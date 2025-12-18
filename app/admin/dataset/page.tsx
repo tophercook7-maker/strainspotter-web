@@ -6,6 +6,8 @@
 import { requireAdmin } from '@/lib/adminAuth';
 import DatasetDashboardClient from './DatasetDashboardClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DatasetDashboardPage() {
   await requireAdmin();
 

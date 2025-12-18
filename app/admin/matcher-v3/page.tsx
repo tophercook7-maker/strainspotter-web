@@ -6,6 +6,8 @@
 import { requireAdmin } from '@/lib/adminAuth';
 import MatcherV3AdminClient from './MatcherV3AdminClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MatcherV3AdminPage() {
   await requireAdmin();
 

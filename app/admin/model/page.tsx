@@ -6,6 +6,8 @@
 import { requireAdmin } from '@/lib/adminAuth';
 import ModelTunerClient from './ModelTunerClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ModelTunerPage() {
   await requireAdmin();
 
