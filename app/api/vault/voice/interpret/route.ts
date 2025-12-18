@@ -5,11 +5,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAPI } from '@/lib/adminAuth';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
 
 const PROMPT = `You are the StrainSpotter OS assistant. Convert the user's natural language into a structured command.
 
@@ -44,12 +39,26 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdminAPI();
 
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: 'OpenAI API key not configured' },
+        { status: 503 }
+      );
+    }
+
     const body = await req.json();
     const { command } = body;
 
     if (!command) {
       return NextResponse.json({ error: 'command is required' }, { status: 400 });
     }
+
+    // Import OpenAI only at runtime, not at build time
+    const { default: OpenAI } = await import('openai');
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
 
     // Use GPT-4o-mini for intent parsing
     const completion = await openai.chat.completions.create({
