@@ -12,6 +12,11 @@ export interface User {
 
 export async function getUser(): Promise<User | null> {
   try {
+    // Check if Supabase env vars are configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+
     const supabase = await createSupabaseServer();
     
     const {
@@ -38,7 +43,7 @@ export async function getUser(): Promise<User | null> {
       role: profile?.role || 'member', // Default to 'member' if no role set
     };
   } catch (error) {
-    console.error('Error getting user:', error);
+    // Silently return null if Supabase is not configured or other errors occur
     return null;
   }
 }
