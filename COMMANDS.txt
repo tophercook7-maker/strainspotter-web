@@ -1,0 +1,74 @@
+# =========================================
+# StrainSpotter – iOS Only Command Cheatsheet
+# =========================================
+
+# Use these commands ONLY for building and updating the iOS app
+# Nothing here is for backend or browser use.
+
+
+# -----------------------------------------
+# 0. Open this commands file again
+# -----------------------------------------
+# From the strainspotter folder:
+open -t COMMANDS.txt
+
+
+# -----------------------------------------
+# 1. Go to the project folder
+# -----------------------------------------
+cd /Users/christophercook/Projects/strainspotter
+
+
+# -----------------------------------------
+# 2. Update your code and push to GitHub 
+# -----------------------------------------
+git pull --rebase origin main
+git add .
+git commit -m "iOS update"
+git push origin main
+
+
+# -----------------------------------------
+# 3. Rebuild the frontend for iOS
+# -----------------------------------------
+# (This prepares the web code for the iOS app shell)
+cd /Users/christophercook/Projects/strainspotter/frontend
+npm run build
+
+
+# -----------------------------------------
+# 4. Sync the built app into iOS (Capacitor)
+# -----------------------------------------
+npm run cap:sync
+
+
+# -----------------------------------------
+# 5. Open the iOS project in Xcode
+# -----------------------------------------
+npm run cap:open:ios
+
+# Then in Xcode:
+# - Select your iPhone from the device list
+# - Press the ▶️ Run button to install the updated app
+
+
+# -----------------------------------------
+# 6. Quick rebuild cycle (use this most often)
+# -----------------------------------------
+# If you already pulled + committed earlier, then just run:
+
+cd /Users/christophercook/Projects/strainspotter/frontend
+npm run build
+npm run cap:sync
+npm run cap:open:ios
+
+# After Xcode opens:
+# Press ▶️ Run again to install latest version
+
+
+# -----------------------------------------
+# 7. If push gets rejected
+# -----------------------------------------
+cd /Users/christophercook/Projects/strainspotter
+git pull --rebase origin main
+git push origin main

@@ -1,0 +1,123 @@
+feat: Add direct messaging system with unread notifications and fix group chat last message display
+
+## 🎯 Summary
+- Implemented complete direct messaging system with unread message tracking
+- Fixed group chat buttons to show last message preview
+- Added notification badges for unread messages
+- Fixed PostgREST schema cache issues by fetching data separately
+
+## ✨ New Features
+
+### Direct Messages
+- Send and receive direct messages between users
+- Real-time unread message count badges
+- "Recent Chats" section showing conversation history
+- Auto-mark messages as read when opening a chat
+- Last message preview for each conversation
+
+### Notification System
+- Red badge on Direct Messages tab showing total unread count
+- Red badge on each user's avatar showing per-conversation unread count
+- Badges automatically update when messages are read
+- Auto-refresh after sending messages
+
+## 🐛 Bug Fixes
+
+### Group Chat Last Message Display
+- Fixed group buttons showing "No conversations yet" after messages were sent
+- Root cause: PostgREST foreign key syntax failing due to schema cache issues
+- Solution: Fetch messages and users separately, then manually join data
+- Groups now properly display last message with username and timestamp
+
+## 🗄️ Database Changes
+
+### New Table: `direct_messages`
+- `id` (UUID, primary key)
+- `sender_id` (UUID, not null)
+- `receiver_id` (UUID, not null)
+- `content` (TEXT, not null)
+- `created_at` (TIMESTAMPTZ, default NOW())
+- `read_at` (TIMESTAMPTZ, nullable)
+- Indexes on sender_id, receiver_id, and created_at
+- Check constraint: sender_id != receiver_id
+- No foreign key constraints (to avoid PostgREST issues)
+
+## 🔧 Backend Changes
+
+### New Route: `backend/routes/direct-messages.js`
+- `GET /api/direct-messages/:userId/:otherUserId` - Load messages between two users
+- `POST /api/direct-messages` - Send a new message
+- `GET /api/direct-chats/chats/:userId` - Get conversation list with unread counts
+- `PUT /api/direct-messages/mark-read/:userId/:otherUserId` - Mark messages as read
+
+### Modified: `backend/routes/groups.js`
+- Fixed last_message fetching to avoid PostgREST foreign key syntax
+- Now fetches messages and users separately, then manually joins
+- Properly returns last_message with user details for each group
+
+### Modified: `backend/index.js`
+- Added direct-messages route mounting
+- Added direct-chats route mounting
+
+## 🎨 Frontend Changes
+
+### Modified: `frontend/src/components/Groups.jsx`
+- Added Direct Messages tab with notification badge
+- Added "Recent Chats" section showing conversation history
+- Added unread count badges on user avatars
+- Implemented auto-mark-as-read when opening chats
+- Created `loadGroups()` function for refreshing groups list
+- Auto-refresh groups after sending messages to update last_message
+
+### UI Improvements
+- Red badges (#FF5252) for high visibility
+- Bold white numbers for readability
+- Green highlighted background for recent chats
+- Sorted conversations by most recent activity
+
+## 📝 Technical Details
+
+### PostgREST Schema Cache Issue
+**Problem:** Using `users(id, username, avatar_url)` syntax in Supabase queries fails with schema cache errors.
+
+**Solution:** 
+1. Fetch main data without foreign key relationships
+2. Extract unique user IDs
+3. Fetch users separately with `IN` query
+4. Create a Map for O(1) lookups
+5. Manually join data in application code
+
+This pattern is now used in both:
+- `backend/routes/direct-messages.js`
+- `backend/routes/groups.js`
+
+### Unread Message Tracking
+- Uses `read_at` timestamp field (NULL = unread)
+- Count unread: `WHERE receiver_id = userId AND read_at IS NULL`
+- Mark as read: `UPDATE SET read_at = NOW() WHERE sender_id = X AND receiver_id = Y`
+
+## 🧪 Testing
+- ✅ Send direct messages between users
+- ✅ Unread badges appear and update correctly
+- ✅ Messages marked as read when opening chat
+- ✅ Group buttons show last message preview
+- ✅ Groups sorted by most recent activity
+- ✅ Auto-refresh after sending messages
+
+## 📁 Files Changed
+- New: `backend/routes/direct-messages.js`
+- New: `backend/migrations/20251108_create_direct_messages.sql`
+- New: `DIRECT_MESSAGES_IMPLEMENTATION.md`
+- Modified: `backend/routes/groups.js`
+- Modified: `backend/index.js`
+- Modified: `frontend/src/components/Groups.jsx`
+
+## 🚀 Deployment Notes
+- Database migration needs to be run in production Supabase
+- Backend will auto-deploy to Render on push
+- Frontend will auto-deploy to Vercel on push
+
+---
+
+Co-authored-by: Augment Agent <agent@augmentcode.com>
+

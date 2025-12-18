@@ -1,0 +1,28 @@
+<svg width="240" height="60" viewBox="0 0 240 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Leaf Mark -->
+  <g>
+    <!-- Main leaf body -->
+    <path d="M20 30 C20 20, 25 15, 30 12 C35 9, 40 8, 45 10 C50 12, 52 15, 52 20 C52 25, 50 28, 48 30 C46 32, 44 33, 42 34 C40 35, 38 36, 36 36 C34 36, 32 35, 30 34 C28 33, 26 32, 24 31 C22 30, 21 29, 20 30 Z" 
+          fill="#111416" 
+          stroke="#42FFB2" 
+          stroke-width="2.5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+    <!-- Leaf veins -->
+    <path d="M30 12 L30 30" stroke="#42FFB2" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M25 18 L35 25" stroke="#42FFB2" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+    <path d="M35 18 L25 25" stroke="#42FFB2" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+    <!-- Accent hotspot -->
+    <circle cx="30" cy="20" r="3" fill="#42FFB2" opacity="0.8">
+      <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Logotype -->
+  <text x="65" y="38" font-family="SF Pro Display, Inter, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#E6EFE9" letter-spacing="-0.5">
+    StrainSpotter
+  </text>
+  <text x="65" y="50" font-family="SF Pro Display, Inter, -apple-system, sans-serif" font-size="10" font-weight="400" fill="#99A8A0" letter-spacing="1.5">
+    BOTANICAL OS
+  </text>
+</svg>

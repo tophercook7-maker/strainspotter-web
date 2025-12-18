@@ -1,0 +1,72 @@
+{
+  "name": "Botanical OS",
+  "version": "1.0.0",
+  "description": "StrainSpotter's unified design system for Vault OS, Garden, Pro Tools, and Scanner",
+  "palette": {
+    "deep": "#0A1A12",
+    "panel": "#111416",
+    "surface": "#1F362B",
+    "border": "#33423B",
+    "accent": "#42FFB2",
+    "accentAlt": "#C4A259",
+    "textPrimary": "#E6EFE9",
+    "textSecondary": "#99A8A0",
+    "textMuted": "#61786D",
+    "glow": "rgba(66, 255, 178, 0.35)",
+    "blur": "rgba(10, 26, 18, 0.7)"
+  },
+  "typography": {
+    "display": "SF Pro Display",
+    "body": "SF Pro Text",
+    "fallback": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+    "mono": "SF Mono, Menlo, Monaco, monospace"
+  },
+  "shapes": {
+    "radiusSm": "8px",
+    "radiusMd": "12px",
+    "radiusLg": "14px"
+  },
+  "motion": {
+    "fast": "120ms",
+    "medium": "180ms",
+    "slow": "300ms",
+    "curve": "cubic-bezier(0.25, 0.1, 0.25, 1.0)"
+  },
+  "spacing": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "32px",
+    "2xl": "48px"
+  },
+  "shadows": {
+    "sm": "0 2px 4px rgba(0, 0, 0, 0.1)",
+    "md": "0 4px 8px rgba(0, 0, 0, 0.15)",
+    "lg": "0 8px 16px rgba(0, 0, 0, 0.2)",
+    "glow": "0 0 20px rgba(66, 255, 178, 0.35)"
+  },
+  "icons": {
+    "strokeWidth": "2.5px",
+    "size": "32px",
+    "style": "SF Symbol-style, rounded ends, botanical accent"
+  },
+  "logos": {
+    "primary": "/brand/logos/botanical-logo.svg",
+    "dark": "/brand/logos/botanical-logo-dark.svg",
+    "mark": "/brand/logos/botanical-logo-mark.svg",
+    "logotype": "/brand/logos/botanical-logotype.svg"
+  },
+  "hero": {
+    "banner": "/brand/hero/botanical-hero-banner.png",
+    "hero1": "/brand/hero/botanical-hero-1.png",
+    "hero2": "/brand/hero/botanical-hero-2.png"
+  },
+  "animations": {
+    "spinner": "/brand/animations/loading/botanical-spinner.svg",
+    "terpenePulse": "/brand/animations/loading/terpene-pulse.svg",
+    "budLineScan": "/brand/animations/loading/bud-line-scan.mp4",
+    "splash": "/brand/animations/splash/botanical-splash.mp4",
+    "scannerEnter": "/brand/animations/scanner/scanner-enter.mp4"
+  }
+}

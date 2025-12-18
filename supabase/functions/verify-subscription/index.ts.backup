@@ -1,0 +1,59 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// Secrets expected (set in Supabase Functions settings):
+// APPLE_ISSUER_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY, APPLE_BUNDLE_ID
+// GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_PACKAGE_NAME
+
+const APPLE_ISSUER_ID = Deno.env.get("APPLE_ISSUER_ID") || "";
+const APPLE_KEY_ID = Deno.env.get("APPLE_KEY_ID") || "";
+const APPLE_PRIVATE_KEY = Deno.env.get("APPLE_PRIVATE_KEY") || "";
+const APPLE_BUNDLE_ID = Deno.env.get("APPLE_BUNDLE_ID") || "";
+const GOOGLE_SERVICE_ACCOUNT_JSON = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "";
+const GOOGLE_PACKAGE_NAME = Deno.env.get("GOOGLE_PACKAGE_NAME") || "";
+
+type VerifyPayload = {
+  platform: 'apple' | 'google';
+  receipt?: string; // iOS App Store (transaction/product token)
+  purchaseToken?: string; // Play Billing token
+  test?: boolean; // allow test-mode success for QA environments
+};
+
+serve(async (req) => {
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+  let payload: VerifyPayload;
+  try {
+    payload = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ message: 'Invalid JSON' }), { status: 400 });
+  }
+
+  // Minimal input validation
+  if (!payload?.platform || !['apple', 'google'].includes(payload.platform)) {
+    return new Response(JSON.stringify({ message: 'platform must be "apple" or "google"' }), { status: 400 });
+  }
+
+  // Test mode to unblock client QA prior to full backend wiring
+  if (payload.test === true) {
+    return new Response(JSON.stringify({ status: 'active', membership: 'club', mode: 'test' }), { status: 200 });
+  }
+
+  const haveApple = APPLE_ISSUER_ID && APPLE_KEY_ID && APPLE_PRIVATE_KEY && APPLE_BUNDLE_ID;
+  const haveGoogle = GOOGLE_SERVICE_ACCOUNT_JSON && GOOGLE_PACKAGE_NAME;
+
+  // If secrets aren’t configured, return actionable message
+  if ((payload.platform === 'apple' && !haveApple) || (payload.platform === 'google' && !haveGoogle)) {
+    return new Response(JSON.stringify({
+      message: 'Subscription verification not configured: missing function secrets',
+      missing: payload.platform === 'apple'
+        ? ['APPLE_ISSUER_ID','APPLE_KEY_ID','APPLE_PRIVATE_KEY','APPLE_BUNDLE_ID'].filter((k) => !({APPLE_ISSUER_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY, APPLE_BUNDLE_ID} as any)[k])
+        : ['GOOGLE_SERVICE_ACCOUNT_JSON','GOOGLE_PACKAGE_NAME'].filter((k) => !({GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_PACKAGE_NAME} as any)[k]),
+    }), { status: 501 });
+  }
+
+  // Placeholder until backend upgrades with real validation + membership upsert
+  return new Response(JSON.stringify({
+    message: 'Receipt validation will be handled by backend upgrade. Secrets detected. Please proceed to deploy upgraded logic.',
+    configured: true,
+    platform: payload.platform,
+  }), { status: 202 });
+});

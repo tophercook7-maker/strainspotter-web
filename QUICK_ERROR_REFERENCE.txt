@@ -1,0 +1,34 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    🚨 ERROR LOGGING QUICK REFERENCE                       ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📱 VIEW ERRORS IN THE APP (easiest way)
+  → Open: http://localhost:5173
+  → Click: "🚨 Errors" tab in the menu
+  → See: Last 20 backend errors with full details
+
+💻 VIEW BACKEND LOGS (PM2)
+  → pm2 logs strainspotter-backend
+  → pm2 logs strainspotter-backend --err (errors only)
+  → pm2 flush (clear all logs)
+
+🌐 VIEW FRONTEND ERRORS (Browser)
+  → Press F12 (DevTools)
+  → Go to Console tab
+  → Errors appear with clear formatting
+
+🔗 API ENDPOINT (development only)
+  → curl http://localhost:5181/api/errors/recent
+
+═══════════════════════════════════════════════════════════════════════════
+
+WHEN SOMETHING BREAKS:
+  1. Check the 🚨 Errors tab first (quickest)
+  2. Open browser console (F12) for frontend issues
+  3. Run: pm2 logs strainspotter-backend
+  4. Read the full error message and stack trace
+  
+RESTART BACKEND:
+  → pm2 restart strainspotter-backend
+
+═══════════════════════════════════════════════════════════════════════════

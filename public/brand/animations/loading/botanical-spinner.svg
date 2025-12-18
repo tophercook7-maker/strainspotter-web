@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Emerald rotating ring spinner -->
+  <circle cx="32" cy="32" r="24" stroke="#33423B" stroke-width="4" fill="none" opacity="0.3"/>
+  <circle cx="32" cy="32" r="24" stroke="#42FFB2" stroke-width="4" fill="none" 
+          stroke-dasharray="40 120" 
+          stroke-linecap="round"
+          transform="rotate(-90 32 32)">
+    <animateTransform attributeName="transform" 
+                      type="rotate" 
+                      from="0 32 32" 
+                      to="360 32 32" 
+                      dur="1s" 
+                      repeatCount="indefinite"/>
+  </circle>
+</svg>

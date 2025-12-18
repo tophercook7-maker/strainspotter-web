@@ -1,0 +1,78 @@
+name: StrainSpotter Health Check
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # Every day at 3 AM UTC
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Check backend health endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GOOGLE_VISION_JSON: ${{ secrets.GOOGLE_VISION_JSON }}
+        run: |
+          cd backend
+          # Start backend in background
+          npm run dev &
+          BACKEND_PID=$!
+          
+          # Wait for server to start
+          sleep 10
+          
+          # Check health endpoint
+          curl -f http://localhost:5181/health || exit 1
+          curl -f http://localhost:5181/api/health || exit 1
+          
+          # Kill backend
+          kill $BACKEND_PID
+
+      - name: Test scan upload (RLS check)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          # Use curl to POST a test scan
+          RESPONSE=$(curl -s -X POST http://localhost:5181/api/uploads \
+            -H "Content-Type: application/json" \
+            -d '{"filename":"test.png","contentType":"image/png","base64":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="}')
+          
+          echo "Scan upload response: $RESPONSE"
+          
+          # Check for RLS error
+          if echo "$RESPONSE" | grep -i "row-level security"; then
+            echo "❌ RLS policy error detected! Run migration: backend/migrations/2025_create_full_schema.sql"
+            exit 1
+          fi
+          
+          # Check for success
+          if echo "$RESPONSE" | grep -q "id"; then
+            echo "✅ Scan upload successful"
+          else
+            echo "⚠️ Unexpected response"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Health check failed! Check logs above for details."
+          # Add Slack/Discord notification here if desired

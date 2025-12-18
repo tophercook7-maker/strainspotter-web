@@ -1,0 +1,1 @@
+Create app (iOS), match Bundle ID, category Reference/Utilities. Age Rating 17+, Privacy: Data Not Collected. Paste listing text, upload 6.7" & 5.5" screenshots and 1024x1024 icon. Select uploaded build and Submit for Review.
