@@ -20,6 +20,7 @@ export default function HomePage() {
       <h1 className="text-6xl font-bold mt-10 text-[#C4A259] tracking-wide text-center">
         STRAINSPOTTER
       </h1>
+      {/* Deployment marker: 0b1a260 */}
 
       {/* SUBHEADING */}
       <p className="mt-6 text-xl text-[#E6EFE9]/90 max-w-2xl text-center leading-relaxed">
@@ -59,3 +60,4 @@ export default function HomePage() {
     </main>
   );
 }
+<!-- Deployment: Thu Dec 18 17:43:35 CST 2025 -->
