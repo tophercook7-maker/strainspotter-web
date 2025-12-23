@@ -18,7 +18,7 @@ export default function SaveToGardenActions({ reply, post }: SaveToGardenActions
     const sourceId = reply?.id || post?.id || "";
     const sourceType = reply ? "reply" : "post";
     const sourceTitle = post?.title;
-    const sourceAuthor = reply?.user?.username || post?.user?.username;
+    const sourceAuthor = (reply?.user?.username || post?.user?.username) ?? undefined;
     
     const prefill = generateCommunityPrefill(content, sourceId, sourceType, sourceTitle, sourceAuthor);
     const encoded = encodeCommunityPrefill(prefill);
@@ -30,7 +30,7 @@ export default function SaveToGardenActions({ reply, post }: SaveToGardenActions
     const sourceId = reply?.id || post?.id || "";
     const sourceType = reply ? "reply" : "post";
     const sourceTitle = post?.title;
-    const sourceAuthor = reply?.user?.username || post?.user?.username;
+    const sourceAuthor = (reply?.user?.username || post?.user?.username) ?? undefined;
     
     // For tasks, create a prefilled title
     const taskTitle = sourceTitle 
