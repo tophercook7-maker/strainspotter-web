@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "desktop:dev": "cd desktop && npm install && STRAINSPOTTER_URL=http://localhost:3000 npm run dev",
-    "desktop:build": "cd desktop && npm install && npm run build"
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.4",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tauri-apps/cli": "^2.9.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

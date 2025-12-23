@@ -1,52 +1,39 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "StrainSpotter",
-  "version": "1.0.0-test",
-  "identifier": "com.strainspotter",
+  "version": "0.1.0",
+  "identifier": "app.strainspotter.desktop",
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "devUrl": "https://app.strainspotter.app",
-    "frontendDist": "https://app.strainspotter.app"
+    "devUrl": "https://app.strainspotter.app"
   },
   "app": {
     "windows": [
       {
-        "label": "main",
         "title": "StrainSpotter",
         "width": 1280,
         "height": 800,
-        "minWidth": 800,
-        "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
-        "decorations": true,
-        "transparent": false,
-        "alwaysOnTop": false,
-        "skipTaskbar": false
+        "minWidth": 800,
+        "minHeight": 600
       }
     ],
     "security": {
-      "csp": "default-src 'self' https://app.strainspotter.app https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://api.openai.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.strainspotter.app; style-src 'self' 'unsafe-inline' https://app.strainspotter.app; img-src 'self' data: https: blob:; font-src 'self' data: https://app.strainspotter.app; connect-src 'self' https://app.strainspotter.app https: wss:; frame-src 'self' https://app.strainspotter.app;"
+      "csp": "default-src 'self'; connect-src https://app.strainspotter.app https://*.supabase.co https://*.googleapis.com; img-src 'self' https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg", "msi"],
+    "targets": "all",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/256x256.png",
-      "icons/256x256@2x.png",
       "icons/512x512.png",
-      "icons/512x512@2x.png"
-    ],
-    "resources": [],
-    "externalBin": [],
-    "copyright": "",
-    "category": "Utility",
-    "shortDescription": "StrainSpotter Desktop Application",
-    "longDescription": "StrainSpotter — Early Test Build (DESKTOP_TEST_v1)"
-  },
-  "plugins": {}
+      "icons/512x512@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
 }
