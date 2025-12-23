@@ -41,7 +41,7 @@ async function fetchFlags(): Promise<Record<string, boolean>> {
     const data = await response.json();
     flagsCache = data.flags || {};
     cacheTimestamp = now;
-    return flagsCache;
+    return flagsCache ?? {};
   } catch (error) {
     console.warn('Error fetching feature flags:', error);
     // Fail safely - return empty object (all flags disabled)
