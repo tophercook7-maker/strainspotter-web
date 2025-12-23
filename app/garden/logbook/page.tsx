@@ -13,6 +13,13 @@ export default function LogbookPage() {
   const [showReminder, setShowReminder] = useState(false);
 
   useEffect(() => {
+    // Check for ?new=true - redirect to new grow creation
+    const isNew = searchParams.get("new");
+    if (isNew === "true") {
+      router.replace("/garden/logbook/new");
+      return;
+    }
+
     fetch("/api/garden/grows", {
       credentials: "include",
     })

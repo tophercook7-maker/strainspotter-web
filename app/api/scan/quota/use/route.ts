@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
-import { incrementScanUsage, ScanType } from "@/app/api/_utils/scanQuota";
+import { incrementScanUsage, ScanType, checkScanQuota, formatLimitReachedResponse } from "@/app/api/_utils/scanQuota";
 
 /**
  * POST /api/scan/quota/use
@@ -31,19 +31,16 @@ export async function POST(req: NextRequest) {
     const result = await incrementScanUsage(user.id, type);
 
     if (!result.success) {
-      // Get quota status for error response
-      const { checkScanQuota } = await import("@/app/api/_utils/scanQuota");
+      // Get quota status for structured error response
       const quotaCheck = await checkScanQuota(user.id, type);
+      const limitResponse = formatLimitReachedResponse(quotaCheck, type);
 
       return NextResponse.json(
         {
+          ...limitResponse,
           success: false,
-          error: 'quota_exceeded',
+          error: 'limit_reached', // Keep for backward compatibility
           reason: result.reason,
-          reset_at: quotaCheck.reset_at,
-          remaining: quotaCheck.remaining,
-          id_scans_used: quotaCheck.id_scans_used,
-          doctor_scans_used: quotaCheck.doctor_scans_used,
         },
         { status: 403 }
       );

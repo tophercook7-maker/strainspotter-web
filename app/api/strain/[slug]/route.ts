@@ -16,7 +16,24 @@ export async function GET(
     }
 
     const json = await res.json();
-    return NextResponse.json(json);
+    
+    // Ensure seed_sources is preserved in response
+    // Log to verify it exists in backend response
+    if (json) {
+      console.log('[STRAIN API] Backend response includes seed_sources:', {
+        hasSeedSources: !!json.seed_sources,
+        seedSourcesType: typeof json.seed_sources,
+        seedSourcesValue: json.seed_sources,
+      });
+    }
+    
+    // Explicitly preserve seed_sources field
+    const response = {
+      ...json,
+      seed_sources: json.seed_sources ?? null, // Preserve null/undefined, don't drop the field
+    };
+    
+    return NextResponse.json(response);
   } catch (err: any) {
     console.error("[API ERROR]", err);
     return NextResponse.json(

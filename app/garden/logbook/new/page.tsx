@@ -52,8 +52,8 @@ export default function NewGrowPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white" style={{ padding: 16, maxWidth: 560, margin: "0 auto" }}>
-      <Link href="/garden/logbook" className="text-emerald-400 mb-4 inline-block text-sm">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden safe-area-bottom" style={{ padding: 16, maxWidth: 560, margin: "0 auto" }}>
+      <Link href="/garden/logbook" className="text-emerald-400 mb-4 inline-block text-sm hover:text-emerald-300 transition">
         ← Back to Logbook
       </Link>
 

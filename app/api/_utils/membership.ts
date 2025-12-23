@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabaseAdmin';
 
-export type MembershipTier = 'free' | 'garden' | 'standard' | 'pro';
+export type MembershipTier = 'free' | 'pro' | 'elite' | 'garden' | 'standard'; // 'garden' and 'standard' are legacy, map to 'pro'
 
 export interface MembershipDefaults {
   scans: number;
@@ -18,16 +18,39 @@ export interface Profile {
 }
 
 /**
+ * Normalize tier name (map legacy tiers to new system)
+ */
+function normalizeTierForDefaults(tier: MembershipTier): 'free' | 'pro' | 'elite' {
+  // Map legacy 'garden' and 'standard' to 'pro'
+  if (tier === 'garden' || tier === 'standard') {
+    return 'pro';
+  }
+  if (tier === 'elite') {
+    return 'elite';
+  }
+  if (tier === 'pro') {
+    return 'pro';
+  }
+  return 'free';
+}
+
+/**
  * Get default scan allocations for each membership tier
+ * Free: Limited (configurable, default 5)
+ * Pro: 250 id scans/month, 40 doctor scans/month
+ * Elite: Unlimited
  */
 export function getDefaultsForMembership(membership: MembershipTier): MembershipDefaults {
-  switch (membership) {
+  const normalized = normalizeTierForDefaults(membership);
+  
+  switch (normalized) {
     case 'free':
-      return { scans: 5, doctor: 0 }; // Very limited
-    case 'garden':
-    case 'standard': // 'garden' is legacy, map to 'standard'
-      return { scans: 250, doctor: 40 };
+      // Configurable limit (default 5, can be adjusted via env)
+      const freeLimit = parseInt(process.env.FREE_TIER_ID_SCAN_LIMIT || '5', 10);
+      return { scans: freeLimit, doctor: 0 }; // Doctor scans not allowed for free
     case 'pro':
+      return { scans: 250, doctor: 40 };
+    case 'elite':
       return { scans: null as any, doctor: null as any }; // Unlimited (represented as null)
     default:
       return { scans: 5, doctor: 0 };

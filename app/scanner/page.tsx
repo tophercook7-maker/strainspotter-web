@@ -1,13 +1,14 @@
 // app/scanner/page.tsx
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ScanResultPanel from '@/components/ScanResultPanel';
 import PaywallManager from '@/components/paywalls/PaywallManager';
 import { useScanGate } from '@/lib/hooks/useScanGate';
+import { setupAndroidBackHandler } from '@/lib/navigation/androidBack';
 
 type ScanMode = 'strain' | 'doctor';
 
@@ -29,40 +30,116 @@ export default function ScannerPage() {
   const [canDoctorScan, setCanDoctorScan] = useState(false);
   const { checkScanAccess, deductScan } = useScanGate();
   const [scanAnimation, setScanAnimation] = useState<string | null>(null);
+  const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
+  const [cameraRetryCount, setCameraRetryCount] = useState(0);
 
-  // Start camera on mount
+  // Setup Android back button handler
+  useEffect(() => {
+    const cleanup = setupAndroidBackHandler(router, '/');
+    return cleanup;
+  }, [router]);
+
+  // Start camera on mount with comprehensive error handling
   useEffect(() => {
     let stream: MediaStream | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
 
     async function initCamera() {
       try {
         setError(null);
-        const s = await navigator.mediaDevices.getUserMedia({
+        
+        // Check if mediaDevices is available
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setError('Camera not supported on this device. Use the upload option instead.');
+          return;
+        }
+
+        // Set timeout for camera initialization (10 seconds)
+        timeoutId = setTimeout(() => {
+          if (!cameraReady) {
+            setError('Camera is taking too long to initialize. Try refreshing or use upload instead.');
+          }
+        }, 10000);
+
+        // Try to get camera with fallback options
+        let constraints: MediaStreamConstraints = {
           video: { facingMode: 'environment' },
           audio: false,
-        });
-        stream = s;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setCameraReady(true);
+        };
+
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (err: any) {
+          // If environment camera fails, try any camera
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            setError('Camera permission denied. Please allow camera access in your browser settings, or use the upload option.');
+            setCameraPermissionDenied(true);
+            return;
+          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            setError('No camera found. Use the upload option to scan from a photo.');
+            return;
+          } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            setError('Camera is already in use by another app. Close other apps and try again, or use upload.');
+            return;
+          } else if (err.name === 'OverconstrainedError') {
+            // Fallback to any camera
+            constraints = { video: true, audio: false };
+            try {
+              stream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (fallbackErr) {
+              setError('Unable to access camera. Use the upload option instead.');
+              return;
+            }
+          } else {
+            throw err;
+          }
         }
-      } catch (err) {
-        console.error(err);
-        setError('Unable to access camera. Check permissions in your browser settings.');
+
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+
+        if (videoRef.current && stream) {
+          videoRef.current.srcObject = stream;
+          try {
+            await videoRef.current.play();
+            setCameraReady(true);
+          } catch (playErr) {
+            console.error('Video play error:', playErr);
+            setError('Camera initialized but failed to display. Try refreshing.');
+            // Clean up stream if play fails
+            stream.getTracks().forEach((t) => t.stop());
+          }
+        }
+      } catch (err: any) {
+        console.error('Camera initialization error:', err);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError('Camera permission denied. Please allow camera access, or use the upload option.');
+          setCameraPermissionDenied(true);
+        } else if (err.name === 'NotFoundError') {
+          setError('No camera found. Use the upload option to scan from a photo.');
+        } else if (err.name === 'NotReadableError') {
+          setError('Camera is in use. Close other apps and try again, or use upload.');
+        } else {
+          setError('Unable to access camera. Use the upload option instead.');
+        }
       }
     }
 
     initCamera();
 
     return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       if (stream) {
         stream.getTracks().forEach((t) => t.stop());
       }
     };
   }, []);
 
-  async function handleNormalScan() {
+  const handleNormalScan = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) {
       setError('Camera not ready yet.');
       return;
@@ -126,8 +203,11 @@ export default function ScannerPage() {
         reader.readAsDataURL(blob);
       });
 
-      // STEP 2: POST /api/uploads
+      // STEP 2: POST /api/uploads (with timeout)
       setProcessingStep('Uploading...');
+      const uploadController = new AbortController();
+      const uploadTimeout = setTimeout(() => uploadController.abort(), 30000); // 30 second timeout
+      
       const uploadResponse = await fetch('/api/uploads', {
         method: 'POST',
         headers: {
@@ -138,39 +218,92 @@ export default function ScannerPage() {
           filename: `scan-${Date.now()}.jpg`,
           mimeType: 'image/jpeg',
         }),
+        signal: uploadController.signal,
       });
+      
+      clearTimeout(uploadTimeout);
 
       if (!uploadResponse.ok) {
         const text = await uploadResponse.text();
         const error = text ? JSON.parse(text) : null;
-        throw new Error(error?.error || 'Upload failed');
+        
+        // Handle limit_reached response gracefully
+        if (error?.status === 'limit_reached' || error?.error === 'limit_reached') {
+          const limitMsg = error.type === 'doctor_scan'
+            ? 'Doctor scans are not available for your membership tier.'
+            : `You've reached your monthly scan limit (${error.used}/${error.limit || 'unlimited'}).`;
+          
+          setError(`${limitMsg} ${error.reset_date ? `Resets on ${new Date(error.reset_date).toLocaleDateString()}.` : ''} Upgrade to continue scanning.`);
+          setIsScanning(false);
+          setProcessingStep(null);
+          // Show paywall for upgrade option
+          if (error.type === 'doctor_scan') {
+            setShowDoctorPaywall(true);
+          } else {
+            setShowRegularPaywall(true);
+          }
+          return; // Exit gracefully, don't throw
+        }
+        
+        throw new Error(error?.error || error?.message || 'Upload failed');
       }
 
       const text = await uploadResponse.text();
       const uploadData = text ? JSON.parse(text) : null;
       const scanId = uploadData.scan_id;
 
-      // STEP 3: POST /api/scans/${scan_id}/process
+      // STEP 3: POST /api/scans/${scan_id}/process (with timeout)
       setProcessingStep('Analyzing image...');
+      const processController = new AbortController();
+      const processTimeout = setTimeout(() => processController.abort(), 60000); // 60 second timeout for processing
+      
       const processResponse = await fetch(`/api/scans/${scanId}/process`, {
         method: 'POST',
+        signal: processController.signal,
       });
+      
+      clearTimeout(processTimeout);
 
       if (!processResponse.ok) {
         const text = await processResponse.text();
         const error = text ? JSON.parse(text) : null;
-        throw new Error(error?.error || 'Processing failed');
+        
+        // Handle limit_reached response gracefully
+        if (error?.status === 'limit_reached' || error?.error === 'limit_reached') {
+          const limitMsg = error.type === 'doctor_scan'
+            ? 'Doctor scans are not available for your membership tier.'
+            : `You've reached your monthly scan limit (${error.used}/${error.limit || 'unlimited'}).`;
+          
+          setError(`${limitMsg} ${error.reset_date ? `Resets on ${new Date(error.reset_date).toLocaleDateString()}.` : ''} Upgrade to continue scanning.`);
+          setIsScanning(false);
+          setProcessingStep(null);
+          // Show paywall for upgrade option
+          if (error.type === 'doctor_scan') {
+            setShowDoctorPaywall(true);
+          } else {
+            setShowRegularPaywall(true);
+          }
+          return; // Exit gracefully, don't throw
+        }
+        
+        throw new Error(error?.error || error?.message || 'Processing failed');
       }
 
-      // STEP 4: POST /api/visual-match
+      // STEP 4: POST /api/visual-match (with timeout)
       setProcessingStep('Matching strain...');
+      const matchController = new AbortController();
+      const matchTimeout = setTimeout(() => matchController.abort(), 30000); // 30 second timeout
+      
       const matchResponse = await fetch('/api/visual-match', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ scan_id: scanId }),
+        signal: matchController.signal,
       });
+      
+      clearTimeout(matchTimeout);
 
       if (!matchResponse.ok) {
         const text = await matchResponse.text();
@@ -184,14 +317,18 @@ export default function ScannerPage() {
       router.push(`/scan/${scanId}`);
     } catch (err: any) {
       console.error('[scanner] Scan error:', err);
-      setError(err.message || 'Scan failed. Please try again.');
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please try again or use upload instead.');
+      } else {
+        setError(err.message || 'Scan failed. Please try again.');
+      }
       setProcessingStep(null);
     } finally {
       setIsScanning(false);
     }
-  }
+  }, [checkScanAccess, deductScan, router]);
 
-  async function handleDoctorScan() {
+  const handleDoctorScan = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) {
       setError('Camera not ready yet.');
       return;
@@ -231,8 +368,11 @@ export default function ScannerPage() {
       canvas.height = height;
       ctx.drawImage(video, 0, 0, width, height);
 
-      // Process doctor scan via API
+      // Process doctor scan via API (with timeout)
       const imageData = canvas.toDataURL('image/jpeg');
+      const doctorController = new AbortController();
+      const doctorTimeout = setTimeout(() => doctorController.abort(), 30000); // 30 second timeout
+      
       const response = await fetch('/api/scans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -240,26 +380,68 @@ export default function ScannerPage() {
           image: imageData,
           scan_type: 'doctor',
         }),
+        signal: doctorController.signal,
       });
+      
+      clearTimeout(doctorTimeout);
       
       if (response.ok) {
         const { scan_id } = await response.json();
         router.push(`/scan/${scan_id}`);
       } else {
-        setError('Failed to process doctor scan');
+        const text = await response.text();
+        const error = text ? JSON.parse(text) : null;
+        
+        // Handle limit_reached response gracefully
+        if (error?.status === 'limit_reached' || error?.error === 'limit_reached') {
+          const limitMsg = error.type === 'doctor_scan'
+            ? 'Doctor scans are not available for your membership tier.'
+            : `You've reached your monthly scan limit (${error.used}/${error.limit || 'unlimited'}).`;
+          
+          setError(`${limitMsg} ${error.reset_date ? `Resets on ${new Date(error.reset_date).toLocaleDateString()}.` : ''} Upgrade to continue scanning.`);
+          setShowDoctorPaywall(true);
+        } else {
+          setError(error?.error || error?.message || 'Failed to process doctor scan');
+        }
         setIsScanning(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Scan failed. Please try again.');
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please try again or use upload instead.');
+      } else {
+        setError('Scan failed. Please try again.');
+      }
     } finally {
       setIsScanning(false);
       setScanAnimation(null);
     }
-  }
+  }, [checkScanAccess, deductScan, router]);
+
+  // Retry camera initialization
+  const retryCamera = useCallback(async () => {
+    setCameraRetryCount(prev => prev + 1);
+    setError(null);
+    setCameraPermissionDenied(false);
+    setCameraReady(false);
+    
+    // Re-run camera initialization
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' },
+      audio: false,
+    }).catch(() => {
+      return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    });
+    
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+      setCameraReady(true);
+    }
+  }, []);
 
   return (
-    <div className="relative min-h-screen text-[var(--botanical-text-primary)] overflow-hidden bg-[var(--botanical-bg-deep)] pb-20 md:pb-0">
+    <div className="relative min-h-screen text-[var(--botanical-text-primary)] overflow-hidden bg-[var(--botanical-bg-deep)] pb-20 md:pb-0 safe-area-bottom">
       {/* Fixed Background */}
       <div className="fixed inset-0 -z-20">
         <Image
@@ -427,23 +609,44 @@ export default function ScannerPage() {
           </div>
         )}
 
-        {/* Error */}
+        {/* Error with retry and upload fallback */}
         {error && (
-          <div className="mt-4 text-xs text-[#FF6B6B] bg-[var(--botanical-bg-surface)] border border-[#FF6B6B]/40 rounded-[var(--radius-md)] px-3 py-2">
-            {error}
-            <button
-              onClick={() => {
-                setError(null);
-                if (scanMode === 'strain') {
-                  handleNormalScan();
-                } else {
-                  handleDoctorScan();
-                }
-              }}
-              className="ml-2 underline hover:no-underline"
-            >
-              Retry
-            </button>
+          <div className="mt-4 space-y-2">
+            <div className="text-xs text-[#FF6B6B] bg-[var(--botanical-bg-surface)] border border-[#FF6B6B]/40 rounded-[var(--radius-md)] px-3 py-2">
+              {error}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              {cameraPermissionDenied || error.includes('camera') || error.includes('Camera') ? (
+                <>
+                  <button
+                    onClick={retryCamera}
+                    className="flex-1 px-4 py-2 text-sm bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 rounded hover:bg-emerald-600/30 transition min-h-[44px]"
+                  >
+                    Retry Camera
+                  </button>
+                  <Link
+                    href="/scanner/upload"
+                    className="flex-1 px-4 py-2 text-sm bg-white/10 border border-white/20 text-white rounded hover:bg-white/15 transition text-center min-h-[44px] flex items-center justify-center"
+                  >
+                    Upload Photo Instead
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setError(null);
+                    if (scanMode === 'strain') {
+                      handleNormalScan();
+                    } else {
+                      handleDoctorScan();
+                    }
+                  }}
+                  className="w-full px-4 py-2 text-sm bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 rounded hover:bg-emerald-600/30 transition min-h-[44px]"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
           </div>
         )}
 

@@ -3,12 +3,24 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@supabase/supabase-js';
+import { getStrainPrimaryImage } from '@/lib/strainImages';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+interface SeedSource {
+  breeder: string;
+  seed_bank?: string;
+  feminized?: boolean;
+  autoflower?: boolean;
+  regular?: boolean;
+  link?: string;
+  notes?: string;
+}
 
 interface StrainData {
   id: string;
@@ -20,6 +32,8 @@ interface StrainData {
   terpenes?: Array<{ name: string; percentage?: number }>;
   description?: string;
   effects?: any;
+  seed_sources?: SeedSource[];
+  notes?: string; // For clone-only detection
 }
 
 export default function StrainDetailsPage() {
@@ -29,18 +43,48 @@ export default function StrainDetailsPage() {
   const [strain, setStrain] = useState<StrainData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [strainImage, setStrainImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     async function loadStrain() {
       try {
+        // Explicitly select all fields including seed_sources
         const { data, error: fetchError } = await supabase
           .from('strains')
-          .select('*')
+          .select('*, seed_sources')
           .eq('slug', slug)
           .single();
 
         if (fetchError) throw fetchError;
-        setStrain(data);
+        
+        // Log to verify seed_sources is present
+        if (data) {
+          console.log('[STRAIN PAGE] Loaded strain:', {
+            name: data.name,
+            slug: data.slug,
+            hasSeedSources: !!data.seed_sources,
+            seedSourcesType: typeof data.seed_sources,
+            seedSourcesValue: data.seed_sources,
+          });
+        }
+        
+        // Ensure seed_sources is preserved (handle JSONB parsing if needed)
+        const strainData = {
+          ...data,
+          seed_sources: data.seed_sources || null, // Preserve null/undefined, don't default to []
+        };
+        
+        setStrain(strainData);
+
+        // Load strain image
+        try {
+          const primaryImage = await getStrainPrimaryImage(slug);
+          setStrainImage(primaryImage);
+        } catch (err) {
+          console.warn('[STRAIN PAGE] Failed to load strain image:', err);
+          // Continue without image
+        }
       } catch (err: any) {
         console.error('Error loading strain:', err);
         setError(err.message || 'Failed to load strain');
@@ -100,6 +144,30 @@ export default function StrainDetailsPage() {
           )}
         </div>
 
+        {/* Primary Strain Image */}
+        {strainImage && !imageError && (
+          <div className="mb-6">
+            <div className="relative w-full max-w-2xl aspect-square rounded-lg overflow-hidden bg-gray-900">
+              <img
+                src={strainImage}
+                alt={strain.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+                loading="lazy"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Placeholder if no image */}
+        {!strainImage && !loading && (
+          <div className="mb-6">
+            <div className="relative w-full max-w-2xl aspect-square rounded-lg overflow-hidden bg-gray-900 flex items-center justify-center">
+              <span className="text-gray-500 text-sm">No image available</span>
+            </div>
+          </div>
+        )}
+
         {/* Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* THC/CBD */}
@@ -148,6 +216,9 @@ export default function StrainDetailsPage() {
           </div>
         )}
 
+        {/* Seeds Section */}
+        <SeedsSection strain={strain} />
+
         {/* Actions */}
         <div className="flex gap-4">
           <Link
@@ -157,6 +228,130 @@ export default function StrainDetailsPage() {
             Scan This Strain
           </Link>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Seeds Section Component
+ * Displays seed sources for the strain
+ */
+function SeedsSection({ strain }: { strain: StrainData }) {
+  // Check if strain is clone-only (check notes or description for "clone-only")
+  const notesText = typeof strain.notes === 'string' ? strain.notes.toLowerCase() : '';
+  const descText = typeof strain.description === 'string' ? strain.description.toLowerCase() : '';
+  const isCloneOnly = notesText.includes('clone-only') || descText.includes('clone-only');
+
+  // Handle clone-only case
+  if (isCloneOnly) {
+    return (
+      <div className="bg-gray-900 rounded-lg p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+          <span>🌱</span>
+          <span>Seeds</span>
+        </h2>
+        <p className="text-gray-300">
+          This strain is clone-only. No commercial seed source exists.
+        </p>
+      </div>
+    );
+  }
+
+  // Handle missing or empty seed_sources
+  if (!strain.seed_sources || strain.seed_sources.length === 0) {
+    return (
+      <div className="bg-gray-900 rounded-lg p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+          <span>🌱</span>
+          <span>Seeds</span>
+        </h2>
+        <p className="text-gray-300">
+          Seed availability unknown.
+        </p>
+      </div>
+    );
+  }
+
+  // Render seed sources
+  return (
+    <div className="bg-gray-900 rounded-lg p-4 mb-6">
+      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+        <span>🌱</span>
+        <span>Seeds</span>
+      </h2>
+      <div className="space-y-4">
+        {strain.seed_sources.map((source, index) => {
+          // Skip if breeder is missing (required field)
+          if (!source.breeder || typeof source.breeder !== 'string') {
+            return null;
+          }
+
+          return (
+            <div
+              key={index}
+              className="bg-gray-800/50 rounded-lg p-4 border border-gray-700"
+            >
+              <div className="flex flex-col gap-3">
+                {/* Breeder (required) */}
+                <div>
+                  <span className="text-gray-400 text-sm">Breeder: </span>
+                  <span className="text-white font-semibold">{source.breeder}</span>
+                </div>
+
+              {/* Seed Bank (optional) */}
+              {source.seed_bank && (
+                <div>
+                  <span className="text-gray-400 text-sm">Seed Bank: </span>
+                  <span className="text-white">{source.seed_bank}</span>
+                </div>
+              )}
+
+              {/* Type Badges */}
+              {(source.feminized || source.autoflower || source.regular) && (
+                <div className="flex flex-wrap gap-2">
+                  {source.feminized && (
+                    <span className="px-2 py-1 bg-purple-500/20 text-purple-200 rounded text-xs font-medium">
+                      Feminized
+                    </span>
+                  )}
+                  {source.autoflower && (
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-200 rounded text-xs font-medium">
+                      Autoflower
+                    </span>
+                  )}
+                  {source.regular && (
+                    <span className="px-2 py-1 bg-green-500/20 text-green-200 rounded text-xs font-medium">
+                      Regular
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Notes (optional) */}
+              {source.notes && (
+                <div>
+                  <p className="text-gray-300 text-sm">{source.notes}</p>
+                </div>
+              )}
+
+              {/* External Link (optional) */}
+              {source.link && (
+                <div>
+                  <a
+                    href={source.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-4 py-2 bg-green-500 text-black rounded-lg font-semibold hover:bg-green-400 transition text-sm"
+                  >
+                    View Seed Bank →
+                  </a>
+                </div>
+              )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

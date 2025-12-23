@@ -1,18 +1,28 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { calculateStreak } from "@/lib/logbook/streaks";
+import { setupAndroidBackHandler } from "@/lib/navigation/androidBack";
 
 function GrowCoachContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [stage, setStage] = useState("veg");
   const [note, setNote] = useState("");
   const [out, setOut] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [streak, setStreak] = useState<number | null>(null);
 
-  // Prefill from query params (if coming from log entry)
+  // Setup Android back button handler
+  useEffect(() => {
+    const cleanup = setupAndroidBackHandler(router, '/garden');
+    return cleanup;
+  }, [router]);
+
+  // Prefill from query params (if coming from log entry) - memoized to prevent re-fetching
+  const growId = useMemo(() => searchParams.get("grow_id"), [searchParams]);
+  
   useEffect(() => {
     const stageParam = searchParams.get("stage");
     const noteParam = searchParams.get("note");
@@ -20,21 +30,39 @@ function GrowCoachContent() {
     if (noteParam) setNote(decodeURIComponent(noteParam));
     
     // Calculate streak if grow_id is provided
-    const growId = searchParams.get("grow_id");
     if (growId) {
+      // Add timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
       fetch(`/api/garden/logs?grow_id=${growId}`, {
         credentials: "include",
+        signal: controller.signal,
       })
-        .then(r => r.json())
+        .then(r => {
+          clearTimeout(timeoutId);
+          return r.json();
+        })
         .then(data => {
           const logsArray = Array.isArray(data) ? data : [];
           setStreak(calculateStreak(logsArray));
         })
-        .catch(() => setStreak(null));
+        .catch((err) => {
+          clearTimeout(timeoutId);
+          if (err.name !== 'AbortError') {
+            console.warn('Failed to fetch streak:', err);
+          }
+          setStreak(null);
+        });
+      
+      return () => {
+        clearTimeout(timeoutId);
+        controller.abort();
+      };
     }
-  }, [searchParams]);
+  }, [growId, searchParams]);
 
-  const run = async () => {
+  const run = useCallback(async () => {
     setLoading(true);
     try {
       const growId = searchParams.get("grow_id");
@@ -48,24 +76,47 @@ function GrowCoachContent() {
         return;
       }
 
-      const r = await fetch("/api/garden/coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ grow_id: growId }),
-        credentials: "include",
-      });
-      const text = await r.text();
-      const trimmed = text.trim();
-      setOut(trimmed || null);
+      // Add timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      try {
+        const r = await fetch("/api/garden/coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ grow_id: growId }),
+          credentials: "include",
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!r.ok) {
+          throw new Error(`Request failed with status ${r.status}`);
+        }
+        
+        const text = await r.text();
+        const trimmed = text.trim();
+        setOut(trimmed || null);
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          setOut("Request timed out. Please try again.");
+        } else {
+          console.error("Error getting coach guidance:", err);
+          setOut("Unable to get guidance right now. Please try again later.");
+        }
+      } finally {
+        setLoading(false);
+      }
     } catch (err) {
       console.error("Error getting coach guidance:", err);
-    } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-black text-white" style={{ padding: 16, maxWidth: 640, margin: "0 auto" }}>
+    <div className="min-h-screen bg-black text-white overflow-x-hidden safe-area-bottom" style={{ padding: 16, maxWidth: 640, margin: "0 auto" }}>
       <Link href="/garden" className="text-emerald-400 mb-4 inline-block text-sm">
         ← Back to Garden
       </Link>

@@ -7,7 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getScan, updateScan } from '@/app/api/_utils/supabaseAdmin';
 import { analyzeImage } from '@/app/api/_utils/vision';
 import { getUser } from '@/lib/auth';
-import { checkScanQuota, incrementScanUsage, ScanType } from '@/app/api/_utils/scanQuota';
+import { checkScanQuota, incrementScanUsage, ScanType, formatLimitReachedResponse } from '@/app/api/_utils/scanQuota';
+import { enrichDoctorScanResult } from '@/lib/scan/enrichment';
 
 export async function POST(
   req: NextRequest,
@@ -34,12 +35,13 @@ export async function POST(
         await updateScan(scan_id, {
           status: 'quota_exceeded',
         });
+        
+        // Return structured limit_reached response
+        const limitResponse = formatLimitReachedResponse(quotaCheck, scanType);
         return NextResponse.json(
           {
-            error: 'quota_exceeded',
-            reason: quotaCheck.reason,
-            reset_at: quotaCheck.reset_at,
-            remaining: quotaCheck.remaining,
+            ...limitResponse,
+            error: 'limit_reached', // Keep for backward compatibility
           },
           { status: 403 }
         );
@@ -49,14 +51,18 @@ export async function POST(
       const incrementResult = await incrementScanUsage(scan.user_id, scanType);
       if (!incrementResult.success) {
         console.error(`[process] Failed to increment usage: ${incrementResult.reason}`);
-        // This should not happen since we checked above, but handle it
+        // This should not happen since we checked above, but handle it gracefully
         await updateScan(scan_id, {
           status: 'quota_exceeded',
         });
+        
+        // Re-check quota to get current state for response
+        const recheck = await checkScanQuota(scan.user_id, scanType);
+        const limitResponse = formatLimitReachedResponse(recheck, scanType);
         return NextResponse.json(
           {
-            error: 'quota_exceeded',
-            reason: incrementResult.reason,
+            ...limitResponse,
+            error: 'limit_reached', // Keep for backward compatibility
           },
           { status: 403 }
         );
@@ -74,16 +80,30 @@ export async function POST(
     const visionResults = await analyzeImage(scan.image_url);
     console.log(`[process] Vision results: ${visionResults.text.length} text lines, ${visionResults.labels.length} labels`);
 
+    // Enrich doctor scans with health analysis
+    let enrichment = null;
+    if (scan.scan_type === 'doctor') {
+      enrichment = enrichDoctorScanResult(visionResults, visionResults.labels);
+      console.log(`[process] Doctor scan enriched: ${enrichment.explanation}`);
+    }
+
     // Update scan row
-    await updateScan(scan_id, {
+    const updateData: any = {
       status: 'processed',
       vision: visionResults,
-    });
+    };
+    
+    if (enrichment) {
+      updateData.enrichment = enrichment;
+    }
+    
+    await updateScan(scan_id, updateData);
 
     return NextResponse.json({
       scan_id,
       status: 'processed',
       vision: visionResults,
+      ...(enrichment && { enrichment }),
     });
   } catch (error: any) {
     console.error('[process] Process error:', error);

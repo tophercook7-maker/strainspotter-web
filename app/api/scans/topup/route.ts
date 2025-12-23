@@ -1,27 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
-import { getProfile, updateProfile, getDefaultsForMembership, MembershipTier } from '@/app/api/_utils/membership';
 import { supabaseAdmin } from '@/app/api/_utils/supabaseAdmin';
 
-// Top-up package definitions by membership tier
-const TOPUP_PACKAGES: Record<string, Record<string, { scans: number; doctor: number; amount: number }>> = {
-  free: {
-    'regular-25': { scans: 25, doctor: 0, amount: 5.99 },
-    'doctor-5': { scans: 0, doctor: 5, amount: 4.99 },
-    'doctor-10': { scans: 0, doctor: 10, amount: 8.99 },
-  },
-  garden: {
-    'regular-25': { scans: 25, doctor: 0, amount: 5.99 },
-    'regular-50': { scans: 50, doctor: 0, amount: 9.99 },
-    'doctor-5': { scans: 0, doctor: 5, amount: 4.99 },
-    'doctor-10': { scans: 0, doctor: 10, amount: 8.99 },
-  },
-  pro: {
-    'regular-50': { scans: 50, doctor: 0, amount: 9.99 },
-    'regular-100': { scans: 100, doctor: 0, amount: 17.99 },
-    'doctor-10': { scans: 0, doctor: 10, amount: 8.99 },
-    'doctor-20': { scans: 0, doctor: 20, amount: 14.99 },
-  },
+// Top-up package definitions (LOCKED PRICING - same for all tiers)
+const TOPUP_PACKAGES: Record<string, { scans: number; doctor: number; amount: number }> = {
+  // ID scan top-ups
+  'id-25': { scans: 25, doctor: 0, amount: 2.99 },
+  'id-75': { scans: 75, doctor: 0, amount: 7.99 },
+  'id-200': { scans: 200, doctor: 0, amount: 18.99 },
+  // Doctor scan top-ups
+  'doctor-5': { scans: 0, doctor: 5, amount: 4.99 },
+  'doctor-15': { scans: 0, doctor: 15, amount: 12.99 },
+  'doctor-40': { scans: 0, doctor: 40, amount: 29.99 },
 };
 
 export async function POST(request: NextRequest) {
@@ -32,40 +22,45 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { type, package: packageName } = body;
+    const { package: packageName } = body;
 
-    if (!type || !['regular', 'doctor'].includes(type)) {
+    if (!packageName || !TOPUP_PACKAGES[packageName]) {
       return NextResponse.json(
-        { error: 'Invalid type. Must be "regular" or "doctor"' },
+        { error: 'Invalid package name' },
         { status: 400 }
       );
     }
 
-    // Get profile to determine membership tier
-    const profile = await getProfile(user.id);
-    if (!profile) {
+    const packageDetails = TOPUP_PACKAGES[packageName];
+
+    // Get profile
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id_scan_topups_remaining, doctor_scan_topups_remaining')
+      .or(`user_id.eq.${user.id},id.eq.${user.id}`)
+      .single();
+
+    if (profileError || !profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    const membership = profile.membership as MembershipTier;
-    const availablePackages = TOPUP_PACKAGES[membership] || TOPUP_PACKAGES.free;
+    // Add top-ups to profile (top-ups stack cumulatively and don't expire)
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        id_scan_topups_remaining: (profile.id_scan_topups_remaining || 0) + packageDetails.scans,
+        doctor_scan_topups_remaining: (profile.doctor_scan_topups_remaining || 0) + packageDetails.doctor,
+        updated_at: new Date().toISOString(),
+      })
+      .or(`user_id.eq.${user.id},id.eq.${user.id}`)
+      .select('id_scan_topups_remaining, doctor_scan_topups_remaining')
+      .single();
 
-    if (!packageName || !availablePackages[packageName]) {
-      return NextResponse.json(
-        { error: 'Invalid package name for your membership tier' },
-        { status: 400 }
-      );
-    }
-
-    const packageDetails = availablePackages[packageName];
-
-    // Add scans to profile
-    const updated = await updateProfile(user.id, {
-      scans_remaining: profile.scans_remaining + packageDetails.scans,
-      doctor_scans_remaining: profile.doctor_scans_remaining + packageDetails.doctor,
-    });
-
-    if (!updated) {
+    if (updateError || !updated) {
       return NextResponse.json(
         { error: 'Failed to update profile' },
         { status: 500 }
@@ -73,9 +68,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transaction record
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-    }
     const { error: txError } = await supabaseAdmin
       .from('transactions')
       .insert({
@@ -94,11 +86,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      scans_remaining: updated.scans_remaining,
-      doctor_scans_remaining: updated.doctor_scans_remaining,
+      id_scan_topups_remaining: updated.id_scan_topups_remaining,
+      doctor_scan_topups_remaining: updated.doctor_scan_topups_remaining,
       package: packageName,
-      added_scans: packageDetails.scans,
+      added_id_scans: packageDetails.scans,
       added_doctor_scans: packageDetails.doctor,
+      amount: packageDetails.amount,
     });
   } catch (error) {
     console.error('Error processing top-up:', error);

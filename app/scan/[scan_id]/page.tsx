@@ -20,7 +20,8 @@ interface ScanData {
       slug: string;
       confidence: number;
       reasoning: string;
-      breakdown: {
+      reasons?: string[]; // Internal reason codes for UI
+      breakdown?: {
         color: number;
         text: number;
         label: number;
@@ -32,6 +33,7 @@ interface ScanData {
       slug: string;
       confidence: number;
       reasoning: string;
+      reasons?: string[]; // Internal reason codes for UI
     }>;
   };
   created_at: string;
@@ -143,6 +145,9 @@ export default function ScanResultPage() {
   const matchData = (scan as any).match || (scan as any).match_result;
   const match = matchData?.match || null;
   const alternatives = matchData?.alternatives || [];
+  
+  // Get enrichment data (graceful fallback if missing)
+  const enrichment = (scan as any).enrichment || matchData?.enrichment || null;
 
   return (
     <div className="min-h-screen bg-[var(--botanical-bg-deep)] text-white p-6">
@@ -193,9 +198,30 @@ export default function ScanResultPage() {
                     <p className="text-sm text-[var(--botanical-text-secondary)]">Slug: {match.slug}</p>
                   </div>
 
-                  <ConfidenceBadge confidence={match.confidence} size="lg" />
+                  <ConfidenceBadge confidence={match.confidence} size="lg" showLabel={true} />
 
-                  <MatchReasoning reasoning={match.reasoning} breakdown={match.breakdown} />
+                  <MatchReasoning 
+                    reasoning={match.reasoning} 
+                    breakdown={match.breakdown}
+                    reasons={(match as any).reasons}
+                  />
+                  
+                  {/* Enrichment explanation if available */}
+                  {enrichment?.explanation && (
+                    <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                      <p className="text-sm text-emerald-300">{enrichment.explanation}</p>
+                      {enrichment.recommendations && enrichment.recommendations.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-emerald-400/80 font-semibold mb-1">Recommendations:</p>
+                          <ul className="text-xs text-emerald-300/70 space-y-1">
+                            {enrichment.recommendations.slice(0, 3).map((rec: string, idx: number) => (
+                              <li key={idx}>• {rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -211,7 +237,73 @@ export default function ScanResultPage() {
                     <li>Make sure the cannabis is clearly visible</li>
                     <li>Check that the image is in focus</li>
                   </ul>
+                  
+                  {/* Show enrichment recommendations even if no match */}
+                  {enrichment?.recommendations && enrichment.recommendations.length > 0 && (
+                    <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                      <p className="text-xs text-emerald-400/80 font-semibold mb-1">Recommendations:</p>
+                      <ul className="text-xs text-emerald-300/70 space-y-1">
+                        {enrichment.recommendations.map((rec: string, idx: number) => (
+                          <li key={idx}>• {rec}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
+              </div>
+            )}
+            
+            {/* Doctor Scan Enrichment (shown even without match) */}
+            {scan.scan_type === 'doctor' && enrichment && (
+              <div className="bg-[var(--botanical-bg-surface)] border border-[var(--botanical-border)] rounded-lg p-4 space-y-3">
+                <h2 className="text-xl font-semibold mb-3">Health Analysis</h2>
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <p className="text-sm text-amber-300">{enrichment.explanation}</p>
+                </div>
+                
+                {enrichment.observed_signals && enrichment.observed_signals.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--botanical-text-primary)] mb-2">Observed Signals:</p>
+                    <ul className="text-sm text-[var(--botanical-text-secondary)] space-y-1">
+                      {enrichment.observed_signals.map((signal: string, idx: number) => (
+                        <li key={idx}>• {signal}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {enrichment.probable_conditions && enrichment.probable_conditions.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--botanical-text-primary)] mb-2">Probable Conditions:</p>
+                    <ul className="text-sm text-[var(--botanical-text-secondary)] space-y-1">
+                      {enrichment.probable_conditions.map((condition: string, idx: number) => (
+                        <li key={idx}>• {condition}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {enrichment.recommendations && enrichment.recommendations.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-400 mb-2">Recommendations:</p>
+                    <ul className="text-sm text-emerald-300/80 space-y-1">
+                      {enrichment.recommendations.map((rec: string, idx: number) => (
+                        <li key={idx}>• {rec}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {enrichment.follow_up_checks && enrichment.follow_up_checks.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--botanical-text-primary)] mb-2">Follow-up Checks:</p>
+                    <ul className="text-sm text-[var(--botanical-text-secondary)] space-y-1">
+                      {enrichment.follow_up_checks.map((check: string, idx: number) => (
+                        <li key={idx}>• {check}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
@@ -246,7 +338,12 @@ export default function ScanResultPage() {
                             <p className="text-xs text-[var(--botanical-text-secondary)]">{alt.reasoning}</p>
                           </div>
                           <div className="text-right">
-                            <ConfidenceBadge confidence={alt.confidence} size="sm" showPercentage={true} />
+                            <ConfidenceBadge 
+                              confidence={alt.confidence} 
+                              size="sm" 
+                              showPercentage={true}
+                              showLabel={true}
+                            />
                           </div>
                         </div>
                       </div>

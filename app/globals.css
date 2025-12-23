@@ -1,10 +1,152 @@
 @import "tailwindcss";
 
+:root {
+  --botanical-bg-panel: #0a0a0a;
+  --botanical-bg-primary: #000000;
+  --botanical-text-primary: #ffffff;
+  --botanical-text-secondary: #a0a0a0;
+  --botanical-text-muted: #666666;
+  --botanical-accent: #22c55e;
+  --botanical-border: rgba(255, 255, 255, 0.1);
+  --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 0;
+  background-color: #000;
+  background-image: url("/backgrounds/strainspotter-bg.png");
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: #fff;
+  font-family: var(--font-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  background-color: #000;
+  background-image: url("/backgrounds/strainspotter-bg.png");
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  min-height: 100%;
+}
+
+#__next {
+  background: transparent;
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+}
+
+/* Safe area insets for mobile (iOS notch, Android navigation bar) */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  .safe-area-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  .safe-area-left {
+    padding-left: max(env(safe-area-inset-left), 0px);
+  }
+  .safe-area-right {
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+body, html {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Ensure text doesn't overflow */
+* {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Mobile-friendly touch targets (minimum 44x44px) */
+button, a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (min-width: 768px) {
+  button, a {
+    min-height: auto;
+    min-width: auto;
+  }
+}
+
+/* Aurora Atmosphere Background Effects */
+.aurora-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+.aurora-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 30% 50%,
+    rgba(34, 197, 94, 0.2) 0%,
+    rgba(16, 255, 180, 0.12) 30%,
+    rgba(34, 197, 94, 0.04) 60%,
+    transparent 80%
+  );
+  filter: blur(100px);
+  animation: aurora-drift 20s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+  z-index: 2;
+}
+
+.particle-field {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle,
+    rgba(34, 197, 94, 0.4) 1px,
+    transparent 1px
+  );
+  background-size: 40px 40px;
+  opacity: 0.15;
+  will-change: opacity;
+}
+
+.particle-pulse {
+  animation: particle-pulse 12s ease-in-out infinite;
+}
+
+@keyframes aurora-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(20%, -10%) scale(1.1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-10%, 10%) scale(0.9);
+    opacity: 0.35;
+  }
+}
+
+@keyframes particle-pulse {
+  0%, 100% {
+    opacity: 0.05;
+  }
+  50% {
+    opacity: 0.13;
+  }
 }

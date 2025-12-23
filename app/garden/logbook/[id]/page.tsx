@@ -9,6 +9,7 @@ import { LogTimeline } from "@/components/logbook/LogTimeline";
 import { CoachPanel } from "@/components/logbook/CoachPanel";
 import { calculateStreak } from "@/lib/logbook/streaks";
 import { getPreviousGrow } from "@/lib/logbook/previousGrow";
+import { decodeCommunityPrefill } from "@/lib/community/logbookPrefill";
 
 function daysBetween(a: string, b: string = new Date().toISOString()): number {
   return Math.floor((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
@@ -66,20 +67,28 @@ export default function GrowDetail() {
     }
   };
 
+  // Store source metadata for saving
+  const [sourceMetadata, setSourceMetadata] = useState<any>(null);
+
   // Prefill effect - runs when searchParams is available
   useEffect(() => {
     if (prefillApplied) return; // Already applied, don't run again
     
     const prefill = searchParams.get("prefill");
     if (prefill) {
-      // Only set if note is currently empty
-      setNote((currentNote) => {
-        if (currentNote.trim() === "") {
-          setPrefillApplied(true);
-          return prefill;
-        }
-        return currentNote;
-      });
+      // Decode prefill (handles both new format with metadata and legacy plain text)
+      const decoded = decodeCommunityPrefill(prefill);
+      
+      if (decoded) {
+        setNote((currentNote) => {
+          if (currentNote.trim() === "") {
+            setPrefillApplied(true);
+            setSourceMetadata(decoded.source_metadata || null);
+            return decoded.text;
+          }
+          return currentNote;
+        });
+      }
     }
   }, [searchParams, prefillApplied]);
 
@@ -214,14 +223,21 @@ export default function GrowDetail() {
     setSubmitting(true);
     try {
       // Step 1: Create log entry first (even if photos fail)
+      const logPayload: any = {
+        grow_id: growId,
+        note: note.trim(),
+        stage,
+      };
+      
+      // Include source metadata if available (silent, not visible in UI)
+      if (sourceMetadata) {
+        logPayload.source_metadata = sourceMetadata;
+      }
+      
       const res = await fetch("/api/garden/logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          grow_id: growId,
-          note: note.trim(),
-          stage,
-        }),
+        body: JSON.stringify(logPayload),
         credentials: "include",
       });
 
@@ -262,8 +278,9 @@ export default function GrowDetail() {
         return updated;
       });
 
-      // Clear form
+      // Clear form and source metadata
       setNote("");
+      setSourceMetadata(null);
       setPhotoFiles([]);
       setPhotoPreviews([]);
       // Reset file input

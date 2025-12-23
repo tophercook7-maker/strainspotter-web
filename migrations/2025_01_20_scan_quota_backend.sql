@@ -33,7 +33,7 @@ ADD COLUMN IF NOT EXISTS id_scans_used integer DEFAULT 0,
 ADD COLUMN IF NOT EXISTS doctor_scans_used integer DEFAULT 0,
 ADD COLUMN IF NOT EXISTS quota_reset_at timestamp with time zone DEFAULT (now() + interval '1 month');
 
--- Update membership tier constraint to include 'standard'
+-- Update membership tier constraint to include 'elite' and 'standard'
 -- First, drop the old constraint if it exists (only if column exists)
 DO $$
 BEGIN
@@ -43,10 +43,10 @@ BEGIN
   ) THEN
     ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_membership_check;
     
-    -- Add new constraint with 'standard' tier
+    -- Add new constraint with all tiers (including elite)
     ALTER TABLE profiles
     ADD CONSTRAINT profiles_membership_check 
-    CHECK (membership IN ('free', 'garden', 'standard', 'pro'));
+    CHECK (membership IN ('free', 'garden', 'standard', 'pro', 'elite'));
   END IF;
 END $$;
 
@@ -60,21 +60,32 @@ CREATE INDEX IF NOT EXISTS idx_profiles_quota_reset ON profiles(quota_reset_at) 
 CREATE INDEX IF NOT EXISTS idx_profiles_tier ON profiles(membership);
 
 -- Function to get quota limits for a tier (locked values)
+-- Free: Limited (configurable, default 5)
+-- Pro/Standard/Garden: 250 id scans, 40 doctor scans
+-- Elite: Unlimited
 CREATE OR REPLACE FUNCTION get_quota_limits(tier text)
 RETURNS TABLE(id_scans_limit integer, doctor_scans_limit integer) AS $$
+DECLARE
+  v_free_limit integer;
 BEGIN
+  -- Get configurable free tier limit (default 5)
+  v_free_limit := COALESCE(
+    (SELECT current_setting('app.free_tier_id_scan_limit', true))::integer,
+    5
+  );
+
   RETURN QUERY
   SELECT
-    CASE tier
-      WHEN 'free' THEN 5  -- Very limited
-      WHEN 'standard' THEN 250
-      WHEN 'pro' THEN NULL  -- NULL = unlimited
-      ELSE 5
+    CASE 
+      WHEN tier = 'free' THEN v_free_limit
+      WHEN tier IN ('standard', 'garden', 'pro') THEN 250
+      WHEN tier = 'elite' THEN NULL  -- NULL = unlimited
+      ELSE v_free_limit
     END AS id_scans_limit,
-    CASE tier
-      WHEN 'free' THEN 0
-      WHEN 'standard' THEN 40
-      WHEN 'pro' THEN NULL  -- NULL = unlimited
+    CASE 
+      WHEN tier = 'free' THEN 0  -- Doctor scans not allowed for free
+      WHEN tier IN ('standard', 'garden', 'pro') THEN 40
+      WHEN tier = 'elite' THEN NULL  -- NULL = unlimited
       ELSE 0
     END AS doctor_scans_limit;
 END;
@@ -135,21 +146,26 @@ BEGIN
     v_tier := 'free';
   END IF;
 
-  -- Get quota limits for tier
+  -- Normalize tier (map legacy to new system) BEFORE getting limits
+  IF v_tier IN ('garden', 'standard') THEN
+    v_tier := 'pro';
+  END IF;
+
+  -- Elite tier: unlimited (check before getting limits)
+  IF v_tier = 'elite' THEN
+    RETURN QUERY SELECT true, 'elite_tier'::text, v_quota_reset_at, NULL::integer;
+    RETURN;
+  END IF;
+
+  -- Get quota limits for normalized tier
   SELECT id_scans_limit, doctor_scans_limit
   INTO v_id_limit, v_doctor_limit
   FROM get_quota_limits(v_tier);
 
-  -- Pro tier: unlimited
-  IF v_tier = 'pro' THEN
-    RETURN QUERY SELECT true, 'pro_tier'::text, v_quota_reset_at, NULL::integer;
-    RETURN;
-  END IF;
-
   -- Check quota based on scan type
   IF p_scan_type = 'id' THEN
     IF v_id_limit IS NULL THEN
-      -- Unlimited (shouldn't happen for non-pro, but handle it)
+      -- Unlimited (elite tier)
       RETURN QUERY SELECT true, 'unlimited'::text, v_quota_reset_at, NULL::integer;
     ELSIF v_id_scans_used < v_id_limit THEN
       RETURN QUERY SELECT true, 'quota_available'::text, v_quota_reset_at, (v_id_limit - v_id_scans_used);
@@ -158,7 +174,11 @@ BEGIN
     END IF;
   ELSIF p_scan_type = 'doctor' THEN
     IF v_doctor_limit IS NULL THEN
+      -- Unlimited (elite tier)
       RETURN QUERY SELECT true, 'unlimited'::text, v_quota_reset_at, NULL::integer;
+    ELSIF v_doctor_limit = 0 THEN
+      -- Not allowed for free tier
+      RETURN QUERY SELECT false, 'not_allowed'::text, v_quota_reset_at, 0;
     ELSIF v_doctor_scans_used < v_doctor_limit THEN
       RETURN QUERY SELECT true, 'quota_available'::text, v_quota_reset_at, (v_doctor_limit - v_doctor_scans_used);
     ELSE
@@ -194,6 +214,15 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Get current usage before incrementing
+  SELECT 
+    COALESCE(id_scans_used, 0),
+    COALESCE(doctor_scans_used, 0)
+  INTO v_check_result.id_scans_used, v_check_result.doctor_scans_used
+  FROM profiles
+  WHERE (user_id = p_user_id OR id = p_user_id)
+  LIMIT 1;
+
   -- Atomically increment usage (handle both user_id and id columns)
   IF p_scan_type = 'id' THEN
     UPDATE profiles
@@ -220,23 +249,38 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to reset quotas for users whose reset date has passed
+-- Function to reset quotas for users whose reset date has passed (monthly reset)
 CREATE OR REPLACE FUNCTION reset_quota_for_expired_users()
 RETURNS integer AS $$
 DECLARE
   v_reset_count integer;
+  v_profile RECORD;
+  v_limits RECORD;
 BEGIN
-  WITH updated AS (
+  -- Reset quotas for users whose reset date has passed (30 days)
+  FOR v_profile IN 
+    SELECT id, membership, quota_reset_at, last_reset
+    FROM profiles
+    WHERE COALESCE(quota_reset_at, last_reset, now() - interval '30 days') < now() - interval '30 days'
+  LOOP
+    -- Get limits for this tier
+    SELECT * INTO v_limits
+    FROM get_quota_limits(v_profile.membership);
+    
+    -- Reset monthly quota counters (elite stays unlimited, others reset to 0)
+    -- NOTE: Top-ups (id_scan_topups_remaining, doctor_scan_topups_remaining) are NOT reset
+    -- Top-ups stack cumulatively and never expire
     UPDATE profiles
     SET 
-      id_scans_used = 0,
-      doctor_scans_used = 0,
-      quota_reset_at = COALESCE(quota_reset_at, now() + interval '1 month') + interval '1 month',
+      id_scans_used = CASE WHEN v_limits.id_scans_limit IS NULL THEN id_scans_used ELSE 0 END,
+      doctor_scans_used = CASE WHEN v_limits.doctor_scans_limit IS NULL THEN doctor_scans_used ELSE 0 END,
+      quota_reset_at = now(),
+      last_reset = now(),
       updated_at = now()
-    WHERE COALESCE(quota_reset_at, now() + interval '1 month') <= now()
-    RETURNING id
-  )
-  SELECT COUNT(*) INTO v_reset_count FROM updated;
+    WHERE id = v_profile.id;
+    
+    v_reset_count := v_reset_count + 1;
+  END LOOP;
   
   RETURN v_reset_count;
 END;

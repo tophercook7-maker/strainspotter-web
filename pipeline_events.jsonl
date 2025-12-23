@@ -1,0 +1,7 @@
+{"timestamp":"2025-12-23T02:18:38.666Z","event":"watchdog_started","stage":null,"details":{"port":"3000","poll_interval_minutes":2,"stall_confirmations":2,"cooldown_minutes":10}}
+{"timestamp":"2025-12-23T06:56:59.562Z","event":"error_detected","stage":null,"details":{"error":"status_api_unavailable","message":"The operation was aborted due to timeout"}}
+{"timestamp":"2025-12-23T06:58:54.543Z","event":"error_detected","stage":null,"details":{"error":"status_api_unavailable","message":"The operation was aborted due to timeout"}}
+{"timestamp":"2025-12-23T07:00:58.802Z","event":"error_detected","stage":null,"details":{"error":"status_api_unavailable","message":"The operation was aborted due to timeout"}}
+{"timestamp":"2025-12-23T07:02:58.902Z","event":"error_detected","stage":null,"details":{"error":"status_api_unavailable","message":"The operation was aborted due to timeout"}}
+{"timestamp":"2025-12-23T07:04:56.156Z","event":"error_detected","stage":null,"details":{"error":"status_api_unavailable","message":"The operation was aborted due to timeout"}}
+{"timestamp":"2025-12-23T07:07:07.394Z","event":"error_detected","stage":null,"details":{"error":"status_api_unavailable","message":"The operation was aborted due to timeout"}}

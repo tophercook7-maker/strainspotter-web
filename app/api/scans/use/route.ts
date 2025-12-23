@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
-import { incrementScanUsage, ScanType } from '@/app/api/_utils/scanQuota';
+import { incrementScanUsage, ScanType, checkScanQuota, formatLimitReachedResponse } from '@/app/api/_utils/scanQuota';
 
 /**
  * POST /api/scans/use
@@ -33,18 +33,19 @@ export async function POST(request: NextRequest) {
     const result = await incrementScanUsage(user.id, scanType);
 
     if (!result.success) {
-      // Get quota status for error response
-      const { checkScanQuota } = await import("@/app/api/_utils/scanQuota");
+      // Get quota status for structured error response
       const quotaCheck = await checkScanQuota(user.id, scanType);
+      const limitResponse = formatLimitReachedResponse(quotaCheck, scanType);
 
       return NextResponse.json(
         {
-          error: 'quota_exceeded',
+          ...limitResponse,
+          error: 'limit_reached', // Keep for backward compatibility
           message: result.reason === 'quota_exceeded' 
             ? `No ${type} scans remaining` 
+            : result.reason === 'not_allowed'
+            ? 'Doctor scans are not available for your membership tier.'
             : 'Scan quota check failed',
-          reset_at: quotaCheck.reset_at,
-          remaining: quotaCheck.remaining,
         },
         { status: 403 }
       );

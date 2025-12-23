@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 import { createScan } from '@/app/api/_utils/supabaseAdmin';
 import { uploadScanImage } from '@/app/api/_utils/storage';
 import { getUser } from '@/lib/auth';
-import { checkScanQuota, ScanType } from '@/app/api/_utils/scanQuota';
+import { checkScanQuota, ScanType, formatLimitReachedResponse } from '@/app/api/_utils/scanQuota';
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,13 +68,16 @@ export async function POST(req: NextRequest) {
     
     if (!quotaCheck.allowed) {
       console.log(`[uploads] Quota check failed: ${quotaCheck.reason}`);
+      
+      // Return structured limit_reached response
+      const limitResponse = formatLimitReachedResponse(quotaCheck, scanType);
       return NextResponse.json(
         {
-          error: 'quota_exceeded',
-          reason: quotaCheck.reason,
-          reset_at: quotaCheck.reset_at,
-          remaining: quotaCheck.remaining,
-          message: quotaCheck.reason === 'quota_exceeded'
+          ...limitResponse,
+          error: 'limit_reached', // Keep for backward compatibility
+          message: quotaCheck.reason === 'not_allowed'
+            ? 'Doctor scans are not available for your membership tier.'
+            : quotaCheck.reason === 'quota_exceeded'
             ? 'Scan quota exceeded. Please wait for monthly reset or upgrade your membership.'
             : 'Scan not allowed',
         },
@@ -149,10 +152,13 @@ export async function POST(req: NextRequest) {
         } catch (rollbackError) {
           console.error('[uploads] Failed to rollback scan record:', rollbackError);
         }
+        // Re-check quota to get current state for response
+        const recheck = await checkScanQuota(user.id, scanType);
+        const limitResponse = formatLimitReachedResponse(recheck, scanType);
         return NextResponse.json(
           {
-            error: 'quota_exceeded',
-            reason: incrementResult.reason,
+            ...limitResponse,
+            error: 'limit_reached', // Keep for backward compatibility
             message: 'Scan quota exceeded. Please try again.',
           },
           { status: 403 }

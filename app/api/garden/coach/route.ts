@@ -117,50 +117,148 @@ export async function POST(req: Request) {
     }
 
     if (includeFlags.logbook) {
-      const { data: logbook } = await supabase
-        .from("garden_logbook_entries")
+      // Try both table names (grows vs gardens system)
+      let logbook: any[] = [];
+      
+      // Check if this is a grow_id (grows system)
+      const { data: growCheck } = await supabase
+        .from("grows")
+        .select("id")
+        .eq("id", garden_id)
+        .eq("user_id", user.id)
+        .single();
+      
+      if (growCheck) {
+        // Use grow_logs table
+        const { data: growLogs } = await supabase
+          .from("grow_logs")
+          .select("*")
+          .eq("grow_id", garden_id)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(10);
+        logbook = growLogs || [];
+      } else {
+        // Use garden_logbook_entries table
+        const { data: gardenLogs } = await supabase
+          .from("garden_logbook_entries")
+          .select("*")
+          .eq("garden_id", garden_id)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(10);
+        logbook = gardenLogs || [];
+      }
+      
+      context.logbook = (logbook || []).map((l: any) => {
+        const entry: any = {
+          created_at: l.created_at,
+          text: l.note || l.text || l.content,
+          stage: l.stage,
+        };
+        
+        // Include source metadata if available (for Coach context)
+        if (l.source_metadata && l.source_metadata.source_type === "community") {
+          entry.source_metadata = l.source_metadata;
+          // Add context hint for Coach
+          if (l.source_metadata.source_title) {
+            entry.community_context = `This entry was saved from a Community discussion: "${l.source_metadata.source_title}"`;
+          }
+        }
+        
+        return entry;
+      });
+    }
+
+    // A) Active garden/plant context (already gathered above)
+    
+    // B) Recent grow notes (last 5-10)
+    try {
+      const { data: growNotes } = await supabase
+        .from("grow_notes")
         .select("*")
-        .eq("garden_id", garden_id)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(20);
-      context.logbook = (logbook || []).map((l: any) => ({
-        created_at: l.created_at,
-        entry_type: l.entry_type,
-        text: l.text,
-        related_plant_id: l.related_plant_id,
+        .limit(10);
+      context.grow_notes = (growNotes || []).map((n: any) => ({
+        created_at: n.created_at,
+        content: n.content,
+        source: n.source,
       }));
+    } catch (err) {
+      // Table might not exist, fail silently
+      context.grow_notes = [];
+    }
+
+    // C) Open tasks (up to 10) - already gathered above, but ensure limit
+    if (context.tasks && context.tasks.length > 10) {
+      context.tasks = context.tasks.slice(0, 10);
+    }
+
+    // D) Last scan result (if exists)
+    try {
+      const { data: lastScan } = await supabase
+        .from("scans")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "processed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (lastScan) {
+        context.last_scan = {
+          scan_type: lastScan.scan_type,
+          created_at: lastScan.created_at,
+          vision: lastScan.vision,
+          enrichment: lastScan.enrichment,
+          match_result: lastScan.match_result,
+        };
+      }
+    } catch (err) {
+      // No scan found or error, fail silently
+      context.last_scan = null;
+    }
+
+    // E) Recent "issue" entries (logbook entries with keywords)
+    if (context.logbook) {
+      const issueKeywords = ['problem', 'issue', 'yellow', 'droop', 'spot', 'pest', 'mold', 'deficiency', 'burn', 'stress'];
+      context.recent_issues = context.logbook.filter((entry: any) => {
+        const text = (entry.text || '').toLowerCase();
+        return issueKeywords.some(keyword => text.includes(keyword));
+      }).slice(0, 5);
     }
 
     // Generate coach response
     const coach = await generateCoachInsights(context, message);
 
-    // Format response
+    // Format response in locked structure
     const sections: string[] = [];
 
-    if (coach.insights && coach.insights.length > 0) {
-      sections.push("Current Status\n--------------\n" + coach.insights[0]);
-      if (coach.insights.length > 1) {
-        sections.push(
-          "Observations\n------------\n" +
-            coach.insights.slice(1).map((o) => `- ${o}`).join("\n")
-        );
-      }
+    // 1) "What I'm seeing" (2-3 bullets)
+    if (coach.seeing && coach.seeing.length > 0) {
+      sections.push("What I'm seeing\n" + coach.seeing.map((s) => `• ${s}`).join("\n"));
     } else {
-      sections.push("Current Status\n--------------\nCoach is reviewing your garden data.");
+      sections.push("What I'm seeing\n• I don't have enough data about your garden yet.");
     }
 
-    if (coach.actions && coach.actions.length > 0) {
-      sections.push(
-        "Suggestions\n-----------\n" +
-          coach.actions
-            .map((s) => (s.startsWith("You") ? `- ${s}` : `- You may want to consider: ${s}`))
-            .join("\n")
-      );
+    // 2) "Why I think this" (2-4 bullets referencing data)
+    if (coach.reasoning && coach.reasoning.length > 0) {
+      sections.push("Why I think this\n" + coach.reasoning.map((r) => `• ${r}`).join("\n"));
     } else {
-      sections.push(
-        "Suggestions\n-----------\nYou may want to consider adding more data to get better insights."
-      );
+      sections.push("Why I think this\n• Based on the data you've shared, I'm making these observations.");
+    }
+
+    // 3) "Do next" (ONE clear action)
+    if (coach.action) {
+      sections.push("Do next\n" + coach.action);
+    } else {
+      sections.push("Do next\nContinue monitoring your plants and log any changes.");
+    }
+
+    // 4) "If you want, tell me" (ONE optional question)
+    if (coach.question) {
+      sections.push("If you want, tell me\n" + coach.question);
     }
 
     const responseText = sections.join("\n\n");

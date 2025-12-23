@@ -1,10 +1,12 @@
-import RequireMember from "@/lib/auth/RequireMember";
+// Temporarily bypass auth for local development
+// import RequireMember from "@/lib/auth/RequireMember";
 
 export default function GardenLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Client-side auth + membership guard
-  return <RequireMember>{children}</RequireMember>;
+  // LOCAL DEV ONLY: Bypass auth to see UI
+  // TODO: Re-enable RequireMember when auth is configured
+  return <>{children}</>;
 }

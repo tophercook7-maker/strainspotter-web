@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { generateCommunityPrefill, encodeCommunityPrefill } from "@/lib/community/logbookPrefill";
 
 interface SaveToGardenActionsProps {
-  reply?: { body: string; id: string };
-  post?: { body: string; id: string };
+  reply?: { body: string; id: string; user?: { username?: string | null } };
+  post?: { body: string; id: string; title?: string; user?: { username?: string | null } };
 }
 
 export default function SaveToGardenActions({ reply, post }: SaveToGardenActionsProps) {
@@ -13,19 +14,30 @@ export default function SaveToGardenActions({ reply, post }: SaveToGardenActions
   const [saving, setSaving] = useState(false);
 
   const handleSaveToLogbook = () => {
-    const text = reply?.body || post?.body || "";
-    const encoded = encodeURIComponent(text.slice(0, 2000));
+    const content = reply?.body || post?.body || "";
+    const sourceId = reply?.id || post?.id || "";
+    const sourceType = reply ? "reply" : "post";
+    const sourceTitle = post?.title;
+    const sourceAuthor = reply?.user?.username || post?.user?.username;
+    
+    const prefill = generateCommunityPrefill(content, sourceId, sourceType, sourceTitle, sourceAuthor);
+    const encoded = encodeCommunityPrefill(prefill);
     router.push("/garden/logbook?prefill=" + encoded);
   };
 
   const handleSaveAsTask = () => {
-    const text =
-      reply?.body ||
-      post?.body ||
-      "";
-
-    const encoded = encodeURIComponent(text.slice(0, 2000));
-
+    const content = reply?.body || post?.body || "";
+    const sourceId = reply?.id || post?.id || "";
+    const sourceType = reply ? "reply" : "post";
+    const sourceTitle = post?.title;
+    const sourceAuthor = reply?.user?.username || post?.user?.username;
+    
+    // For tasks, create a prefilled title
+    const taskTitle = sourceTitle 
+      ? `Try suggestion from Community: ${sourceTitle}`
+      : "Try nutrient adjustment suggested in Community";
+    
+    const encoded = encodeURIComponent(taskTitle);
     router.push(`/garden/all/tasks?prefill=${encoded}`);
   };
 

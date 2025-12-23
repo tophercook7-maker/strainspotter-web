@@ -227,7 +227,7 @@ export default function ReplyCard({ reply, currentUserId, currentUserRole, onUpd
 
           {/* Save to Garden Actions (only for helpful replies) */}
           {isHelpful && (
-            <SaveToGardenActions reply={{ body: reply.body, id: reply.id }} />
+            <SaveToGardenActions reply={{ body: reply.body, id: reply.id, user: reply.user }} />
           )}
         </div>
         <div className="flex flex-col gap-2 ml-2">

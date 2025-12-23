@@ -84,6 +84,7 @@ export async function updateScan(
     status?: string;
     vision?: any;
     match?: any;
+    enrichment?: any; // Enriched scan result data
     vision_results?: any; // Legacy support
     match_result?: any; // Legacy support
     processed_at?: string;

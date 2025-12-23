@@ -64,7 +64,7 @@ const communityRules = [
 
 export default function CommunityPage() {
   return (
-    <div className="space-y-6 md:space-y-10 p-4 md:p-6 pb-24 md:pb-8">
+    <div className="space-y-6 md:space-y-10 p-4 md:p-6 pb-24 md:pb-8 safe-area-bottom overflow-x-hidden">
       {/* Header */}
       <div className="max-w-4xl">
         <h1 className="text-3xl font-semibold text-white mb-2">Community</h1>

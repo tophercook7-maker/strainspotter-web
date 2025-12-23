@@ -6,17 +6,27 @@
 import { supabaseAdmin } from './supabaseAdmin';
 
 export type ScanType = 'id' | 'doctor';
-export type MembershipTier = 'free' | 'standard' | 'pro';
+export type MembershipTier = 'free' | 'pro' | 'elite' | 'garden' | 'standard'; // 'garden' and 'standard' are legacy, map to 'pro'
 
 export interface QuotaCheckResult {
   allowed: boolean;
-  reason: 'pro_tier' | 'quota_available' | 'quota_exceeded' | 'user_not_found' | 'invalid_scan_type' | 'unlimited';
+  reason: 'elite_tier' | 'quota_available' | 'quota_exceeded' | 'user_not_found' | 'invalid_scan_type' | 'unlimited' | 'not_allowed' | 'topup_available';
   reset_at: string | null;
-  remaining: number | null; // null = unlimited
+  remaining: number | null; // null = unlimited (includes both monthly quota and top-ups)
   id_scans_used: number;
   doctor_scans_used: number;
   id_scans_limit: number | null;
   doctor_scans_limit: number | null;
+  id_scan_topups_remaining?: number;
+  doctor_scan_topups_remaining?: number;
+}
+
+export interface LimitReachedResponse {
+  status: 'limit_reached';
+  type: 'id_scan' | 'doctor_scan';
+  used: number;
+  limit: number | null; // null = unlimited
+  reset_date: string | null;
 }
 
 export interface QuotaIncrementResult {
@@ -27,15 +37,39 @@ export interface QuotaIncrementResult {
 }
 
 /**
+ * Normalize tier name (map legacy tiers to new system)
+ */
+function normalizeTier(tier: MembershipTier): 'free' | 'pro' | 'elite' {
+  // Map legacy 'garden' and 'standard' to 'pro'
+  if (tier === 'garden' || tier === 'standard') {
+    return 'pro';
+  }
+  if (tier === 'elite') {
+    return 'elite';
+  }
+  if (tier === 'pro') {
+    return 'pro';
+  }
+  return 'free';
+}
+
+/**
  * Get quota limits for a tier (locked values)
+ * Free: Limited (configurable, default 5)
+ * Pro: 250 id scans/month, 40 doctor scans/month
+ * Elite: Unlimited
  */
 export function getQuotaLimits(tier: MembershipTier): { id_scans: number | null; doctor_scans: number | null } {
-  switch (tier) {
+  const normalized = normalizeTier(tier);
+  
+  switch (normalized) {
     case 'free':
-      return { id_scans: 5, doctor_scans: 0 }; // Very limited
-    case 'standard':
-      return { id_scans: 250, doctor_scans: 40 };
+      // Configurable limit (default 5, can be adjusted via env or config)
+      const freeLimit = parseInt(process.env.FREE_TIER_ID_SCAN_LIMIT || '5', 10);
+      return { id_scans: freeLimit, doctor_scans: 0 }; // Doctor scans not allowed for free
     case 'pro':
+      return { id_scans: 250, doctor_scans: 40 };
+    case 'elite':
       return { id_scans: null, doctor_scans: null }; // null = unlimited
     default:
       return { id_scans: 5, doctor_scans: 0 };
@@ -81,24 +115,60 @@ export async function checkScanQuota(
 
   const result = data[0];
 
-  // Get full profile to return usage and limits
+  // Get full profile to return usage and limits (including top-ups)
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('membership, id_scans_used, doctor_scans_used')
+    .select('membership, id_scans_used, doctor_scans_used, id_scan_topups_remaining, doctor_scan_topups_remaining')
     .or(`user_id.eq.${userId},id.eq.${userId}`)
     .single();
 
   const limits = profile ? getQuotaLimits(profile.membership as MembershipTier) : { id_scans: null, doctor_scans: null };
 
+  // Normalize tier for reason checking
+  const normalizedTier = profile ? normalizeTier(profile.membership as MembershipTier) : 'free';
+  
+  // Determine reason based on tier and quota
+  let reason: QuotaCheckResult['reason'] = result.reason as QuotaCheckResult['reason'];
+  
+  if (normalizedTier === 'elite') {
+    reason = 'elite_tier'; // Elite bypasses all limits
+  } else if (!result.allowed) {
+    if (scanType === 'doctor' && limits.doctor_scans === 0) {
+      reason = 'not_allowed'; // Doctor scans not allowed for free tier
+    } else {
+      reason = 'quota_exceeded';
+    }
+  } else {
+    reason = 'quota_available';
+  }
+
   return {
-    allowed: result.allowed,
-    reason: result.reason as QuotaCheckResult['reason'],
+    allowed: result.allowed || normalizedTier === 'elite', // Elite always allowed
+    reason,
     reset_at: result.reset_at,
-    remaining: result.remaining,
+    remaining: result.remaining, // Includes both monthly quota and top-ups
     id_scans_used: profile?.id_scans_used || 0,
     doctor_scans_used: profile?.doctor_scans_used || 0,
     id_scans_limit: limits.id_scans,
     doctor_scans_limit: limits.doctor_scans,
+    id_scan_topups_remaining: profile?.id_scan_topups_remaining || 0,
+    doctor_scan_topups_remaining: profile?.doctor_scan_topups_remaining || 0,
+  };
+}
+
+/**
+ * Format quota check result as structured limit_reached response
+ */
+export function formatLimitReachedResponse(
+  quotaCheck: QuotaCheckResult,
+  scanType: ScanType
+): LimitReachedResponse {
+  return {
+    status: 'limit_reached',
+    type: scanType === 'doctor' ? 'doctor_scan' : 'id_scan',
+    used: scanType === 'doctor' ? quotaCheck.doctor_scans_used : quotaCheck.id_scans_used,
+    limit: scanType === 'doctor' ? quotaCheck.doctor_scans_limit : quotaCheck.id_scans_limit,
+    reset_date: quotaCheck.reset_at,
   };
 }
 
@@ -145,7 +215,7 @@ export async function incrementScanUsage(
 }
 
 /**
- * Get user's current quota status
+ * Get user's current quota status (including top-ups)
  */
 export async function getQuotaStatus(userId: string): Promise<{
   tier: MembershipTier;
@@ -154,6 +224,8 @@ export async function getQuotaStatus(userId: string): Promise<{
   id_scans_limit: number | null;
   doctor_scans_limit: number | null;
   quota_reset_at: string;
+  id_scan_topups_remaining: number;
+  doctor_scan_topups_remaining: number;
 }> {
   if (!supabaseAdmin) {
     throw new Error('Supabase admin client not initialized');
@@ -161,7 +233,7 @@ export async function getQuotaStatus(userId: string): Promise<{
 
   const { data: profile, error } = await supabaseAdmin
     .from('profiles')
-    .select('membership, id_scans_used, doctor_scans_used, quota_reset_at')
+    .select('membership, id_scans_used, doctor_scans_used, quota_reset_at, last_reset, id_scan_topups_remaining, doctor_scan_topups_remaining')
     .or(`user_id.eq.${userId},id.eq.${userId}`)
     .single();
 
@@ -170,6 +242,9 @@ export async function getQuotaStatus(userId: string): Promise<{
   }
 
   const limits = getQuotaLimits(profile.membership as MembershipTier);
+  
+  // Use quota_reset_at if available, fallback to last_reset
+  const resetDate = profile.quota_reset_at || profile.last_reset;
 
   return {
     tier: profile.membership as MembershipTier,
@@ -177,6 +252,8 @@ export async function getQuotaStatus(userId: string): Promise<{
     doctor_scans_used: profile.doctor_scans_used || 0,
     id_scans_limit: limits.id_scans,
     doctor_scans_limit: limits.doctor_scans,
-    quota_reset_at: profile.quota_reset_at,
+    quota_reset_at: resetDate,
+    id_scan_topups_remaining: profile.id_scan_topups_remaining || 0,
+    doctor_scan_topups_remaining: profile.doctor_scan_topups_remaining || 0,
   };
 }

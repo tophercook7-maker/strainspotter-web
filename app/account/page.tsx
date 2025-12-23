@@ -72,7 +72,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white pb-24 md:pb-8">
+    <div className="min-h-screen bg-black text-white pb-24 md:pb-8 safe-area-bottom overflow-x-hidden">
       <div className="max-w-2xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div>

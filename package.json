@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "desktop:dev": "cd desktop && npm install && STRAINSPOTTER_URL=http://localhost:3000 npm run dev",
+    "desktop:build": "cd desktop && npm install && npm run build"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.4",
