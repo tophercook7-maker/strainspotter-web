@@ -13,6 +13,7 @@ interface ScanData {
   id: string;
   image_url: string;
   status: string;
+  scan_type?: 'id' | 'doctor';
   vision_results?: any;
   match_result?: {
     match: {
