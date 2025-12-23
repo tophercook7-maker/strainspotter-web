@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "identifier": "app.strainspotter.desktop",
   "build": {
-    "devUrl": "https://app.strainspotter.app"
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
   },
   "app": {
     "windows": [
@@ -15,7 +16,8 @@
         "resizable": true,
         "fullscreen": false,
         "minWidth": 800,
-        "minHeight": 600
+        "minHeight": 600,
+        "url": "https://app.strainspotter.app"
       }
     ],
     "security": {
