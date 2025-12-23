@@ -235,6 +235,7 @@ export default function ScannerPage() {
       } else {
         // Capture frame from camera
         const video = videoRef.current;
+        if (!video) throw new Error('Video not available');
         const canvas = canvasRef.current;
         if (!canvas) throw new Error('Canvas not available');
         const ctx = canvas.getContext('2d');
@@ -436,6 +437,7 @@ export default function ScannerPage() {
       } else {
         // Capture frame from camera
         const video = videoRef.current;
+        if (!video) throw new Error('Video not available');
         const canvas = canvasRef.current;
         if (!canvas) throw new Error('Canvas not available');
         const ctx = canvas.getContext('2d');
