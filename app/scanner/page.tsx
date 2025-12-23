@@ -16,12 +16,18 @@ export default function ScannerPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [cameraReady, setCameraReady] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanMode, setScanMode] = useState<ScanMode>('strain');
   const [error, setError] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState<string | null>(null);
+  
+  // Image upload state
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   
   // Paywall state
   const [showRegularPaywall, setShowRegularPaywall] = useState(false);
@@ -139,9 +145,65 @@ export default function ScannerPage() {
     };
   }, []);
 
+  // Handle file upload
+  const handleFileSelect = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setUploadedImage(reader.result);
+        setUploadedImageFile(file);
+        setError(null);
+      }
+    };
+    reader.onerror = () => {
+      setError('Failed to read image file.');
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  }, [handleFileSelect]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  }, [handleFileSelect]);
+
+  const clearUploadedImage = useCallback(() => {
+    setUploadedImage(null);
+    setUploadedImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
   const handleNormalScan = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current) {
-      setError('Camera not ready yet.');
+    // Check if we have an uploaded image or camera
+    if (!uploadedImage && (!videoRef.current || !canvasRef.current)) {
+      setError('Please select an image or wait for camera to be ready.');
       return;
     }
 
@@ -161,47 +223,55 @@ export default function ScannerPage() {
 
     setIsScanning(true);
     setError(null);
-    setProcessingStep('Capturing image...');
+    setProcessingStep(uploadedImage ? 'Processing image...' : 'Capturing image...');
     setScanMode('strain');
 
     try {
-      // Capture frame
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas not supported');
+      let base64: string;
 
-      const width = video.videoWidth || 720;
-      const height = video.videoHeight || 720;
+      if (uploadedImage) {
+        // Use uploaded image
+        base64 = uploadedImage;
+      } else {
+        // Capture frame from camera
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error('Canvas not available');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas not supported');
 
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(video, 0, 0, width, height);
+        const width = video.videoWidth || 720;
+        const height = video.videoHeight || 720;
 
-      // Convert canvas to blob
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to convert canvas to blob'));
-          }
-        }, 'image/jpeg', 0.9);
-      });
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(video, 0, 0, width, height);
 
-      // Convert blob to base64 for upload
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            resolve(reader.result);
-          } else {
-            reject(new Error('Failed to read blob as base64'));
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+        // Convert canvas to blob
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to convert canvas to blob'));
+            }
+          }, 'image/jpeg', 0.9);
+        });
+
+        // Convert blob to base64 for upload
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result);
+            } else {
+              reject(new Error('Failed to read blob as base64'));
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
 
       // STEP 2: POST /api/uploads (with timeout)
       setProcessingStep('Uploading...');
@@ -314,6 +384,8 @@ export default function ScannerPage() {
 
       // STEP 5: Redirect to /scan/${scan_id}
       setProcessingStep('Complete!');
+      // Clear uploaded image after successful scan
+      clearUploadedImage();
       router.push(`/scan/${scanId}`);
     } catch (err: any) {
       console.error('[scanner] Scan error:', err);
@@ -326,11 +398,12 @@ export default function ScannerPage() {
     } finally {
       setIsScanning(false);
     }
-  }, [checkScanAccess, deductScan, router]);
+  }, [checkScanAccess, deductScan, router, uploadedImage, clearUploadedImage]);
 
   const handleDoctorScan = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current) {
-      setError('Camera not ready yet.');
+    // Check if we have an uploaded image or camera
+    if (!uploadedImage && (!videoRef.current || !canvasRef.current)) {
+      setError('Please select an image or wait for camera to be ready.');
       return;
     }
 
@@ -355,21 +428,30 @@ export default function ScannerPage() {
     setScanMode('doctor');
 
     try {
-      // Capture frame
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas not supported');
+      let imageData: string;
 
-      const width = video.videoWidth || 720;
-      const height = video.videoHeight || 720;
+      if (uploadedImage) {
+        // Use uploaded image
+        imageData = uploadedImage;
+      } else {
+        // Capture frame from camera
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error('Canvas not available');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas not supported');
 
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(video, 0, 0, width, height);
+        const width = video.videoWidth || 720;
+        const height = video.videoHeight || 720;
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(video, 0, 0, width, height);
+
+        imageData = canvas.toDataURL('image/jpeg');
+      }
 
       // Process doctor scan via API (with timeout)
-      const imageData = canvas.toDataURL('image/jpeg');
       const doctorController = new AbortController();
       const doctorTimeout = setTimeout(() => doctorController.abort(), 30000); // 30 second timeout
       
@@ -387,6 +469,8 @@ export default function ScannerPage() {
       
       if (response.ok) {
         const { scan_id } = await response.json();
+        // Clear uploaded image after successful scan
+        clearUploadedImage();
         router.push(`/scan/${scan_id}`);
       } else {
         const text = await response.text();
@@ -416,7 +500,7 @@ export default function ScannerPage() {
       setIsScanning(false);
       setScanAnimation(null);
     }
-  }, [checkScanAccess, deductScan, router]);
+  }, [checkScanAccess, deductScan, router, uploadedImage, clearUploadedImage]);
 
   // Retry camera initialization
   const retryCamera = useCallback(async () => {
@@ -502,44 +586,98 @@ export default function ScannerPage() {
           </p>
         </section>
 
-        {/* Camera + holo frame */}
+        {/* Camera + holo frame / Image preview */}
         <section className="mt-8">
           <div
-            className="relative mx-auto max-w-[360px] aspect-[3/4]
+            className={`relative mx-auto max-w-[360px] aspect-[3/4]
               rounded-[32px] border border-green-400/40 bg-black/50
               shadow-[0_0_35px_rgba(16,255,180,0.45)]
-              overflow-hidden backdrop-blur-xl"
+              overflow-hidden backdrop-blur-xl
+              ${isDragging ? 'border-green-400/80 bg-green-400/10' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
-            {/* Camera preview */}
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover opacity-80"
-              playsInline
-              muted
-            />
+            {/* Image preview (when uploaded) */}
+            {uploadedImage ? (
+              <>
+                <img
+                  src={uploadedImage}
+                  alt="Uploaded preview"
+                  className="w-full h-full object-cover"
+                />
+                {/* Clear image button */}
+                <button
+                  onClick={clearUploadedImage}
+                  className="absolute top-3 right-3 bg-red-600/80 hover:bg-red-600 text-white rounded-full p-2 text-xs font-semibold backdrop-blur-sm transition"
+                  title="Remove image"
+                >
+                  ✕
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Camera preview */}
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover opacity-80"
+                  playsInline
+                  muted
+                />
 
-            {/* Holographic overlay */}
-            <div className="absolute inset-0 pointer-events-none mix-blend-screen">
-              <div
-                className="absolute inset-[18px] rounded-[28px]
-                border border-green-400/40"
-              />
-              <div className="absolute left-1/2 -translate-x-1/2 top-4 text-[10px] tracking-[0.22em] uppercase text-[var(--botanical-text-secondary)]">
-                ALIGN LABEL OR LEAF
-              </div>
-              <div className="absolute inset-x-1/4 top-1/2 h-[1px] bg-gradient-to-r from-transparent via-[var(--botanical-accent)]/70 to-transparent opacity-80" />
-              <div className="absolute inset-x-1/3 top-1/3 h-[1px] bg-gradient-to-r from-transparent via-[var(--botanical-accent)]/60 to-transparent opacity-60" />
-              <div className="absolute inset-x-1/3 bottom-1/3 h-[1px] bg-gradient-to-r from-transparent via-[var(--botanical-accent)]/60 to-transparent opacity-60" />
-            </div>
+                {/* Holographic overlay */}
+                <div className="absolute inset-0 pointer-events-none mix-blend-screen">
+                  <div
+                    className="absolute inset-[18px] rounded-[28px]
+                    border border-green-400/40"
+                  />
+                  <div className="absolute left-1/2 -translate-x-1/2 top-4 text-[10px] tracking-[0.22em] uppercase text-[var(--botanical-text-secondary)]">
+                    ALIGN LABEL OR LEAF
+                  </div>
+                  <div className="absolute inset-x-1/4 top-1/2 h-[1px] bg-gradient-to-r from-transparent via-[var(--botanical-accent)]/70 to-transparent opacity-80" />
+                  <div className="absolute inset-x-1/3 top-1/3 h-[1px] bg-gradient-to-r from-transparent via-[var(--botanical-accent)]/60 to-transparent opacity-60" />
+                  <div className="absolute inset-x-1/3 bottom-1/3 h-[1px] bg-gradient-to-r from-transparent via-[var(--botanical-accent)]/60 to-transparent opacity-60" />
+                </div>
+              </>
+            )}
 
             {/* Mode indicator tag */}
             <div className="absolute left-3 bottom-3 text-xs bg-[var(--botanical-blur)] border border-[var(--botanical-accent)]/40 rounded-full px-3 py-1 text-[var(--botanical-text-primary)]">
               {scanMode === 'strain' ? 'Strain Identification' : 'Grow Doctor Mode'}
             </div>
+
+            {/* Drag overlay hint */}
+            {isDragging && !uploadedImage && (
+              <div className="absolute inset-0 flex items-center justify-center bg-green-400/20 backdrop-blur-sm">
+                <div className="text-center text-green-300 font-semibold">
+                  <div className="text-2xl mb-2">📷</div>
+                  <div>Drop image here</div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Hidden canvas for capture */}
           <canvas ref={canvasRef} className="hidden" />
+
+          {/* File input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileInputChange}
+            className="hidden"
+          />
+        </section>
+
+        {/* Upload button */}
+        <section className="mt-4 flex justify-center">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="text-sm text-[var(--botanical-text-secondary)] hover:text-[var(--botanical-accent)] underline-offset-4 hover:underline transition"
+          >
+            {uploadedImage ? 'Change image' : 'Upload photo instead'}
+          </button>
         </section>
 
         {/* Scan buttons - Mobile-first: larger touch targets */}
@@ -548,7 +686,7 @@ export default function ScannerPage() {
             {/* Normal Scan Button - Primary action */}
             <button
               onClick={handleNormalScan}
-              disabled={isScanning || !cameraReady}
+              disabled={isScanning || (!cameraReady && !uploadedImage)}
               className="scan-btn w-full py-4 md:py-4 rounded-full text-base md:text-lg font-semibold
                 bg-gradient-to-r from-[#00ffae] to-[#16f3a8]
                 text-black shadow-[0_0_35px_var(--botanical-glow)]
@@ -571,7 +709,7 @@ export default function ScannerPage() {
             {/* Doctor Scan Button - Secondary action */}
             <button
               onClick={handleDoctorScan}
-              disabled={isScanning || !cameraReady}
+              disabled={isScanning || (!cameraReady && !uploadedImage)}
               className={`doctor-btn w-full py-4 md:py-4 rounded-full text-base md:text-lg font-semibold
                 flex items-center justify-center gap-2
                 transition-transform active:scale-95
@@ -592,13 +730,6 @@ export default function ScannerPage() {
             </button>
           </div>
 
-          {/* Upload fallback */}
-          <Link
-            href="/scanner/upload"
-            className="text-xs text-[var(--botanical-text-secondary)] underline-offset-4 hover:underline hover:text-[var(--botanical-accent)]"
-          >
-            or upload a photo instead →
-          </Link>
         </section>
 
         {/* Processing Status */}
