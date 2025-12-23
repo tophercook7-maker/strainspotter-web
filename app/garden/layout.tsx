@@ -1,6 +1,9 @@
 // Temporarily bypass auth for local development
 // import RequireMember from "@/lib/auth/RequireMember";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function GardenLayout({
   children,
 }: {
