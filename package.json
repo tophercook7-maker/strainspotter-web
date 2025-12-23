@@ -9,7 +9,7 @@
     "lint": "eslint",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "CI=false tauri build"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.4",
