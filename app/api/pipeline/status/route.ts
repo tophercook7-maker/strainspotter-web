@@ -150,13 +150,13 @@ export async function GET() {
       const lastUpdate = canonicalProgress.last_updated || '';
       const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
       const stalled = isStalled(lastUpdate);
-      const status = scraperState?.harvesting_complete
+      const status = (scraperState?.harvesting_complete
         ? 'complete'
         : stalled
         ? 'stalled'
         : completed > 0
         ? 'running'
-        : 'idle';
+        : 'idle') as PipelineStage['status'];
 
       if (status === 'running') activeStage = 'Image Harvesting';
       if (status === 'stalled') overallHealth = 'stalled';
@@ -193,13 +193,13 @@ export async function GET() {
       const completed = lastIndex;
       const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
       const stalled = isStalled(lastUpdate);
-      const status = scraperState?.assignment_complete
+      const status = (scraperState?.assignment_complete
         ? 'complete'
         : stalled
         ? 'stalled'
         : completed > 0
         ? 'running'
-        : 'idle';
+        : 'idle') as PipelineStage['status'];
 
       if (status === 'running') activeStage = 'Strain Assignment';
       if (status === 'stalled') overallHealth = 'stalled';
@@ -248,7 +248,7 @@ export async function GET() {
         const completed = lastIndex;
         const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
         const stalled = isStalled(lastUpdate);
-        const status = stalled ? 'stalled' : completed > 0 ? 'running' : 'idle';
+        const status = (stalled ? 'stalled' : completed > 0 ? 'running' : 'idle') as PipelineStage['status'];
 
         if (status === 'running') activeStage = 'Fingerprinting';
         if (status === 'stalled') overallHealth = 'stalled';
