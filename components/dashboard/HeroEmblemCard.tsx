@@ -18,7 +18,7 @@ export default function HeroEmblemCard() {
 
       <Image
 
-        src="/emblem/hero.png"
+        src="/brand/strainspotter-mark.png"
 
         alt="StrainSpotter"
 
