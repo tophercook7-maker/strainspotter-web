@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { upsertProfile } from "@/lib/auth/onAuth";
 
 const REMEMBER_ME_KEY = "strainspotter_remember_email";
