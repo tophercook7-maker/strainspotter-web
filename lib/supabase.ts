@@ -53,24 +53,11 @@ export function getSupabaseBrowserClient() {
   return getSupabaseClient();
 }
 
-// Export as a Proxy that calls getSupabaseClient() on property access
-// This maintains the same API while ensuring lazy initialization
+// Export client with minimal Proxy - just forward properties without modification
+// This should avoid interfering with Supabase's internal fetch mechanism
 export const supabase = new Proxy({} as ReturnType<typeof createBrowserClient>, {
   get(_target, prop) {
-    // Handle special properties that shouldn't trigger client creation
-    if (prop === 'then' || prop === Symbol.toPrimitive || prop === Symbol.toStringTag) {
-      return undefined;
-    }
-    
     const client = getSupabaseClient();
-    const value = (client as any)[prop];
-    
-    // If it's a function, bind it to the client to preserve 'this' context
-    if (typeof value === 'function') {
-      return value.bind(client);
-    }
-    
-    // For non-function values, return as-is
-    return value;
+    return (client as any)[prop];
   }
 });
