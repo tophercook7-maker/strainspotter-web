@@ -41,10 +41,33 @@ export function getSupabaseBrowserClient() {
   return client;
 }
 
+// Export a Proxy that lazily creates the client only when accessed in the browser
+// This prevents build-time errors while still failing at runtime if env vars are missing
 export const supabase = new Proxy({} as ReturnType<typeof getSupabaseClient>, {
   get(_target, prop) {
+    // Only create client in browser environment (not during SSR/build)
+    if (typeof window === 'undefined') {
+      // During SSR/build, return a no-op function to prevent errors
+      // The actual client will be created when accessed in the browser
+      if (typeof prop === 'string' && prop !== 'then' && prop !== 'Symbol') {
+        return () => Promise.resolve({ data: null, error: { message: 'Supabase client not available during SSR' } });
+      }
+      return undefined;
+    }
+    
     if (!client) {
-      client = getSupabaseClient();
+      try {
+        client = getSupabaseClient();
+      } catch (error) {
+        // Log the error for debugging
+        console.error('Failed to initialize Supabase client:', error);
+        // If env vars are missing, throw a more helpful error
+        throw new Error(
+          "❌ Supabase client initialization failed. " +
+          "Make sure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your environment. " +
+          `Current URL: ${supabaseUrl ? 'set' : 'missing'}, Key: ${supabaseAnonKey ? 'set' : 'missing'}`
+        );
+      }
     }
     const value = (client as any)[prop];
     return typeof value === 'function' ? value.bind(client) : value;
