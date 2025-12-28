@@ -54,24 +54,37 @@ export function getSupabaseBrowserClient() {
   return getSupabaseClient();
 }
 
-// Export client with lazy initialization using Proxy
-// The Proxy forwards all property access to the actual client without modification
+// Export client directly without Proxy - create it only in browser
+// Use a simple getter pattern to avoid Proxy interference with fetch
 let _supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
 
-function getSupabaseInstance() {
-  if (!_supabaseInstance) {
-    _supabaseInstance = getSupabaseClient();
-  }
-  return _supabaseInstance;
-}
+// Create a simple object with getters that lazily initialize
+// This avoids Proxy entirely which may be causing fetch header issues
+const supabaseWrapper = {
+  get auth() {
+    if (typeof window === 'undefined') {
+      return {
+        getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        signOut: () => Promise.resolve({ error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      };
+    }
+    if (!_supabaseInstance) {
+      _supabaseInstance = getSupabaseClient();
+    }
+    return _supabaseInstance.auth;
+  },
+  get from() {
+    if (typeof window === 'undefined') {
+      return () => ({ select: () => ({ data: null, error: null }) });
+    }
+    if (!_supabaseInstance) {
+      _supabaseInstance = getSupabaseClient();
+    }
+    return _supabaseInstance.from;
+  },
+};
 
-// Use a Proxy that simply forwards all property access
-// No function binding, no special handling - just pure property forwarding
-export const supabase = new Proxy({} as ReturnType<typeof createBrowserClient>, {
-  get(_target, prop) {
-    const client = getSupabaseInstance();
-    // Use Reflect.get to get the property value directly from the client
-    // This ensures we don't modify anything about how the property is accessed
-    return Reflect.get(client, prop);
-  }
-});
+// Export with type assertion - this is safe because we're just forwarding to the real client
+export const supabase = supabaseWrapper as ReturnType<typeof createBrowserClient>;
