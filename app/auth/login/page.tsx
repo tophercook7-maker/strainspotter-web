@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { upsertProfile } from "@/lib/auth/onAuth";
 
 const REMEMBER_ME_KEY = "strainspotter_remember_email";
@@ -35,6 +35,8 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    // Use browser client directly to avoid Proxy issues
+    const supabase = getSupabaseBrowserClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
