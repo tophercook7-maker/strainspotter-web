@@ -36,7 +36,7 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
   // Check auth state
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
       setUser(session?.user || null);
       setLoading(false);
     });
