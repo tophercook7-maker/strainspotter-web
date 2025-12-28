@@ -22,7 +22,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
       setReady(true);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       if (!session) router.replace("/auth/login");
     });
 
