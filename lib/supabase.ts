@@ -11,7 +11,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 function getSupabaseClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
-      "❌ Supabase environment variables missing. " +
+      "Supabase environment variables missing. " +
       "Required: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY"
     );
   }
@@ -63,7 +63,7 @@ export const supabase = new Proxy({} as ReturnType<typeof getSupabaseClient>, {
         console.error('Failed to initialize Supabase client:', error);
         // If env vars are missing, throw a more helpful error
         throw new Error(
-          "❌ Supabase client initialization failed. " +
+          "Supabase client initialization failed. " +
           "Make sure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your environment. " +
           `Current URL: ${supabaseUrl ? 'set' : 'missing'}, Key: ${supabaseAnonKey ? 'set' : 'missing'}`
         );
