@@ -1,47 +1,17 @@
-import Link from "next/link";
-import { CannabisNewsArticle } from "@/lib/news/fetchCannabisNews";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
-async function getNews(): Promise<CannabisNewsArticle[]> {
-  try {
-    // Always use relative URL - works on both vercel.app and custom domain
-    const url = '/api/news/cannabis';
-    
-    // Add timeout for server-side fetch
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
-    try {
-      const response = await fetch(url, {
-        next: { revalidate: 900 }, // Cache for 15 minutes
-        signal: controller.signal,
-        cache: 'no-store', // Ensure fresh fetch on both domains
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        return [];
-      }
-      
-      const data = await response.json();
-      return data.articles || [];
-    } catch (fetchError: any) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        console.warn('News fetch timeout');
-        return [];
-      }
-      throw fetchError;
-    }
-  } catch (error) {
-    console.error('Error fetching news:', error);
-    // Fail gracefully - return empty array
-    return [];
-  }
-}
+import Link from "next/link";
+import { fetchCannabisNews, CannabisNewsArticle } from "@/lib/news/fetchCannabisNews";
 
 export default async function NewsPage() {
-  const articles = await getNews();
+  let articles: CannabisNewsArticle[] = [];
+
+  try {
+    articles = await fetchCannabisNews();
+  } catch (err) {
+    console.error("Error fetching news:", err);
+  }
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden safe-area-bottom" style={{ padding: 16, maxWidth: 800, margin: "0 auto" }}>
