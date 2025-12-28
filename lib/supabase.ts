@@ -18,6 +18,7 @@ function getSupabaseClient() {
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         signOut: () => Promise.resolve({ error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
       },
       from: () => ({ select: () => ({ data: null, error: null }) }),
     } as any;
@@ -53,11 +54,40 @@ export function getSupabaseBrowserClient() {
   return getSupabaseClient();
 }
 
-// Export client with minimal Proxy - just forward properties without modification
-// This should avoid interfering with Supabase's internal fetch mechanism
-export const supabase = new Proxy({} as ReturnType<typeof createBrowserClient>, {
-  get(_target, prop) {
-    const client = getSupabaseClient();
-    return (client as any)[prop];
+// Export client directly without Proxy to avoid interfering with Supabase's internal fetch
+// Initialize lazily on first property access using a getter
+let _supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
+
+const supabaseObject = {
+  get auth() {
+    if (!_supabaseInstance) {
+      _supabaseInstance = getSupabaseClient();
+    }
+    return _supabaseInstance.auth;
+  },
+  get from() {
+    if (!_supabaseInstance) {
+      _supabaseInstance = getSupabaseClient();
+    }
+    return _supabaseInstance.from;
+  },
+};
+
+// Create a Proxy that forwards all property access to the actual client
+// but only creates the client when needed
+export const supabase = new Proxy(supabaseObject, {
+  get(target, prop) {
+    if (!_supabaseInstance) {
+      _supabaseInstance = getSupabaseClient();
+    }
+    const value = (_supabaseInstance as any)[prop];
+    // Don't bind functions - return them as-is to avoid interfering with internal mechanisms
+    return value;
+  },
+  has(target, prop) {
+    if (!_supabaseInstance) {
+      _supabaseInstance = getSupabaseClient();
+    }
+    return prop in _supabaseInstance;
   }
-});
+}) as ReturnType<typeof createBrowserClient>;
