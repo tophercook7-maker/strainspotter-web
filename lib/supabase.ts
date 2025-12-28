@@ -6,31 +6,39 @@ import { createBrowserClient } from '@supabase/ssr';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "❌ Supabase environment variables missing. " +
-    "Required: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY"
+// Only throw error in browser/runtime, not during build time
+// This allows Next.js to build the page, but will fail at runtime if env vars are missing
+function getSupabaseClient() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      "❌ Supabase environment variables missing. " +
+      "Required: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY"
+    );
+  }
+
+  return createBrowserClient(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce'
+      }
+    }
   );
 }
 
-// Log configuration for debugging
-if (process.env.NODE_ENV === 'development' || typeof window !== 'undefined') {
-  console.log('[SUPABASE CLIENT] URL:', supabaseUrl.substring(0, 30) + '...');
-  console.log('[SUPABASE CLIENT] Key present:', !!supabaseAnonKey);
-}
+// Create client lazily - only throw error when actually used (runtime), not at module load (build time)
+let client: ReturnType<typeof getSupabaseClient> | null = null;
 
-// Create Supabase client for browser with SSR cookie support
-// createBrowserClient is correct for Next.js App Router
-// NO PLACEHOLDER VALUES - must use real env vars
-export const supabase = createBrowserClient(
-  supabaseUrl,
-  supabaseAnonKey,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      flowType: 'pkce'
+export const supabase = new Proxy({} as ReturnType<typeof getSupabaseClient>, {
+  get(_target, prop) {
+    if (!client) {
+      client = getSupabaseClient();
     }
+    const value = (client as any)[prop];
+    return typeof value === 'function' ? value.bind(client) : value;
   }
-);
+});
