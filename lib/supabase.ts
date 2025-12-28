@@ -33,6 +33,14 @@ function getSupabaseClient() {
 // Create client lazily - only throw error when actually used (runtime), not at module load (build time)
 let client: ReturnType<typeof getSupabaseClient> | null = null;
 
+// Export function for explicit client creation (useful for components that need to call it in useEffect)
+export function getSupabaseBrowserClient() {
+  if (!client) {
+    client = getSupabaseClient();
+  }
+  return client;
+}
+
 export const supabase = new Proxy({} as ReturnType<typeof getSupabaseClient>, {
   get(_target, prop) {
     if (!client) {
