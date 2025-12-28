@@ -2,19 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
-
-// Fail hard if env vars are missing - no placeholders allowed
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set'
-  );
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 
 export default function ScanGatePage() {
   const [loading, setLoading] = useState(true);
@@ -23,6 +11,9 @@ export default function ScanGatePage() {
   useEffect(() => {
     async function load() {
       try {
+        // Get Supabase client (lazy-loaded, will throw at runtime if env vars missing)
+        const supabase = getSupabaseBrowserClient();
+        
         // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         
