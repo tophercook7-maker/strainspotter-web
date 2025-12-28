@@ -2,22 +2,21 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 
-// Use environment variables with fallback to real Supabase credentials
-const supabaseUrl = 
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 
-  'https://rdqpxixsbqcsyfewcmbz.supabase.co';
+// Use environment variables - NO FALLBACKS (fail hard if missing)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const supabaseAnonKey = 
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkcXB4aXhzYnFjc3lmZXdjbWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxMjI3NTMsImV4cCI6MjA3NTY5ODc1M30.rTbYZNKNv1szvzjA2D828OVt7qUZVSXgi4G_tUqm3mA';
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    "❌ Supabase environment variables missing. " +
+    "Required: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  );
+}
 
 // Log configuration for debugging
 if (process.env.NODE_ENV === 'development' || typeof window !== 'undefined') {
-  console.log('[SUPABASE CLIENT] URL:', supabaseUrl?.substring(0, 30) + '...');
+  console.log('[SUPABASE CLIENT] URL:', supabaseUrl.substring(0, 30) + '...');
   console.log('[SUPABASE CLIENT] Key present:', !!supabaseAnonKey);
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    console.warn('[SUPABASE CLIENT] Using fallback URL (env var not set)');
-  }
 }
 
 // Create Supabase client for browser with SSR cookie support
