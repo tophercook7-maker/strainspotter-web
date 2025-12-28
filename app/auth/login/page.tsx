@@ -1,16 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { upsertProfile } from "@/lib/auth/onAuth";
+
+const REMEMBER_ME_KEY = "strainspotter_remember_email";
+const REMEMBER_ME_ENABLED_KEY = "strainspotter_remember_enabled";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load saved email on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedEmail = localStorage.getItem(REMEMBER_ME_KEY);
+      const rememberEnabled = localStorage.getItem(REMEMBER_ME_ENABLED_KEY) === "true";
+      if (savedEmail && rememberEnabled) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    }
+  }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +44,17 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
       return;
+    }
+
+    // Save email if "Remember me" is checked
+    if (typeof window !== "undefined") {
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_ME_KEY, email.trim());
+        localStorage.setItem(REMEMBER_ME_ENABLED_KEY, "true");
+      } else {
+        localStorage.removeItem(REMEMBER_ME_KEY);
+        localStorage.removeItem(REMEMBER_ME_ENABLED_KEY);
+      }
     }
 
     // Upsert profile (non-blocking)
@@ -66,8 +93,19 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="current-password"
           className="w-full p-2 rounded bg-neutral-800 text-white"
         />
+
+        <label className="flex items-center gap-2 text-sm text-neutral-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="w-4 h-4 rounded bg-neutral-800 border-neutral-700 text-emerald-600 focus:ring-emerald-500"
+          />
+          <span>Remember me</span>
+        </label>
 
         {error && (
           <p className="text-red-400 text-sm">{error}</p>
