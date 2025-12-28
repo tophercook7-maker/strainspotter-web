@@ -54,40 +54,16 @@ export function getSupabaseBrowserClient() {
   return getSupabaseClient();
 }
 
-// Export client directly without Proxy to avoid interfering with Supabase's internal fetch
-// Initialize lazily on first property access using a getter
+// Export client directly - create it immediately but safely handle SSR/build time
+// We create it at module load but it will only actually initialize in the browser
 let _supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
 
-const supabaseObject = {
-  get auth() {
-    if (!_supabaseInstance) {
-      _supabaseInstance = getSupabaseClient();
-    }
-    return _supabaseInstance.auth;
-  },
-  get from() {
-    if (!_supabaseInstance) {
-      _supabaseInstance = getSupabaseClient();
-    }
-    return _supabaseInstance.from;
-  },
-};
-
-// Create a Proxy that forwards all property access to the actual client
-// but only creates the client when needed
-export const supabase = new Proxy(supabaseObject, {
-  get(target, prop) {
-    if (!_supabaseInstance) {
-      _supabaseInstance = getSupabaseClient();
-    }
-    const value = (_supabaseInstance as any)[prop];
-    // Don't bind functions - return them as-is to avoid interfering with internal mechanisms
-    return value;
-  },
-  has(target, prop) {
-    if (!_supabaseInstance) {
-      _supabaseInstance = getSupabaseClient();
-    }
-    return prop in _supabaseInstance;
+function initSupabase() {
+  if (!_supabaseInstance) {
+    _supabaseInstance = getSupabaseClient();
   }
-}) as ReturnType<typeof createBrowserClient>;
+  return _supabaseInstance;
+}
+
+// Create the client immediately, but getSupabaseClient() handles SSR/build safely
+export const supabase = initSupabase();
