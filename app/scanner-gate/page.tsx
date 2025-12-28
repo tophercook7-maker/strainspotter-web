@@ -4,9 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
-// Use placeholder values if env vars are missing (for build-time)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+// Fail hard if env vars are missing - no placeholders allowed
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set'
+  );
+}
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -53,7 +59,7 @@ export default function ScanGatePage() {
     return (
       <div className="flex flex-col items-center mt-24 text-white">
         <img
-          src="/emblem/hero.png"
+          src="/brand/strainspotter-mark.png"
           alt="StrainSpotter"
           className="w-44 mb-6 drop-shadow-lg"
         />
@@ -100,8 +106,8 @@ export default function ScanGatePage() {
 
       {/* Hero */}
       <img
-        src="/emblem/hero.png"
-        alt="StrainSpotter Emblem"
+        src="/brand/strainspotter-mark.png"
+        alt="StrainSpotter"
         className="w-40 mb-6 drop-shadow-xl"
       />
 
