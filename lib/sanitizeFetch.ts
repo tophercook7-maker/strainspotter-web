@@ -4,6 +4,12 @@
  * Strips non-ISO-8859-1 characters from Authorization headers.
  * Prevents browser fetch crashes caused by corrupted tokens.
  */
+
+export function sanitizeToken(token: string | null | undefined) {
+  if (!token) return token;
+  return token.replace(/[^\x00-\xFF]/g, "");
+}
+
 export function installFetchSanitizer() {
   if (typeof window === "undefined") return;
 
@@ -18,8 +24,8 @@ export function installFetchSanitizer() {
 
       const auth = headers.get("Authorization");
       if (auth) {
-        const cleaned = auth.replace(/[^\x20-\x7E]+/g, "").trim();
-        if (cleaned !== auth) {
+        const cleaned = sanitizeToken(auth);
+        if (cleaned && cleaned !== auth) {
           console.warn("🧹 Sanitized Authorization header");
           headers.set("Authorization", cleaned);
         }
