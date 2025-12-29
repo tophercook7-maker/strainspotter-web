@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Hero from "@/components/Hero";
+import HeroLeaf from "@/components/HeroLeaf";
 
 export default function Home() {
   const router = useRouter();
@@ -18,10 +18,8 @@ export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-transparent">
       <div className="text-center px-4">
-        {/* Hero - HOME ONLY */}
-        <div className="mb-8">
-          <Hero />
-        </div>
+        {/* Hero Leaf - HOME ONLY */}
+        <HeroLeaf />
 
         {/* Two Buttons */}
         <div className="flex flex-col gap-4 max-w-xs mx-auto">
