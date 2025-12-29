@@ -6,21 +6,31 @@ export function installFetchDebug() {
 
   window.fetch = function (input, init) {
     if (init?.headers) {
-      const headers =
-        init.headers instanceof Headers
-          ? Object.fromEntries(init.headers.entries())
-          : init.headers;
+      let headers = {};
 
-      if (headers?.Authorization) {
+      try {
+        if (init.headers instanceof Headers) {
+          headers = Object.fromEntries(init.headers.entries());
+        } else if (Array.isArray(init.headers)) {
+          headers = Object.fromEntries(init.headers);
+        } else {
+          headers = init.headers;
+        }
+      } catch {}
+
+      const auth = headers["authorization"] || headers["Authorization"];
+
+      if (auth) {
         console.error("❌ INVALID AUTH HEADER DETECTED");
-        console.error("Authorization:", headers.Authorization);
-        console.error("STACK TRACE:");
+        console.error("Authorization:", auth);
+        console.error("STACK TRACE (THIS IS THE SOURCE):");
         console.trace();
-        debugger; // pause exactly here
+        debugger;
       }
     }
+
     return originalFetch.apply(this, arguments);
   };
 
-  console.log("🔍 fetch debug interceptor ACTIVE");
+  console.log("🔍 Fetch debug interceptor INSTALLED");
 }
