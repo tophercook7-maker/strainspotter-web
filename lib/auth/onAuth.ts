@@ -4,7 +4,7 @@
  * Upserts user profile on sign-in
  */
 
-import { supabase } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export interface User {
   id: string;
@@ -35,6 +35,7 @@ export async function upsertProfile(user: User | null) {
     last_login: new Date().toISOString(),
   };
 
+  const supabase = getSupabaseBrowserClient();
   const { error } = await supabase.from("profiles").upsert(payload);
 
   if (error) {

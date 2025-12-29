@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { SearchIcon } from "../icons/SearchIcon";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import BottomTabBar from "./BottomTabBar";
 import { installFetchDebug } from "@/lib/debugFetch";
 
@@ -41,6 +41,7 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
 
   // Check auth state
   useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
       setUser(session?.user || null);
@@ -59,6 +60,7 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
 
 
   const handleLogout = async () => {
+    const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
     router.push("/");
   };
