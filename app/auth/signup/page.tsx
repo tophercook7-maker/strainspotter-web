@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { upsertProfile } from '@/lib/auth/onAuth';
 
 export default function SignupPage() {

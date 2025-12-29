@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import NewPostForm from "@/components/community/NewPostForm";
 import PostCard from "@/components/community/PostCard";
 import WeeklySummaryCard from "@/components/community/WeeklySummaryCard";

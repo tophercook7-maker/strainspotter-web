@@ -6,7 +6,7 @@ import Link from 'next/link';
 import UploadButton from '@/components/UploadButton';
 import ImagePreview from '@/components/ImagePreview';
 import { uploadImage, processScan, getVisualMatch } from '@/lib/api';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { checkCredits, deductCredit } from '@/lib/credits';
 import { getMembership } from '@/lib/membership';
 import NotEnoughCreditsModal from '@/components/NotEnoughCreditsModal';

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { getUser } from "@/lib/auth";
 import { getQuotaStatus } from "@/app/api/_utils/scanQuota";
 
@@ -16,6 +16,7 @@ export default function AccountPage() {
   useEffect(() => {
     async function loadUser() {
       try {
+        const supabase = getSupabaseBrowserClient();
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user || null);
 
@@ -42,6 +43,7 @@ export default function AccountPage() {
   }, []);
 
   const handleSignOut = async () => {
+    const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
     router.push("/");
   };

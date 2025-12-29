@@ -6,7 +6,7 @@ import Link from 'next/link';
 import ImagePreview from '@/components/ImagePreview';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
 import MatchReasoning from '@/components/MatchReasoning';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { useMembership } from '@/lib/membership/useMembership';
 
 interface ScanData {

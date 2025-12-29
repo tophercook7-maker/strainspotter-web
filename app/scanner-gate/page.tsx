@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getSupabaseBrowserClient } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export default function ScanGatePage() {
   const [loading, setLoading] = useState(true);

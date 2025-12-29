@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter();

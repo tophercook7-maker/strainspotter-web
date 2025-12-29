@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export function useMembership() {
   const [loading, setLoading] = useState(true);

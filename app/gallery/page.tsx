@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ImagePreview from '@/components/ImagePreview';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 interface ScanRecord {
   id: string;
