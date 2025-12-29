@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ================================================
 // EXAMPLE: How to use checkScanGuard in Next.js API routes
 // ================================================
