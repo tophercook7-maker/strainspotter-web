@@ -1,28 +1,27 @@
-export type GardenFeature = {
-  id: string;
-  title: string;
-  description: string;
-  href: string;
-};
-
-export const gardenFeatures: GardenFeature[] = [
+export const gardenFeatures = [
   {
-    id: "scan",
+    id: "scanner",
     title: "Scanner",
     description: "Identify strains from images or camera.",
-    href: "/scanner",
+    href: "/scan",
   },
   {
     id: "upload",
     title: "Upload Image",
     description: "Upload a strain photo for analysis.",
-    href: "/scanner-upload",
+    href: "/scan/upload",
   },
   {
     id: "saved",
     title: "Saved Strains",
     description: "Your scanned and saved strains.",
-    href: "/gallery",
+    href: "/library",
+  },
+  {
+    id: "library",
+    title: "Strain Library",
+    description: "Explore the strain database.",
+    href: "/strains",
   },
   {
     id: "community",
@@ -40,19 +39,13 @@ export const gardenFeatures: GardenFeature[] = [
     id: "news",
     title: "News",
     description: "Industry and strain news.",
-    href: "/discover/news",
+    href: "/news",
   },
   {
     id: "dispensaries",
     title: "Dispensaries",
     description: "Find nearby dispensaries.",
     href: "/dispensaries",
-  },
-  {
-    id: "strains",
-    title: "Strain Library",
-    description: "Explore the strain database.",
-    href: "/strains",
   },
   {
     id: "account",
@@ -64,7 +57,6 @@ export const gardenFeatures: GardenFeature[] = [
     id: "membership",
     title: "Membership",
     description: "Manage your plan and access.",
-    href: "/account",
+    href: "/membership",
   },
 ];
-
