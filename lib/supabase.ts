@@ -1,13 +1,15 @@
 "use client";
 
-import { createBrowserClient } from '@supabase/ssr';
+// Use createClient from @supabase/supabase-js directly instead of @supabase/ssr
+// This avoids any potential header encoding issues with SSR wrappers
+import { createClient } from '@supabase/supabase-js';
 
 // Use environment variables - NO FALLBACKS (fail hard if missing)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // Create client lazily - only throw error when actually used (runtime), not at module load (build time)
-let client: ReturnType<typeof createBrowserClient> | null = null;
+let client: ReturnType<typeof createClient> | null = null;
 
 function getSupabaseClient() {
   // Only create client in browser environment (not during SSR/build)
@@ -32,7 +34,8 @@ function getSupabaseClient() {
       );
     }
 
-    client = createBrowserClient(
+    // Use createClient directly - no SSR wrapper that might interfere with fetch/headers
+    client = createClient(
       supabaseUrl,
       supabaseAnonKey,
       {
@@ -42,6 +45,8 @@ function getSupabaseClient() {
           detectSessionInUrl: true,
           flowType: 'pkce'
         }
+        // 🚫 NO global.fetch - let browser handle it
+        // 🚫 NO headers - let Supabase handle headers internally
       }
     );
   }
@@ -56,7 +61,7 @@ export function getSupabaseBrowserClient() {
 
 // Export client directly without Proxy - create it only in browser
 // Use a simple getter pattern to avoid Proxy interference with fetch
-let _supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
+let _supabaseInstance: ReturnType<typeof createClient> | null = null;
 
 // Create a simple object with getters that lazily initialize
 // This avoids Proxy entirely which may be causing fetch header issues
@@ -87,4 +92,4 @@ const supabaseWrapper = {
 };
 
 // Export with type assertion - this is safe because we're just forwarding to the real client
-export const supabase = supabaseWrapper as ReturnType<typeof createBrowserClient>;
+export const supabase = supabaseWrapper as ReturnType<typeof createClient>;
