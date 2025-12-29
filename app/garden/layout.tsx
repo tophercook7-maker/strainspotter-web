@@ -1,13 +1,12 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getUser } from "@/lib/auth";
 
-import AuthWall from "@/components/AuthWall";
-
-export default function GardenLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthWall>
-      <div className="relative" style={{ position: 'relative', zIndex: 1 }}>
-        {children}
-      </div>
-    </AuthWall>
-  );
+export default async function GardenLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await getUser();
+  if (!user) redirect("/auth/login");
+  return <div className="relative" style={{ position: 'relative', zIndex: 1 }}>{children}</div>;
 }
