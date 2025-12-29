@@ -7,7 +7,6 @@ import clsx from "clsx";
 import { SearchIcon } from "../icons/SearchIcon";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import BottomTabBar from "./BottomTabBar";
-import { installFetchDebug } from "@/lib/debugFetch";
 
 // Top-level navigation items only
 const topLevelNavItems = [

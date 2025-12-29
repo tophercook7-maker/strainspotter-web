@@ -50,6 +50,7 @@ export default function StrainDetailsPage() {
     async function loadStrain() {
       try {
         // Explicitly select all fields including seed_sources
+        const supabase = getSupabaseBrowserClient();
         const { data, error: fetchError } = await supabase
           .from('strains')
           .select('*, seed_sources')
