@@ -1,0 +1,6 @@
+// Temporary test page - will be replaced
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  redirect("/garden");
+}

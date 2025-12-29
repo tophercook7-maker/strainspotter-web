@@ -1,0 +1,29 @@
+body {
+  font-family: system-ui, sans-serif;
+  background: #0e140e;
+  color: #e8f0e8;
+  padding: 20px;
+}
+
+.card {
+  border: 1px solid #2c3a2c;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #141c14;
+}
+
+.ok { color: #6cff8f; }
+.warn { color: #ffd166; }
+.bad { color: #ff6b6b; }
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+
+button:not(:disabled):hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+  transition: all 0.2s;
+}

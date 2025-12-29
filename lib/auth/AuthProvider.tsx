@@ -38,6 +38,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [supabase]);
 
+  // Debug: Track auth state changes
+  useEffect(() => {
+    console.log("[AUTH]", { user: user?.email ?? null });
+  }, [user]);
+
   return (
     <AuthContext.Provider value={{ user, loading }}>
       {children}

@@ -89,29 +89,27 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
 
           {/* Auth Section */}
           <div className="mt-auto pt-4 border-t border-[var(--botanical-border)]">
-            {!loading && (
-              <>
-                {user ? (
-                  <div className="space-y-2">
-                    <div className="text-xs text-[var(--botanical-text-secondary)] px-3 py-1">
-                      {user.email}
-                    </div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full px-3 py-2 rounded-md transition-all flex items-center gap-2 hover:bg-red-500/10 text-red-400 text-sm"
-                    >
-                      Log out
-                    </button>
+            {loading ? null : (
+              user ? (
+                <div className="space-y-2">
+                  <div className="text-xs text-[var(--botanical-text-secondary)] px-3 py-1">
+                    {user.email}
                   </div>
-                ) : (
-                  <Link
-                    href="/auth/login"
-                    className="px-3 py-2 rounded-md transition-all flex items-center gap-2 hover:bg-green-400/10 text-[var(--botanical-accent)] text-sm"
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-3 py-2 rounded-md transition-all flex items-center gap-2 hover:bg-red-500/10 text-red-400 text-sm"
                   >
-                    Sign in
-                  </Link>
-                )}
-              </>
+                    Log out
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="px-3 py-2 rounded-md transition-all flex items-center gap-2 hover:bg-green-400/10 text-[var(--botanical-accent)] text-sm"
+                >
+                  Sign in
+                </Link>
+              )
             )}
           </div>
 
