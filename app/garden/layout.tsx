@@ -7,7 +7,9 @@ export default function GardenLayout({ children }: { children: React.ReactNode }
   return (
     <AuthWall>
       <MembershipGate>
-        {children}
+        <div className="relative z-10" style={{ position: 'relative' }}>
+          {children}
+        </div>
       </MembershipGate>
     </AuthWall>
   );

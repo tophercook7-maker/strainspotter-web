@@ -48,20 +48,21 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center">
-      {/* Background Image */}
+    <div className="min-h-screen relative flex items-center justify-center" style={{ isolation: 'isolate' }}>
+      {/* Background Image - relative, not absolute/fixed */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: "url('/brand/strainspotter-hero.png')",
+          zIndex: 0,
         }}
       />
 
       {/* Overlay for readability */}
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/40" style={{ zIndex: 1 }} />
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4">
+      <div className="relative z-10 text-center px-4" style={{ position: 'relative', zIndex: 2 }}>
         {/* Hero Image */}
         <div className="mb-12">
           <img 
