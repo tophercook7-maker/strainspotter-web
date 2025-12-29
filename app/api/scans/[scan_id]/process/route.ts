@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/scans/[scan_id]/process
  * Process a scan with Vision API

@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 
 // GET /api/community/what-you-missed
 // Returns new pinned posts, helpful replies, and summaries since last visit
+import "server-only";
 export async function GET(req: NextRequest) {
   try {
     // STEP 8: Kill switch check

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/remote/key
  * Send keyboard input to remote desktop

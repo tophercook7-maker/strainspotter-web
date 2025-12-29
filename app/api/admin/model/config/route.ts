@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/model/config - Get current matcher config
  * PUT /api/admin/model/config - Update matcher config

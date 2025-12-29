@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/pipeline/cancel
  * Cancel a pipeline job

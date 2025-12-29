@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/ai/similarity-map
  * Get similarity map data

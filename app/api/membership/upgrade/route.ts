@@ -3,6 +3,7 @@ import { getUser } from '@/lib/auth';
 import { getProfile, updateProfile, getDefaultsForMembership } from '@/app/api/_utils/membership';
 import { supabaseAdmin } from '@/app/api/_utils/supabaseAdmin';
 
+import "server-only";
 export async function POST(request: NextRequest) {
   try {
     const user = await getUser();

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+import "server-only";
 export async function POST(req: Request) {
   const body = await req.json();
 

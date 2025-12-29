@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/auto-grow/run
  * Trigger auto-grow for all incomplete strains

@@ -3,6 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth";
 
 // POST /api/community/report
+import "server-only";
 export async function POST(req: NextRequest) {
   try {
     const user = await getUser();

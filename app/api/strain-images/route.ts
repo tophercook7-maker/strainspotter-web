@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
+import "server-only";
 /**
  * API route to serve strain_images.json
  * Handles file location in both dev and production

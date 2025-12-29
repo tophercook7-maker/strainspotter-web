@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
+import "server-only";
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

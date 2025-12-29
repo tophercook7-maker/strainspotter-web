@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/ai/watchdog/stop
  * Stop watchdog

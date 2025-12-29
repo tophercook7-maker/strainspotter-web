@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/app/api/_utils/supabaseAdmin";
 
 // GET /api/community/replies?post_id=X
+import "server-only";
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createSupabaseServer();

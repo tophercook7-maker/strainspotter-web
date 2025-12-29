@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/manifests/list
  * List all manifests

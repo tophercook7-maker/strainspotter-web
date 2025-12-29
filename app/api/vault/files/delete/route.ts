@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * DELETE /api/vault/files/delete
  * Delete file or directory

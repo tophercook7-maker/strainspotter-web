@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/clusters/list
  * List clusters for a strain

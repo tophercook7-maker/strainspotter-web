@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 
 // POST /api/community/posts/[id]/pin
 // Pin a post (moderators only)
+import "server-only";
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

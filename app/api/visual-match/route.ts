@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/visual-match
  * Match an image against the strain library using OCR and Vault data

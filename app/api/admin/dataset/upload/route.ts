@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/dataset/upload
  * Trigger upload to Supabase for a strain

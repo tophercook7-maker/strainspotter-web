@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
 
 // Top-up package definitions (LOCKED PRICING - same for all tiers)
+import "server-only";
 export const TOPUP_PACKAGES = {
   // ID scan top-ups
   'id-25': { scans: 25, doctor: 0, amount: 2.99, label: '25 ID Scans' },

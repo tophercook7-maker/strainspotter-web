@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { CoaAnalysisResult } from "@/types/coa";
 
+import "server-only";
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));

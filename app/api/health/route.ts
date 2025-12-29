@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/health
  * Health check endpoint to diagnose configuration issues

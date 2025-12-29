@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/files/move
  * Move file or directory

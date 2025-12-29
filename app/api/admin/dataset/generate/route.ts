@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/dataset/generate
  * Trigger synthetic image generation for a strain

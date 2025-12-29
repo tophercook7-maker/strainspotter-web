@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 
 // GET /api/community/summaries/list
 // Returns summaries for groups the user has activity in
+import "server-only";
 export async function GET(req: NextRequest) {
   try {
     // STEP 8: Kill switch check

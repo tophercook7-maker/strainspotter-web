@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/augment-test
  * Test image augmentation

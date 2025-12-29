@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/files/read
  * Read file content (for previews)

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/dataset/full
  * Trigger full pipeline for a strain or all strains

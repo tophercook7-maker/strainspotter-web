@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/vault/status
  * Returns Vault health, scraper status, and generator status

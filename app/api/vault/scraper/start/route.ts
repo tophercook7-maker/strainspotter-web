@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/scraper/start
  * Start a new scrape job

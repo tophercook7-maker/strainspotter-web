@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/dataset/scrape
  * Trigger scraping for a strain

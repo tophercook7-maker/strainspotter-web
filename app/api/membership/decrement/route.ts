@@ -1,3 +1,4 @@
+import "server-only";
 // app/api/membership/decrement/route.ts
 
 import { NextResponse } from "next/server";

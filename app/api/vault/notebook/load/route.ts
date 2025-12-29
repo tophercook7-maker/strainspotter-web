@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/notebook/load
  * Load notebook from vault

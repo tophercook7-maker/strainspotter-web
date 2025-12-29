@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
+import "server-only";
 /**
  * PATCH /api/garden/notes/[id]
  * Update a note

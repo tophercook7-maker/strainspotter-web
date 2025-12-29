@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/terminal/execute
  * Execute terminal command

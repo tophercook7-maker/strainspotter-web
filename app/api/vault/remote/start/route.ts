@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/remote/start
  * Start remote desktop session

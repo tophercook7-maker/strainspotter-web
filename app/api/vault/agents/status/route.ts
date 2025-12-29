@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/agents/status
  * Get agent manager status

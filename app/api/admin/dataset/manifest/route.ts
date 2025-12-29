@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/dataset/manifest
  * Trigger manifest build for a strain

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 // DELETE - Delete a photo
+import "server-only";
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

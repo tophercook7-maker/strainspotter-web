@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 
 // POST /api/community/replies/[id]/helpful
 // Mark a reply as helpful (moderators only)
+import "server-only";
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

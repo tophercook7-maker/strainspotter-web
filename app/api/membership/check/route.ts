@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { getUser } from '@/lib/auth';
 import { getProfile, shouldResetScans, resetScansToDefaults } from '@/app/api/_utils/membership';
 
+import "server-only";
 export async function GET(request: NextRequest) {
   try {
     const user = await getUser();

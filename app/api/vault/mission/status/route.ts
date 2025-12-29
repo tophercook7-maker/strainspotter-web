@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/mission/status
  * Get comprehensive system status

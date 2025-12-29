@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 
 // POST /api/community/user-seen
 // Track when user views a group
+import "server-only";
 export async function POST(req: NextRequest) {
   try {
     const user = await getUser();

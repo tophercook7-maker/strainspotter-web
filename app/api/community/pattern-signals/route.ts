@@ -3,6 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 
 // GET /api/community/pattern-signals
 // Returns active pattern signals (cross-group themes)
+import "server-only";
 export async function GET(req: NextRequest) {
   try {
     // STEP 8: Kill switch check

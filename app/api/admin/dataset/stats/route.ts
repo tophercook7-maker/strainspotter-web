@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/dataset/stats
  * Get global dataset statistics

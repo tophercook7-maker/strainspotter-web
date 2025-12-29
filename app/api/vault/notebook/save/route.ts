@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/notebook/save
  * Save notebook to vault

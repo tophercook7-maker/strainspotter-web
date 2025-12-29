@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/ai/restart
  * Restart GPU/embedding server

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/pro/strain-train/upload
  * Upload images for private strain training

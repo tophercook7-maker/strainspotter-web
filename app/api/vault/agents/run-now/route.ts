@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/agents/run-now
  * Manually trigger agent run

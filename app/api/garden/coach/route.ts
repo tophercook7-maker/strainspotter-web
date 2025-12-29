@@ -3,6 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { generateCoachInsights } from "@/lib/ai/coach";
 
 // POST - Get AI coach insights for garden (all content types)
+import "server-only";
 export async function POST(req: Request) {
   try {
     const supabase = await createSupabaseServer();

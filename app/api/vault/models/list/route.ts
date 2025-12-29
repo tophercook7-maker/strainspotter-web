@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/models/list
  * List all registered models

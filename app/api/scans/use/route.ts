@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
 import { incrementScanUsage, ScanType, checkScanQuota, formatLimitReachedResponse } from '@/app/api/_utils/scanQuota';
 
+import "server-only";
 /**
  * POST /api/scans/use
  * Atomically check quota and increment usage (authoritative server-side)

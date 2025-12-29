@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/files/list
  * List directory contents

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/app/api/_utils/supabaseAdmin";
 
+import "server-only";
 /**
  * POST /api/admin/desktop/feature-flag
  * Enable/disable desktop access feature flag for a user (admin only)

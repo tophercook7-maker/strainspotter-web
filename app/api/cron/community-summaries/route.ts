@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import "server-only";
 /**
  * Cron endpoint for generating weekly community summaries
  * 

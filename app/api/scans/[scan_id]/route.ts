@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/scans/[scan_id]
  * Return scan details

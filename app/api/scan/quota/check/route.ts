@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { checkScanQuota, ScanType } from "@/app/api/_utils/scanQuota";
 
+import "server-only";
 /**
  * GET /api/scan/quota/check?type=id|doctor
  * Check if user can perform a scan (authoritative server-side check)

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/similarity-map/rebuild
  * Rebuild similarity map

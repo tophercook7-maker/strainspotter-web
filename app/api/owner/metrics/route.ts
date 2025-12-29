@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/app/api/_utils/supabaseAdmin';
 
+import "server-only";
 /**
  * GET /api/owner/metrics
  * Get system metrics for owner dashboard

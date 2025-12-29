@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/models/register
  * Register a new model

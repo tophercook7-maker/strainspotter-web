@@ -3,6 +3,7 @@ import { getUser } from '@/lib/auth';
 import { createSupabaseServer } from '@/lib/supabase/server';
 import { requireGardenMembership } from '@/app/api/_utils/membershipGuard';
 
+import "server-only";
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

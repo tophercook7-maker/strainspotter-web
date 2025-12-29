@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/scans/latest
  * Get the most recent scan for the current user

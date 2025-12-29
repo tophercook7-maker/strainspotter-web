@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/model/test
  * Test matcher v1 and v2 on an uploaded image

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/vault/embeddings/refresh
  * Queue embeddings refresh for strains

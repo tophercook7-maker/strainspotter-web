@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
+import "server-only";
 export async function GET(req: Request) {
   try {
     const supabase = await createSupabaseServer();

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/generator/status
  * Get generator status

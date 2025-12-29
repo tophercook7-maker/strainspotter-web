@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/agents/stop
  * Stop agent manager

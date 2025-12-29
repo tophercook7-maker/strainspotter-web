@@ -1,3 +1,4 @@
+import "server-only";
 // app/api/scan/deduct/route.ts
 
 import { NextResponse } from "next/server";

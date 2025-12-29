@@ -1,3 +1,4 @@
+import "server-only";
 // /app/api/inventory/[id]/duplicate/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';

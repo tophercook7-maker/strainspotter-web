@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/clusters/rebuild
  * Rebuild clusters for a strain

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/pipeline/history
  * Get pipeline job history

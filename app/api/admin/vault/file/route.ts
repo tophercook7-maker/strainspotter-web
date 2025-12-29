@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/vault/file
  * Serve vault file (for previews)

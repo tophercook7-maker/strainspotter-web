@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 // POST - Attach photos to a log entry
+import "server-only";
 export async function POST(req: Request) {
   try {
     const supabase = await createSupabaseServer();

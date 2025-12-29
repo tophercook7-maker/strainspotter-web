@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/vault/scraper/resume
  * Signals external scraper process to resume

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/mission/events
  * Get recent system events

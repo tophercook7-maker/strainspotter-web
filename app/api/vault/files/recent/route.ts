@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/files/recent
  * Get recently accessed files

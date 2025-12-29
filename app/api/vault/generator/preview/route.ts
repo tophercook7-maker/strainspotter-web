@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/generator/preview
  * Get preview images for a strain

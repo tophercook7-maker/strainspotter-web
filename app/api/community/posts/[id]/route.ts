@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/app/api/_utils/supabaseAdmin";
 
 // PUT /api/community/posts/[id]
+import "server-only";
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

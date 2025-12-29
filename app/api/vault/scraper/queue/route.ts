@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/scraper/queue
  * Get scraper queue status

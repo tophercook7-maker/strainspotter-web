@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/vault/completeness
  * Get completeness data for strains (paginated)

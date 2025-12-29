@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/vault/flags
  * List all flags or read a specific flag

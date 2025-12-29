@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/vault/generator/resume
  * Signals external generator process to resume

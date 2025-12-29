@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/notebook/execute
  * Execute Python code in isolated environment

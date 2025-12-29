@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+import "server-only";
 type AdjustPayload = {
   inventory_id: string;
   delta: number; // negative for sale/use, positive for restock

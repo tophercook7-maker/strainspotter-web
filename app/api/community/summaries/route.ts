@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 // GET /api/community/summaries?category=X&group_id=Y
+import "server-only";
 export async function GET(req: NextRequest) {
   try {
     // STEP 8: Kill switch check

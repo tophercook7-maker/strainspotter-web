@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/vault/jobs/queue
  * Get queue status

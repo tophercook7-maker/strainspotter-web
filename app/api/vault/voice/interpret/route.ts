@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/voice/interpret
  * Interpret voice command using GPT

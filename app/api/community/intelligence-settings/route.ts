@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 
 // GET /api/community/intelligence-settings
 // Get user's intelligence preferences
+import "server-only";
 export async function GET(req: NextRequest) {
   try {
     const user = await getUser();

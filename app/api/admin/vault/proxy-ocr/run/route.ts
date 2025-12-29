@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/vault/proxy-ocr/run
  * Run proxy image and OCR pipeline for strains

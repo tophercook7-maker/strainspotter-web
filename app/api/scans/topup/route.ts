@@ -3,6 +3,7 @@ import { getUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/app/api/_utils/supabaseAdmin';
 
 // Top-up package definitions (LOCKED PRICING - same for all tiers)
+import "server-only";
 const TOPUP_PACKAGES: Record<string, { scans: number; doctor: number; amount: number }> = {
   // ID scan top-ups
   'id-25': { scans: 25, doctor: 0, amount: 2.99 },

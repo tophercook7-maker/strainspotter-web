@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/clusters/[strain]
  * Get clusters for a strain

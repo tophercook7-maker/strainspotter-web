@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/app/api/_utils/supabaseAdmin";
 
 // GET /api/community/posts?group_category=X&group_id=Y
+import "server-only";
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createSupabaseServer();

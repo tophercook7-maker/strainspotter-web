@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/models/benchmark
  * Benchmark model performance

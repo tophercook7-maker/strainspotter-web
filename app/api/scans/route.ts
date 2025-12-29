@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/scans
  * Return most recent scans for gallery

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/images/[slug]
  * Serve proxy images from Vault processed dataset

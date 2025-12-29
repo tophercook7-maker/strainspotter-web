@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/visual-match/v3
  * Advanced visual matching with augmentation and LLM explanations

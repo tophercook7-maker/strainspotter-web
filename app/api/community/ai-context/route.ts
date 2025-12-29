@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 // GET /api/community/ai-context?post_id=X or ?reply_id=Y
+import "server-only";
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createSupabaseServer();

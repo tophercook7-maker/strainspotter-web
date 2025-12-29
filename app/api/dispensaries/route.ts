@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import "server-only";
 interface DispensaryResult {
   id: string;
   name: string;

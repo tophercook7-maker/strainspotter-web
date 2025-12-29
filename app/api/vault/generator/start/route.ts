@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/generator/start
  * Start synthetic image generation

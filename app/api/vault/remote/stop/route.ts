@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/remote/stop
  * Stop remote desktop session

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/uploads
  * Upload an image and create a scan record

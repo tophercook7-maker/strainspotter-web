@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/vault/jobs/cancel
  * Cancel a job

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/settings/update
  * Update vault settings

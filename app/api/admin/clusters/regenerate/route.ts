@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/clusters/regenerate
  * Regenerate clusters for a strain

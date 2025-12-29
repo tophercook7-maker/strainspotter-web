@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { getQuotaStatus } from "@/app/api/_utils/scanQuota";
 
+import "server-only";
 /**
  * GET /api/scan/quota/status
  * Get user's current quota status

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/garden/grows/[id]
  * PATCH /api/garden/grows/[id]

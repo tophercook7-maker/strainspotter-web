@@ -1,3 +1,4 @@
+import "server-only";
 // app/api/membership/status/route.ts
 
 import { NextResponse } from "next/server";

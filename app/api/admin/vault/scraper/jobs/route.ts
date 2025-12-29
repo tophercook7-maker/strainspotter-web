@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/admin/vault/scraper/jobs
  * Get scraper jobs from Supabase

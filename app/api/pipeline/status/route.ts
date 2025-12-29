@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/pipeline/status
  * Returns pipeline status for internal dashboard

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/app/api/_utils/supabaseAdmin';
 
+import "server-only";
 /**
  * GET /api/feature-flags/[flag]
  * Check if a specific feature flag is enabled for the current user

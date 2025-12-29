@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/manifests/rebuild
  * Rebuild manifest for a strain

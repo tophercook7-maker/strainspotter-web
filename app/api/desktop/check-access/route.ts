@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/app/api/_utils/supabaseAdmin";
 
+import "server-only";
 /**
  * GET /api/desktop/check-access
  * Check if user has access to desktop app

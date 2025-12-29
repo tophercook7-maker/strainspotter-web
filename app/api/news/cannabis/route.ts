@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchCannabisNews } from "@/lib/news/fetchCannabisNews";
 
+import "server-only";
 /**
  * GET /api/news/cannabis
  * Returns latest cannabis industry news articles

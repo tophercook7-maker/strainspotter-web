@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/ai/watchdog/status
  * Get watchdog status

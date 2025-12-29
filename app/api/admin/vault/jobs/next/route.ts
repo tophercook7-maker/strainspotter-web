@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/vault/jobs/next
  * Start next job from queue

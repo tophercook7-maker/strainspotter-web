@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
+import "server-only";
 /**
  * GET /api/garden/notes/[id]/suggestions
  * Get AI suggestions for a note (conversions, related notes)

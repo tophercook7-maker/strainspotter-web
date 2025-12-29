@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/visual-match/v2
  * Advanced visual matching using manifest-based scoring

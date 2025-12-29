@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/admin/dataset/process
  * Trigger image processing for a strain

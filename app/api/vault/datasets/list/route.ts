@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * GET /api/vault/datasets/list
  * List all datasets with statistics

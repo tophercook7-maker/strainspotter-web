@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * POST /api/vault/pipeline/add-job
  * Add job to pipeline queue
