@@ -3,7 +3,6 @@ import "./globals.css";
 import { PortalProvider } from "./components/portal/PortalController";
 import AuroraAtmosphere from "@/components/AuroraAtmosphere";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
-import AuthSessionReset from "@/components/AuthSessionReset";
 import "./service-worker-unregister";
 
 export const metadata: Metadata = {
@@ -19,7 +18,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen" style={{ margin: 0, padding: 0 }}>
-        <AuthSessionReset />
         <PortalProvider>
           <AuroraAtmosphere />
           <div className="min-h-screen relative z-10" style={{ background: 'transparent' }}>
