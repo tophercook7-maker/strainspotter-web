@@ -27,6 +27,7 @@ export default function ScannerUploadPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
+        const supabase = getSupabaseBrowserClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           router.push('/login');

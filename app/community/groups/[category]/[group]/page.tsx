@@ -122,6 +122,7 @@ export default function GroupPage({ params }: GroupPageProps) {
 
   const loadCurrentUser = async () => {
     try {
+      const supabase = getSupabaseBrowserClient();
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id);
 

@@ -12,6 +12,7 @@ export function useMembership() {
     let mounted = true;
 
     async function check() {
+      const supabase = getSupabaseBrowserClient();
       const { data: auth } = await supabase.auth.getSession();
       if (!auth.session) {
         if (!mounted) return;
