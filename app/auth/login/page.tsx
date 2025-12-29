@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { upsertProfile } from "@/lib/auth/onAuth";
 import { validateAuthTokenBeforeUse } from "@/lib/auth/validateAuthHeader";
+import { cleanEnv } from "@/lib/cleanEnv";
 
 const REMEMBER_ME_KEY = "strainspotter_remember_email";
 const REMEMBER_ME_ENABLED_KEY = "strainspotter_remember_enabled";
@@ -35,6 +36,22 @@ export default function LoginPage() {
 
     setLoading(true);
     setError(null);
+
+    // Validate env vars are clean before creating client
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (rawUrl && rawKey) {
+      const cleanedUrl = cleanEnv(rawUrl, "NEXT_PUBLIC_SUPABASE_URL");
+      const cleanedKey = cleanEnv(rawKey, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
+      
+      // Fail hard if env vars are corrupted
+      if (cleanedUrl !== rawUrl || cleanedKey !== rawKey) {
+        setError('Environment variables corrupted. Please contact support.');
+        setLoading(false);
+        return;
+      }
+    }
 
     // Use browser client directly to avoid Proxy issues
     const supabase = getSupabaseBrowserClient();

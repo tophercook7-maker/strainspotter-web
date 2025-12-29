@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@supabase/supabase-js";
+import { cleanEnv } from "@/lib/cleanEnv";
 
 let browserClient: ReturnType<typeof createClient> | null = null;
 
@@ -17,12 +18,16 @@ let browserClient: ReturnType<typeof createClient> | null = null;
  */
 export function getSupabaseBrowserClient() {
   if (!browserClient) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!rawUrl || !rawKey) {
       throw new Error('Supabase environment variables not configured');
     }
+
+    // Clean env vars to remove invisible Unicode characters
+    const supabaseUrl = cleanEnv(rawUrl, "NEXT_PUBLIC_SUPABASE_URL");
+    const supabaseAnonKey = cleanEnv(rawKey, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
     browserClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
