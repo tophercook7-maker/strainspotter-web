@@ -23,10 +23,7 @@ export default function RootLayout({
         <AuthProvider>
           <AuthWall>
             <PortalProvider>
-              <AuroraAtmosphere />
-              <div className="min-h-screen relative z-10" style={{ background: 'transparent' }}>
-                <ResponsiveShell>{children}</ResponsiveShell>
-              </div>
+              <ResponsiveShell>{children}</ResponsiveShell>
             </PortalProvider>
           </AuthWall>
         </AuthProvider>
