@@ -15,7 +15,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
+    <div className="min-h-screen flex items-center justify-center bg-transparent">
       <div className="text-center px-4">
         {/* Two Buttons */}
         <div className="flex flex-col gap-4 max-w-xs mx-auto">
