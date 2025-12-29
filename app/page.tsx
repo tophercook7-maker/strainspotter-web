@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useMembership } from "@/lib/hooks/useMembership";
+import AgeGate from "@/components/AgeGate";
 
 export default function HomePage() {
   const router = useRouter();
@@ -48,7 +49,8 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center" style={{ isolation: 'isolate' }}>
+    <AgeGate>
+      <div className="min-h-screen relative flex items-center justify-center" style={{ isolation: 'isolate' }}>
       {/* Background Image - relative, not absolute/fixed */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -97,5 +99,6 @@ export default function HomePage() {
         </p>
       </div>
     </div>
+    </AgeGate>
   );
 }

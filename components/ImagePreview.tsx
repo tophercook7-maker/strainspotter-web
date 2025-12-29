@@ -9,10 +9,11 @@ interface ImagePreviewProps {
 }
 
 export default function ImagePreview({ src, alt = 'Preview', className }: ImagePreviewProps) {
-  if (!src) {
+  if (!src || src === 'undefined' || src === 'null') {
     return (
       <div
         className={`bg-gray-800 rounded-lg flex items-center justify-center ${className || ''}`}
+        style={{ minHeight: '200px', minWidth: '200px' }}
       >
         <span className="text-gray-500">No image</span>
       </div>

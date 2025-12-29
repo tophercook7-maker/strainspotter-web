@@ -4,7 +4,6 @@ import { PortalProvider } from "./components/portal/PortalController";
 import AuroraAtmosphere from "@/components/AuroraAtmosphere";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
-import AgeGate from "@/components/AgeGate";
 import AuthWall from "@/components/AuthWall";
 import "./service-worker-unregister";
 
@@ -21,18 +20,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen" style={{ margin: 0, padding: 0 }}>
-        <AgeGate>
-          <AuthProvider>
-            <AuthWall>
-              <PortalProvider>
-                <AuroraAtmosphere />
-                <div className="min-h-screen relative z-10" style={{ background: 'transparent' }}>
-                  <ResponsiveShell>{children}</ResponsiveShell>
-                </div>
-              </PortalProvider>
-            </AuthWall>
-          </AuthProvider>
-        </AgeGate>
+        <AuthProvider>
+          <AuthWall>
+            <PortalProvider>
+              <AuroraAtmosphere />
+              <div className="min-h-screen relative z-10" style={{ background: 'transparent' }}>
+                <ResponsiveShell>{children}</ResponsiveShell>
+              </div>
+            </PortalProvider>
+          </AuthWall>
+        </AuthProvider>
       </body>
     </html>
   );
