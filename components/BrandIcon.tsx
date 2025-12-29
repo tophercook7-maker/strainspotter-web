@@ -18,7 +18,7 @@ export default function BrandIcon({ size = 120, className = "" }: BrandIconProps
       }}
     >
       <Image
-        src="/icons/leaf.svg"
+        src="/icons/leaf.png"
         alt="StrainSpotter"
         width={Math.round(size * 0.6)}
         height={Math.round(size * 0.6)}
