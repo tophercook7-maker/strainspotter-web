@@ -39,11 +39,6 @@ export default function Home() {
             SCANNER
           </button>
         </div>
-
-        {/* Temp visual marker */}
-        <p className="mt-8 text-xs text-white/60">
-          HOME ONLY — HERO ACTIVE
-        </p>
       </div>
     </div>
   );

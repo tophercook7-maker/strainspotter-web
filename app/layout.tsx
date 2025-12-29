@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { PortalProvider } from "./components/portal/PortalController";
-import AuroraAtmosphere from "@/components/AuroraAtmosphere";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import AuthWall from "@/components/AuthWall";
