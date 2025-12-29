@@ -36,6 +36,7 @@ export function useMembership() {
     check();
 
     // Listen for auth changes
+    const supabase = getSupabaseBrowserClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       check();
     });
