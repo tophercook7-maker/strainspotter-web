@@ -10,6 +10,10 @@ import "./service-worker-unregister";
 export const metadata: Metadata = {
   title: "StrainSpotter",
   description: "Cannabis strain identification and tracking",
+  icons: {
+    icon: "/icons/leaf.svg",
+    apple: "/icons/leaf.svg",
+  },
 };
 
 export default function RootLayout({
