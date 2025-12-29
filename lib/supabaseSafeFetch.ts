@@ -22,11 +22,11 @@ export const supabaseSafeFetch: typeof fetch = async (input, init) => {
       });
       sanitizedHeaders = headersObj;
     } else if (Array.isArray(init.headers)) {
-      sanitizedHeaders = init.headers.map(([key, value]) => [
+      sanitizedHeaders = init.headers.map(([key, value]): [string, string] => [
         key,
         key.toLowerCase() === "authorization"
-          ? value.replace(/[^\x20-\x7E]/g, "")
-          : value,
+          ? String(value).replace(/[^\x20-\x7E]/g, "")
+          : String(value),
       ]);
     } else {
       const headersObj: Record<string, string> = {};
