@@ -8,6 +8,7 @@ import { SearchIcon } from "../icons/SearchIcon";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import BottomTabBar from "./BottomTabBar";
+import BrandIcon from "@/components/BrandIcon";
 
 // Top-level navigation items only
 const topLevelNavItems = [
