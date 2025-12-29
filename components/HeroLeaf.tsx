@@ -4,7 +4,7 @@ export default function HeroLeaf() {
       style={{
         display: "flex",
         justifyContent: "center",
-        marginBottom: "28px",
+        marginBottom: "24px",
       }}
     >
       <img
@@ -14,7 +14,9 @@ export default function HeroLeaf() {
           width: "220px",
           height: "220px",
           borderRadius: "50%",
-          boxShadow: "0 0 28px rgba(0,255,0,0.65)",
+          border: "6px solid #1f5f3a", // forest green ring
+          boxShadow: "0 0 18px rgba(31, 95, 58, 0.65)", // soft glow
+          backgroundColor: "black",
         }}
       />
     </div>
