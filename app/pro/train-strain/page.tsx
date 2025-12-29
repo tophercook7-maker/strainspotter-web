@@ -15,8 +15,8 @@ export default async function TrainStrainPage() {
   }
 
   // Check for pro membership
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(
+  const { getSupabaseBrowserClient } = await import('@/lib/supabaseBrowser');
+  const supabase = getSupabaseBrowserClient();
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
