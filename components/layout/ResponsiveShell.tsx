@@ -25,10 +25,6 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Install fetch debug interceptor to catch invalid fetch calls with headers
-  useEffect(() => {
-    installFetchDebug();
-  }, []);
 
   // Detect desktop width
   useEffect(() => {
