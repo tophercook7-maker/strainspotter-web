@@ -4,6 +4,7 @@ import { PortalProvider } from "./components/portal/PortalController";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import AuthWall from "@/components/AuthWall";
+import DesktopRefreshButton from "@/components/DesktopRefreshButton";
 import "./service-worker-unregister";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function RootLayout({
             </PortalProvider>
           </AuthWall>
         </AuthProvider>
+        <DesktopRefreshButton />
       </body>
     </html>
   );

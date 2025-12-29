@@ -92,40 +92,56 @@ export default function GardenShell() {
       ) : null}
 
       {/* FEATURE GRID */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {gardenFeatures.map((feature) => (
-          <Link
-            key={feature.id}
-            href={feature.href}
-            className="
-              group
-              relative
-              rounded-xl
-              px-5 py-4
-              border border-white/15
-              bg-white/10
-              backdrop-blur-xl
-              shadow-[0_8px_30px_rgba(0,0,0,0.25)]
-              hover:bg-white/15
-              hover:shadow-[0_10px_40px_rgba(0,0,0,0.35)]
-              transition-all
-              duration-300
-            "
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-white tracking-tight">
-                {feature.title}
-              </h2>
-              <span className="opacity-0 group-hover:opacity-100 transition text-white/50">
-                →
-              </span>
-            </div>
-
-            <p className="mt-1 text-sm text-white/65 leading-snug">
-              {feature.description}
-            </p>
-          </Link>
-        ))}
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {gardenFeatures.map((feature) => {
+          const isPrimary = feature.priority === "primary";
+          return (
+            <Link
+              key={feature.id}
+              href={feature.href}
+              className="
+                group
+                relative
+                flex
+                flex-col
+                justify-center
+                h-16
+                px-5
+                rounded-2xl
+                border
+                transition-all
+                duration-200
+              "
+              style={{
+                background: "rgba(0,0,0,0.45)",
+                backdropFilter: "blur(18px)",
+                border: "1px solid rgba(255,255,255,0.15)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(0,0,0,0.55)";
+                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(34, 197, 94, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(0,0,0,0.45)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-white tracking-tight">
+                  {feature.title}
+                </h2>
+                {isPrimary && (
+                  <span className="opacity-0 group-hover:opacity-100 transition text-emerald-400 text-xs">
+                    →
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs text-white/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                {feature.description}
+              </p>
+            </Link>
+          );
+        })}
       </div>
 
     </main>
