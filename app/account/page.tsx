@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { getUser } from "@/lib/auth";
-import { getQuotaStatus } from "@/app/api/_utils/scanQuota";
 
 export default function AccountPage() {
   const router = useRouter();
