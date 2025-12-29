@@ -1,68 +1,104 @@
 "use client";
 
-import Link from "next/link";
-import { gardenGroups } from "./gardenButtons";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useMembership } from "@/lib/hooks/useMembership";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function GardenPage() {
-  return (
-    <div className="space-y-6 md:space-y-8 p-4 md:p-6 pb-24 md:pb-8 safe-area-bottom overflow-x-hidden">
-      {/* Header */}
-      <div className="max-w-4xl mb-6">
-        <h1 className="text-2xl md:text-3xl font-semibold text-white">
-          The Garden
-        </h1>
-        <p className="text-sm text-white/85 mt-1">
-          Everything related to your grow, tools, and cannabis knowledge.
-        </p>
+  const { user, loading: authLoading } = useAuth();
+  const { membership, loading: membershipLoading } = useMembership();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (authLoading || membershipLoading) return;
+    
+    if (!user) {
+      router.replace("/auth/login");
+      return;
+    }
+
+    if (!membership || membership.tier === 'free') {
+      // Show upgrade panel instead of redirecting
+      return;
+    }
+  }, [user, membership, authLoading, membershipLoading, router]);
+
+  if (authLoading || membershipLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p>Loading…</p>
+        </div>
       </div>
+    );
+  }
 
-      {/* Grouped Sections */}
-      {gardenGroups.map((group) => {
-        return (
-          <section 
-            key={group.id} 
-            className="space-y-4"
-          >
-            <div className="px-1">
-              <h2 className="text-sm md:text-base font-semibold text-white/90 uppercase tracking-wider">
-                {group.label}
-              </h2>
-            </div>
+  if (!user) {
+    return null; // Redirecting
+  }
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 w-full">
-              {group.buttons.map((btn) => {
-                const isPrimary = (btn as any).isPrimary === true;
-                return (
-                  <Link
-                    key={btn.id}
-                    href={btn.href}
-                    className={`
-                      rounded-xl
-                      backdrop-blur-md
-                      ${isPrimary ? 'bg-white/18 border-white/20' : 'bg-white/10 border-white/10'}
-                      border
-                      ${isPrimary ? 'p-7 min-h-[120px]' : 'p-6 min-h-[100px]'}
-                      hover:bg-white/15
-                      hover:border-white/20
-                      ${isPrimary ? 'hover:scale-[1.02] hover:bg-white/22' : ''}
-                      active:bg-white/12
-                      transition-all
-                      flex flex-col justify-center
-                    `}
-                  >
-                    <div className={`${isPrimary ? 'text-lg font-semibold' : 'text-base font-medium'} text-white`}>
-                      {btn.label}
-                    </div>
-                    <div className="text-sm text-white/70 mt-1.5">
-                      {btn.description}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
-    </div>
+  if (!membership || membership.tier === 'free') {
+    return (
+      <main style={{ padding: "24px", maxWidth: "800px", margin: "0 auto" }}>
+        <h1 className="text-3xl font-bold text-white mb-4">Join the Garden</h1>
+        <p className="text-white/80 mb-6">
+          Access the full Garden experience with an active membership.
+        </p>
+        <button
+          onClick={() => router.push("/account")}
+          className="px-6 py-3 bg-emerald-600 text-black font-semibold rounded-lg hover:bg-emerald-500 transition"
+        >
+          Upgrade Membership
+        </button>
+      </main>
+    );
+  }
+
+  return (
+    <main style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
+      <h1 className="text-3xl font-bold text-white mb-6">Garden</h1>
+
+      <section style={{ marginTop: "24px" }}>
+        <h2 className="text-2xl font-semibold text-white mb-3">Your Activity</h2>
+        <p className="text-white/70">
+          Recent scans, saved strains, and recommendations appear here.
+        </p>
+      </section>
+
+      <section style={{ marginTop: "32px" }}>
+        <h2 className="text-2xl font-semibold text-white mb-3">Scanner</h2>
+        <p className="text-white/70 mb-4">
+          Upload or scan a strain image to identify cannabis strains.
+        </p>
+        <button
+          onClick={() => router.push("/scanner")}
+          className="px-6 py-3 bg-emerald-600 text-black font-semibold rounded-lg hover:bg-emerald-500 transition"
+        >
+          Open Scanner
+        </button>
+      </section>
+
+      <section style={{ marginTop: "32px" }}>
+        <h2 className="text-2xl font-semibold text-white mb-3">Saved Strains</h2>
+        <p className="text-white/70">
+          Your library of identified strains and favorites.
+        </p>
+      </section>
+
+      <section style={{ marginTop: "32px" }}>
+        <h2 className="text-2xl font-semibold text-white mb-3">Community</h2>
+        <p className="text-white/70 mb-4">
+          Groups, posts, and discussions with other growers.
+        </p>
+        <button
+          onClick={() => router.push("/community")}
+          className="px-6 py-3 bg-emerald-600 text-black font-semibold rounded-lg hover:bg-emerald-500 transition"
+        >
+          Visit Community
+        </button>
+      </section>
+    </main>
   );
 }

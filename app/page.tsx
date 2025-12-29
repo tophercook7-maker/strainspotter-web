@@ -11,7 +11,7 @@ export default function HomePage() {
   };
 
   const handleScanner = () => {
-    router.push("/scanner");
+    router.push("/garden"); // Scanner is accessed through Garden
   };
 
   return (
