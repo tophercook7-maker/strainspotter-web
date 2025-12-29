@@ -26,16 +26,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
+    // COMMENTED OUT: onAuthStateChange causes rerender loops during login
+    // Use hard redirects in login forms instead
+    // const { data: listener } = supabase.auth.onAuthStateChange(
+    //   (_event, session) => {
+    //     setUser(session?.user ?? null);
+    //   }
+    // );
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    // return () => {
+    //   listener.subscription.unsubscribe();
+    // };
   }, [supabase]);
 
   // Debug: Track auth state changes
