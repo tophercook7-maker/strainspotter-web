@@ -16,28 +16,24 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-transparent">
-      <div className="text-center px-4">
-        {/* Hero Leaf - HOME ONLY */}
-        <HeroLeaf />
+    <main className="min-h-screen flex flex-col items-center justify-center bg-transparent">
+      <HeroLeaf />
 
-        {/* Two Buttons */}
-        <div className="flex flex-col gap-4 max-w-xs mx-auto">
-          <button
-            onClick={handleEnterGarden}
-            className="px-8 py-4 bg-emerald-600 text-black font-bold text-lg rounded-lg hover:bg-emerald-500 transition shadow-lg"
-          >
-            ENTER GARDEN
-          </button>
-          
-          <button
-            onClick={handleScanner}
-            className="px-8 py-4 bg-emerald-600 text-black font-bold text-lg rounded-lg hover:bg-emerald-500 transition shadow-lg"
-          >
-            SCANNER
-          </button>
-        </div>
+      <div className="flex flex-col gap-4 w-full max-w-xs px-4">
+        <button
+          onClick={handleEnterGarden}
+          className="px-8 py-4 bg-emerald-600 text-black font-bold text-lg rounded-lg hover:bg-emerald-500 transition shadow-lg"
+        >
+          ENTER GARDEN
+        </button>
+        
+        <button
+          onClick={handleScanner}
+          className="px-8 py-4 bg-emerald-600 text-black font-bold text-lg rounded-lg hover:bg-emerald-500 transition shadow-lg"
+        >
+          SCANNER
+        </button>
       </div>
-    </div>
+    </main>
   );
 }
