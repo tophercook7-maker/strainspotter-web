@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { gardenFeatures } from "@/lib/gardenFeatures";
 
 type MembershipStatus = "unknown" | "none" | "member";
 
@@ -99,69 +100,23 @@ export default function GardenShell() {
         </SectionCard>
       ) : null}
 
-      {/* SCANNER */}
-      <SectionCard title="Scanner">
-        <p>Scan a strain image to identify it.</p>
-        <div className="mt-3 flex gap-3">
+      {/* FEATURE GRID */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {gardenFeatures.map((feature) => (
           <Link
-            href="/scanner-upload"
-            className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white"
+            key={feature.id}
+            href={feature.href}
+            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-lg hover:bg-white/10 transition"
           >
-            Upload Image
+            <h2 className="text-lg font-semibold text-white">
+              {feature.title}
+            </h2>
+            <p className="mt-2 text-white/70 text-sm">
+              {feature.description}
+            </p>
           </Link>
-          <Link
-            href="/scanner"
-            className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white"
-          >
-            Open Camera
-          </Link>
-        </div>
-      </SectionCard>
-
-      {/* SAVED STRAINS */}
-      <SectionCard title="Saved Strains">
-        <p>No saved strains yet? Scan your first one to start building your library.</p>
-        <div className="mt-3">
-          <Link
-            href="/gallery"
-            className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white inline-block"
-          >
-            Open Gallery
-          </Link>
-        </div>
-      </SectionCard>
-
-      {/* COMMUNITY */}
-      <SectionCard title="Community">
-        <p>Explore groups and posts.</p>
-        <div className="mt-3">
-          <Link
-            href="/community"
-            className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white inline-block"
-          >
-            Open Community
-          </Link>
-        </div>
-      </SectionCard>
-
-      {/* DISCOVER / NEWS */}
-      <SectionCard title="Discover">
-        <p>Browse strains, news, and tools.</p>
-        <div className="mt-3 flex gap-3">
-          <Link
-            href="/discover"
-            className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white"
-          >
-            Discover
-          </Link>
-          <Link
-            href="/discover/news"
-            className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white"
-          >
-            News
-          </Link>
-        </div>
-      </SectionCard>
+        ))}
+      </div>
 
       {/* SAFETY: NEVER EMPTY */}
       <div className="mt-8 text-white/50 text-sm">
