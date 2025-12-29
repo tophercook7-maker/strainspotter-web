@@ -15,5 +15,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: false,
     detectSessionInUrl: false,
   },
+  global: {
+    headers: {},
+  },
 });
 

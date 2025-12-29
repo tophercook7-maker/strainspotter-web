@@ -1,8 +1,8 @@
 "use client";
 
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 
-let browserClient: ReturnType<typeof createBrowserClient> | null = null;
+let browserClient: ReturnType<typeof createClient> | null = null;
 
 /**
  * Get the single Supabase browser client
@@ -11,17 +11,31 @@ let browserClient: ReturnType<typeof createBrowserClient> | null = null;
  */
 export function getSupabaseBrowserClient() {
   if (!browserClient) {
-    browserClient = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
-        },
-      }
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase environment variables not configured');
+    }
+
+    browserClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+      global: {
+        headers: {},
+      },
+    });
   }
   return browserClient;
 }
+
+// Mock user for protected pages (temporary)
+export const MOCK_USER = {
+  id: 'mock-user-id-temp',
+  email: 'mock@strainspotter.app',
+  user_metadata: {},
+  app_metadata: {},
+};
