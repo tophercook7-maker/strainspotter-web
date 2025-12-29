@@ -36,7 +36,7 @@ export default function ImagePreview({ src, alt = 'Preview', className }: ImageP
   }
 
   return (
-    <div className={`relative rounded-lg overflow-hidden ${className || ''}`}>
+    <div className={`relative rounded-lg overflow-hidden ${className || ''}`} style={{ width: '100%', height: '100%', minHeight: '200px', position: 'relative' }}>
       <Image
         src={src}
         alt={alt}
@@ -44,6 +44,13 @@ export default function ImagePreview({ src, alt = 'Preview', className }: ImageP
         className="object-cover"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         unoptimized={src.includes('supabase.co')} // Supabase URLs may need unoptimized
+        onError={(e) => {
+          // Hide broken image, show placeholder
+          const target = e.target as HTMLImageElement;
+          if (target.parentElement) {
+            target.parentElement.innerHTML = '<div class="bg-gray-800 rounded-lg flex items-center justify-center" style="min-height: 200px;"><span class="text-gray-500">No image</span></div>';
+          }
+        }}
       />
     </div>
   );
