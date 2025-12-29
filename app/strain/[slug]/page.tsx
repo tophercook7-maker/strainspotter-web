@@ -7,6 +7,13 @@ import Image from 'next/image';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { getStrainPrimaryImage } from '@/lib/strainImages';
 
+type Strain = {
+  id: string;
+  name: string;
+  slug: string;
+  seed_sources: unknown | null;
+};
+
 interface SeedSource {
   breeder: string;
   seed_bank?: string;
@@ -17,25 +24,11 @@ interface SeedSource {
   notes?: string;
 }
 
-interface StrainData {
-  id: string;
-  name: string;
-  slug: string;
-  type?: string;
-  thc?: number;
-  cbd?: number;
-  terpenes?: Array<{ name: string; percentage?: number }>;
-  description?: string;
-  effects?: any;
-  seed_sources?: SeedSource[];
-  notes?: string; // For clone-only detection
-}
-
 export default function StrainDetailsPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const [strain, setStrain] = useState<StrainData | null>(null);
+  const [strain, setStrain] = useState<Strain | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [strainImage, setStrainImage] = useState<string | null>(null);
@@ -48,26 +41,33 @@ export default function StrainDetailsPage() {
         const supabase = getSupabaseBrowserClient();
         const { data, error: fetchError } = await supabase
           .from('strains')
-          .select('*, seed_sources')
+          .select('id, name, slug, seed_sources')
           .eq('slug', slug)
-          .single();
+          .maybeSingle<Strain>();
 
         if (fetchError) throw fetchError;
         
-        // Log to verify seed_sources is present
-        if (data) {
-          console.log('[STRAIN PAGE] Loaded strain:', {
-            name: data.name,
-            slug: data.slug,
-            hasSeedSources: !!data.seed_sources,
-            seedSourcesType: typeof data.seed_sources,
-            seedSourcesValue: data.seed_sources,
-          });
+        // Null guard: check if data exists before accessing properties
+        if (!data) {
+          setError('Strain not found');
+          setLoading(false);
+          return;
         }
         
+        // Log to verify seed_sources is present
+        console.log('[STRAIN PAGE] Loaded strain:', {
+          name: data.name,
+          slug: data.slug,
+          hasSeedSources: !!data.seed_sources,
+          seedSourcesType: typeof data.seed_sources,
+          seedSourcesValue: data.seed_sources,
+        });
+        
         // Ensure seed_sources is preserved (handle JSONB parsing if needed)
-        const strainData = {
-          ...data,
+        const strainData: Strain = {
+          id: data.id,
+          name: data.name,
+          slug: data.slug,
           seed_sources: data.seed_sources || null, // Preserve null/undefined, don't default to []
         };
         
@@ -135,9 +135,6 @@ export default function StrainDetailsPage() {
             ← Back to Gallery
           </Link>
           <h1 className="text-4xl font-bold">{strain.name}</h1>
-          {strain.type && (
-            <p className="text-gray-400 mt-2 capitalize">{strain.type}</p>
-          )}
         </div>
 
         {/* Primary Strain Image */}
@@ -164,53 +161,6 @@ export default function StrainDetailsPage() {
           </div>
         )}
 
-        {/* Details Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* THC/CBD */}
-          <div className="bg-gray-900 rounded-lg p-4">
-            <h2 className="text-xl font-semibold mb-3">Cannabinoids</h2>
-            <div className="space-y-2">
-              {strain.thc !== undefined && (
-                <div>
-                  <span className="text-gray-400">THC: </span>
-                  <span className="text-green-200 font-semibold">{strain.thc}%</span>
-                </div>
-              )}
-              {strain.cbd !== undefined && (
-                <div>
-                  <span className="text-gray-400">CBD: </span>
-                  <span className="text-green-200 font-semibold">{strain.cbd}%</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Terpenes */}
-          {strain.terpenes && strain.terpenes.length > 0 && (
-            <div className="bg-gray-900 rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-3">Terpenes</h2>
-              <div className="flex flex-wrap gap-2">
-                {strain.terpenes.map((terpene, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1 bg-green-500/20 text-green-200 rounded-full text-sm"
-                  >
-                    {terpene.name}
-                    {terpene.percentage && ` (${terpene.percentage}%)`}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Description */}
-        {strain.description && (
-          <div className="bg-gray-900 rounded-lg p-4 mb-6">
-            <h2 className="text-xl font-semibold mb-3">Description</h2>
-            <p className="text-gray-300">{strain.description}</p>
-          </div>
-        )}
 
         {/* Seeds Section */}
         <SeedsSection strain={strain} />
@@ -233,29 +183,9 @@ export default function StrainDetailsPage() {
  * Seeds Section Component
  * Displays seed sources for the strain
  */
-function SeedsSection({ strain }: { strain: StrainData }) {
-  // Check if strain is clone-only (check notes or description for "clone-only")
-  const notesText = typeof strain.notes === 'string' ? strain.notes.toLowerCase() : '';
-  const descText = typeof strain.description === 'string' ? strain.description.toLowerCase() : '';
-  const isCloneOnly = notesText.includes('clone-only') || descText.includes('clone-only');
-
-  // Handle clone-only case
-  if (isCloneOnly) {
-    return (
-      <div className="bg-gray-900 rounded-lg p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-          <span>🌱</span>
-          <span>Seeds</span>
-        </h2>
-        <p className="text-gray-300">
-          This strain is clone-only. No commercial seed source exists.
-        </p>
-      </div>
-    );
-  }
-
-  // Handle missing or empty seed_sources
-  if (!strain.seed_sources || strain.seed_sources.length === 0) {
+function SeedsSection({ strain }: { strain: Strain }) {
+  // Handle missing or null seed_sources
+  if (!strain.seed_sources) {
     return (
       <div className="bg-gray-900 rounded-lg p-4 mb-6">
         <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
@@ -277,7 +207,7 @@ function SeedsSection({ strain }: { strain: StrainData }) {
         <span>Seeds</span>
       </h2>
       <div className="space-y-4">
-        {strain.seed_sources.map((source, index) => {
+        {(Array.isArray(strain.seed_sources) ? strain.seed_sources : []).map((source: any, index: number) => {
           // Skip if breeder is missing (required field)
           if (!source.breeder || typeof source.breeder !== 'string') {
             return null;
