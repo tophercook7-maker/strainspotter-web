@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { checkScanGuard } from "@/lib/scanGuard";
+import NotEnoughCreditsModal from "@/components/NotEnoughCreditsModal";
 
 interface MatchResult {
   match: {
@@ -51,24 +52,19 @@ export default function ScannerPage() {
       return;
     }
 
-    // Check scan credits before proceeding
-    try {
-      const guard = await checkScanGuard(user.id, 'local');
-      if (!guard.allowed) {
-        setShowCreditsModal(true);
-        return;
-      }
-    } catch (err: any) {
-      console.error("[SCANNER] Credit check failed:", err);
-      setError("Failed to check scan credits");
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setResults([]);
 
     try {
+      // Check scan credits before proceeding
+      const guard = await checkScanGuard(user.id, 'local');
+      if (!guard.allowed) {
+        setShowCreditsModal(true);
+        setLoading(false);
+        return;
+      }
+
       // Create FormData
       const formData = new FormData();
       formData.append("image", file);
