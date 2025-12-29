@@ -7,5 +7,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️  Missing Supabase environment variables - using defaults');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Browser client with auth persistence disabled to prevent corrupted session auto-restore
+// All auth must be explicit per login - no auto-restore
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+});
 
