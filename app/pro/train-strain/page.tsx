@@ -18,9 +18,6 @@ export default async function TrainStrainPage() {
   // This is a server component - use server-side client
   const { createSupabaseServer } = await import('@/lib/supabase/server');
   const supabase = await createSupabaseServer();
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   const { data: profile } = await supabase
     .from('profiles')
