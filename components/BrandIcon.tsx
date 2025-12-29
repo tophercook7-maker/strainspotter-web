@@ -17,7 +17,7 @@ export default function BrandIcon({ size = 120, className = "" }: BrandIconProps
       }}
     >
       <Image
-        src="/emblem/StrainSpotterEmblem.png"
+        src="/brand/leaf-icon.png"
         alt="StrainSpotter"
         width={size}
         height={size}
