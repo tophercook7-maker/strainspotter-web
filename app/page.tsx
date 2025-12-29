@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import BrandIcon from "@/components/BrandIcon";
+import Hero from "@/components/Hero";
 
 export default function Home() {
   const router = useRouter();
@@ -18,21 +18,10 @@ export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-transparent">
       <div className="text-center px-4">
-        {/* HARD VERIFY: Direct image render */}
-        <img
-          src="/brand/leaf-icon.png"
-          alt="StrainSpotter Leaf"
-          style={{
-            width: "220px",
-            height: "220px",
-            borderRadius: "50%",
-            boxShadow: "0 0 25px rgba(0,255,0,0.6)",
-            display: "block",
-            margin: "0 auto",
-            zIndex: 50,
-            position: "relative"
-          }}
-        />
+        {/* Hero - HOME ONLY */}
+        <div className="mb-8">
+          <Hero />
+        </div>
 
         {/* Two Buttons */}
         <div className="flex flex-col gap-4 max-w-xs mx-auto">
