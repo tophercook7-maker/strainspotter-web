@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ImagePreview from '@/components/ImagePreview';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+// TEMPORARY: Auth disabled
+// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { MOCK_USER } from "@/lib/supabaseBrowser";
 
 interface ScanRecord {
   id: string;
@@ -28,23 +30,27 @@ export default function GalleryPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // TEMPORARY: Auth disabled - use mock user
   // Check authentication first
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const supabase = getSupabaseBrowserClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/login');
-          return;
-        }
-        setAuthenticated(true);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        router.push('/login');
-      }
-    }
-    checkAuth();
+    // async function checkAuth() {
+    //   try {
+    //     const supabase = getSupabaseBrowserClient();
+    //     const { data: { user } } = await supabase.auth.getUser();
+    //     if (!user) {
+    //       router.push('/login');
+    //       return;
+    //     }
+    //     setAuthenticated(true);
+    //   } catch (error) {
+    //     console.error('Auth check error:', error);
+    //     router.push('/login');
+    //   }
+    // }
+    // checkAuth();
+    
+    // Mock: Always authenticated
+    setAuthenticated(true);
   }, [router]);
 
   useEffect(() => {

@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+// TEMPORARY: Auth disabled
+// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { MOCK_USER } from "@/lib/supabaseBrowser";
 import { getUser } from "@/lib/auth";
 
 export default function AccountPage() {
@@ -13,37 +15,41 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadUser() {
-      try {
-        const supabase = getSupabaseBrowserClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user || null);
-
-        if (session?.user) {
-          // Load quota status
-          try {
-            const res = await fetch("/api/scan/quota/status");
-            if (res.ok) {
-              const data = await res.json();
-              setQuotaStatus(data);
-            }
-          } catch (err) {
-            console.error("Error loading quota status:", err);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading user:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadUser();
+    // TEMPORARY: Use mock user instead of real auth
+    // async function loadUser() {
+    //   try {
+    //     const supabase = getSupabaseBrowserClient();
+    //     const { data: { session } } = await supabase.auth.getSession();
+    //     setUser(session?.user || null);
+    //     if (session?.user) {
+    //       try {
+    //         const res = await fetch("/api/scan/quota/status");
+    //         if (res.ok) {
+    //           const data = await res.json();
+    //           setQuotaStatus(data);
+    //         }
+    //       } catch (err) {
+    //         console.error("Error loading quota status:", err);
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error("Error loading user:", error);
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // }
+    // loadUser();
+    
+    // Mock: Set mock user
+    setUser(MOCK_USER);
+    setLoading(false);
   }, []);
 
   const handleSignOut = async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    // TEMPORARY: Auth disabled
+    // const supabase = getSupabaseBrowserClient();
+    // await supabase.auth.signOut();
+    setUser(null);
     router.push("/");
   };
 

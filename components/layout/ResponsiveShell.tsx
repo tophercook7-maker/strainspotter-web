@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { SearchIcon } from "../icons/SearchIcon";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+// TEMPORARY: Auth disabled
+// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import BottomTabBar from "./BottomTabBar";
 
 // Top-level navigation items only
@@ -34,29 +35,36 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  // TEMPORARY: Auth disabled - using mock user
   // Check auth state
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
-      setUser(session?.user || null);
+    // const supabase = getSupabaseBrowserClient();
+    // // Get initial session
+    // supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
+    //   setUser(session?.user || null);
+    //   setLoading(false);
+    // });
+    // // Listen for auth changes
+    // const {
+    //   data: { subscription },
+    // } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+    //   setUser(session?.user || null);
+    // });
+    // return () => subscription.unsubscribe();
+    
+    // Mock: Set mock user
+    import("@/lib/supabaseBrowser").then(({ MOCK_USER }) => {
+      setUser(MOCK_USER);
       setLoading(false);
     });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
 
   const handleLogout = async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    // TEMPORARY: Auth disabled
+    // const supabase = getSupabaseBrowserClient();
+    // await supabase.auth.signOut();
+    setUser(null);
     router.push("/");
   };
 

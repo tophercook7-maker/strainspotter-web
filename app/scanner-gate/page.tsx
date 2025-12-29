@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+// TEMPORARY: Auth disabled
+// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { MOCK_USER } from "@/lib/supabaseBrowser";
 
 export default function ScanGatePage() {
   const [loading, setLoading] = useState(true);
@@ -11,19 +13,18 @@ export default function ScanGatePage() {
   useEffect(() => {
     async function load() {
       try {
-        // Get Supabase client (lazy-loaded, will throw at runtime if env vars missing)
-        const supabase = getSupabaseBrowserClient();
+        // TEMPORARY: Use mock user instead of real auth
+        // const supabase = getSupabaseBrowserClient();
+        // const { data: { user } } = await supabase.auth.getUser();
+        // if (!user) {
+        //   setStatus({ allowed: false, message: "Please sign in to use the scanner." });
+        //   setLoading(false);
+        //   return;
+        // }
+        // const res = await fetch(`/api/scan/check?user=${user.id}`);
         
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          setStatus({ allowed: false, message: "Please sign in to use the scanner." });
-          setLoading(false);
-          return;
-        }
-
-        // Fetch scan check with user ID
+        // Mock: Always allow access
+        const user = MOCK_USER;
         const res = await fetch(`/api/scan/check?user=${user.id}`);
         const data = await res.json();
         setStatus(data);

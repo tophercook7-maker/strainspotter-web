@@ -4,6 +4,7 @@ import { PortalProvider } from "./components/portal/PortalController";
 import AuroraAtmosphere from "@/components/AuroraAtmosphere";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
 import AuthSessionReset from "@/components/AuthSessionReset";
+import "./service-worker-unregister";
 
 export const metadata: Metadata = {
   title: "StrainSpotter",

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+// REMOVED: getSupabaseBrowserClient - no session recovery
+// Auth state must be passed as prop or managed in parent component
 
 export function useMembership() {
   const [loading, setLoading] = useState(true);
@@ -9,42 +10,14 @@ export function useMembership() {
   const [tier, setTier] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function check() {
-      const supabase = getSupabaseBrowserClient();
-      const { data: auth } = await supabase.auth.getSession();
-      if (!auth.session) {
-        if (!mounted) return;
-        setIsMember(false);
-        setTier(null);
-        setLoading(false);
-        return;
-      }
-
-      // TEMP SOURCE OF TRUTH (until billing live)
-      // Later replace with real membership table
-      const email = auth.session.user.email ?? "";
-      const paid = !email.endsWith("@example.com"); // placeholder logic
-
-      if (!mounted) return;
-      setIsMember(paid);
-      setTier(paid ? "grower" : null);
-      setLoading(false);
-    }
-
-    check();
-
-    // Listen for auth changes
-    const supabase = getSupabaseBrowserClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      check();
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    // REMOVED: getSession() and onAuthStateChange() calls
+    // Supabase session recovery is disabled to prevent corrupted token crashes
+    // Membership state must be managed in React only or passed as prop
+    
+    // For now, default to non-member until auth is passed explicitly
+    setLoading(false);
+    setIsMember(false);
+    setTier(null);
   }, []);
 
   return { loading, isMember, tier };

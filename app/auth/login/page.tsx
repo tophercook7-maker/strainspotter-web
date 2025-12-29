@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { upsertProfile } from "@/lib/auth/onAuth";
+import { validateAuthTokenBeforeUse } from "@/lib/auth/validateAuthHeader";
 
 const REMEMBER_ME_KEY = "strainspotter_remember_email";
 const REMEMBER_ME_ENABLED_KEY = "strainspotter_remember_enabled";
@@ -42,37 +43,56 @@ export default function LoginPage() {
     // This prevents Headers() construction failure from invalid tokens
     await supabase.auth.signOut({ scope: "local" });
     
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
-    // Save email if "Remember me" is checked
-    if (typeof window !== "undefined") {
-      if (rememberMe) {
-        localStorage.setItem(REMEMBER_ME_KEY, email.trim());
-        localStorage.setItem(REMEMBER_ME_ENABLED_KEY, "true");
-      } else {
-        localStorage.removeItem(REMEMBER_ME_KEY);
-        localStorage.removeItem(REMEMBER_ME_ENABLED_KEY);
-      }
-    }
-
-    // Upsert profile (non-blocking)
-    if (data.user) {
-      upsertProfile(data.user).catch((err) => {
-        console.error("[onAuth] Profile upsert failed (non-blocking):", err);
+    // HARD FAIL: Validate auth token before use
+    // This prevents non-ISO-8859-1 character crashes
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
-    }
 
-    // Redirect immediately after sign-in
-    router.replace("/garden");
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
+      // Validate the returned session token BEFORE using it
+      if (data?.session?.access_token) {
+        validateAuthTokenBeforeUse(data.session.access_token);
+      }
+
+      // Save email if "Remember me" is checked
+      if (typeof window !== "undefined") {
+        if (rememberMe) {
+          localStorage.setItem(REMEMBER_ME_KEY, email.trim());
+          localStorage.setItem(REMEMBER_ME_ENABLED_KEY, "true");
+        } else {
+          localStorage.removeItem(REMEMBER_ME_KEY);
+          localStorage.removeItem(REMEMBER_ME_ENABLED_KEY);
+        }
+      }
+
+      // Upsert profile (non-blocking)
+      if (data.user) {
+        upsertProfile(data.user).catch((err) => {
+          console.error("[onAuth] Profile upsert failed (non-blocking):", err);
+        });
+      }
+
+      // Redirect immediately after sign-in
+      router.replace("/garden");
+    } catch (err: any) {
+      // Hard fail on validation error
+      if (err.message?.includes('non-ISO-8859-1')) {
+        setError('Authentication token corrupted. Please clear browser data and try again.');
+        // Force sign out to clear corrupted token
+        await supabase.auth.signOut({ scope: "local" });
+      } else {
+        setError(err.message || 'Login failed');
+      }
+      setLoading(false);
+    }
   };
 
   return (

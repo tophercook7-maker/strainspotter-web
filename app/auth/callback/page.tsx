@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+// TEMPORARY: Auth disabled
+// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -10,40 +11,36 @@ function AuthCallbackContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function handleCallback() {
-      try {
-        // Check for existing session (not relying on magic link tokens)
-        const supabase = getSupabaseBrowserClient();
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          throw sessionError;
-        }
-
-        if (session) {
-          // Session exists - redirect to garden
-          router.push('/garden');
-        } else {
-          // Check if there's an error in the URL
-          const errorParam = searchParams.get('error');
-          if (errorParam) {
-            setError(errorParam);
-          } else {
-            // No session - redirect to login
-            router.push('/auth/login');
-          }
-        }
-      } catch (err: any) {
-        console.error('Auth callback error:', err);
-        setError(err.message || 'Authentication failed');
-        // Redirect to login on error
-        setTimeout(() => {
-          router.push('/auth/login');
-        }, 2000);
-      }
-    }
-
-    handleCallback();
+    // TEMPORARY: Auth disabled - redirect to garden
+    // async function handleCallback() {
+    //   try {
+    //     const supabase = getSupabaseBrowserClient();
+    //     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    //     if (sessionError) {
+    //       throw sessionError;
+    //     }
+    //     if (session) {
+    //       router.push('/garden');
+    //     } else {
+    //       const errorParam = searchParams.get('error');
+    //       if (errorParam) {
+    //         setError(errorParam);
+    //       } else {
+    //         router.push('/auth/login');
+    //       }
+    //     }
+    //   } catch (err: any) {
+    //     console.error('Auth callback error:', err);
+    //     setError(err.message || 'Authentication failed');
+    //     setTimeout(() => {
+    //       router.push('/auth/login');
+    //     }, 2000);
+    //   }
+    // }
+    // handleCallback();
+    
+    // Mock: Always redirect to garden
+    router.push('/garden');
   }, [router, searchParams]);
 
   if (error) {

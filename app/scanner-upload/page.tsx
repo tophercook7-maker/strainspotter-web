@@ -6,7 +6,9 @@ import Link from 'next/link';
 import UploadButton from '@/components/UploadButton';
 import ImagePreview from '@/components/ImagePreview';
 import { uploadImage, processScan, getVisualMatch } from '@/lib/api';
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+// TEMPORARY: Auth disabled
+// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { MOCK_USER } from "@/lib/supabaseBrowser";
 import { checkCredits, deductCredit } from '@/lib/credits';
 import { getMembership } from '@/lib/membership';
 import NotEnoughCreditsModal from '@/components/NotEnoughCreditsModal';
@@ -23,25 +25,30 @@ export default function ScannerUploadPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [scanId, setScanId] = useState<string | null>(null);
 
+  // TEMPORARY: Auth disabled - use mock user
   // Check authentication on mount
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const supabase = getSupabaseBrowserClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.push('/login');
-          return;
-        }
-        setAuthenticated(true);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        router.push('/login');
-      } finally {
-        setLoading(false);
-      }
-    }
-    checkAuth();
+    // async function checkAuth() {
+    //   try {
+    //     const supabase = getSupabaseBrowserClient();
+    //     const { data: { user } } = await supabase.auth.getUser();
+    //     if (!user) {
+    //       router.push('/login');
+    //       return;
+    //     }
+    //     setAuthenticated(true);
+    //   } catch (error) {
+    //     console.error('Auth check error:', error);
+    //     router.push('/login');
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // }
+    // checkAuth();
+    
+    // Mock: Always authenticated
+    setAuthenticated(true);
+    setLoading(false);
   }, [router]);
 
   const handleFileSelect = (file: File) => {
