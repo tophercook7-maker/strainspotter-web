@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   title: "StrainSpotter",
   description: "Cannabis strain identification and tracking",
   icons: {
-    icon: "/icons/leaf.svg",
-    apple: "/icons/leaf.svg",
+    icon: "/brand/leaf-icon.png",
+    apple: "/brand/leaf-icon.png",
   },
 };
 
