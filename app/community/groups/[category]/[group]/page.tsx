@@ -150,7 +150,7 @@ export default function GroupPage({ params }: GroupPageProps) {
             console.error("❌ Error fetching user role:", profileError);
           } else {
             console.log(`✅ User role: ${(profile as ProfileRow | null)?.role || "null"} for user: ${user.id}`);
-            setCurrentUserRole((profile as ProfileRow | null)?.role);
+            setCurrentUserRole(((profile as ProfileRow | null)?.role) ?? undefined);
           }
         } catch (err) {
           console.error("❌ Error fetching user role:", err);
