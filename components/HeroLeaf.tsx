@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function HeroLeaf() {
   return (
     <div
@@ -7,17 +9,18 @@ export default function HeroLeaf() {
         marginBottom: "24px",
       }}
     >
-      <img
+      <Image
         src="/brand/leaf-icon.png"
         alt="StrainSpotter"
+        width={220}
+        height={220}
         style={{
-          width: "220px",
-          height: "220px",
           borderRadius: "50%",
           border: "6px solid #1f5f3a", // forest green ring
-          boxShadow: "0 0 18px rgba(31, 95, 58, 0.65)", // soft glow
+          boxShadow: "0 0 20px rgba(31, 95, 58, 0.65)",
           backgroundColor: "black",
         }}
+        priority
       />
     </div>
   );
