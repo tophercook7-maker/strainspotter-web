@@ -13,6 +13,7 @@ function AuthCallbackContent() {
     async function handleCallback() {
       try {
         // Check for existing session (not relying on magic link tokens)
+        const supabase = getSupabaseBrowserClient();
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError) {
