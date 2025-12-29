@@ -40,13 +40,9 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
   };
 
 
-  // Hide sidebar on home page
+  // Hide sidebar and all layout on home page - home is completely isolated
   if (pathname === '/') {
-    return (
-      <div className="min-h-screen" style={{ background: 'transparent' }}>
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   return (

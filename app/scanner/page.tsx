@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { checkScanGuard } from "@/lib/scanGuard";
 
 interface MatchResult {
   match: {
@@ -40,6 +42,25 @@ export default function ScannerPage() {
   const handleScan = async () => {
     if (!file) {
       setError("Please select an image first");
+      return;
+    }
+
+    if (!user) {
+      setError("Please sign in to scan");
+      router.push("/auth/login");
+      return;
+    }
+
+    // Check scan credits before proceeding
+    try {
+      const guard = await checkScanGuard(user.id, 'local');
+      if (!guard.allowed) {
+        setShowCreditsModal(true);
+        return;
+      }
+    } catch (err: any) {
+      console.error("[SCANNER] Credit check failed:", err);
+      setError("Failed to check scan credits");
       return;
     }
 

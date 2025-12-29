@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { gardenGroups } from "./gardenButtons";
-import MembershipGate from "@/components/MembershipGate";
 
 export default function GardenPage() {
   return (
-    <MembershipGate>
-      <div className="space-y-6 md:space-y-8 p-4 md:p-6 pb-24 md:pb-8 safe-area-bottom overflow-x-hidden">
+    <div className="space-y-6 md:space-y-8 p-4 md:p-6 pb-24 md:pb-8 safe-area-bottom overflow-x-hidden">
       {/* Header */}
       <div className="max-w-4xl mb-6">
         <h1 className="text-2xl md:text-3xl font-semibold text-white">
@@ -65,7 +63,6 @@ export default function GardenPage() {
           </section>
         );
       })}
-      </div>
-    </MembershipGate>
+    </div>
   );
 }

@@ -23,7 +23,8 @@ export default function HomePage() {
 
     // If user && membership !== "active" → router.push("/account")
     // Membership tier 'garden' or 'pro' is considered "active" for Garden access
-    if (membership && membership.tier === 'free') {
+    // Check if membership exists and is not 'free'
+    if (!membership || membership.tier === 'free') {
       router.push("/account");
       return;
     }

@@ -1,15 +1,14 @@
-// Temporarily bypass auth for local development
-// import RequireMember from "@/lib/auth/RequireMember";
+"use client";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import AuthWall from "@/components/AuthWall";
+import MembershipGate from "@/components/MembershipGate";
 
-export default function GardenLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // LOCAL DEV ONLY: Bypass auth to see UI
-  // TODO: Re-enable RequireMember when auth is configured
-  return <>{children}</>;
+export default function GardenLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthWall>
+      <MembershipGate>
+        {children}
+      </MembershipGate>
+    </AuthWall>
+  );
 }
