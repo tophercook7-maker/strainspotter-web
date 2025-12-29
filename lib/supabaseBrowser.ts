@@ -4,6 +4,12 @@ import { createClient } from '@supabase/supabase-js'
 
 let browserClient: ReturnType<typeof createClient> | null = null
 
+function sanitizeToken(token?: string | null) {
+  if (!token) return undefined;
+  // Remove all non-ASCII chars (browser fetch requirement)
+  return token.replace(/[^ -~]/g, "");
+}
+
 export function getSupabaseBrowserClient() {
   if (browserClient) return browserClient
 
