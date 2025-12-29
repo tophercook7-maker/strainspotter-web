@@ -5,17 +5,21 @@ import { useEffect } from "react";
 export default function AuthSessionReset() {
   useEffect(() => {
     try {
-      // Remove ALL Supabase auth storage keys
+      // Supabase v2 keys - clear localStorage
       Object.keys(localStorage).forEach((key) => {
-        if (key.includes("supabase") || key.includes("sb-")) {
+        if (key.startsWith("sb-") || key.includes("supabase")) {
           localStorage.removeItem(key);
         }
       });
 
-      Object.keys(sessionStorage).forEach((key) => {
-        if (key.includes("supabase") || key.includes("sb-")) {
-          sessionStorage.removeItem(key);
-        }
+      // Clear all sessionStorage
+      sessionStorage.clear();
+
+      // Clear cookies
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date(0).toUTCString() + ";path=/");
       });
 
       console.warn("🧨 Corrupted Supabase session forcibly cleared");
