@@ -119,7 +119,7 @@ export default function GardenShell() {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "rgba(0,0,0,0.55)";
-                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(34, 197, 94, 0.3)";
+                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(34, 197, 94, 0.25)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "rgba(0,0,0,0.45)";
@@ -131,7 +131,7 @@ export default function GardenShell() {
                   {feature.title}
                 </h2>
                 {isPrimary && (
-                  <span className="opacity-0 group-hover:opacity-100 transition text-emerald-400 text-xs">
+                  <span className="opacity-0 group-hover:opacity-100 transition text-emerald-400/70 text-xs">
                     →
                   </span>
                 )}
