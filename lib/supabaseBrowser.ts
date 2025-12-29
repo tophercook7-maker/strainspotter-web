@@ -1,14 +1,12 @@
 "use client";
 
-// Import reset function - it runs at module load time
-import "@/lib/resetSupabaseStorage";
 import { createBrowserClient } from "@supabase/ssr";
 
 let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
 /**
  * Get the single Supabase browser client
- * Storage is reset at module load time before this can be called
+ * Auth persistence is disabled to prevent corrupted session auto-restore
  */
 export function getSupabaseBrowserClient() {
   if (!browserClient) {

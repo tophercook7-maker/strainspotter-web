@@ -3,7 +3,6 @@ import "./globals.css";
 import { PortalProvider } from "./components/portal/PortalController";
 import AuroraAtmosphere from "@/components/AuroraAtmosphere";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
-import SupabaseStorageReset from "@/components/SupabaseStorageReset";
 
 export const metadata: Metadata = {
   title: "StrainSpotter",
@@ -18,7 +17,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen" style={{ margin: 0, padding: 0 }}>
-        <SupabaseStorageReset />
         <PortalProvider>
           <AuroraAtmosphere />
           <div className="min-h-screen relative z-10" style={{ background: 'transparent' }}>
