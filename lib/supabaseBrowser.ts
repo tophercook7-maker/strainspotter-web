@@ -7,19 +7,15 @@ let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
 export function getSupabaseBrowserClient() {
   if (!browserClient) {
-    // Temporarily override global fetch during client creation
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = supabaseSafeFetch as typeof fetch;
-    
-    try {
-      browserClient = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-    } finally {
-      // Restore original fetch after client creation
-      globalThis.fetch = originalFetch;
-    }
+    browserClient = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          fetch: supabaseSafeFetch,
+        },
+      }
+    );
   }
   return browserClient;
 }
