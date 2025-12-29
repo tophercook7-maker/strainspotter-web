@@ -40,6 +40,15 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
   };
 
 
+  // Hide sidebar on home page
+  if (pathname === '/') {
+    return (
+      <div className="min-h-screen" style={{ background: 'transparent' }}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex text-[var(--botanical-text-primary)] font-[var(--font-primary)]" style={{ background: 'transparent' }}>
       {/* Desktop Sidebar */}

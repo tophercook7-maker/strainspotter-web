@@ -1,8 +1,51 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useMembership } from "@/lib/hooks/useMembership";
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const { membership, loading: membershipLoading } = useMembership();
+
+  const handleEnterGarden = () => {
+    // If loading states → do nothing
+    if (authLoading || membershipLoading) {
+      return;
+    }
+
+    // If !user → router.push("/auth/login")
+    if (!user) {
+      router.push("/auth/login");
+      return;
+    }
+
+    // If user && membership !== "active" → router.push("/account")
+    // Membership tier 'garden' or 'pro' is considered "active" for Garden access
+    if (membership && membership.tier === 'free') {
+      router.push("/account");
+      return;
+    }
+
+    // If user && membership === "active" → router.push("/garden")
+    router.push("/garden");
+  };
+
+  const handleScanner = () => {
+    // Scanner requires auth but not membership
+    if (authLoading) {
+      return;
+    }
+
+    if (!user) {
+      router.push("/auth/login");
+      return;
+    }
+
+    router.push("/scanner");
+  };
+
   return (
     <div className="min-h-screen relative flex items-center justify-center">
       {/* Background Image */}
@@ -29,19 +72,21 @@ export default function HomePage() {
 
         {/* Two Buttons */}
         <div className="flex flex-col gap-4 max-w-xs mx-auto">
-          <Link
-            href="/garden"
-            className="px-8 py-4 bg-emerald-600 text-black font-bold text-lg rounded-lg hover:bg-emerald-500 transition shadow-lg"
+          <button
+            onClick={handleEnterGarden}
+            disabled={authLoading || membershipLoading}
+            className="px-8 py-4 bg-emerald-600 text-black font-bold text-lg rounded-lg hover:bg-emerald-500 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             ENTER GARDEN
-          </Link>
+          </button>
           
-          <Link
-            href="/scanner"
-            className="px-8 py-4 bg-emerald-600 text-black font-bold text-lg rounded-lg hover:bg-emerald-500 transition shadow-lg"
+          <button
+            onClick={handleScanner}
+            disabled={authLoading}
+            className="px-8 py-4 bg-emerald-600 text-black font-bold text-lg rounded-lg hover:bg-emerald-500 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             SCANNER
-          </Link>
+          </button>
         </div>
 
         {/* Small legal note */}
