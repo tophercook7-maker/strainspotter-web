@@ -2,7 +2,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import HeroImage from "@/components/HeroImage";
 
 export default function Home() {
   const router = useRouter();
@@ -16,15 +15,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center" style={{ isolation: 'isolate' }}>
-      {/* Hero Background */}
-      <HeroImage />
-
-      {/* Overlay for readability */}
-      <div className="absolute inset-0 bg-black/40" style={{ zIndex: 1 }} />
-
-      {/* Content */}
-      <div className="relative z-10 text-center px-4" style={{ position: 'relative', zIndex: 2 }}>
+    <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="text-center px-4">
         {/* Two Buttons */}
         <div className="flex flex-col gap-4 max-w-xs mx-auto">
           <button
