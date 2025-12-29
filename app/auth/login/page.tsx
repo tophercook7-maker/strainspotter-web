@@ -37,6 +37,11 @@ export default function LoginPage() {
 
     // Use browser client directly to avoid Proxy issues
     const supabase = getSupabaseBrowserClient();
+    
+    // Force sign out to clear any corrupted in-memory session before login
+    // This prevents Headers() construction failure from invalid tokens
+    await supabase.auth.signOut({ scope: "local" });
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
