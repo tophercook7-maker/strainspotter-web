@@ -56,12 +56,9 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
         <aside
           className="fixed left-0 top-0 h-screen w-64 border-r border-white/10 bg-white/8 backdrop-blur-lg p-6 flex flex-col z-50 overflow-y-auto shadow-lg"
         >
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-full border border-[var(--botanical-accent)]/50 flex items-center justify-center overflow-hidden bg-transparent p-2">
-              <img src="/brand/logos/botanical-logo-mark.svg" alt="StrainSpotter" className="w-full h-full object-contain opacity-90 drop-shadow-[0_0_10px_var(--botanical-glow)]" />
-            </div>
-            <span className="text-xl font-semibold text-[var(--botanical-accent)]">StrainSpotter</span>
+          {/* Brand Icon / Logo */}
+          <div className="flex items-center justify-center mb-8">
+            <BrandIcon size={64} />
           </div>
 
           {/* Navigation - Top-level only */}

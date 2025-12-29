@@ -2,6 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import BrandIcon from "@/components/BrandIcon";
 
 export default function Home() {
   const router = useRouter();
@@ -17,6 +18,11 @@ export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-transparent">
       <div className="text-center px-4">
+        {/* Brand Icon */}
+        <div className="mb-8 flex justify-center">
+          <BrandIcon size={120} />
+        </div>
+
         {/* Two Buttons */}
         <div className="flex flex-col gap-4 max-w-xs mx-auto">
           <button
