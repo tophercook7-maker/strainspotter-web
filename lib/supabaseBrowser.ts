@@ -30,9 +30,6 @@ export function getSupabaseBrowserClient() {
         autoRefreshToken: false,
         detectSessionInUrl: false,
       },
-      global: {
-        headers: {},
-      },
     });
   }
   return browserClient;
