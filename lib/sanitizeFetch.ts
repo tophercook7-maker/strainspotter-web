@@ -16,22 +16,23 @@ export function installFetchSanitizer() {
   const originalFetch = window.fetch;
 
   window.fetch = async (input, init = {}) => {
-    if (init.headers) {
-      const headers =
-        init.headers instanceof Headers
-          ? init.headers
-          : new Headers(init.headers);
+    if (init?.headers) {
+      const headers = new Headers(init.headers);
 
       const auth = headers.get("Authorization");
       if (auth) {
-        const cleaned = sanitizeToken(auth);
-        if (cleaned && cleaned !== auth) {
+        // Strip ALL non-ASCII characters (more restrictive, safer)
+        const cleaned = auth.replace(/[^\x20-\x7E]/g, "");
+        if (cleaned !== auth) {
           console.warn("🧹 Sanitized Authorization header");
           headers.set("Authorization", cleaned);
         }
       }
 
-      init.headers = headers;
+      init = {
+        ...init,
+        headers,
+      };
     }
 
     return originalFetch(input, init);
