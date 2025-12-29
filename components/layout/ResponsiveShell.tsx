@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { SearchIcon } from "../icons/SearchIcon";
 import { supabase } from "@/lib/supabase";
 import BottomTabBar from "./BottomTabBar";
+import { installFetchDebug } from "@/lib/debugFetch";
 
 // Top-level navigation items only
 const topLevelNavItems = [
@@ -24,6 +25,11 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
   const [isDesktop, setIsDesktop] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Install fetch debug interceptor to catch invalid fetch calls with headers
+  useEffect(() => {
+    installFetchDebug();
+  }, []);
 
   // Detect desktop width
   useEffect(() => {
