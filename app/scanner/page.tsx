@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { checkScanGuard } from "@/lib/scanGuard";
 import NotEnoughCreditsModal from "@/components/NotEnoughCreditsModal";
+import NotEnoughCreditsModal from "@/components/NotEnoughCreditsModal";
 
 interface MatchResult {
   match: {
@@ -188,6 +189,14 @@ export default function ScannerPage() {
           </div>
         )}
       </div>
+
+      {/* Credits Modal */}
+      {showCreditsModal && (
+        <NotEnoughCreditsModal
+          onClose={() => setShowCreditsModal(false)}
+          scanType="regular"
+        />
+      )}
     </div>
   );
 }
