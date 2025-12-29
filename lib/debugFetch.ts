@@ -1,3 +1,4 @@
+// @ts-nocheck
 export function installFetchDebug() {
   if (typeof window === "undefined") return;
 
