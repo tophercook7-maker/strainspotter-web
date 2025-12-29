@@ -54,7 +54,7 @@ export function installSanitizedLocalStorage() {
         originalSetItem.call(this, key, sanitized);
         return sanitized;
       }
-      return sanitized;
+      return sanitized || null;
     }
     return value;
   };
