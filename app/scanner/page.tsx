@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { checkScanGuard } from "@/lib/scanGuard";
 import NotEnoughCreditsModal from "@/components/NotEnoughCreditsModal";
-import NotEnoughCreditsModal from "@/components/NotEnoughCreditsModal";
 
 interface MatchResult {
   match: {
@@ -17,6 +16,7 @@ interface MatchResult {
 
 export default function ScannerPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [file, setFile] = useState<File | null>(null);
@@ -24,6 +24,7 @@ export default function ScannerPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<MatchResult[]>([]);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -194,7 +195,7 @@ export default function ScannerPage() {
       {showCreditsModal && (
         <NotEnoughCreditsModal
           onClose={() => setShowCreditsModal(false)}
-          scanType="regular"
+          credits={0}
         />
       )}
     </div>
