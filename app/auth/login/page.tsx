@@ -1,58 +1,51 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  }
-);
+import { useState, useRef } from "react";
+import { supabaseLoginClient } from "@/lib/supabaseLoginClient";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  const submitting = useRef(false);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (loading) return;
+    if (submitting.current) return;
 
+    submitting.current = true;
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } =
+      await supabaseLoginClient.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (error) {
-      setError(error.message);
+      submitting.current = false;
       setLoading(false);
+      setError(error.message);
       return;
     }
 
-    // HARD redirect — prevents rerender loop
-    window.location.href = "/garden";
+    // 🚨 HARD NAVIGATION — NO REACT INVOLVEMENT
+    window.location.replace("/garden");
   }
 
   return (
     <form
-      onSubmit={handleLogin}
+      onSubmit={handleSubmit}
       style={{
         maxWidth: "420px",
         margin: "0 auto",
-        padding: "32px 20px",
+        padding: "40px 20px",
         display: "flex",
         flexDirection: "column",
-        gap: "16px",
+        gap: "18px",
       }}
     >
       <h1 style={{ color: "#E8FFE8", fontSize: "22px" }}>
@@ -60,24 +53,26 @@ export default function LoginPage() {
       </h1>
 
       <input
-        type="email"
+        id="email"
         name="email"
+        type="email"
         autoComplete="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
         required
+        placeholder="Email"
         style={inputStyle}
       />
 
       <input
-        type="password"
+        id="password"
         name="password"
+        type="password"
         autoComplete="current-password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
         required
+        placeholder="Password"
         style={inputStyle}
       />
 
@@ -93,7 +88,7 @@ export default function LoginPage() {
         style={{
           height: "52px",
           borderRadius: "14px",
-          background: "rgba(0,40,0,0.8)",
+          background: "rgba(0,40,0,0.85)",
           border: "1px solid rgba(0,255,0,0.4)",
           color: "#E8FFE8",
           fontSize: "16px",
@@ -112,7 +107,7 @@ const inputStyle: React.CSSProperties = {
   height: "48px",
   padding: "0 14px",
   borderRadius: "12px",
-  background: "rgba(0,0,0,0.6)",
+  background: "rgba(0,0,0,0.65)",
   border: "1px solid rgba(255,255,255,0.15)",
   color: "#E8FFE8",
   fontSize: "15px",
