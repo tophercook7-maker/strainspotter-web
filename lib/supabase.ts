@@ -75,19 +75,15 @@ const supabaseWrapper = {
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
       };
     }
-    if (!_supabaseInstance) {
-      _supabaseInstance = getSupabaseClient();
-    }
-    return _supabaseInstance.auth;
+    const client = _supabaseInstance ?? (_supabaseInstance = getSupabaseClient());
+    return client.auth;
   },
   get from() {
     if (typeof window === 'undefined') {
       return () => ({ select: () => ({ data: null, error: null }) });
     }
-    if (!_supabaseInstance) {
-      _supabaseInstance = getSupabaseClient();
-    }
-    return _supabaseInstance.from;
+    const client = _supabaseInstance ?? (_supabaseInstance = getSupabaseClient());
+    return client.from;
   },
 };
 
