@@ -7,8 +7,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️  Missing Supabase environment variables - using defaults');
 }
 
-// Browser client with auth persistence disabled to prevent corrupted session auto-restore
-// All auth must be explicit per login - no auto-restore
+// Browser client with auth persistence DISABLED
+// 
+// CRITICAL: Supabase does NOT manage auth state.
+// - persistSession: false - No localStorage/sessionStorage persistence
+// - autoRefreshToken: false - No automatic token refresh
+// - detectSessionInUrl: false - No URL-based session detection
+// 
+// Auth state is managed in React only.
+// This prevents non-ISO-8859-1 Authorization header crashes.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: false,
