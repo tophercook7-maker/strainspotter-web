@@ -40,6 +40,7 @@ export default function SignupPage() {
     }
 
     try {
+      const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
