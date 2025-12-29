@@ -6,6 +6,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { upsertProfile } from "@/lib/auth/onAuth";
 import { validateAuthTokenBeforeUse } from "@/lib/auth/validateAuthHeader";
 import { cleanEnv } from "@/lib/cleanEnv";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 const REMEMBER_ME_KEY = "strainspotter_remember_email";
 const REMEMBER_ME_ENABLED_KEY = "strainspotter_remember_enabled";
@@ -98,6 +99,7 @@ export default function LoginPage() {
       }
 
       // Redirect immediately after sign-in
+      // AuthProvider will update UI automatically via onAuthStateChange
       router.replace("/garden");
     } catch (err: any) {
       // Hard fail on validation error

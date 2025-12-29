@@ -3,57 +3,41 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-// TEMPORARY: Auth disabled
-// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
-import { MOCK_USER } from "@/lib/supabaseBrowser";
-import { getUser } from "@/lib/auth";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export default function AccountPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading } = useAuth();
   const [quotaStatus, setQuotaStatus] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TEMPORARY: Use mock user instead of real auth
-    // async function loadUser() {
-    //   try {
-    //     const supabase = getSupabaseBrowserClient();
-    //     const { data: { session } } = await supabase.auth.getSession();
-    //     setUser(session?.user || null);
-    //     if (session?.user) {
-    //       try {
-    //         const res = await fetch("/api/scan/quota/status");
-    //         if (res.ok) {
-    //           const data = await res.json();
-    //           setQuotaStatus(data);
-    //         }
-    //       } catch (err) {
-    //         console.error("Error loading quota status:", err);
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error("Error loading user:", error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // }
-    // loadUser();
-    
-    // Mock: Set mock user
-    setUser(MOCK_USER);
-    setLoading(false);
-  }, []);
+    if (user) {
+      // Load quota status when user is available
+      fetch("/api/scan/quota/status")
+        .then((res) => {
+          if (res.ok) {
+            return res.json();
+          }
+        })
+        .then((data) => {
+          if (data) {
+            setQuotaStatus(data);
+          }
+        })
+        .catch((err) => {
+          console.error("Error loading quota status:", err);
+        });
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
-    // TEMPORARY: Auth disabled
-    // const supabase = getSupabaseBrowserClient();
-    // await supabase.auth.signOut();
-    setUser(null);
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
     router.push("/");
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-black text-white p-6 flex items-center justify-center">
         <p>Loading...</p>

@@ -1,7 +1,50 @@
 "use client";
 
-// AuthProvider intentionally simplified - no redirect logic
-// Login page handles redirect explicitly after sign-in
+import { createContext, useContext, useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+
+type AuthContextType = {
+  user: User | null;
+  loading: boolean;
+};
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+});
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  const supabase = getSupabaseBrowserClient();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Initial user fetch
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  return (
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
 }

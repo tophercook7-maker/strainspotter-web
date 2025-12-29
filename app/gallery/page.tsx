@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ImagePreview from '@/components/ImagePreview';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
-// TEMPORARY: Auth disabled
-// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
-import { MOCK_USER } from "@/lib/supabaseBrowser";
+import { useAuth } from '@/lib/auth/AuthProvider';
 
 interface ScanRecord {
   id: string;
@@ -25,44 +23,29 @@ interface ScanRecord {
 
 export default function GalleryPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [scans, setScans] = useState<ScanRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // TEMPORARY: Auth disabled - use mock user
-  // Check authentication first
+  // Redirect if not authenticated
   useEffect(() => {
-    // async function checkAuth() {
-    //   try {
-    //     const supabase = getSupabaseBrowserClient();
-    //     const { data: { user } } = await supabase.auth.getUser();
-    //     if (!user) {
-    //       router.push('/login');
-    //       return;
-    //     }
-    //     setAuthenticated(true);
-    //   } catch (error) {
-    //     console.error('Auth check error:', error);
-    //     router.push('/login');
-    //   }
-    // }
-    // checkAuth();
-    
-    // Mock: Always authenticated
-    setAuthenticated(true);
-  }, [router]);
+    if (!authLoading && !user) {
+      router.push('/auth/login');
+      return;
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     async function loadScans() {
-      if (!authenticated) return;
+      if (!user) return; // Don't load if not authenticated
 
       try {
         const response = await fetch('/api/scans?limit=50');
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorData = await response.json().catch(() => ({}));
           if (response.status === 401 || response.status === 403) {
-            router.push('/login');
+            router.push('/auth/login');
             return;
           }
           throw new Error(errorData.error || 'Failed to load scans');
@@ -78,10 +61,10 @@ export default function GalleryPage() {
       }
     }
 
-    if (authenticated) {
+    if (user) {
       loadScans();
     }
-  }, [authenticated, router]);
+  }, [user, router]);
 
   if (loading) {
     return (

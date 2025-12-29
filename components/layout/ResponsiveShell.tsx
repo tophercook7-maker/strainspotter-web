@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { SearchIcon } from "../icons/SearchIcon";
-// TEMPORARY: Auth disabled
-// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import BottomTabBar from "./BottomTabBar";
 
 // Top-level navigation items only
@@ -23,9 +23,7 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [isDesktop, setIsDesktop] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
+  const { user, loading } = useAuth();
 
   // Detect desktop width
   useEffect(() => {
@@ -35,36 +33,9 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // TEMPORARY: Auth disabled - using mock user
-  // Check auth state
-  useEffect(() => {
-    // const supabase = getSupabaseBrowserClient();
-    // // Get initial session
-    // supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
-    //   setUser(session?.user || null);
-    //   setLoading(false);
-    // });
-    // // Listen for auth changes
-    // const {
-    //   data: { subscription },
-    // } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-    //   setUser(session?.user || null);
-    // });
-    // return () => subscription.unsubscribe();
-    
-    // Mock: Set mock user
-    import("@/lib/supabaseBrowser").then(({ MOCK_USER }) => {
-      setUser(MOCK_USER);
-      setLoading(false);
-    });
-  }, []);
-
-
   const handleLogout = async () => {
-    // TEMPORARY: Auth disabled
-    // const supabase = getSupabaseBrowserClient();
-    // await supabase.auth.signOut();
-    setUser(null);
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
     router.push("/");
   };
 
