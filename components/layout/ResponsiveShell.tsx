@@ -127,7 +127,7 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
       )}
 
       {/* MAIN CONTENT AREA */}
-      <main className={`flex-1 ${pathname === '/' ? 'p-0' : 'p-4 md:p-8'} w-full ${isDesktop ? 'ml-64' : 'pb-20'}`} style={{ background: 'transparent' }}>
+      <main className={`flex-1 ${pathname === '/' ? 'p-0' : 'p-4 md:p-8'} w-full ${isDesktop && pathname !== '/' ? 'ml-64' : ''} ${!isDesktop ? 'pb-20' : ''}`} style={{ background: 'transparent' }}>
         {children}
       </main>
 
