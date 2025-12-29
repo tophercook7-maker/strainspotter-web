@@ -4,7 +4,7 @@
 // ================================================
 import { NextRequest, NextResponse } from 'next/server';
 import { checkScanGuard } from '@/lib/scanGuard';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 
 /**
  * Example API route showing scan guard usage

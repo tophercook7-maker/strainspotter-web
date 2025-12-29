@@ -11,6 +11,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   useEffect(() => {
     let mounted = true;
 
+    const supabase = getSupabaseBrowserClient();
     supabase.auth.getSession().then(({ data }: { data: any }) => {
       if (!mounted) return;
 
