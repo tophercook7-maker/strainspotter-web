@@ -7,6 +7,9 @@ import NewPostForm from "@/components/community/NewPostForm";
 import PostCard from "@/components/community/PostCard";
 import WeeklySummaryCard from "@/components/community/WeeklySummaryCard";
 
+
+type ProfileRow = { role?: string | null };
+
 interface GroupPageProps {
   params: Promise<{
     category: string;
@@ -126,19 +129,19 @@ export default function GroupPage({ params }: GroupPageProps) {
       if (user?.id) {
         try {
           // Try user_id first
-          let { data: profile, error: profileError } = await supabase
+          let { data: profile, error: profileError } = (await supabase
             .from("profiles")
             .select("role, user_id, id")
             .eq("user_id", user.id)
-            .maybeSingle();
+            .maybeSingle()) as unknown as { data: ProfileRow | null; error: any };
           
           // If not found, try id column
           if (!profile && !profileError) {
-            const { data: profileById, error: profileByIdError } = await supabase
+            const { data: profileById, error: profileByIdError } = (await supabase
               .from("profiles")
               .select("role, user_id, id")
               .eq("id", user.id)
-              .maybeSingle();
+              .maybeSingle()) as unknown as { data: ProfileRow | null; error: any };
             profile = profileById;
             profileError = profileByIdError;
           }
@@ -146,8 +149,8 @@ export default function GroupPage({ params }: GroupPageProps) {
           if (profileError) {
             console.error("❌ Error fetching user role:", profileError);
           } else {
-            console.log(`✅ User role: ${profile?.role || "null"} for user: ${user.id}`);
-            setCurrentUserRole(profile?.role);
+            console.log(`✅ User role: ${(profile as ProfileRow | null)?.role || "null"} for user: ${user.id}`);
+            setCurrentUserRole((profile as ProfileRow | null)?.role);
           }
         } catch (err) {
           console.error("❌ Error fetching user role:", err);
