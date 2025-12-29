@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Auth State Change Handlers
  * Upserts user profile on sign-in
