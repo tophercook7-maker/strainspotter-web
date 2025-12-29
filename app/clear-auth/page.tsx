@@ -26,8 +26,8 @@ export default function ClearAuthPage() {
       console.error('Auth clear failed', e);
     }
 
-    // Redirect cleanly
-    window.location.replace('/login');
+    // Redirect cleanly to login
+    window.location.replace('/auth/login');
   }, []);
 
   return <p>Resetting authentication…</p>;
