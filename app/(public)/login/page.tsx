@@ -6,73 +6,49 @@ import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
-// Initialize from localStorage BEFORE React
-let initialEmail = "";
-let initialPassword = "";
-
-if (typeof window !== "undefined") {
-  try {
-    initialEmail = localStorage.getItem(STORAGE_KEY_EMAIL) || "";
-    initialPassword = localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
-  } catch (e) {
-    // Ignore
-  }
-}
-
 export default function LoginPage() {
-  const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState(initialPassword);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const mountedRef = useRef(false);
 
-  // Log mount/unmount
+  // Hydrate from localStorage AFTER mount to prevent hydration mismatch
   useEffect(() => {
-    console.log("[LOGIN] Component mounted");
-    mountedRef.current = true;
-    return () => {
-      console.log("[LOGIN] Component unmounting");
-      mountedRef.current = false;
-    };
-  }, []);
-
-  // Prevent form reset
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) return;
-
-    const handleReset = (e: Event) => {
-      console.log("[LOGIN] Form reset prevented");
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    };
-
-    form.addEventListener("reset", handleReset);
-    return () => form.removeEventListener("reset", handleReset);
+    if (typeof window !== "undefined") {
+      try {
+        const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+        const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+        if (savedEmail) setEmail(savedEmail);
+        if (savedPassword) setPassword(savedPassword);
+      } catch (e) {
+        // Ignore
+      }
+      setHydrated(true);
+    }
   }, []);
 
   // Save to localStorage as user types
   useEffect(() => {
-    if (mountedRef.current && email) {
+    if (hydrated && email) {
       try {
         localStorage.setItem(STORAGE_KEY_EMAIL, email);
       } catch (e) {
         // Ignore
       }
     }
-  }, [email]);
+  }, [email, hydrated]);
 
   useEffect(() => {
-    if (mountedRef.current && password) {
+    if (hydrated && password) {
       try {
         localStorage.setItem(STORAGE_KEY_PASSWORD, password);
       } catch (e) {
         // Ignore
       }
     }
-  }, [password]);
+  }, [password, hydrated]);
 
   const supabase = getSupabaseBrowserClient();
 
@@ -80,9 +56,7 @@ export default function LoginPage() {
     e.preventDefault();
     e.stopPropagation();
     
-    if (loading || !mountedRef.current) {
-      return;
-    }
+    if (loading) return;
     
     setLoading(true);
     setError(null);
@@ -120,32 +94,14 @@ export default function LoginPage() {
     }
   }
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    console.log("[LOGIN] Email onChange:", newValue.substring(0, 3) + "***");
-    setEmail(newValue);
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    console.log("[LOGIN] Password onChange: ***");
-    setPassword(newValue);
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black" key="login-page-container">
+    <div className="min-h-screen flex items-center justify-center bg-black">
       <form
         ref={formRef}
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 w-full max-w-sm p-6"
         style={{ minWidth: "320px" }}
         noValidate
-        onReset={(e) => {
-          console.log("[LOGIN] onReset handler called");
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        key="login-form"
       >
         <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
         
@@ -154,12 +110,11 @@ export default function LoginPage() {
           name="email"
           placeholder="Email"
           value={email}
-          onChange={handleEmailChange}
+          onChange={(e) => setEmail(e.target.value)}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
           autoComplete="email"
-          key="email-input"
         />
 
         <input
@@ -167,12 +122,11 @@ export default function LoginPage() {
           name="password"
           placeholder="Password"
           value={password}
-          onChange={handlePasswordChange}
+          onChange={(e) => setPassword(e.target.value)}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
           autoComplete="current-password"
-          key="password-input"
         />
 
         <button 
