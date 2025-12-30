@@ -33,10 +33,14 @@ export default function LoginPage() {
   const restoreAttemptedRef = useRef(false);
 
   // Debug: Log every render
+  const currentEmailValue = emailRef.current?.value || "";
+  const currentPasswordValue = passwordRef.current?.value ? "***" : "";
   console.log(`[LOGIN RENDER #${renderCount}] Render ID: ${renderId.current}`, {
-    emailRef: emailRef.current?.value || 'null',
+    emailRefValue: currentEmailValue || 'null',
+    emailRefExists: !!emailRef.current,
     globalEmail,
     localStorageEmail: typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_EMAIL) : 'N/A',
+    passwordRefExists: !!passwordRef.current,
   });
 
   // Get Supabase client directly (no memoization to avoid hook issues)
@@ -114,26 +118,34 @@ export default function LoginPage() {
     const passwordInput = passwordRef.current;
 
     const handleEmailChange = () => {
-      if (emailInput?.value) {
-        globalEmail = emailInput.value;
+      const currentValue = emailInput?.value || "";
+      console.log(`[LOGIN] Email change event - current value: "${currentValue.substring(0, 5)}***"`);
+      if (currentValue) {
+        globalEmail = currentValue;
         try {
-          localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
-          console.log(`[LOGIN] Saved email: ${emailInput.value.substring(0, 3)}***`);
+          localStorage.setItem(STORAGE_KEY_EMAIL, currentValue);
+          console.log(`[LOGIN] Saved email: ${currentValue.substring(0, 3)}***`);
         } catch (e) {
-          // Ignore
+          console.error(`[LOGIN] Failed to save email:`, e);
         }
+      } else {
+        console.log(`[LOGIN] Email input is empty - NOT saving`);
       }
     };
 
     const handlePasswordChange = () => {
-      if (passwordInput?.value) {
-        globalPassword = passwordInput.value;
+      const currentValue = passwordInput?.value || "";
+      console.log(`[LOGIN] Password change event - current value length: ${currentValue.length}`);
+      if (currentValue) {
+        globalPassword = currentValue;
         try {
-          localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
+          localStorage.setItem(STORAGE_KEY_PASSWORD, currentValue);
           console.log(`[LOGIN] Saved password`);
         } catch (e) {
-          // Ignore
+          console.error(`[LOGIN] Failed to save password:`, e);
         }
+      } else {
+        console.log(`[LOGIN] Password input is empty - NOT saving`);
       }
     };
 
