@@ -46,50 +46,9 @@ export default function LoginPage() {
   // Get Supabase client directly (no memoization to avoid hook issues)
   const supabase = getSupabaseBrowserClient();
 
-  // AGGRESSIVE RESTORATION: Restore values synchronously on every render
-  // This ensures values persist even if component remounts
-  // Note: Refs might be null on first render, so we also restore in useEffect
-  // CRITICAL: Only restore if the input is empty or different - don't overwrite user typing
-  if (emailRef.current) {
-    const emailValue = globalEmail || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_EMAIL) : "") || "";
-    const currentInputValue = emailRef.current.value;
-    
-    // Only restore if:
-    // 1. We have a saved value AND
-    // 2. The input is empty OR the input value doesn't match the saved value
-    if (emailValue && (currentInputValue === "" || currentInputValue !== emailValue)) {
-      console.log(`[LOGIN] Restoring email synchronously: ${emailValue.substring(0, 3)}*** (input was: "${currentInputValue.substring(0, 5)}")`);
-      emailRef.current.value = emailValue;
-      globalEmail = emailValue;
-    } else if (currentInputValue && currentInputValue !== emailValue) {
-      // User is typing - update global immediately
-      globalEmail = currentInputValue;
-      try {
-        localStorage.setItem(STORAGE_KEY_EMAIL, currentInputValue);
-      } catch (e) {
-        // Ignore
-      }
-    }
-  }
-
-  if (passwordRef.current) {
-    const passwordValue = globalPassword || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_PASSWORD) : "") || "";
-    const currentInputValue = passwordRef.current.value;
-    
-    if (passwordValue && (currentInputValue === "" || currentInputValue !== passwordValue)) {
-      console.log(`[LOGIN] Restoring password synchronously (input was empty: ${currentInputValue === ""})`);
-      passwordRef.current.value = passwordValue;
-      globalPassword = passwordValue;
-    } else if (currentInputValue && currentInputValue !== passwordValue) {
-      // User is typing - update global immediately
-      globalPassword = currentInputValue;
-      try {
-        localStorage.setItem(STORAGE_KEY_PASSWORD, currentInputValue);
-      } catch (e) {
-        // Ignore
-      }
-    }
-  }
+  // DISABLED: Synchronous restoration was interfering with user typing
+  // Values are restored in useEffect and requestAnimationFrame instead
+  // This prevents the restoration from running during render and clearing user input
 
   // Restore values from global storage and localStorage on mount
   useEffect(() => {
