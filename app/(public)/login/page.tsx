@@ -1,28 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
-// Inject style immediately (before React renders)
-if (typeof window !== "undefined") {
-  const styleId = "login-page-override";
-  if (!document.getElementById(styleId)) {
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.textContent = `
-      body, html {
-        background-image: none !important;
-        background-color: #000000 !important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-}
-
-export default function LoginPage() {
+function LoginForm() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -30,20 +15,33 @@ export default function LoginPage() {
   const mountedRef = useRef(false);
   const valuesRestoredRef = useRef(false);
 
-  // Also override in useEffect as backup
+  // Override background immediately on mount
   useEffect(() => {
+    // Inject style tag if it doesn't exist
+    const styleId = "login-page-override";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        body, html, #__next {
+          background-image: none !important;
+          background-color: #000000 !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Also set inline styles
     document.body.style.backgroundImage = "none";
     document.body.style.backgroundColor = "#000000";
     document.documentElement.style.backgroundImage = "none";
     document.documentElement.style.backgroundColor = "#000000";
     
-    return () => {
-      // Restore on unmount
-      document.body.style.backgroundImage = "";
-      document.body.style.backgroundColor = "";
-      document.documentElement.style.backgroundImage = "";
-      document.documentElement.style.backgroundColor = "";
-    };
+    const nextRoot = document.getElementById("__next");
+    if (nextRoot) {
+      nextRoot.style.backgroundImage = "none";
+      nextRoot.style.backgroundColor = "#000000";
+    }
   }, []);
 
   // Restore values ONCE
@@ -296,3 +294,20 @@ export default function LoginPage() {
     </div>
   );
 }
+
+// Disable SSR completely - render only on client
+export default dynamic(() => Promise.resolve(LoginForm), {
+  ssr: false,
+  loading: () => (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#000000",
+      color: "#ffffff",
+    }}>
+      Loading...
+    </div>
+  ),
+});
