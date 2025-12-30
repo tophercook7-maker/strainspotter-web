@@ -27,15 +27,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
-  const supabase = getSupabaseBrowserClient();
 
-  // Debug: Log when component mounts/remounts
-  useEffect(() => {
-    console.log("[LOGIN] Component mounted");
-    return () => {
-      console.log("[LOGIN] Component unmounting");
-    };
-  }, []);
+  // Get Supabase client directly (no memoization to avoid hook issues)
+  const supabase = getSupabaseBrowserClient();
 
   // Restore values from global storage and localStorage on mount
   useEffect(() => {
@@ -49,7 +43,6 @@ export default function LoginPage() {
         if (value) {
           emailRef.current.value = value;
           globalEmail = value;
-          console.log("[LOGIN] Restored email:", value.substring(0, 3) + "***");
         }
       }
 
@@ -59,7 +52,6 @@ export default function LoginPage() {
         if (value) {
           passwordRef.current.value = value;
           globalPassword = value;
-          console.log("[LOGIN] Restored password: ***");
         }
       }
     });
@@ -118,7 +110,6 @@ export default function LoginPage() {
     
     // Triple guard: prevent double submission
     if (loading || submittingRef.current || !mountedRef.current) {
-      console.log("[LOGIN] Submit blocked:", { loading, submitting: submittingRef.current, mounted: mountedRef.current });
       return;
     }
     
@@ -129,8 +120,6 @@ export default function LoginPage() {
     // Get values from refs, global storage, or localStorage (in that order)
     const currentEmail = emailRef.current?.value || globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
     const currentPassword = passwordRef.current?.value || globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
-
-    console.log("[LOGIN] Submitting:", { email: currentEmail ? currentEmail.substring(0, 3) + "***" : "", password: currentPassword ? "***" : "" });
 
     if (!currentEmail || !currentPassword) {
       setError("Please enter both email and password");
@@ -146,7 +135,6 @@ export default function LoginPage() {
       });
 
       if (error) {
-        console.error("[LOGIN] Auth error:", error);
         if (mountedRef.current) {
           setError(error.message);
           setLoading(false);
@@ -154,8 +142,6 @@ export default function LoginPage() {
         }
         return;
       }
-
-      console.log("[LOGIN] Login successful, redirecting...");
 
       // SUCCESS — clear storage and redirect
       try {
@@ -172,7 +158,6 @@ export default function LoginPage() {
         window.location.replace("/garden");
       }
     } catch (err: any) {
-      console.error("[LOGIN] Exception:", err);
       if (mountedRef.current) {
         setError(err.message || "Login failed");
         setLoading(false);
