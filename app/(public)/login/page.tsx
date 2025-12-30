@@ -7,48 +7,84 @@ const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const mountedRef = useRef(false);
 
-  // Hydrate from localStorage AFTER mount to prevent hydration mismatch
+  // Only restore values ONCE on mount - never again
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL) || "";
-        const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
-        if (savedEmail) setEmail(savedEmail);
-        if (savedPassword) setPassword(savedPassword);
-      } catch (e) {
-        // Ignore
-      }
-      setHydrated(true);
-    }
-  }, []);
+    if (mountedRef.current) return; // Already mounted
+    mountedRef.current = true;
 
-  // Save to localStorage as user types
-  useEffect(() => {
-    if (hydrated && email) {
+    // Restore from localStorage directly to DOM
+    if (emailRef.current && typeof window !== "undefined") {
       try {
-        localStorage.setItem(STORAGE_KEY_EMAIL, email);
+        const saved = localStorage.getItem(STORAGE_KEY_EMAIL);
+        if (saved) {
+          emailRef.current.value = saved;
+        }
       } catch (e) {
         // Ignore
       }
     }
-  }, [email, hydrated]);
 
-  useEffect(() => {
-    if (hydrated && password) {
+    if (passwordRef.current && typeof window !== "undefined") {
       try {
-        localStorage.setItem(STORAGE_KEY_PASSWORD, password);
+        const saved = localStorage.getItem(STORAGE_KEY_PASSWORD);
+        if (saved) {
+          passwordRef.current.value = saved;
+        }
       } catch (e) {
         // Ignore
       }
     }
-  }, [password, hydrated]);
+
+    // Save as user types
+    const emailInput = emailRef.current;
+    const passwordInput = passwordRef.current;
+
+    const saveEmail = () => {
+      if (emailInput?.value && typeof window !== "undefined") {
+        try {
+          localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
+        } catch (e) {
+          // Ignore
+        }
+      }
+    };
+
+    const savePassword = () => {
+      if (passwordInput?.value && typeof window !== "undefined") {
+        try {
+          localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
+        } catch (e) {
+          // Ignore
+        }
+      }
+    };
+
+    if (emailInput) {
+      emailInput.addEventListener("input", saveEmail);
+      emailInput.addEventListener("change", saveEmail);
+    }
+    if (passwordInput) {
+      passwordInput.addEventListener("input", savePassword);
+      passwordInput.addEventListener("change", savePassword);
+    }
+
+    return () => {
+      if (emailInput) {
+        emailInput.removeEventListener("input", saveEmail);
+        emailInput.removeEventListener("change", saveEmail);
+      }
+      if (passwordInput) {
+        passwordInput.removeEventListener("input", savePassword);
+        passwordInput.removeEventListener("change", savePassword);
+      }
+    };
+  }, []); // Empty deps - only run once
 
   const supabase = getSupabaseBrowserClient();
 
@@ -60,6 +96,9 @@ export default function LoginPage() {
     
     setLoading(true);
     setError(null);
+
+    const email = emailRef.current?.value || "";
+    const password = passwordRef.current?.value || "";
 
     if (!email || !password) {
       setError("Please enter both email and password");
@@ -97,7 +136,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">
       <form
-        ref={formRef}
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 w-full max-w-sm p-6"
         style={{ minWidth: "320px" }}
@@ -106,11 +144,10 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
         
         <input
+          ref={emailRef}
           type="email"
           name="email"
           placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
@@ -118,11 +155,10 @@ export default function LoginPage() {
         />
 
         <input
+          ref={passwordRef}
           type="password"
           name="password"
           placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
