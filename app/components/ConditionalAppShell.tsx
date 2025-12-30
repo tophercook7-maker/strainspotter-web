@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { memo, useRef, useEffect } from "react";
+import { memo, useRef, useEffect, useMemo } from "react";
 import { PortalProvider } from "./portal/PortalController";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
@@ -20,6 +20,11 @@ const MemoizedAppShell = memo(function AppShell({ children }: { children: React.
   );
 });
 
+// Separate component for public routes that never re-renders
+const PublicRouteWrapper = memo(function PublicRouteWrapper({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}, () => true); // Never re-render
+
 let conditionalAppShellRenderCount = 0;
 
 export default function ConditionalAppShell({
@@ -31,32 +36,29 @@ export default function ConditionalAppShell({
   const renderId = useRef(Math.random().toString(36).substring(7));
   const pathname = usePathname();
   
-  // Store children in a ref to prevent remounts when ConditionalAppShell re-renders
-  const childrenRef = useRef(children);
   const isPublicRoute = pathname === "/login" || pathname?.startsWith("/auth/");
-  const wasPublicRouteRef = useRef(isPublicRoute);
   
-  // Only update children ref when route type changes (public <-> protected)
-  // This prevents remounts when ConditionalAppShell re-renders for the same route type
-  if (wasPublicRouteRef.current !== isPublicRoute) {
-    childrenRef.current = children;
-    wasPublicRouteRef.current = isPublicRoute;
-  } else if (!isPublicRoute) {
-    // For protected routes, always update (they need fresh children)
-    childrenRef.current = children;
+  // Store children in a ref for public routes to prevent remounts
+  const publicChildrenRef = useRef<React.ReactNode>(null);
+  if (isPublicRoute && publicChildrenRef.current === null) {
+    publicChildrenRef.current = children;
   }
-  // For public routes, keep the same children ref to prevent remounts
+  
+  // Reset ref when leaving public routes
+  if (!isPublicRoute) {
+    publicChildrenRef.current = null;
+  }
 
   useEffect(() => {
     console.log(`[CONDITIONAL_APP_SHELL] Render #${conditionalAppShellRenderCount}, ID: ${renderId.current}, Pathname: ${pathname}, IsPublic: ${isPublicRoute}`);
   });
 
   // Public routes get NO providers - completely isolated
-  // This prevents any auth state changes from affecting login
+  // Use ref to prevent remounts when ConditionalAppShell re-renders
   if (isPublicRoute) {
-    return <>{childrenRef.current}</>;
+    return <PublicRouteWrapper>{publicChildrenRef.current || children}</PublicRouteWrapper>;
   }
 
   // All other routes get full app shell
-  return <MemoizedAppShell>{childrenRef.current}</MemoizedAppShell>;
+  return <MemoizedAppShell>{children}</MemoizedAppShell>;
 }
