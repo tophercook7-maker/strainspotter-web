@@ -36,7 +36,7 @@ export default function ConditionalAppShell({
   const renderId = useRef(Math.random().toString(36).substring(7));
   const pathname = usePathname();
   
-  const isPublicRoute = pathname === "/login" || pathname?.startsWith("/auth/");
+  const isPublicRoute = pathname === "/login" || pathname?.startsWith("/auth/") || pathname?.startsWith("/(public)/");
   
   // Store children in a ref for public routes to prevent remounts
   const publicChildrenRef = useRef<React.ReactNode>(null);
