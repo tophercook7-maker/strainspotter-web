@@ -1,6 +1,31 @@
 "use client";
 
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseBrowser";
+
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+    }
+
+    setLoading(false);
+  }
+
   return (
     <div
       style={{
@@ -12,10 +37,7 @@ export default function LoginPage() {
       }}
     >
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          alert("FORM SUBMIT — NO AUTH YET");
-        }}
+        onSubmit={handleSubmit}
         style={{
           maxWidth: "420px",
           width: "100%",
@@ -31,7 +53,11 @@ export default function LoginPage() {
 
         <input
           type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
+          autoComplete="email"
+          required
           style={{
             height: "48px",
             padding: "0 14px",
@@ -45,7 +71,11 @@ export default function LoginPage() {
 
         <input
           type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
+          autoComplete="current-password"
+          required
           style={{
             height: "48px",
             padding: "0 14px",
@@ -59,6 +89,7 @@ export default function LoginPage() {
 
         <button
           type="submit"
+          disabled={loading}
           style={{
             height: "52px",
             borderRadius: "14px",
@@ -68,10 +99,17 @@ export default function LoginPage() {
             fontSize: "16px",
             cursor: "pointer",
             boxShadow: "0 0 18px rgba(0,255,0,0.35)",
+            opacity: loading ? 0.6 : 1,
           }}
         >
-          Test
+          {loading ? "Signing in..." : "Sign In"}
         </button>
+
+        {error && (
+          <p style={{ color: "#FF9A9A", marginTop: 12, fontSize: "14px" }}>
+            {error}
+          </p>
+        )}
       </form>
     </div>
   );
