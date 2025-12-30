@@ -111,7 +111,7 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
                 </div>
               ) : (
                 <Link
-                  href="/auth/login"
+                  href="/login"
                   className="px-3 py-2 rounded-md transition-all flex items-center gap-2 hover:bg-green-400/10 text-[var(--botanical-accent)] text-sm"
                 >
                   Sign in
