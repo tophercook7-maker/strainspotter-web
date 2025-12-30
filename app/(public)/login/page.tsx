@@ -30,7 +30,6 @@ export default function LoginPage() {
       return;
     }
 
-    // SUCCESS — hard redirect (prevents remount loop)
     window.location.href = "/garden";
   }
 
@@ -42,6 +41,7 @@ export default function LoginPage() {
       >
         <input
           type="email"
+          name="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -50,6 +50,7 @@ export default function LoginPage() {
 
         <input
           type="password"
+          name="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}

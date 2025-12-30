@@ -3,17 +3,15 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 
 export default async function GardenPage() {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!data.user) {
     redirect("/login");
   }
 
   return (
-    <main>
-      {/* garden content */}
-    </main>
+    <div>
+      GARDEN CONTENT GOES HERE
+    </div>
   );
 }
