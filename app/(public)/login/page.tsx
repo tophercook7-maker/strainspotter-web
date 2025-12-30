@@ -224,7 +224,6 @@ export default function LoginPage() {
           name="email"
           placeholder="Email"
           defaultValue={globalEmail}
-          key={`email-${globalEmail}`}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
@@ -237,7 +236,6 @@ export default function LoginPage() {
           name="password"
           placeholder="Password"
           defaultValue={globalPassword}
-          key={`password-${globalPassword}`}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
