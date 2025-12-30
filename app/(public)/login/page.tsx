@@ -11,49 +11,60 @@ export default function LoginPage() {
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mountedRef = useRef(false);
+  const valuesRestoredRef = useRef(false);
 
-  // Only run on client, after mount
+  // Restore values ONCE - use multiple strategies to ensure it works
   useEffect(() => {
-    setMounted(true);
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+
+    const restoreValues = () => {
+      if (valuesRestoredRef.current) return;
+      
+      const emailInput = emailRef.current;
+      const passwordInput = passwordRef.current;
+
+      if (!emailInput || !passwordInput) return;
+
+      try {
+        const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
+        const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
+
+        // Only restore if inputs are empty (don't overwrite user typing)
+        if (savedEmail && !emailInput.value) {
+          emailInput.value = savedEmail;
+        }
+        if (savedPassword && !passwordInput.value) {
+          passwordInput.value = savedPassword;
+        }
+
+        valuesRestoredRef.current = true;
+      } catch (e) {
+        // Ignore
+      }
+    };
+
+    // Try immediately
+    restoreValues();
     
-    // Restore values after a tiny delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      if (emailRef.current && typeof window !== "undefined") {
-        try {
-          const saved = localStorage.getItem(STORAGE_KEY_EMAIL);
-          if (saved) {
-            emailRef.current.value = saved;
-          }
-        } catch (e) {
-          // Ignore
-        }
-      }
-
-      if (passwordRef.current && typeof window !== "undefined") {
-        try {
-          const saved = localStorage.getItem(STORAGE_KEY_PASSWORD);
-          if (saved) {
-            passwordRef.current.value = saved;
-          }
-        } catch (e) {
-          // Ignore
-        }
-      }
-    }, 0);
-
-    return () => clearTimeout(timer);
+    // Try in next frame
+    requestAnimationFrame(() => {
+      restoreValues();
+      // Try again after a tiny delay
+      setTimeout(restoreValues, 10);
+    });
   }, []);
 
-  // Save as user types
+  // Save as user types - use direct event listeners to avoid React re-renders
   useEffect(() => {
-    if (!mounted) return;
-
     const emailInput = emailRef.current;
     const passwordInput = passwordRef.current;
 
+    if (!emailInput || !passwordInput) return;
+
     const saveEmail = () => {
-      if (emailInput?.value && typeof window !== "undefined") {
+      if (emailInput.value && typeof window !== "undefined") {
         try {
           localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
         } catch (e) {
@@ -63,7 +74,7 @@ export default function LoginPage() {
     };
 
     const savePassword = () => {
-      if (passwordInput?.value && typeof window !== "undefined") {
+      if (passwordInput.value && typeof window !== "undefined") {
         try {
           localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
         } catch (e) {
@@ -72,26 +83,18 @@ export default function LoginPage() {
       }
     };
 
-    if (emailInput) {
-      emailInput.addEventListener("input", saveEmail);
-      emailInput.addEventListener("change", saveEmail);
-    }
-    if (passwordInput) {
-      passwordInput.addEventListener("input", savePassword);
-      passwordInput.addEventListener("change", savePassword);
-    }
+    emailInput.addEventListener("input", saveEmail, { passive: true });
+    emailInput.addEventListener("change", saveEmail, { passive: true });
+    passwordInput.addEventListener("input", savePassword, { passive: true });
+    passwordInput.addEventListener("change", savePassword, { passive: true });
 
     return () => {
-      if (emailInput) {
-        emailInput.removeEventListener("input", saveEmail);
-        emailInput.removeEventListener("change", saveEmail);
-      }
-      if (passwordInput) {
-        passwordInput.removeEventListener("input", savePassword);
-        passwordInput.removeEventListener("change", savePassword);
-      }
+      emailInput.removeEventListener("input", saveEmail);
+      emailInput.removeEventListener("change", saveEmail);
+      passwordInput.removeEventListener("input", savePassword);
+      passwordInput.removeEventListener("change", savePassword);
     };
-  }, [mounted]);
+  }, []);
 
   const supabase = getSupabaseBrowserClient();
 
@@ -146,27 +149,17 @@ export default function LoginPage() {
     }
   }
 
-  // Don't render until mounted to prevent flash
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="flex flex-col gap-4 w-full max-w-sm p-6" style={{ minWidth: "320px" }}>
-          <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
-          <div className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white opacity-50">
-            Loading...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
+    <div 
+      className="min-h-screen flex items-center justify-center bg-black"
+      suppressHydrationWarning
+    >
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 w-full max-w-sm p-6"
         style={{ minWidth: "320px" }}
         noValidate
+        suppressHydrationWarning
       >
         <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
         
@@ -178,8 +171,14 @@ export default function LoginPage() {
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-          style={{ transition: "none" }}
+          style={{ 
+            transition: "none",
+            WebkitTransition: "none",
+            MozTransition: "none",
+            OTransition: "none",
+          }}
           autoComplete="email"
+          suppressHydrationWarning
         />
 
         <input
@@ -190,15 +189,26 @@ export default function LoginPage() {
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-          style={{ transition: "none" }}
+          style={{ 
+            transition: "none",
+            WebkitTransition: "none",
+            MozTransition: "none",
+            OTransition: "none",
+          }}
           autoComplete="current-password"
+          suppressHydrationWarning
         />
 
         <button 
           type="submit" 
           disabled={loading}
           className="px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ transition: "none" }}
+          style={{ 
+            transition: "none",
+            WebkitTransition: "none",
+            MozTransition: "none",
+            OTransition: "none",
+          }}
         >
           {loading ? "Signing in…" : "Sign In"}
         </button>
