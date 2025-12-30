@@ -26,6 +26,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Block background image on login page immediately */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (window.location.pathname === '/login') {
+                document.documentElement.style.setProperty('background-image', 'none', 'important');
+                document.documentElement.style.setProperty('background-color', '#000000', 'important');
+                document.body.style.setProperty('background-image', 'none', 'important');
+                document.body.style.setProperty('background-color', '#000000', 'important');
+              }
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen" style={{ margin: 0, padding: 0 }}>
         {children}
         <DesktopRefreshButton />
