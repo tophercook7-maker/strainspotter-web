@@ -9,6 +9,7 @@ const STORAGE_KEY_PASSWORD = "ss_login_password";
 // Global storage outside React to survive any remounts
 let globalEmail = "";
 let globalPassword = "";
+let renderCount = 0;
 
 // Restore from localStorage immediately (before React)
 if (typeof window !== "undefined") {
@@ -21,6 +22,8 @@ if (typeof window !== "undefined") {
 }
 
 export default function LoginPage() {
+  renderCount++;
+  const renderId = useRef(Math.random().toString(36).substring(7));
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -29,22 +32,31 @@ export default function LoginPage() {
   const submittingRef = useRef(false);
   const restoreAttemptedRef = useRef(false);
 
+  // Debug: Log every render
+  console.log(`[LOGIN RENDER #${renderCount}] Render ID: ${renderId.current}`, {
+    emailRef: emailRef.current?.value || 'null',
+    globalEmail,
+    localStorageEmail: typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_EMAIL) : 'N/A',
+  });
+
   // Get Supabase client directly (no memoization to avoid hook issues)
   const supabase = getSupabaseBrowserClient();
 
   // AGGRESSIVE RESTORATION: Restore values synchronously on every render
   // This ensures values persist even if component remounts
   if (emailRef.current && !restoreAttemptedRef.current) {
-    const emailValue = globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+    const emailValue = globalEmail || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_EMAIL) : "") || "";
     if (emailValue && emailRef.current.value !== emailValue) {
+      console.log(`[LOGIN] Restoring email synchronously: ${emailValue.substring(0, 3)}***`);
       emailRef.current.value = emailValue;
       globalEmail = emailValue;
     }
   }
 
   if (passwordRef.current && !restoreAttemptedRef.current) {
-    const passwordValue = globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+    const passwordValue = globalPassword || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_PASSWORD) : "") || "";
     if (passwordValue && passwordRef.current.value !== passwordValue) {
+      console.log(`[LOGIN] Restoring password synchronously`);
       passwordRef.current.value = passwordValue;
       globalPassword = passwordValue;
     }
@@ -52,21 +64,24 @@ export default function LoginPage() {
 
   // Restore values from global storage and localStorage on mount
   useEffect(() => {
+    console.log(`[LOGIN MOUNT] Render ID: ${renderId.current}, Mounting...`);
     mountedRef.current = true;
     restoreAttemptedRef.current = true;
 
     // Immediate synchronous restoration
     if (emailRef.current) {
-      const value = globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+      const value = globalEmail || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_EMAIL) : "") || "";
       if (value) {
+        console.log(`[LOGIN] Restoring email in useEffect: ${value.substring(0, 3)}***`);
         emailRef.current.value = value;
         globalEmail = value;
       }
     }
 
     if (passwordRef.current) {
-      const value = globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+      const value = globalPassword || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_PASSWORD) : "") || "";
       if (value) {
+        console.log(`[LOGIN] Restoring password in useEffect`);
         passwordRef.current.value = value;
         globalPassword = value;
       }
@@ -75,16 +90,18 @@ export default function LoginPage() {
     // Also use requestAnimationFrame as backup
     requestAnimationFrame(() => {
       if (emailRef.current) {
-        const value = globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+        const value = globalEmail || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_EMAIL) : "") || "";
         if (value && emailRef.current.value !== value) {
+          console.log(`[LOGIN] Restoring email in RAF: ${value.substring(0, 3)}***`);
           emailRef.current.value = value;
           globalEmail = value;
         }
       }
 
       if (passwordRef.current) {
-        const value = globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+        const value = globalPassword || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_PASSWORD) : "") || "";
         if (value && passwordRef.current.value !== value) {
+          console.log(`[LOGIN] Restoring password in RAF`);
           passwordRef.current.value = value;
           globalPassword = value;
         }
@@ -100,6 +117,7 @@ export default function LoginPage() {
         globalEmail = emailInput.value;
         try {
           localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
+          console.log(`[LOGIN] Saved email: ${emailInput.value.substring(0, 3)}***`);
         } catch (e) {
           // Ignore
         }
@@ -111,6 +129,7 @@ export default function LoginPage() {
         globalPassword = passwordInput.value;
         try {
           localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
+          console.log(`[LOGIN] Saved password`);
         } catch (e) {
           // Ignore
         }
@@ -120,17 +139,16 @@ export default function LoginPage() {
     if (emailInput) {
       emailInput.addEventListener("input", handleEmailChange);
       emailInput.addEventListener("change", handleEmailChange);
-      // Also listen to keyup as backup
       emailInput.addEventListener("keyup", handleEmailChange);
     }
     if (passwordInput) {
       passwordInput.addEventListener("input", handlePasswordChange);
       passwordInput.addEventListener("change", handlePasswordChange);
-      // Also listen to keyup as backup
       passwordInput.addEventListener("keyup", handlePasswordChange);
     }
 
     return () => {
+      console.log(`[LOGIN UNMOUNT] Render ID: ${renderId.current}, Unmounting...`);
       mountedRef.current = false;
       restoreAttemptedRef.current = false;
       if (emailInput) {
@@ -160,8 +178,8 @@ export default function LoginPage() {
     setError(null);
 
     // Get values from refs, global storage, or localStorage (in that order)
-    const currentEmail = emailRef.current?.value || globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
-    const currentPassword = passwordRef.current?.value || globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+    const currentEmail = emailRef.current?.value || globalEmail || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_EMAIL) : "") || "";
+    const currentPassword = passwordRef.current?.value || globalPassword || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_PASSWORD) : "") || "";
 
     if (!currentEmail || !currentPassword) {
       setError("Please enter both email and password");
