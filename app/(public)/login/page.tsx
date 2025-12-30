@@ -9,6 +9,10 @@ const supabase = createClient(
 );
 
 export default function LoginPage() {
+  // Use refs to persist values across remounts
+  const emailRef = useRef("");
+  const passwordRef = useRef("");
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,8 +20,20 @@ export default function LoginPage() {
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
 
-  // Prevent state updates after unmount
+  // Sync refs with state
   useEffect(() => {
+    emailRef.current = email;
+    passwordRef.current = password;
+  }, [email, password]);
+
+  // Restore from refs on mount (in case of remount)
+  useEffect(() => {
+    if (emailRef.current) {
+      setEmail(emailRef.current);
+    }
+    if (passwordRef.current) {
+      setPassword(passwordRef.current);
+    }
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
@@ -36,10 +52,14 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    // Use refs to ensure we have the latest values even if component remounts
+    const currentEmail = emailRef.current || email;
+    const currentPassword = passwordRef.current || password;
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: currentEmail,
+        password: currentPassword,
       });
 
       if (error) {
@@ -79,8 +99,10 @@ export default function LoginPage() {
           placeholder="Email"
           value={email}
           onChange={(e) => {
+            const value = e.target.value;
+            emailRef.current = value;
             if (mountedRef.current) {
-              setEmail(e.target.value);
+              setEmail(value);
             }
           }}
           required
@@ -95,8 +117,10 @@ export default function LoginPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => {
+            const value = e.target.value;
+            passwordRef.current = value;
             if (mountedRef.current) {
-              setPassword(e.target.value);
+              setPassword(value);
             }
           }}
           required
