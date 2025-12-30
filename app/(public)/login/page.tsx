@@ -1,79 +1,85 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
-// Memoize the Supabase client to prevent recreation
-const getClient = () => getSupabaseBrowserClient();
-
 export default function LoginPage() {
-  const [email, setEmail] = useState(() => {
-    // Initialize from localStorage immediately
-    if (typeof window !== "undefined") {
-      try {
-        return localStorage.getItem(STORAGE_KEY_EMAIL) || "";
-      } catch {
-        return "";
-      }
-    }
-    return "";
-  });
-
-  const [password, setPassword] = useState(() => {
-    // Initialize from localStorage immediately
-    if (typeof window !== "undefined") {
-      try {
-        return localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
-      } catch {
-        return "";
-      }
-    }
-    return "";
-  });
-
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
+  const supabase = getSupabaseBrowserClient();
 
-  // Memoize the Supabase client instance
-  const supabase = useMemo(() => getClient(), []);
-
-  // Mark as mounted
+  // Restore values from localStorage on mount
   useEffect(() => {
     mountedRef.current = true;
+
+    // Restore email
+    try {
+      const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
+      if (savedEmail && emailRef.current) {
+        emailRef.current.value = savedEmail;
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    // Restore password
+    try {
+      const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
+      if (savedPassword && passwordRef.current) {
+        passwordRef.current.value = savedPassword;
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    // Save to localStorage as user types (using input events)
+    const emailInput = emailRef.current;
+    const passwordInput = passwordRef.current;
+
+    const handleEmailChange = () => {
+      if (emailInput?.value) {
+        try {
+          localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
+        } catch (e) {
+          // Ignore
+        }
+      }
+    };
+
+    const handlePasswordChange = () => {
+      if (passwordInput?.value) {
+        try {
+          localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
+        } catch (e) {
+          // Ignore
+        }
+      }
+    };
+
+    if (emailInput) {
+      emailInput.addEventListener("input", handleEmailChange);
+    }
+    if (passwordInput) {
+      passwordInput.addEventListener("input", handlePasswordChange);
+    }
+
     return () => {
       mountedRef.current = false;
+      if (emailInput) {
+        emailInput.removeEventListener("input", handleEmailChange);
+      }
+      if (passwordInput) {
+        passwordInput.removeEventListener("input", handlePasswordChange);
+      }
     };
   }, []);
-
-  // Save to localStorage on change (debounced)
-  useEffect(() => {
-    if (!email) return;
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY_EMAIL, email);
-      } catch (e) {
-        // Ignore
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [email]);
-
-  useEffect(() => {
-    if (!password) return;
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY_PASSWORD, password);
-      } catch (e) {
-        // Ignore
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [password]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,9 +94,9 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // Get values from state (they should be synced with localStorage)
-    const currentEmail = email || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
-    const currentPassword = password || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+    // Get values directly from refs (uncontrolled inputs)
+    const currentEmail = emailRef.current?.value || "";
+    const currentPassword = passwordRef.current?.value || "";
 
     if (!currentEmail || !currentPassword) {
       setError("Please enter both email and password");
@@ -146,17 +152,10 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
         
         <input
-          key="email-input"
+          ref={emailRef}
           type="email"
           name="email"
           placeholder="Email"
-          value={email}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (mountedRef.current) {
-              setEmail(value);
-            }
-          }}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
@@ -164,17 +163,10 @@ export default function LoginPage() {
         />
 
         <input
-          key="password-input"
+          ref={passwordRef}
           type="password"
           name="password"
           placeholder="Password"
-          value={password}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (mountedRef.current) {
-              setPassword(value);
-            }
-          }}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
