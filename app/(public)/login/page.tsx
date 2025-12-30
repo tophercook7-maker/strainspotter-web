@@ -13,51 +13,46 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
 
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const res = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      setError(error.message);
+    if (res.error) {
+      setError(res.error.message);
       setLoading(false);
       return;
     }
 
-    // ✅ SUCCESS → MANUAL REDIRECT
-    router.replace("/garden");
-  };
+    // HARD redirect — no router state
+    window.location.href = "/garden";
+  }
 
   return (
-    <form onSubmit={handleLogin}>
+    <form onSubmit={handleSubmit}>
       <input
-        id="email"
         name="email"
-        type="email"
-        placeholder="Email"
+        autoComplete="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        required
       />
 
       <input
-        id="password"
         name="password"
         type="password"
-        placeholder="Password"
+        autoComplete="current-password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        required
       />
 
-      <button type="submit" disabled={loading}>
+      <button type="submit">
         {loading ? "Signing in…" : "Sign In"}
       </button>
 
@@ -65,4 +60,3 @@ export default function LoginPage() {
     </form>
   );
 }
-
