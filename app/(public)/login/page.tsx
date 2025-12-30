@@ -15,29 +15,42 @@ export default function LoginPage() {
   const submittingRef = useRef(false);
   const supabase = getSupabaseBrowserClient();
 
+  // Debug: Log when component mounts/remounts
+  useEffect(() => {
+    console.log("[LOGIN] Component mounted");
+    return () => {
+      console.log("[LOGIN] Component unmounting");
+    };
+  }, []);
+
   // Restore values from localStorage on mount
   useEffect(() => {
     mountedRef.current = true;
 
-    // Restore email
-    try {
-      const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
-      if (savedEmail && emailRef.current) {
-        emailRef.current.value = savedEmail;
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      // Restore email
+      try {
+        const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
+        if (savedEmail && emailRef.current) {
+          emailRef.current.value = savedEmail;
+          console.log("[LOGIN] Restored email from localStorage");
+        }
+      } catch (e) {
+        console.error("[LOGIN] Failed to restore email:", e);
       }
-    } catch (e) {
-      // Ignore
-    }
 
-    // Restore password
-    try {
-      const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
-      if (savedPassword && passwordRef.current) {
-        passwordRef.current.value = savedPassword;
+      // Restore password
+      try {
+        const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
+        if (savedPassword && passwordRef.current) {
+          passwordRef.current.value = savedPassword;
+          console.log("[LOGIN] Restored password from localStorage");
+        }
+      } catch (e) {
+        console.error("[LOGIN] Failed to restore password:", e);
       }
-    } catch (e) {
-      // Ignore
-    }
+    }, 0);
 
     // Save to localStorage as user types (using input events)
     const emailInput = emailRef.current;
@@ -71,6 +84,7 @@ export default function LoginPage() {
     }
 
     return () => {
+      clearTimeout(timer);
       mountedRef.current = false;
       if (emailInput) {
         emailInput.removeEventListener("input", handleEmailChange);
@@ -87,6 +101,7 @@ export default function LoginPage() {
     
     // Triple guard: prevent double submission
     if (loading || submittingRef.current || !mountedRef.current) {
+      console.log("[LOGIN] Submit blocked:", { loading, submitting: submittingRef.current, mounted: mountedRef.current });
       return;
     }
     
@@ -97,6 +112,8 @@ export default function LoginPage() {
     // Get values directly from refs (uncontrolled inputs)
     const currentEmail = emailRef.current?.value || "";
     const currentPassword = passwordRef.current?.value || "";
+
+    console.log("[LOGIN] Submitting:", { email: currentEmail ? "***" : "", password: currentPassword ? "***" : "" });
 
     if (!currentEmail || !currentPassword) {
       setError("Please enter both email and password");
@@ -112,6 +129,7 @@ export default function LoginPage() {
       });
 
       if (error) {
+        console.error("[LOGIN] Auth error:", error);
         if (mountedRef.current) {
           setError(error.message);
           setLoading(false);
@@ -119,6 +137,8 @@ export default function LoginPage() {
         }
         return;
       }
+
+      console.log("[LOGIN] Login successful, redirecting...");
 
       // SUCCESS — clear localStorage and redirect
       try {
@@ -133,6 +153,7 @@ export default function LoginPage() {
         window.location.replace("/garden");
       }
     } catch (err: any) {
+      console.error("[LOGIN] Exception:", err);
       if (mountedRef.current) {
         setError(err.message || "Login failed");
         setLoading(false);
