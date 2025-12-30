@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo, memo } from "react";
+import { memo } from "react";
 import { PortalProvider } from "./portal/PortalController";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
@@ -27,14 +27,9 @@ export default function ConditionalAppShell({
 }) {
   const pathname = usePathname();
 
-  // Memoize the public route check to prevent unnecessary rerenders
-  const isPublicRoute = useMemo(() => {
-    return pathname === "/login" || pathname?.startsWith("/auth/");
-  }, [pathname]);
-
   // Public routes get NO providers - completely isolated
   // This prevents any auth state changes from affecting login
-  if (isPublicRoute) {
+  if (pathname === "/login" || pathname?.startsWith("/auth/")) {
     return <>{children}</>;
   }
 
