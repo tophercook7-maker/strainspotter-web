@@ -66,7 +66,7 @@ export default function SignupPage() {
         // No email confirmation required - redirect immediately
         setSuccess('Account created successfully!');
         setTimeout(() => {
-          router.replace('/garden');
+          window.location.href = "/garden";
         }, 1000);
       } else {
         // Email confirmation required
