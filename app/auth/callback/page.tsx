@@ -40,7 +40,7 @@ function AuthCallbackContent() {
     // handleCallback();
     
     // Mock: Always redirect to garden
-    router.push('/garden');
+    window.location.href = "/garden";
   }, [router, searchParams]);
 
   if (error) {
