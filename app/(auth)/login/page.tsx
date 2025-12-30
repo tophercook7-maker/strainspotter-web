@@ -13,8 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleLogin() {
     if (loading) return;
 
     setLoading(true);
@@ -31,15 +30,14 @@ export default function LoginPage() {
       return;
     }
 
-    // ✅ DO NOT check auth here
-    // ✅ DO NOT redirect early
-    // ✅ Let Garden resolve auth
+    // ✅ Do NOT re-check auth here
+    // ✅ Do NOT reload
+    // ✅ Hard redirect into garden
     router.replace("/garden");
   }
 
   return (
-    <form
-      onSubmit={handleLogin}
+    <div
       style={{
         maxWidth: 360,
         margin: "80px auto",
@@ -53,9 +51,9 @@ export default function LoginPage() {
         name="email"
         type="email"
         placeholder="Email"
+        autoComplete="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        required
       />
 
       <input
@@ -63,18 +61,22 @@ export default function LoginPage() {
         name="password"
         type="password"
         placeholder="Password"
+        autoComplete="current-password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        required
       />
 
-      <button type="submit" disabled={loading}>
+      <button
+        type="button"
+        onClick={handleLogin}
+        disabled={loading}
+      >
         {loading ? "Signing in…" : "Sign in"}
       </button>
 
       {error && (
         <div style={{ color: "red", fontSize: 13 }}>{error}</div>
       )}
-    </form>
+    </div>
   );
 }
