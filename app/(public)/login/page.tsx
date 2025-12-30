@@ -44,7 +44,8 @@ export default function LoginPage() {
 
   // AGGRESSIVE RESTORATION: Restore values synchronously on every render
   // This ensures values persist even if component remounts
-  if (emailRef.current && !restoreAttemptedRef.current) {
+  // Note: Refs might be null on first render, so we also restore in useEffect
+  if (emailRef.current) {
     const emailValue = globalEmail || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_EMAIL) : "") || "";
     if (emailValue && emailRef.current.value !== emailValue) {
       console.log(`[LOGIN] Restoring email synchronously: ${emailValue.substring(0, 3)}***`);
@@ -53,7 +54,7 @@ export default function LoginPage() {
     }
   }
 
-  if (passwordRef.current && !restoreAttemptedRef.current) {
+  if (passwordRef.current) {
     const passwordValue = globalPassword || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_PASSWORD) : "") || "";
     if (passwordValue && passwordRef.current.value !== passwordValue) {
       console.log(`[LOGIN] Restoring password synchronously`);
