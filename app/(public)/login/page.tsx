@@ -1,48 +1,18 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
-function LoginForm() {
+export default function LoginPage() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(false);
   const valuesRestoredRef = useRef(false);
-
-  // Override background immediately on mount
-  useEffect(() => {
-    // Inject style tag if it doesn't exist
-    const styleId = "login-page-override";
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement("style");
-      style.id = styleId;
-      style.textContent = `
-        body, html, #__next {
-          background-image: none !important;
-          background-color: #000000 !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    // Also set inline styles
-    document.body.style.backgroundImage = "none";
-    document.body.style.backgroundColor = "#000000";
-    document.documentElement.style.backgroundImage = "none";
-    document.documentElement.style.backgroundColor = "#000000";
-    
-    const nextRoot = document.getElementById("__next");
-    if (nextRoot) {
-      nextRoot.style.backgroundImage = "none";
-      nextRoot.style.backgroundColor = "#000000";
-    }
-  }, []);
 
   // Restore values ONCE
   useEffect(() => {
@@ -181,17 +151,9 @@ function LoginForm() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#000000",
+        backgroundColor: "transparent",
         margin: 0,
         padding: 0,
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-        width: "100%",
-        height: "100%",
       }}
       suppressHydrationWarning
     >
@@ -205,6 +167,10 @@ function LoginForm() {
           maxWidth: "384px",
           padding: "24px",
           minWidth: "320px",
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+          backdropFilter: "blur(12px)",
+          borderRadius: "16px",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
         }}
         noValidate
         suppressHydrationWarning
@@ -222,8 +188,8 @@ function LoginForm() {
           disabled={loading}
           style={{
             padding: "12px 16px",
-            backgroundColor: "#171717",
-            border: "1px solid #404040",
+            backgroundColor: "rgba(23, 23, 23, 0.8)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
             borderRadius: "8px",
             color: "#ffffff",
             fontSize: "16px",
@@ -247,8 +213,8 @@ function LoginForm() {
           disabled={loading}
           style={{
             padding: "12px 16px",
-            backgroundColor: "#171717",
-            border: "1px solid #404040",
+            backgroundColor: "rgba(23, 23, 23, 0.8)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
             borderRadius: "8px",
             color: "#ffffff",
             fontSize: "16px",
@@ -294,20 +260,3 @@ function LoginForm() {
     </div>
   );
 }
-
-// Disable SSR completely - render only on client
-export default dynamic(() => Promise.resolve(LoginForm), {
-  ssr: false,
-  loading: () => (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#000000",
-      color: "#ffffff",
-    }}>
-      Loading...
-    </div>
-  ),
-});
