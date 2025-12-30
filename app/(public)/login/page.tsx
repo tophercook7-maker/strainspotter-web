@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
@@ -19,6 +14,9 @@ export default function LoginPage() {
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
   const initializedRef = useRef(false);
+
+  // Get the shared Supabase client instance
+  const supabase = getSupabaseBrowserClient();
 
   // Restore from localStorage on mount
   useEffect(() => {
