@@ -1,29 +1,19 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+export default async function GardenPage() {
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export default function GardenPage() {
-  const router = useRouter();
-  const supabase = getSupabaseBrowserClient();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data?.user) {
-        router.replace("/login");
-      } else {
-        setLoading(false);
-      }
-    });
-  }, []);
-
-  if (loading) return null;
+  if (!user) {
+    redirect("/login");
+  }
 
   return (
-    <div>
-      {/* ALL GARDEN CONTENT GOES HERE */}
-    </div>
+    <main>
+      {/* garden content */}
+    </main>
   );
 }
