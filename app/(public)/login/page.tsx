@@ -14,7 +14,24 @@ export default function LoginPage() {
   const mountedRef = useRef(false);
   const valuesRestoredRef = useRef(false);
 
-  // Restore values ONCE - use multiple strategies to ensure it works
+  // Prevent background image from loading on login page
+  useEffect(() => {
+    // Override body background immediately
+    document.body.style.backgroundImage = "none";
+    document.body.style.backgroundColor = "#000000";
+    document.documentElement.style.backgroundImage = "none";
+    document.documentElement.style.backgroundColor = "#000000";
+    
+    return () => {
+      // Restore on unmount if needed
+      document.body.style.backgroundImage = "";
+      document.body.style.backgroundColor = "";
+      document.documentElement.style.backgroundImage = "";
+      document.documentElement.style.backgroundColor = "";
+    };
+  }, []);
+
+  // Restore values ONCE
   useEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
@@ -31,7 +48,6 @@ export default function LoginPage() {
         const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
         const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
 
-        // Only restore if inputs are empty (don't overwrite user typing)
         if (savedEmail && !emailInput.value) {
           emailInput.value = savedEmail;
         }
@@ -45,18 +61,14 @@ export default function LoginPage() {
       }
     };
 
-    // Try immediately
     restoreValues();
-    
-    // Try in next frame
     requestAnimationFrame(() => {
       restoreValues();
-      // Try again after a tiny delay
       setTimeout(restoreValues, 10);
     });
   }, []);
 
-  // Save as user types - use direct event listeners to avoid React re-renders
+  // Save as user types
   useEffect(() => {
     const emailInput = emailRef.current;
     const passwordInput = passwordRef.current;
@@ -164,7 +176,9 @@ export default function LoginPage() {
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 1,
+        zIndex: 9999,
+        width: "100%",
+        height: "100%",
       }}
       suppressHydrationWarning
     >
