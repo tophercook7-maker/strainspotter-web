@@ -6,6 +6,20 @@ import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
+// Global storage outside React to survive any remounts
+let globalEmail = "";
+let globalPassword = "";
+
+// Restore from localStorage immediately (before React)
+if (typeof window !== "undefined") {
+  try {
+    globalEmail = localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+    globalPassword = localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+  } catch (e) {
+    // Ignore
+  }
+}
+
 export default function LoginPage() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -23,41 +37,40 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Restore values from localStorage on mount
+  // Restore values from global storage and localStorage on mount
   useEffect(() => {
     mountedRef.current = true;
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
       // Restore email
-      try {
-        const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
-        if (savedEmail && emailRef.current) {
-          emailRef.current.value = savedEmail;
-          console.log("[LOGIN] Restored email from localStorage");
+      if (emailRef.current) {
+        const value = globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+        if (value) {
+          emailRef.current.value = value;
+          globalEmail = value;
+          console.log("[LOGIN] Restored email:", value.substring(0, 3) + "***");
         }
-      } catch (e) {
-        console.error("[LOGIN] Failed to restore email:", e);
       }
 
       // Restore password
-      try {
-        const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
-        if (savedPassword && passwordRef.current) {
-          passwordRef.current.value = savedPassword;
-          console.log("[LOGIN] Restored password from localStorage");
+      if (passwordRef.current) {
+        const value = globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+        if (value) {
+          passwordRef.current.value = value;
+          globalPassword = value;
+          console.log("[LOGIN] Restored password: ***");
         }
-      } catch (e) {
-        console.error("[LOGIN] Failed to restore password:", e);
       }
-    }, 0);
+    });
 
-    // Save to localStorage as user types (using input events)
+    // Save to localStorage and global storage as user types
     const emailInput = emailRef.current;
     const passwordInput = passwordRef.current;
 
     const handleEmailChange = () => {
       if (emailInput?.value) {
+        globalEmail = emailInput.value;
         try {
           localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
         } catch (e) {
@@ -68,6 +81,7 @@ export default function LoginPage() {
 
     const handlePasswordChange = () => {
       if (passwordInput?.value) {
+        globalPassword = passwordInput.value;
         try {
           localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
         } catch (e) {
@@ -78,19 +92,22 @@ export default function LoginPage() {
 
     if (emailInput) {
       emailInput.addEventListener("input", handleEmailChange);
+      emailInput.addEventListener("change", handleEmailChange);
     }
     if (passwordInput) {
       passwordInput.addEventListener("input", handlePasswordChange);
+      passwordInput.addEventListener("change", handlePasswordChange);
     }
 
     return () => {
-      clearTimeout(timer);
       mountedRef.current = false;
       if (emailInput) {
         emailInput.removeEventListener("input", handleEmailChange);
+        emailInput.removeEventListener("change", handleEmailChange);
       }
       if (passwordInput) {
         passwordInput.removeEventListener("input", handlePasswordChange);
+        passwordInput.removeEventListener("change", handlePasswordChange);
       }
     };
   }, []);
@@ -109,11 +126,11 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // Get values directly from refs (uncontrolled inputs)
-    const currentEmail = emailRef.current?.value || "";
-    const currentPassword = passwordRef.current?.value || "";
+    // Get values from refs, global storage, or localStorage (in that order)
+    const currentEmail = emailRef.current?.value || globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+    const currentPassword = passwordRef.current?.value || globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
 
-    console.log("[LOGIN] Submitting:", { email: currentEmail ? "***" : "", password: currentPassword ? "***" : "" });
+    console.log("[LOGIN] Submitting:", { email: currentEmail ? currentEmail.substring(0, 3) + "***" : "", password: currentPassword ? "***" : "" });
 
     if (!currentEmail || !currentPassword) {
       setError("Please enter both email and password");
@@ -140,8 +157,10 @@ export default function LoginPage() {
 
       console.log("[LOGIN] Login successful, redirecting...");
 
-      // SUCCESS — clear localStorage and redirect
+      // SUCCESS — clear storage and redirect
       try {
+        globalEmail = "";
+        globalPassword = "";
         localStorage.removeItem(STORAGE_KEY_EMAIL);
         localStorage.removeItem(STORAGE_KEY_PASSWORD);
       } catch (e) {
@@ -177,6 +196,7 @@ export default function LoginPage() {
           type="email"
           name="email"
           placeholder="Email"
+          defaultValue={globalEmail}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
@@ -188,6 +208,7 @@ export default function LoginPage() {
           type="password"
           name="password"
           placeholder="Password"
+          defaultValue={globalPassword}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
