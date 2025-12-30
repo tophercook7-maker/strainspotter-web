@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { PortalProvider } from "./components/portal/PortalController";
-import ResponsiveShell from "@/components/layout/ResponsiveShell";
-import { AuthProvider } from "@/lib/auth/AuthProvider";
-import AuthWall from "@/components/AuthWall";
 import DesktopRefreshButton from "@/components/DesktopRefreshButton";
 import "./service-worker-unregister";
-import ConditionalAppShell from "./components/ConditionalAppShell";
 
 export const metadata: Metadata = {
   title: "StrainSpotter",
@@ -17,6 +12,13 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Root layout - DUMB wrapper only
+ * NO auth logic
+ * NO ConditionalAppShell
+ * NO redirects
+ * Login is in (public) route group and will NEVER touch ConditionalAppShell
+ */
 export default function RootLayout({
   children,
 }: {
@@ -25,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen" style={{ margin: 0, padding: 0 }}>
-        <ConditionalAppShell>{children}</ConditionalAppShell>
+        {children}
         <DesktopRefreshButton />
       </body>
     </html>
