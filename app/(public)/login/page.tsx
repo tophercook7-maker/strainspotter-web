@@ -151,17 +151,40 @@ export default function LoginPage() {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center bg-black"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#000000",
+        margin: 0,
+        padding: 0,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1,
+      }}
       suppressHydrationWarning
     >
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 w-full max-w-sm p-6"
-        style={{ minWidth: "320px" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+          width: "100%",
+          maxWidth: "384px",
+          padding: "24px",
+          minWidth: "320px",
+        }}
         noValidate
         suppressHydrationWarning
       >
-        <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
+        <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#ffffff", marginBottom: "16px", margin: 0 }}>
+          Sign In
+        </h1>
         
         <input
           ref={emailRef}
@@ -170,8 +193,15 @@ export default function LoginPage() {
           placeholder="Email"
           required
           disabled={loading}
-          className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-          style={{ 
+          style={{
+            padding: "12px 16px",
+            backgroundColor: "#171717",
+            border: "1px solid #404040",
+            borderRadius: "8px",
+            color: "#ffffff",
+            fontSize: "16px",
+            outline: "none",
+            opacity: loading ? 0.5 : 1,
             transition: "none",
             WebkitTransition: "none",
             MozTransition: "none",
@@ -188,8 +218,15 @@ export default function LoginPage() {
           placeholder="Password"
           required
           disabled={loading}
-          className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-          style={{ 
+          style={{
+            padding: "12px 16px",
+            backgroundColor: "#171717",
+            border: "1px solid #404040",
+            borderRadius: "8px",
+            color: "#ffffff",
+            fontSize: "16px",
+            outline: "none",
+            opacity: loading ? 0.5 : 1,
             transition: "none",
             WebkitTransition: "none",
             MozTransition: "none",
@@ -202,8 +239,16 @@ export default function LoginPage() {
         <button 
           type="submit" 
           disabled={loading}
-          className="px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ 
+          style={{
+            padding: "12px 16px",
+            backgroundColor: "#16a34a",
+            color: "#000000",
+            fontWeight: "600",
+            borderRadius: "8px",
+            border: "none",
+            fontSize: "16px",
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.5 : 1,
             transition: "none",
             WebkitTransition: "none",
             MozTransition: "none",
@@ -213,7 +258,11 @@ export default function LoginPage() {
           {loading ? "Signing in…" : "Sign In"}
         </button>
 
-        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+        {error && (
+          <p style={{ color: "#f87171", fontSize: "14px", marginTop: "8px", margin: 0 }}>
+            {error}
+          </p>
+        )}
       </form>
     </div>
   );
