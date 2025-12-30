@@ -8,37 +8,63 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const STORAGE_KEY_EMAIL = "ss_login_email";
+const STORAGE_KEY_PASSWORD = "ss_login_password";
+
 export default function LoginPage() {
-  // Use refs to persist values across remounts
-  const emailRef = useRef("");
-  const passwordRef = useRef("");
-  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
+  const initializedRef = useRef(false);
 
-  // Sync refs with state
+  // Restore from localStorage on mount
   useEffect(() => {
-    emailRef.current = email;
-    passwordRef.current = password;
-  }, [email, password]);
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-  // Restore from refs on mount (in case of remount)
-  useEffect(() => {
-    if (emailRef.current) {
-      setEmail(emailRef.current);
+    try {
+      const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
+      const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
+      
+      if (savedEmail) {
+        setEmail(savedEmail);
+      }
+      if (savedPassword) {
+        setPassword(savedPassword);
+      }
+    } catch (e) {
+      // localStorage might not be available
     }
-    if (passwordRef.current) {
-      setPassword(passwordRef.current);
-    }
+
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    if (email) {
+      try {
+        localStorage.setItem(STORAGE_KEY_EMAIL, email);
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }, [email]);
+
+  useEffect(() => {
+    if (password) {
+      try {
+        localStorage.setItem(STORAGE_KEY_PASSWORD, password);
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }, [password]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,9 +78,16 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // Use refs to ensure we have the latest values even if component remounts
-    const currentEmail = emailRef.current || email;
-    const currentPassword = passwordRef.current || password;
+    // Get values from state (they should be synced with localStorage)
+    const currentEmail = email || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+    const currentPassword = password || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+
+    if (!currentEmail || !currentPassword) {
+      setError("Please enter both email and password");
+      setLoading(false);
+      submittingRef.current = false;
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -71,7 +104,14 @@ export default function LoginPage() {
         return;
       }
 
-      // SUCCESS — hard redirect (prevents remount loop)
+      // SUCCESS — clear localStorage and redirect
+      try {
+        localStorage.removeItem(STORAGE_KEY_EMAIL);
+        localStorage.removeItem(STORAGE_KEY_PASSWORD);
+      } catch (e) {
+        // Ignore
+      }
+
       if (mountedRef.current) {
         window.location.href = "/garden";
       }
@@ -100,7 +140,6 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => {
             const value = e.target.value;
-            emailRef.current = value;
             if (mountedRef.current) {
               setEmail(value);
             }
@@ -118,7 +157,6 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => {
             const value = e.target.value;
-            passwordRef.current = value;
             if (mountedRef.current) {
               setPassword(value);
             }
