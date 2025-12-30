@@ -15,11 +15,11 @@ export default function GardenPage() {
     let alive = true;
 
     async function resolveAuth() {
-      const { data, error } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
 
       if (!alive) return;
 
-      if (error || !data?.user) {
+      if (!data?.user) {
         router.replace("/login");
         return;
       }
@@ -35,7 +35,6 @@ export default function GardenPage() {
     };
   }, [router, supabase]);
 
-  // ⏳ HARD BLOCK — no render, no redirect
   if (loading) {
     return (
       <div
@@ -52,11 +51,9 @@ export default function GardenPage() {
     );
   }
 
-  if (!user) return null;
-
   return (
     <main style={{ padding: 24 }}>
-      {/* 🌿 ALL GARDEN CONTENT GOES HERE */}
+      {/* 🌿 ALL GARDEN CONTENT LIVES HERE */}
     </main>
   );
 }
