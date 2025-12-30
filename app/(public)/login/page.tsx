@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -14,11 +14,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
+  const submittingRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (loading || !mountedRef.current) return;
     
+    // Prevent double submission
+    if (loading || submittingRef.current || !mountedRef.current) {
+      return;
+    }
+    
+    submittingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -32,6 +45,7 @@ export default function LoginPage() {
         if (mountedRef.current) {
           setError(error.message);
           setLoading(false);
+          submittingRef.current = false;
         }
         return;
       }
@@ -44,6 +58,7 @@ export default function LoginPage() {
       if (mountedRef.current) {
         setError(err.message || "Login failed");
         setLoading(false);
+        submittingRef.current = false;
       }
     }
   }
@@ -62,7 +77,11 @@ export default function LoginPage() {
           name="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            if (mountedRef.current) {
+              setEmail(e.target.value);
+            }
+          }}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
@@ -74,7 +93,11 @@ export default function LoginPage() {
           name="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            if (mountedRef.current) {
+              setPassword(e.target.value);
+            }
+          }}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
