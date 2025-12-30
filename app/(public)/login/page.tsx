@@ -10,36 +10,40 @@ const STORAGE_KEY_PASSWORD = "ss_login_password";
 const getClient = () => getSupabaseBrowserClient();
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(() => {
+    // Initialize from localStorage immediately
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
+
+  const [password, setPassword] = useState(() => {
+    // Initialize from localStorage immediately
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
-  const initializedRef = useRef(false);
 
   // Memoize the Supabase client instance
   const supabase = useMemo(() => getClient(), []);
 
-  // Restore from localStorage on mount (only once)
+  // Mark as mounted
   useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
-    try {
-      const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
-      const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
-      
-      if (savedEmail) {
-        setEmail(savedEmail);
-      }
-      if (savedPassword) {
-        setPassword(savedPassword);
-      }
-    } catch (e) {
-      // localStorage might not be available
-    }
-
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
@@ -142,6 +146,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
         
         <input
+          key="email-input"
           type="email"
           name="email"
           placeholder="Email"
@@ -159,6 +164,7 @@ export default function LoginPage() {
         />
 
         <input
+          key="password-input"
           type="password"
           name="password"
           placeholder="Password"
