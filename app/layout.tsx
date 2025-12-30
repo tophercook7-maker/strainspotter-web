@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth/AuthProvider";
 import AuthWall from "@/components/AuthWall";
 import DesktopRefreshButton from "@/components/DesktopRefreshButton";
 import "./service-worker-unregister";
+import ConditionalAppShell from "./components/ConditionalAppShell";
 
 export const metadata: Metadata = {
   title: "StrainSpotter",
@@ -24,13 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen" style={{ margin: 0, padding: 0 }}>
-        <AuthProvider>
-          <AuthWall>
-            <PortalProvider>
-              <ResponsiveShell>{children}</ResponsiveShell>
-            </PortalProvider>
-          </AuthWall>
-        </AuthProvider>
+        <ConditionalAppShell>{children}</ConditionalAppShell>
         <DesktopRefreshButton />
       </body>
     </html>
