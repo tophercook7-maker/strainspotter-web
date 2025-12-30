@@ -76,7 +76,7 @@ export default function GardenShell() {
           </p>
           <div className="mt-3 flex gap-3">
             <Link
-              href="/auth/login"
+              href="/login"
               className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white"
             >
               Sign in
