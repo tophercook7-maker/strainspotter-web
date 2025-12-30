@@ -13,45 +13,52 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(false);
   const valuesRestoredRef = useRef(false);
+  const isRestoringRef = useRef(false);
 
-  // Restore values ONCE
+  // Restore values ONCE - prevent any interference
   useEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
+    isRestoringRef.current = true;
 
     const restoreValues = () => {
-      if (valuesRestoredRef.current) return;
+      if (valuesRestoredRef.current || isRestoringRef.current === false) return;
       
       const emailInput = emailRef.current;
       const passwordInput = passwordRef.current;
 
-      if (!emailInput || !passwordInput) return;
+      if (!emailInput || !passwordInput) {
+        // Retry if inputs aren't ready
+        setTimeout(restoreValues, 10);
+        return;
+      }
 
       try {
         const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
         const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
 
-        if (savedEmail && !emailInput.value) {
+        // Only restore if input is empty AND we have saved value
+        if (savedEmail && emailInput.value === "") {
           emailInput.value = savedEmail;
         }
-        if (savedPassword && !passwordInput.value) {
+        if (savedPassword && passwordInput.value === "") {
           passwordInput.value = savedPassword;
         }
 
         valuesRestoredRef.current = true;
+        isRestoringRef.current = false;
       } catch (e) {
-        // Ignore
+        isRestoringRef.current = false;
       }
     };
 
+    // Try multiple times to ensure inputs are ready
     restoreValues();
-    requestAnimationFrame(() => {
-      restoreValues();
-      setTimeout(restoreValues, 10);
-    });
+    requestAnimationFrame(restoreValues);
+    setTimeout(restoreValues, 50);
   }, []);
 
-  // Save as user types
+  // Save as user types - NEVER restore during this
   useEffect(() => {
     const emailInput = emailRef.current;
     const passwordInput = passwordRef.current;
@@ -59,6 +66,9 @@ export default function LoginPage() {
     if (!emailInput || !passwordInput) return;
 
     const saveEmail = () => {
+      // Don't save if we're currently restoring
+      if (isRestoringRef.current) return;
+      
       if (emailInput.value && typeof window !== "undefined") {
         try {
           localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
@@ -69,6 +79,9 @@ export default function LoginPage() {
     };
 
     const savePassword = () => {
+      // Don't save if we're currently restoring
+      if (isRestoringRef.current) return;
+      
       if (passwordInput.value && typeof window !== "undefined") {
         try {
           localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
@@ -78,16 +91,17 @@ export default function LoginPage() {
       }
     };
 
-    emailInput.addEventListener("input", saveEmail, { passive: true });
-    emailInput.addEventListener("change", saveEmail, { passive: true });
-    passwordInput.addEventListener("input", savePassword, { passive: true });
-    passwordInput.addEventListener("change", savePassword, { passive: true });
+    // Use capture phase to save before any other handlers
+    emailInput.addEventListener("input", saveEmail, { passive: true, capture: true });
+    emailInput.addEventListener("change", saveEmail, { passive: true, capture: true });
+    passwordInput.addEventListener("input", savePassword, { passive: true, capture: true });
+    passwordInput.addEventListener("change", savePassword, { passive: true, capture: true });
 
     return () => {
-      emailInput.removeEventListener("input", saveEmail);
-      emailInput.removeEventListener("change", saveEmail);
-      passwordInput.removeEventListener("input", savePassword);
-      passwordInput.removeEventListener("change", savePassword);
+      emailInput.removeEventListener("input", saveEmail, { capture: true });
+      emailInput.removeEventListener("change", saveEmail, { capture: true });
+      passwordInput.removeEventListener("input", savePassword, { capture: true });
+      passwordInput.removeEventListener("change", savePassword, { capture: true });
     };
   }, []);
 
@@ -174,6 +188,10 @@ export default function LoginPage() {
         }}
         noValidate
         suppressHydrationWarning
+        onReset={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
       >
         <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#ffffff", marginBottom: "16px", margin: 0 }}>
           Sign In
@@ -202,6 +220,7 @@ export default function LoginPage() {
           }}
           autoComplete="email"
           suppressHydrationWarning
+          key="email-input"
         />
 
         <input
@@ -227,6 +246,7 @@ export default function LoginPage() {
           }}
           autoComplete="current-password"
           suppressHydrationWarning
+          key="password-input"
         />
 
         <button 
