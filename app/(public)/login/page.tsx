@@ -6,104 +6,126 @@ import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
+// Global state outside React to survive remounts
+let globalEmail = "";
+let globalPassword = "";
+let isInitialized = false;
+
+// Initialize from localStorage immediately (before React)
+if (typeof window !== "undefined" && !isInitialized) {
+  try {
+    globalEmail = localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+    globalPassword = localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+    isInitialized = true;
+  } catch (e) {
+    // Ignore
+  }
+}
+
 export default function LoginPage() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(false);
-  const valuesRestoredRef = useRef(false);
-  const isRestoringRef = useRef(false);
 
-  // Restore values ONCE - prevent any interference
+  // Restore values ONCE - use global state
   useEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
-    isRestoringRef.current = true;
 
     const restoreValues = () => {
-      if (valuesRestoredRef.current || isRestoringRef.current === false) return;
-      
       const emailInput = emailRef.current;
       const passwordInput = passwordRef.current;
 
       if (!emailInput || !passwordInput) {
-        // Retry if inputs aren't ready
         setTimeout(restoreValues, 10);
         return;
       }
 
-      try {
-        const savedEmail = localStorage.getItem(STORAGE_KEY_EMAIL);
-        const savedPassword = localStorage.getItem(STORAGE_KEY_PASSWORD);
+      // Get from global state or localStorage
+      const email = globalEmail || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_EMAIL) : "") || "";
+      const password = globalPassword || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_PASSWORD) : "") || "";
 
-        // Only restore if input is empty AND we have saved value
-        if (savedEmail && emailInput.value === "") {
-          emailInput.value = savedEmail;
-        }
-        if (savedPassword && passwordInput.value === "") {
-          passwordInput.value = savedPassword;
-        }
-
-        valuesRestoredRef.current = true;
-        isRestoringRef.current = false;
-      } catch (e) {
-        isRestoringRef.current = false;
+      // Only set if input is empty and we have a value
+      if (email && emailInput.value === "") {
+        emailInput.value = email;
+        globalEmail = email;
+      }
+      if (password && passwordInput.value === "") {
+        passwordInput.value = password;
+        globalPassword = password;
       }
     };
 
-    // Try multiple times to ensure inputs are ready
     restoreValues();
     requestAnimationFrame(restoreValues);
-    setTimeout(restoreValues, 50);
   }, []);
 
-  // Save as user types - NEVER restore during this
+  // Save as user types - update global state immediately
   useEffect(() => {
     const emailInput = emailRef.current;
     const passwordInput = passwordRef.current;
 
     if (!emailInput || !passwordInput) return;
 
-    const saveEmail = () => {
-      // Don't save if we're currently restoring
-      if (isRestoringRef.current) return;
-      
-      if (emailInput.value && typeof window !== "undefined") {
+    const saveEmail = (e?: Event) => {
+      const value = emailInput.value;
+      globalEmail = value; // Update global immediately
+      if (value && typeof window !== "undefined") {
         try {
-          localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
+          localStorage.setItem(STORAGE_KEY_EMAIL, value);
         } catch (e) {
           // Ignore
         }
       }
     };
 
-    const savePassword = () => {
-      // Don't save if we're currently restoring
-      if (isRestoringRef.current) return;
-      
-      if (passwordInput.value && typeof window !== "undefined") {
+    const savePassword = (e?: Event) => {
+      const value = passwordInput.value;
+      globalPassword = value; // Update global immediately
+      if (value && typeof window !== "undefined") {
         try {
-          localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
+          localStorage.setItem(STORAGE_KEY_PASSWORD, value);
         } catch (e) {
           // Ignore
         }
       }
     };
 
-    // Use capture phase to save before any other handlers
+    // Use capture phase and multiple event types
     emailInput.addEventListener("input", saveEmail, { passive: true, capture: true });
     emailInput.addEventListener("change", saveEmail, { passive: true, capture: true });
+    emailInput.addEventListener("keyup", saveEmail, { passive: true, capture: true });
     passwordInput.addEventListener("input", savePassword, { passive: true, capture: true });
     passwordInput.addEventListener("change", savePassword, { passive: true, capture: true });
+    passwordInput.addEventListener("keyup", savePassword, { passive: true, capture: true });
 
     return () => {
       emailInput.removeEventListener("input", saveEmail, { capture: true });
       emailInput.removeEventListener("change", saveEmail, { capture: true });
+      emailInput.removeEventListener("keyup", saveEmail, { capture: true });
       passwordInput.removeEventListener("input", savePassword, { capture: true });
       passwordInput.removeEventListener("change", savePassword, { capture: true });
+      passwordInput.removeEventListener("keyup", savePassword, { capture: true });
     };
   }, []);
+
+  // Restore from global state if component remounts
+  useEffect(() => {
+    const emailInput = emailRef.current;
+    const passwordInput = passwordRef.current;
+
+    if (!emailInput || !passwordInput) return;
+
+    // If inputs are empty but we have global state, restore it
+    if (globalEmail && emailInput.value === "") {
+      emailInput.value = globalEmail;
+    }
+    if (globalPassword && passwordInput.value === "") {
+      passwordInput.value = globalPassword;
+    }
+  });
 
   const supabase = getSupabaseBrowserClient();
 
@@ -116,8 +138,9 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const email = emailRef.current?.value || "";
-    const password = passwordRef.current?.value || "";
+    // Get from refs, global state, or localStorage (in that order)
+    const email = emailRef.current?.value || globalEmail || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_EMAIL) : "") || "";
+    const password = passwordRef.current?.value || globalPassword || (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY_PASSWORD) : "") || "";
 
     if (!email || !password) {
       setError("Please enter both email and password");
@@ -128,6 +151,8 @@ export default function LoginPage() {
     try {
       localStorage.setItem(STORAGE_KEY_EMAIL, email);
       localStorage.setItem(STORAGE_KEY_PASSWORD, password);
+      globalEmail = email;
+      globalPassword = password;
     } catch (e) {
       // Ignore
     }
@@ -147,6 +172,8 @@ export default function LoginPage() {
       try {
         localStorage.removeItem(STORAGE_KEY_EMAIL);
         localStorage.removeItem(STORAGE_KEY_PASSWORD);
+        globalEmail = "";
+        globalPassword = "";
       } catch (e) {
         // Ignore
       }
@@ -204,6 +231,7 @@ export default function LoginPage() {
           placeholder="Email"
           required
           disabled={loading}
+          defaultValue={globalEmail}
           style={{
             padding: "12px 16px",
             backgroundColor: "rgba(23, 23, 23, 0.8)",
@@ -220,7 +248,6 @@ export default function LoginPage() {
           }}
           autoComplete="email"
           suppressHydrationWarning
-          key="email-input"
         />
 
         <input
@@ -230,6 +257,7 @@ export default function LoginPage() {
           placeholder="Password"
           required
           disabled={loading}
+          defaultValue={globalPassword}
           style={{
             padding: "12px 16px",
             backgroundColor: "rgba(23, 23, 23, 0.8)",
@@ -246,7 +274,6 @@ export default function LoginPage() {
           }}
           autoComplete="current-password"
           suppressHydrationWarning
-          key="password-input"
         />
 
         <button 
