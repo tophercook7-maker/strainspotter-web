@@ -6,6 +6,22 @@ import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
+// Inject style immediately (before React renders)
+if (typeof window !== "undefined") {
+  const styleId = "login-page-override";
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      body, html {
+        background-image: none !important;
+        background-color: #000000 !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
 export default function LoginPage() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -14,16 +30,15 @@ export default function LoginPage() {
   const mountedRef = useRef(false);
   const valuesRestoredRef = useRef(false);
 
-  // Prevent background image from loading on login page
+  // Also override in useEffect as backup
   useEffect(() => {
-    // Override body background immediately
     document.body.style.backgroundImage = "none";
     document.body.style.backgroundColor = "#000000";
     document.documentElement.style.backgroundImage = "none";
     document.documentElement.style.backgroundColor = "#000000";
     
     return () => {
-      // Restore on unmount if needed
+      // Restore on unmount
       document.body.style.backgroundImage = "";
       document.body.style.backgroundColor = "";
       document.documentElement.style.backgroundImage = "";
