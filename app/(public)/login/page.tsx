@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export default function LoginPage() {
@@ -8,39 +8,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Restore from localStorage on mount only
-  useEffect(() => {
-    try {
-      const savedEmail = localStorage.getItem("ss_login_email");
-      const savedPassword = localStorage.getItem("ss_login_password");
-      if (savedEmail) setEmail(savedEmail);
-      if (savedPassword) setPassword(savedPassword);
-    } catch (e) {
-      // Ignore
-    }
-  }, []);
-
-  // Save to localStorage as user types
-  useEffect(() => {
-    if (email) {
-      try {
-        localStorage.setItem("ss_login_email", email);
-      } catch (e) {
-        // Ignore
-      }
-    }
-  }, [email]);
-
-  useEffect(() => {
-    if (password) {
-      try {
-        localStorage.setItem("ss_login_password", password);
-      } catch (e) {
-        // Ignore
-      }
-    }
-  }, [password]);
 
   const supabase = getSupabaseBrowserClient();
 
@@ -60,19 +27,13 @@ export default function LoginPage() {
       return;
     }
 
-    // Success - clear storage and redirect
-    try {
-      localStorage.removeItem("ss_login_email");
-      localStorage.removeItem("ss_login_password");
-    } catch (e) {
-      // Ignore
-    }
-
+    // Success - redirect
     window.location.replace("/garden");
   };
 
   return (
     <div
+      id="login"
       style={{
         minHeight: "100vh",
         display: "flex",
