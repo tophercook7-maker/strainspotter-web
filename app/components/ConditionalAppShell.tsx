@@ -13,7 +13,7 @@ export default function ConditionalAppShell({
 }) {
   const pathname = usePathname();
 
-  // Auth routes get NO providers - completely isolated
+  // Public routes get NO providers - completely isolated
   if (pathname === "/login" || pathname?.startsWith("/auth/")) {
     return <>{children}</>;
   }
