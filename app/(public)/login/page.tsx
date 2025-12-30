@@ -1,29 +1,28 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
-function LoginForm() {
+export default function LoginPage() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const restoredRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Restore values ONCE after mount
+  // Only run on client, after mount
   useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
-
-    const restore = () => {
+    setMounted(true);
+    
+    // Restore values after a tiny delay to ensure DOM is ready
+    const timer = setTimeout(() => {
       if (emailRef.current && typeof window !== "undefined") {
         try {
           const saved = localStorage.getItem(STORAGE_KEY_EMAIL);
-          if (saved && !emailRef.current.value) {
+          if (saved) {
             emailRef.current.value = saved;
           }
         } catch (e) {
@@ -34,18 +33,65 @@ function LoginForm() {
       if (passwordRef.current && typeof window !== "undefined") {
         try {
           const saved = localStorage.getItem(STORAGE_KEY_PASSWORD);
-          if (saved && !passwordRef.current.value) {
+          if (saved) {
             passwordRef.current.value = saved;
           }
         } catch (e) {
           // Ignore
         }
       }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Save as user types
+  useEffect(() => {
+    if (!mounted) return;
+
+    const emailInput = emailRef.current;
+    const passwordInput = passwordRef.current;
+
+    const saveEmail = () => {
+      if (emailInput?.value && typeof window !== "undefined") {
+        try {
+          localStorage.setItem(STORAGE_KEY_EMAIL, emailInput.value);
+        } catch (e) {
+          // Ignore
+        }
+      }
     };
 
-    restore();
-    requestAnimationFrame(restore);
-  }, []);
+    const savePassword = () => {
+      if (passwordInput?.value && typeof window !== "undefined") {
+        try {
+          localStorage.setItem(STORAGE_KEY_PASSWORD, passwordInput.value);
+        } catch (e) {
+          // Ignore
+        }
+      }
+    };
+
+    if (emailInput) {
+      emailInput.addEventListener("input", saveEmail);
+      emailInput.addEventListener("change", saveEmail);
+    }
+    if (passwordInput) {
+      passwordInput.addEventListener("input", savePassword);
+      passwordInput.addEventListener("change", savePassword);
+    }
+
+    return () => {
+      if (emailInput) {
+        emailInput.removeEventListener("input", saveEmail);
+        emailInput.removeEventListener("change", saveEmail);
+      }
+      if (passwordInput) {
+        passwordInput.removeEventListener("input", savePassword);
+        passwordInput.removeEventListener("change", savePassword);
+      }
+    };
+  }, [mounted]);
 
   const supabase = getSupabaseBrowserClient();
 
@@ -100,31 +146,19 @@ function LoginForm() {
     }
   }
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      const value = e.target.value;
-      if (value) {
-        localStorage.setItem(STORAGE_KEY_EMAIL, value);
-      } else {
-        localStorage.removeItem(STORAGE_KEY_EMAIL);
-      }
-    } catch (e) {
-      // Ignore
-    }
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      const value = e.target.value;
-      if (value) {
-        localStorage.setItem(STORAGE_KEY_PASSWORD, value);
-      } else {
-        localStorage.removeItem(STORAGE_KEY_PASSWORD);
-      }
-    } catch (e) {
-      // Ignore
-    }
-  };
+  // Don't render until mounted to prevent flash
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="flex flex-col gap-4 w-full max-w-sm p-6" style={{ minWidth: "320px" }}>
+          <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
+          <div className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white opacity-50">
+            Loading...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">
@@ -141,10 +175,10 @@ function LoginForm() {
           type="email"
           name="email"
           placeholder="Email"
-          onChange={handleEmailChange}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+          style={{ transition: "none" }}
           autoComplete="email"
         />
 
@@ -153,17 +187,18 @@ function LoginForm() {
           type="password"
           name="password"
           placeholder="Password"
-          onChange={handlePasswordChange}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+          style={{ transition: "none" }}
           autoComplete="current-password"
         />
 
         <button 
           type="submit" 
           disabled={loading}
-          className="px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ transition: "none" }}
         >
           {loading ? "Signing in…" : "Sign In"}
         </button>
@@ -173,8 +208,3 @@ function LoginForm() {
     </div>
   );
 }
-
-// Disable SSR to prevent hydration mismatch
-export default dynamic(() => Promise.resolve(LoginForm), {
-  ssr: false,
-});
