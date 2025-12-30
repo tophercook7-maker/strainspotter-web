@@ -72,7 +72,7 @@ export default function SignupPage() {
         // Email confirmation required
         setSuccess('Account created! Please check your email to confirm your account before signing in.');
         setTimeout(() => {
-          router.replace('/auth/login');
+          window.location.href = '/login';
         }, 3000);
       }
     } catch (err: any) {

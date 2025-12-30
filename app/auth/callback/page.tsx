@@ -11,37 +11,9 @@ function AuthCallbackContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TEMPORARY: Auth disabled - redirect to garden
-    // async function handleCallback() {
-    //   try {
-    //     const supabase = getSupabaseBrowserClient();
-    //     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    //     if (sessionError) {
-    //       throw sessionError;
-    //     }
-    //     if (session) {
-    //       router.push('/garden');
-    //     } else {
-    //       const errorParam = searchParams.get('error');
-    //       if (errorParam) {
-    //         setError(errorParam);
-    //       } else {
-    //         router.push('/auth/login');
-    //       }
-    //     }
-    //   } catch (err: any) {
-    //     console.error('Auth callback error:', err);
-    //     setError(err.message || 'Authentication failed');
-    //     setTimeout(() => {
-    //       router.push('/auth/login');
-    //     }, 2000);
-    //   }
-    // }
-    // handleCallback();
-    
-    // Mock: Always redirect to garden
+    // HARD redirect — no router state
     window.location.href = "/garden";
-  }, [router, searchParams]);
+  }, []);
 
   if (error) {
     return (
@@ -50,7 +22,7 @@ function AuthCallbackContent() {
           <h1 className="text-2xl font-bold mb-4 text-red-400">Authentication Error</h1>
           <p className="text-gray-400 mb-6">{error}</p>
           <button
-            onClick={() => router.push('/login')}
+            onClick={() => window.location.href = '/login'}
             className="px-6 py-3 bg-green-500 text-black rounded-lg font-semibold hover:bg-green-400 transition"
           >
             Back to Login
