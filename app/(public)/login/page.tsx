@@ -27,29 +27,64 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
+  const restoreAttemptedRef = useRef(false);
 
   // Get Supabase client directly (no memoization to avoid hook issues)
   const supabase = getSupabaseBrowserClient();
 
+  // AGGRESSIVE RESTORATION: Restore values synchronously on every render
+  // This ensures values persist even if component remounts
+  if (emailRef.current && !restoreAttemptedRef.current) {
+    const emailValue = globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+    if (emailValue && emailRef.current.value !== emailValue) {
+      emailRef.current.value = emailValue;
+      globalEmail = emailValue;
+    }
+  }
+
+  if (passwordRef.current && !restoreAttemptedRef.current) {
+    const passwordValue = globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+    if (passwordValue && passwordRef.current.value !== passwordValue) {
+      passwordRef.current.value = passwordValue;
+      globalPassword = passwordValue;
+    }
+  }
+
   // Restore values from global storage and localStorage on mount
   useEffect(() => {
     mountedRef.current = true;
+    restoreAttemptedRef.current = true;
 
-    // Use requestAnimationFrame to ensure DOM is ready
+    // Immediate synchronous restoration
+    if (emailRef.current) {
+      const value = globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+      if (value) {
+        emailRef.current.value = value;
+        globalEmail = value;
+      }
+    }
+
+    if (passwordRef.current) {
+      const value = globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+      if (value) {
+        passwordRef.current.value = value;
+        globalPassword = value;
+      }
+    }
+
+    // Also use requestAnimationFrame as backup
     requestAnimationFrame(() => {
-      // Restore email
       if (emailRef.current) {
         const value = globalEmail || localStorage.getItem(STORAGE_KEY_EMAIL) || "";
-        if (value) {
+        if (value && emailRef.current.value !== value) {
           emailRef.current.value = value;
           globalEmail = value;
         }
       }
 
-      // Restore password
       if (passwordRef.current) {
         const value = globalPassword || localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
-        if (value) {
+        if (value && passwordRef.current.value !== value) {
           passwordRef.current.value = value;
           globalPassword = value;
         }
@@ -85,21 +120,28 @@ export default function LoginPage() {
     if (emailInput) {
       emailInput.addEventListener("input", handleEmailChange);
       emailInput.addEventListener("change", handleEmailChange);
+      // Also listen to keyup as backup
+      emailInput.addEventListener("keyup", handleEmailChange);
     }
     if (passwordInput) {
       passwordInput.addEventListener("input", handlePasswordChange);
       passwordInput.addEventListener("change", handlePasswordChange);
+      // Also listen to keyup as backup
+      passwordInput.addEventListener("keyup", handlePasswordChange);
     }
 
     return () => {
       mountedRef.current = false;
+      restoreAttemptedRef.current = false;
       if (emailInput) {
         emailInput.removeEventListener("input", handleEmailChange);
         emailInput.removeEventListener("change", handleEmailChange);
+        emailInput.removeEventListener("keyup", handleEmailChange);
       }
       if (passwordInput) {
         passwordInput.removeEventListener("input", handlePasswordChange);
         passwordInput.removeEventListener("change", handlePasswordChange);
+        passwordInput.removeEventListener("keyup", handlePasswordChange);
       }
     };
   }, []);
@@ -182,6 +224,7 @@ export default function LoginPage() {
           name="email"
           placeholder="Email"
           defaultValue={globalEmail}
+          key={`email-${globalEmail}`}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
@@ -194,6 +237,7 @@ export default function LoginPage() {
           name="password"
           placeholder="Password"
           defaultValue={globalPassword}
+          key={`password-${globalPassword}`}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
