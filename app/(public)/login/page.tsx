@@ -1,19 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
-export default function LoginPage() {
+function LoginForm() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const restoredRef = useRef(false);
 
-  // Restore values ONCE after mount using requestAnimationFrame to ensure DOM is ready
+  // Restore values ONCE after mount
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
@@ -42,9 +43,7 @@ export default function LoginPage() {
       }
     };
 
-    // Try immediately
     restore();
-    // Also try in next frame to ensure DOM is ready
     requestAnimationFrame(restore);
   }, []);
 
@@ -68,7 +67,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Save before submit
     try {
       localStorage.setItem(STORAGE_KEY_EMAIL, email);
       localStorage.setItem(STORAGE_KEY_PASSWORD, password);
@@ -88,7 +86,6 @@ export default function LoginPage() {
         return;
       }
 
-      // SUCCESS — clear storage and redirect
       try {
         localStorage.removeItem(STORAGE_KEY_EMAIL);
         localStorage.removeItem(STORAGE_KEY_PASSWORD);
@@ -104,8 +101,8 @@ export default function LoginPage() {
   }
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
     try {
+      const value = e.target.value;
       if (value) {
         localStorage.setItem(STORAGE_KEY_EMAIL, value);
       } else {
@@ -117,8 +114,8 @@ export default function LoginPage() {
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
     try {
+      const value = e.target.value;
       if (value) {
         localStorage.setItem(STORAGE_KEY_PASSWORD, value);
       } else {
@@ -176,3 +173,8 @@ export default function LoginPage() {
     </div>
   );
 }
+
+// Disable SSR to prevent hydration mismatch
+export default dynamic(() => Promise.resolve(LoginForm), {
+  ssr: false,
+});
