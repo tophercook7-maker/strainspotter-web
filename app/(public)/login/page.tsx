@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -13,32 +13,50 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading || !mountedRef.current) return;
+    
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
+      if (error) {
+        if (mountedRef.current) {
+          setError(error.message);
+          setLoading(false);
+        }
+        return;
+      }
+
+      // SUCCESS — hard redirect (prevents remount loop)
+      if (mountedRef.current) {
+        window.location.href = "/garden";
+      }
+    } catch (err: any) {
+      if (mountedRef.current) {
+        setError(err.message || "Login failed");
+        setLoading(false);
+      }
     }
-
-    window.location.href = "/garden";
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-black">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 w-full max-w-sm"
+        className="flex flex-col gap-4 w-full max-w-sm p-6"
+        style={{ minWidth: "320px" }}
       >
+        <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
+        
         <input
           type="email"
           name="email"
@@ -46,6 +64,9 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={loading}
+          className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+          autoComplete="email"
         />
 
         <input
@@ -55,13 +76,20 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          disabled={loading}
+          className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+          autoComplete="current-password"
         />
 
-        <button type="submit" disabled={loading}>
+        <button 
+          type="submit" 
+          disabled={loading}
+          className="px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
           {loading ? "Signing in…" : "Sign In"}
         </button>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
       </form>
     </div>
   );
