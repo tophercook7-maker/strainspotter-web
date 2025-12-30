@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
 // Public routes that don't require auth
-const PUBLIC_ROUTES = ["/", "/auth/login", "/auth/signup", "/auth/callback"];
+const PUBLIC_ROUTES = ["/", "/login", "/auth/signup", "/auth/callback"];
 
 export default function AuthWall({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -20,7 +20,7 @@ export default function AuthWall({ children }: { children: React.ReactNode }) {
 
     // If not loading and no user, redirect to login
     if (!loading && !user) {
-      router.replace("/auth/login");
+      router.replace("/login");
     }
   }, [user, loading, pathname, router]);
 
