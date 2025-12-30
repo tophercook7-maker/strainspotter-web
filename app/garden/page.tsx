@@ -7,53 +7,23 @@ import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 export default function GardenPage() {
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
-
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    let alive = true;
-
-    async function resolveAuth() {
-      const { data } = await supabase.auth.getUser();
-
-      if (!alive) return;
-
+    supabase.auth.getUser().then(({ data }) => {
       if (!data?.user) {
         router.replace("/login");
-        return;
+      } else {
+        setLoading(false);
       }
+    });
+  }, []);
 
-      setUser(data.user);
-      setLoading(false);
-    }
-
-    resolveAuth();
-
-    return () => {
-      alive = false;
-    };
-  }, [router, supabase]);
-
-  if (loading) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: 0.6,
-        }}
-      >
-        Entering the garden…
-      </div>
-    );
-  }
+  if (loading) return null;
 
   return (
-    <main style={{ padding: 24 }}>
-      {/* 🌿 ALL GARDEN CONTENT LIVES HERE */}
-    </main>
+    <div>
+      {/* ALL GARDEN CONTENT GOES HERE */}
+    </div>
   );
 }
