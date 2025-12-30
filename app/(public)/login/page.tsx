@@ -6,42 +6,35 @@ import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
 
+// Get initial values at module level (before React)
+function getInitialEmail() {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(STORAGE_KEY_EMAIL) || "";
+  } catch {
+    return "";
+  }
+}
+
+function getInitialPassword() {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(STORAGE_KEY_PASSWORD) || "";
+  } catch {
+    return "";
+  }
+}
+
 export default function LoginPage() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const mountedRef = useRef(false);
+  const initialEmailRef = useRef(getInitialEmail());
+  const initialPasswordRef = useRef(getInitialPassword());
 
-  // Only restore values ONCE on mount - never again
+  // Save as user types
   useEffect(() => {
-    if (mountedRef.current) return; // Already mounted
-    mountedRef.current = true;
-
-    // Restore from localStorage directly to DOM
-    if (emailRef.current && typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY_EMAIL);
-        if (saved) {
-          emailRef.current.value = saved;
-        }
-      } catch (e) {
-        // Ignore
-      }
-    }
-
-    if (passwordRef.current && typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY_PASSWORD);
-        if (saved) {
-          passwordRef.current.value = saved;
-        }
-      } catch (e) {
-        // Ignore
-      }
-    }
-
-    // Save as user types
     const emailInput = emailRef.current;
     const passwordInput = passwordRef.current;
 
@@ -84,7 +77,7 @@ export default function LoginPage() {
         passwordInput.removeEventListener("change", savePassword);
       }
     };
-  }, []); // Empty deps - only run once
+  }, []);
 
   const supabase = getSupabaseBrowserClient();
 
@@ -134,12 +127,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
+    <div className="min-h-screen flex items-center justify-center bg-black" key="login-page">
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 w-full max-w-sm p-6"
         style={{ minWidth: "320px" }}
         noValidate
+        key="login-form"
       >
         <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
         
@@ -148,10 +142,12 @@ export default function LoginPage() {
           type="email"
           name="email"
           placeholder="Email"
+          defaultValue={initialEmailRef.current}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
           autoComplete="email"
+          key="email-input"
         />
 
         <input
@@ -159,10 +155,12 @@ export default function LoginPage() {
           type="password"
           name="password"
           placeholder="Password"
+          defaultValue={initialPasswordRef.current}
           required
           disabled={loading}
           className="px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
           autoComplete="current-password"
+          key="password-input"
         />
 
         <button 
