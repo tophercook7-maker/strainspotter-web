@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 const STORAGE_KEY_EMAIL = "ss_login_email";
 const STORAGE_KEY_PASSWORD = "ss_login_password";
+
+// Memoize the Supabase client to prevent recreation
+const getClient = () => getSupabaseBrowserClient();
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,10 +18,10 @@ export default function LoginPage() {
   const submittingRef = useRef(false);
   const initializedRef = useRef(false);
 
-  // Get the shared Supabase client instance
-  const supabase = getSupabaseBrowserClient();
+  // Memoize the Supabase client instance
+  const supabase = useMemo(() => getClient(), []);
 
-  // Restore from localStorage on mount
+  // Restore from localStorage on mount (only once)
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
@@ -43,29 +46,34 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Save to localStorage on change
+  // Save to localStorage on change (debounced)
   useEffect(() => {
-    if (email) {
+    if (!email) return;
+    const timer = setTimeout(() => {
       try {
         localStorage.setItem(STORAGE_KEY_EMAIL, email);
       } catch (e) {
         // Ignore
       }
-    }
+    }, 100);
+    return () => clearTimeout(timer);
   }, [email]);
 
   useEffect(() => {
-    if (password) {
+    if (!password) return;
+    const timer = setTimeout(() => {
       try {
         localStorage.setItem(STORAGE_KEY_PASSWORD, password);
       } catch (e) {
         // Ignore
       }
-    }
+    }, 100);
+    return () => clearTimeout(timer);
   }, [password]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    e.stopPropagation();
     
     // Triple guard: prevent double submission
     if (loading || submittingRef.current || !mountedRef.current) {
@@ -111,7 +119,8 @@ export default function LoginPage() {
       }
 
       if (mountedRef.current) {
-        window.location.href = "/garden";
+        // Use replace to prevent back button issues
+        window.location.replace("/garden");
       }
     } catch (err: any) {
       if (mountedRef.current) {
@@ -128,6 +137,7 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 w-full max-w-sm p-6"
         style={{ minWidth: "320px" }}
+        noValidate
       >
         <h1 className="text-2xl font-bold text-white mb-4">Sign In</h1>
         

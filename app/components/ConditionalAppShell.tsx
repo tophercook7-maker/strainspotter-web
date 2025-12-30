@@ -1,11 +1,24 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { PortalProvider } from "./portal/PortalController";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import AuthWall from "@/components/AuthWall";
+
+// Memoize the shell to prevent unnecessary rerenders
+const MemoizedAppShell = memo(function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <AuthWall>
+        <PortalProvider>
+          <ResponsiveShell>{children}</ResponsiveShell>
+        </PortalProvider>
+      </AuthWall>
+    </AuthProvider>
+  );
+});
 
 export default function ConditionalAppShell({
   children,
@@ -26,13 +39,5 @@ export default function ConditionalAppShell({
   }
 
   // All other routes get full app shell
-  return (
-    <AuthProvider>
-      <AuthWall>
-        <PortalProvider>
-          <ResponsiveShell>{children}</ResponsiveShell>
-        </PortalProvider>
-      </AuthWall>
-    </AuthProvider>
-  );
+  return <MemoizedAppShell>{children}</MemoizedAppShell>;
 }
