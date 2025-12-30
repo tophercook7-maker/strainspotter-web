@@ -14,6 +14,7 @@ export default function ConditionalAppShell({
   const pathname = usePathname();
 
   // Public routes get NO providers - completely isolated
+  // This prevents any auth state changes from affecting login
   if (pathname === "/login" || pathname?.startsWith("/auth/")) {
     return <>{children}</>;
   }
@@ -29,4 +30,3 @@ export default function ConditionalAppShell({
     </AuthProvider>
   );
 }
-

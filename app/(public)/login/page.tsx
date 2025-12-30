@@ -16,6 +16,7 @@ export default function LoginPage() {
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
 
+  // Prevent state updates after unmount
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -26,7 +27,7 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
-    // Prevent double submission
+    // Triple guard: prevent double submission
     if (loading || submittingRef.current || !mountedRef.current) {
       return;
     }
