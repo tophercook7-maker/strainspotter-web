@@ -13,7 +13,6 @@ export default function HomePage() {
         alt="StrainSpotter"
         width={140}
         height={140}
-        className="landing-logo"
         priority
       />
 
