@@ -1,16 +1,29 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
-export default function HomePage() {
+export default function RootGate() {
   const router = useRouter()
 
-  return (
-    <main>
-      <h1>StrainSpotter</h1>
-      <button onClick={() => router.push('/garden')}>
-        Enter the Garden
-      </button>
-    </main>
-  )
+  useEffect(() => {
+    let alive = true
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!alive) return
+
+      if (data.session) {
+        router.replace('/garden')
+      } else {
+        router.replace('/login')
+      }
+    })
+
+    return () => {
+      alive = false
+    }
+  }, [router])
+
+  return null
 }
