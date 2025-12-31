@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true); // ✅ default ON
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const router = useRouter();
   const supabase = getSupabaseBrowserClient();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -16,10 +18,16 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword(
+      {
+        email,
+        password,
+      },
+      {
+        // 🔐 localStorage = remember me, sessionStorage = forget on close
+        persistSession: remember,
+      }
+    );
 
     if (error) {
       setError(error.message);
@@ -27,8 +35,8 @@ export default function LoginPage() {
       return;
     }
 
-    // Success - redirect
-    window.location.replace("/garden");
+    // Success - redirect using Next.js router
+    router.replace("/garden");
   };
 
   return (
@@ -73,9 +81,22 @@ export default function LoginPage() {
           Sign In
         </h1>
 
+        <label
+          htmlFor="login-email"
+          style={{
+            color: "#ffffff",
+            fontSize: "14px",
+            fontWeight: "500",
+            marginBottom: "-8px",
+          }}
+        >
+          Email
+        </label>
         <input
+          id="login-email"
+          name="email"
           type="email"
-          placeholder="Email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -90,12 +111,24 @@ export default function LoginPage() {
             outline: "none",
             opacity: loading ? 0.5 : 1,
           }}
-          autoComplete="email"
         />
 
+        <label
+          htmlFor="login-password"
+          style={{
+            color: "#ffffff",
+            fontSize: "14px",
+            fontWeight: "500",
+            marginBottom: "-8px",
+          }}
+        >
+          Password
+        </label>
         <input
+          id="login-password"
+          name="password"
           type="password"
-          placeholder="Password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -110,8 +143,34 @@ export default function LoginPage() {
             outline: "none",
             opacity: loading ? 0.5 : 1,
           }}
-          autoComplete="current-password"
         />
+
+        {/* REMEMBER ME */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginTop: "4px",
+            cursor: "pointer",
+            color: "#ffffff",
+            fontSize: "14px",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            disabled={loading}
+            style={{
+              width: "16px",
+              height: "16px",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.5 : 1,
+            }}
+          />
+          Remember me
+        </label>
 
         <button
           type="submit"
@@ -132,7 +191,10 @@ export default function LoginPage() {
         </button>
 
         {error && (
-          <p style={{ color: "#f87171", fontSize: "14px", marginTop: "8px", margin: 0 }}>
+          <p
+            role="alert"
+            style={{ color: "#f87171", fontSize: "14px", marginTop: "8px", margin: 0 }}
+          >
             {error}
           </p>
         )}

@@ -7,13 +7,8 @@ let browserClient: ReturnType<typeof createClient> | null = null;
 /**
  * Get the single Supabase browser client (singleton pattern)
  * 
- * CRITICAL: Supabase does NOT manage auth state.
- * - persistSession: false - No localStorage/sessionStorage persistence
- * - autoRefreshToken: false - No automatic token refresh
- * - detectSessionInUrl: false - No URL-based session detection
- * 
- * Auth state is managed in React only.
- * This prevents non-ISO-8859-1 Authorization header crashes.
+ * Session persistence is controlled per-login via the persistSession option
+ * in signInWithPassword() calls.
  */
 export function getSupabaseBrowserClient() {
   if (!browserClient) {
@@ -28,13 +23,7 @@ export function getSupabaseBrowserClient() {
     const supabaseUrl = cleanEnv(rawUrl, "NEXT_PUBLIC_SUPABASE_URL");
     const supabaseAnonKey = cleanEnv(rawKey, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
-    browserClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
+    browserClient = createClient(supabaseUrl, supabaseAnonKey);
   }
   return browserClient;
 }
