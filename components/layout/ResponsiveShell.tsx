@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { SearchIcon } from "../icons/SearchIcon";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { supabase } from "@/lib/supabaseClient";
 import BottomTabBar from "./BottomTabBar";
 import BrandIcon from "@/components/BrandIcon";
 
@@ -35,7 +35,6 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
   }, []);
 
   const handleLogout = async () => {
-    const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
     router.push("/");
   };

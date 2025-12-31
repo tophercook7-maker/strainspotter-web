@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { supabase } from "@/lib/supabaseClient";
 
 type AuthContextType = {
   user: User | null;
@@ -15,7 +15,6 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const supabase = getSupabaseBrowserClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // return () => {
     //   listener.subscription.unsubscribe();
     // };
-  }, [supabase]);
+  }, []);
 
   // Debug: Track auth state changes
   useEffect(() => {

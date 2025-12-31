@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { supabase } from '@/lib/supabaseClient';
 import { getStrainPrimaryImage } from '@/lib/strainImages';
 
 type Strain = {
@@ -38,7 +38,6 @@ export default function StrainDetailsPage() {
     async function loadStrain() {
       try {
         // Explicitly select all fields including seed_sources
-        const supabase = getSupabaseBrowserClient();
         const { data, error: fetchError } = await supabase
           .from('strains')
           .select('id, name, slug, seed_sources')

@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { supabase } from "@/lib/supabaseClient";
 import NewPostForm from "@/components/community/NewPostForm";
 import PostCard from "@/components/community/PostCard";
 import WeeklySummaryCard from "@/components/community/WeeklySummaryCard";
@@ -122,7 +122,6 @@ export default function GroupPage({ params }: GroupPageProps) {
 
   const loadCurrentUser = async () => {
     try {
-      const supabase = getSupabaseBrowserClient();
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id);
 

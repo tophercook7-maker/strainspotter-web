@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 // TEMPORARY: Auth disabled
-// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 import { MOCK_USER } from "@/lib/supabaseBrowser";
 
 export default function ScanGatePage() {
@@ -14,7 +13,6 @@ export default function ScanGatePage() {
     async function load() {
       try {
         // TEMPORARY: Use mock user instead of real auth
-        // const supabase = getSupabaseBrowserClient();
         // const { data: { user } } = await supabase.auth.getUser();
         // if (!user) {
         //   setStatus({ allowed: false, message: "Please sign in to use the scanner." });

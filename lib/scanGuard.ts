@@ -2,7 +2,7 @@
 // ================================================
 // STEP 3.2: BLOCK SCANS BASED ON CREDITS
 // ================================================
-import { getSupabaseBrowserClient } from './supabaseBrowser';
+import { supabase } from './supabaseClient';
 
 export type ScanKind = 'local' | 'doctor';
 
@@ -24,7 +24,6 @@ export async function checkScanGuard(
   kind: ScanKind
 ): Promise<ScanGuardResult> {
   try {
-    const supabase = getSupabaseBrowserClient();
     const { data, error } = await supabase.rpc('can_user_scan', {
       uid,
       scan_kind: kind,
@@ -80,7 +79,6 @@ export async function deductScanCredit(
   kind: ScanKind
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = getSupabaseBrowserClient();
     const { error } = await supabase.rpc('deduct_scan_credit', {
       uid,
       scan_kind: kind,

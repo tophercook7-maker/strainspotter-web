@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { supabase } from "@/lib/supabaseClient";
 import { gardenFeatures } from "@/lib/gardenFeatures";
 
 type MembershipStatus = "unknown" | "none" | "member";
@@ -20,7 +20,6 @@ function SectionCard(props: { title: string; children: React.ReactNode }) {
 }
 
 export default function GardenShell() {
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [email, setEmail] = useState<string | null>(null);
   const [uid, setUid] = useState<string | null>(null);
   const [membership, setMembership] = useState<MembershipStatus>("unknown");

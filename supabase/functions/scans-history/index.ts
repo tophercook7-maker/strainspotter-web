@@ -1,12 +1,12 @@
 import { serve } from "./std/server";
-import { getSupabaseClient } from '../../_shared/supabaseClient.ts';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Helper to get env vars
 function getEnv(key: string, fallback = ''): string {
   return Deno.env.get(key) || fallback;
 }
 
-const supabase = getSupabaseClient(
+const supabase = createClient(
   getEnv('SUPABASE_URL'),
   getEnv('SUPABASE_ANON_KEY')
 );

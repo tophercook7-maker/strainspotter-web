@@ -3,7 +3,6 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 // TEMPORARY: Auth disabled
-// import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 function AuthCallbackContent() {
   const router = useRouter();

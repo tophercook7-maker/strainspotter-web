@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// REMOVED: getSupabaseBrowserClient - no session recovery
+// REMOVED: Supabase client - no session recovery
 // Auth state must be passed as prop or managed in parent component
 
 export function useMembership() {

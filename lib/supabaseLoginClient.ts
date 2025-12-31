@@ -1,5 +1,4 @@
 // Re-export the singleton client for backward compatibility
-// All code should use getSupabaseBrowserClient() directly
-import { getSupabaseBrowserClient } from "./supabaseBrowser";
+import { supabase } from "./supabaseClient";
 
-export const supabaseLoginClient = getSupabaseBrowserClient();
+export const supabaseLoginClient = supabase;

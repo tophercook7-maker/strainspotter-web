@@ -1,9 +1,8 @@
 "use client";
 
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { supabase } from "@/lib/supabaseClient";
 
 export async function resetSupabaseSession() {
-  const supabase = getSupabaseBrowserClient();
   await supabase.auth.signOut();
   localStorage.clear();
   sessionStorage.clear();
