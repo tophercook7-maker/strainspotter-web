@@ -1,36 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [checking, setChecking] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    let mounted = true
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return
-
-      if (data.session) {
-        router.replace('/garden') // logged in → skip login
-      } else {
-        setChecking(false)
-      }
-    })
-
-    return () => {
-      mounted = false
-    }
-  }, [router])
-
-  if (checking) return null // ← THIS STOPS THE FLASH
+  const [error, setError] = useState<string | null>(null)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,7 +27,7 @@ export default function LoginPage() {
       return
     }
 
-    router.replace('/garden') // replace prevents back/flash
+    router.replace('/garden')
   }
 
   return (

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 
 export default function RootGate() {
   const router = useRouter()
-  const [ready, setReady] = useState(false)
+  const [checked, setChecked] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -20,7 +20,7 @@ export default function RootGate() {
         router.replace('/login')
       }
 
-      setReady(true)
+      setChecked(true)
     })
 
     return () => {
@@ -28,7 +28,7 @@ export default function RootGate() {
     }
   }, [router])
 
-  if (!ready) {
+  if (!checked) {
     return (
       <main>
         <h2>Loading…</h2>
