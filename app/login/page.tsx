@@ -1,15 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
   const router = useRouter()
+  const [checking, setChecking] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return
+
+      if (data.session) {
+        router.replace('/garden') // logged in → skip login
+      } else {
+        setChecking(false)
+      }
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [router])
+
+  if (checking) return null // ← THIS STOPS THE FLASH
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,7 +48,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/garden')
+    router.replace('/garden') // replace prevents back/flash
   }
 
   return (
@@ -38,6 +59,7 @@ export default function LoginPage() {
         <input
           type="email"
           name="email"
+          autoComplete="email"
           placeholder="Email"
           value={email}
           onChange={e => setEmail(e.target.value)}
@@ -47,6 +69,7 @@ export default function LoginPage() {
         <input
           type="password"
           name="password"
+          autoComplete="current-password"
           placeholder="Password"
           value={password}
           onChange={e => setPassword(e.target.value)}
@@ -62,4 +85,3 @@ export default function LoginPage() {
     </main>
   )
 }
-
