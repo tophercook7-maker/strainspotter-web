@@ -1,6 +1,5 @@
-// Re-export getSupabaseClient as getSupabaseBrowserClient for backward compatibility
-// This ensures only ONE client instance exists
-export { getSupabaseClient as getSupabaseBrowserClient } from './supabaseClient';
+// Re-export supabase client for backward compatibility
+export { supabase as getSupabaseBrowserClient } from './supabaseClient';
 
 // Mock user for protected pages (temporary)
 export const MOCK_USER = {

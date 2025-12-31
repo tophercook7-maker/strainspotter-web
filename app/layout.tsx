@@ -1,35 +1,15 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import DesktopRefreshButton from "@/components/DesktopRefreshButton";
-import "./service-worker-unregister";
-import AuthGate from "./AuthGate";
+import type { ReactNode } from "react";
 
-export const metadata: Metadata = {
-  title: "StrainSpotter",
-  description: "Cannabis strain identification and tracking",
-  icons: {
-    icon: "/brand/leaf-icon.png",
-    apple: "/brand/leaf-icon.png",
-  },
-};
-
-/**
- * Root layout - Desktop-safe wrapper
- * AuthGate prevents white screen / reload loop
- * Login is in (public) route group and will NEVER touch ConditionalAppShell
- */
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen" style={{ margin: 0, padding: 0 }}>
-        <AuthGate>
-          {children}
-          <DesktopRefreshButton />
-        </AuthGate>
+      <head>
+        <title>StrainSpotter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charSet="utf-8" />
+      </head>
+      <body>
+        {children}
       </body>
     </html>
   );
