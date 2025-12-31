@@ -2,32 +2,28 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
+import { createDesktopSafeSupabaseClient } from "@/lib/supabaseClient";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true); // ✅ default ON
+  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = getSupabaseBrowserClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword(
-      {
-        email,
-        password,
-      },
-      {
-        // 🔐 localStorage = remember me, sessionStorage = forget on close
-        persistSession: remember,
-      }
-    );
+    // ✅ Create desktop-safe client with remember-me preference
+    const supabase = createDesktopSafeSupabaseClient(remember);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
       setError(error.message);

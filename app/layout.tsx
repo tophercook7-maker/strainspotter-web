@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import DesktopRefreshButton from "@/components/DesktopRefreshButton";
 import "./service-worker-unregister";
+import AuthGate from "./AuthGate";
 
 export const metadata: Metadata = {
   title: "StrainSpotter",
@@ -13,10 +14,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root layout - DUMB wrapper only
- * NO auth logic
- * NO ConditionalAppShell
- * NO redirects
+ * Root layout - Desktop-safe wrapper
+ * AuthGate prevents white screen / reload loop
  * Login is in (public) route group and will NEVER touch ConditionalAppShell
  */
 export default function RootLayout({
@@ -27,8 +26,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen" style={{ margin: 0, padding: 0 }}>
-        {children}
-        <DesktopRefreshButton />
+        <AuthGate>
+          {children}
+          <DesktopRefreshButton />
+        </AuthGate>
       </body>
     </html>
   );

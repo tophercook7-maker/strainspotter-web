@@ -1,29 +1,46 @@
 import { createClient } from "@supabase/supabase-js";
 import { cleanEnv } from "@/lib/cleanEnv";
 
-// Single singleton instance
+const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!rawUrl || !rawKey) {
+  throw new Error('Supabase environment variables not configured');
+}
+
+// Clean env vars to remove invisible Unicode characters
+const SUPABASE_URL = cleanEnv(rawUrl, "NEXT_PUBLIC_SUPABASE_URL");
+const SUPABASE_ANON_KEY = cleanEnv(rawKey, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
+
+/**
+ * Create a Supabase client with configurable session persistence
+ * 
+ * @param persistSession - If true, uses localStorage (remembers across sessions)
+ *                        If false, uses sessionStorage (forgets on close)
+ */
+export function createSupabaseClient(persistSession: boolean) {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession, // 🔐 REMEMBER ME CONTROL
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+}
+
+// Singleton instance for backward compatibility
+// Uses Supabase defaults (persistSession: true by default, but not hardcoded)
 let browserClient: ReturnType<typeof createClient> | null = null;
 
 /**
- * Get the single Supabase browser client (singleton pattern)
- * 
- * Session persistence is controlled per-login via the persistSession option
- * in signInWithPassword() calls.
+ * Get the default Supabase browser client (singleton pattern)
+ * Uses Supabase default behavior (persistSession: true by default)
+ * For login with "Remember Me", use createSupabaseClient(remember) instead
  */
 export function getSupabaseBrowserClient() {
   if (!browserClient) {
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!rawUrl || !rawKey) {
-      throw new Error('Supabase environment variables not configured');
-    }
-
-    // Clean env vars to remove invisible Unicode characters
-    const supabaseUrl = cleanEnv(rawUrl, "NEXT_PUBLIC_SUPABASE_URL");
-    const supabaseAnonKey = cleanEnv(rawKey, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
-
-    browserClient = createClient(supabaseUrl, supabaseAnonKey);
+    // Use Supabase defaults - no hardcoded persistence
+    browserClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   return browserClient;
 }
