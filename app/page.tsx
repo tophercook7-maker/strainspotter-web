@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function RootGate() {
   const router = useRouter()
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -18,12 +19,22 @@ export default function RootGate() {
       } else {
         router.replace('/login')
       }
+
+      setReady(true)
     })
 
     return () => {
       alive = false
     }
   }, [router])
+
+  if (!ready) {
+    return (
+      <main>
+        <h2>Loading…</h2>
+      </main>
+    )
+  }
 
   return null
 }
