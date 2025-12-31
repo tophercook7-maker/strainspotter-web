@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { cleanEnv } from '@/lib/cleanEnv';
 
 const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,29 +12,34 @@ if (!rawUrl || !rawKey) {
 const SUPABASE_URL = cleanEnv(rawUrl, "NEXT_PUBLIC_SUPABASE_URL");
 const SUPABASE_ANON_KEY = cleanEnv(rawKey, "NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
+let supabase: SupabaseClient | null = null;
+
 /**
- * Create a desktop-safe Supabase client
- * 
- * @param persistSession - If true, uses localStorage (remembers across sessions)
- *                        If false, uses sessionStorage (forgets on close)
- * 
- * WHY:
- * - detectSessionInUrl MUST be false (no OAuth redirect loop in desktop)
- * - explicit storage prevents Electron/Tauri quirks
+ * Get the singleton Supabase client
+ * Initializes once on first call
  */
-export function createDesktopSafeSupabaseClient(persistSession: boolean) {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      persistSession,
-      autoRefreshToken: true,
-      detectSessionInUrl: false, // 🚫 critical for desktop
-      storage: persistSession
-        ? window.localStorage
-        : window.sessionStorage,
-    },
-  });
+export function getSupabaseClient() {
+  if (!supabase && typeof window !== 'undefined') {
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false, // 🖥️ desktop critical
+        storage: window.localStorage,
+      },
+    });
+  }
+  if (!supabase) {
+    throw new Error('Supabase client not available (server-side or not initialized)');
+  }
+  return supabase;
 }
 
-// Re-export for backward compatibility
-export { createSupabaseClient, getSupabaseBrowserClient } from './supabaseBrowser';
+/**
+ * Alias for backward compatibility
+ * Uses the same singleton instance
+ */
+export function getSupabaseBrowserClient() {
+  return getSupabaseClient();
+}
 

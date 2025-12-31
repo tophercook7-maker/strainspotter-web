@@ -1,28 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createDesktopSafeSupabaseClient } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
-/**
- * AuthGate - Prevents white screen / reload loop
- * 
- * Waits for Supabase session check before rendering children.
- * This prevents flicker and reload loops in desktop wrappers.
- */
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const supabase = createDesktopSafeSupabaseClient(true);
+    // 🔐 Get singleton client (initializes on first call)
+    const supabase = getSupabaseClient();
 
-    supabase.auth.getSession().then(() => {
+    supabase.auth.getSession().finally(() => {
       setReady(true);
     });
   }, []);
 
-  // 🔒 prevents flicker / reload loop
   if (!ready) return null;
-
   return <>{children}</>;
 }
 
