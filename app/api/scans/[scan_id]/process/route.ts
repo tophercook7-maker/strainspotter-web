@@ -11,6 +11,7 @@ import { checkScanQuota, incrementScanUsage, ScanType, formatLimitReachedRespons
 import { enrichDoctorScanResult } from '@/lib/scan/enrichment';
 import { assessImageQuality, extractVisualFeatures } from '@/app/api/_utils/imageIntelligence';
 import { detectPackaging, extractLabelInfo, checkLabelConsistency } from '@/app/api/_utils/packagingIntelligence';
+import { supabaseAdmin } from '@/app/api/_utils/supabaseAdmin';
 
 export async function POST(
   req: NextRequest,

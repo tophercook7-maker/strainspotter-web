@@ -355,14 +355,31 @@ export async function POST(req: NextRequest) {
       calibration: getCalibrationConfig(),
     } : undefined;
     
-    // Update scan with match result and enrichment
-    await updateScan(scan_id, {
-      status: 'matched',
-      match: {
-        ...matchResult,
-        enrichment,
-      },
-    });
+            // Update scan with match result and enrichment
+            await updateScan(scan_id, {
+              status: 'matched',
+              match: {
+                ...matchResult,
+                enrichment,
+              },
+            });
+
+            // PHASE 3: Update matcher agreement signal (non-blocking)
+            (async () => {
+              try {
+                if (supabaseAdmin && matchResult.match) {
+                  const matcherConfidence = matchResult.match.confidence || 0;
+                  await supabaseAdmin
+                    .from('scan_confidence_signals')
+                    .update({
+                      matcher_agreement: matcherConfidence,
+                    })
+                    .eq('scan_id', scan_id);
+                }
+              } catch (signalError) {
+                console.warn('[visual-match] Matcher agreement signal update failed (non-blocking):', signalError);
+              }
+            })();
 
     // PHASE 5: Generate AI report (non-blocking)
     // This runs after matching completes and does not block the response

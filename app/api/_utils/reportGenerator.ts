@@ -5,6 +5,7 @@
 
 import OpenAI from 'openai';
 import { findPhenotypeSimilarStrains, VisualFeatures } from './strainPhenotypeIndex';
+import { supabaseAdmin } from './supabaseAdmin';
 
 const SYSTEM_PROMPT = `You are a cannabis visual analysis assistant providing objective, evidence-based observations.
 
@@ -304,8 +305,71 @@ Generate a report following the exact JSON structure:
       disclaimer: reportJson.disclaimer || 'This is a visual analysis only. Strain identification requires additional verification. No lab values or test results are provided.',
     };
 
+    // PHASE 5: Confidence calibration (subtle language adjustment only)
+    const imageQualityText = imageQuality?.overall || 'unknown';
+    
+    // Compute phenotype agreement: % overlap between visual_features and phenotype_context traits
+    const visualTraits = [
+      visualFeatures?.bud_density,
+      visualFeatures?.bud_shape,
+      visualFeatures?.trichome_coverage,
+      visualFeatures?.secondary_pigmentation,
+    ].filter(Boolean);
+    const phenotypeTraits = phenotypeContext.common_traits || [];
+    const phenotypeAgreement = visualTraits.length > 0 && phenotypeTraits.length > 0
+      ? phenotypeTraits.filter(t => 
+          visualTraits.some(vt => 
+            t.toLowerCase().includes(String(vt).toLowerCase()) || 
+            String(vt).toLowerCase().includes(t.toLowerCase())
+          )
+        ).length / Math.max(visualTraits.length, phenotypeTraits.length)
+      : null;
+    
+    // Calibration thresholds
+    const poorImageQuality = imageQualityText === 'poor' || imageQualityText === 'fair';
+    const lowPhenotypeAgreement = phenotypeAgreement !== null && phenotypeAgreement < 0.3;
+    
+    // Apply subtle calibration to confidence language (not structure)
+    if (poorImageQuality || lowPhenotypeAgreement) {
+      if (report.summary.confidence_level === 'high') {
+        report.summary.confidence_level = 'moderate';
+        report.summary.overall_assessment += ' Confidence adjusted due to visual clarity limits.';
+      } else if (report.summary.confidence_level === 'moderate' && poorImageQuality) {
+        report.summary.confidence_level = 'low';
+        report.summary.overall_assessment += ' Confidence adjusted due to image quality limitations.';
+      }
+    }
+
     // Calculate confidence score (0-1)
     const confidenceScore = calculateConfidenceScore(report, matchConfidence, imageQuality);
+
+    // PHASE 3: Update signals (non-blocking)
+    (async () => {
+      try {
+        // Map confidence level to numeric
+        const generatedConfidenceMap: Record<string, number> = {
+          low: 0.35,
+          moderate: 0.6,
+          high: 0.85,
+        };
+        const generatedConfidence = generatedConfidenceMap[report.summary.confidence_level] || 0.35;
+        
+        // Get scan_id from scan object (it should have id field)
+        const scanId = (scan as any)?.id || null;
+        
+        if (supabaseAdmin && scanId) {
+          await supabaseAdmin
+            .from('scan_confidence_signals')
+            .update({
+              phenotype_agreement: phenotypeAgreement,
+              generated_confidence: generatedConfidence,
+            })
+            .eq('scan_id', scanId);
+        }
+      } catch (signalError) {
+        console.warn('[reportGenerator] Signal update failed (non-blocking):', signalError);
+      }
+    })();
 
     return { report, confidenceScore };
   } catch (error) {
