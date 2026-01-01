@@ -7,15 +7,13 @@ import { supabase } from '@/lib/supabaseClient'
 export default function LoginPage() {
   const router = useRouter()
 
-  // 🔒 useRef so values survive remounts
   const emailRef = useRef('')
   const passwordRef = useRef('')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleLogin = async () => {
     if (loading) return
 
     setLoading(true)
@@ -39,33 +37,25 @@ export default function LoginPage() {
     <main>
       <h2>Sign In</h2>
 
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          name="email"
-          autoComplete="email"
-          placeholder="Email"
-          defaultValue=""
-          onChange={e => (emailRef.current = e.target.value)}
-          required
-        />
+      <input
+        type="email"
+        autoComplete="email"
+        placeholder="Email"
+        onChange={e => (emailRef.current = e.target.value)}
+      />
 
-        <input
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          placeholder="Password"
-          defaultValue=""
-          onChange={e => (passwordRef.current = e.target.value)}
-          required
-        />
+      <input
+        type="password"
+        autoComplete="current-password"
+        placeholder="Password"
+        onChange={e => (passwordRef.current = e.target.value)}
+      />
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Signing in…' : 'Sign In'}
-        </button>
+      <button onClick={handleLogin} disabled={loading}>
+        {loading ? 'Signing in…' : 'Sign In'}
+      </button>
 
-        {error && <p>{error}</p>}
-      </form>
+      {error && <p>{error}</p>}
     </main>
   )
 }
