@@ -7,9 +7,9 @@ import "server-only";
 import { NextRequest, NextResponse } from 'next/server';
 import { getScan, updateScan } from '@/app/api/_utils/supabaseAdmin';
 import { analyzeImage } from '@/app/api/_utils/vision';
-import { getUser } from '@/lib/auth';
 import { checkScanQuota, incrementScanUsage, ScanType, formatLimitReachedResponse } from '@/app/api/_utils/scanQuota';
 import { enrichDoctorScanResult } from '@/lib/scan/enrichment';
+import { assessImageQuality, extractVisualFeatures } from '@/app/api/_utils/imageIntelligence';
 
 export async function POST(
   req: NextRequest,
@@ -76,25 +76,67 @@ export async function POST(
       status: 'processing',
     });
 
+    // PHASE 2: Image Quality Assessment (before vision/matching)
+    let imageQuality = null;
+    let visualFeatures = null;
+    try {
+      console.log(`[process] Assessing image quality and extracting visual features`);
+      const imageResponse = await fetch(scan.image_url);
+      if (imageResponse.ok) {
+        const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+        
+        // Assess image quality
+        imageQuality = await assessImageQuality(imageBuffer);
+        console.log(`[process] Image quality: ${imageQuality.overall} (blur: ${imageQuality.blur}, exposure: ${imageQuality.exposure}, resolution: ${imageQuality.resolution})`);
+        
+        // Extract visual features
+        visualFeatures = await extractVisualFeatures(imageBuffer);
+        console.log(`[process] Visual features extracted:`, visualFeatures);
+      }
+    } catch (intelligenceError) {
+      console.warn('[process] Image intelligence assessment failed (non-blocking):', intelligenceError);
+      // Continue processing even if intelligence fails
+    }
+
     // Run analyzeImage (it handles downloading from URL internally)
     console.log(`[process] Running vision analysis on: ${scan.image_url}`);
     const visionResults = await analyzeImage(scan.image_url);
     console.log(`[process] Vision results: ${visionResults.text.length} text lines, ${visionResults.labels.length} labels`);
 
     // Enrich doctor scans with health analysis
-    let enrichment = null;
+    let existingEnrichment = scan.enrichment || null;
     if (scan.scan_type === 'doctor') {
-      enrichment = enrichDoctorScanResult(visionResults, visionResults.labels);
-      console.log(`[process] Doctor scan enriched: ${enrichment.explanation}`);
+      const doctorEnrichment = enrichDoctorScanResult(visionResults, visionResults.labels);
+      console.log(`[process] Doctor scan enriched: ${doctorEnrichment.explanation}`);
+      
+      // Merge doctor enrichment with intelligence data
+      existingEnrichment = {
+        ...(existingEnrichment || {}),
+        ...doctorEnrichment,
+      };
     }
 
-    // Update scan row
-    const updateData: any = {
+    // Build enrichment object with intelligence data
+    const enrichment: Record<string, unknown> = existingEnrichment || {};
+    if (imageQuality) {
+      enrichment.image_quality = imageQuality;
+    }
+    if (visualFeatures) {
+      enrichment.visual_features = visualFeatures;
+    }
+
+    // Update scan row (preserve legacy vision and match fields)
+    const updateData: {
+      status: string;
+      vision: typeof visionResults;
+      enrichment?: Record<string, unknown>;
+    } = {
       status: 'processed',
       vision: visionResults,
     };
     
-    if (enrichment) {
+    // Only add enrichment if we have data to add
+    if (Object.keys(enrichment).length > 0) {
       updateData.enrichment = enrichment;
     }
     
@@ -104,9 +146,9 @@ export async function POST(
       scan_id,
       status: 'processed',
       vision: visionResults,
-      ...(enrichment && { enrichment }),
+      ...(Object.keys(enrichment).length > 0 && { enrichment }),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[process] Process error:', error);
     
     // Update scan status to error
@@ -119,8 +161,9 @@ export async function POST(
       console.error('[process] Failed to update scan status to error:', updateError);
     }
 
+    const errorMessage = error instanceof Error ? error.message : 'Processing failed';
     return NextResponse.json(
-      { error: error.message || 'Processing failed' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
