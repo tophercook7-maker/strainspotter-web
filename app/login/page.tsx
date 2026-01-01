@@ -1,27 +1,23 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
-  const router = useRouter()
-
-  const emailRef = useRef('')
-  const passwordRef = useRef('')
-
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const handleLogin = async () => {
     if (loading) return
-
     setLoading(true)
     setError(null)
 
     const { error } = await supabase.auth.signInWithPassword({
-      email: emailRef.current,
-      password: passwordRef.current,
+      email,
+      password,
     })
 
     if (error) {
@@ -30,7 +26,8 @@ export default function LoginPage() {
       return
     }
 
-    router.replace('/garden')
+    setSuccess(true)
+    setLoading(false)
   }
 
   return (
@@ -39,23 +36,28 @@ export default function LoginPage() {
 
       <input
         type="email"
+        name="email"
         autoComplete="email"
         placeholder="Email"
-        onChange={e => (emailRef.current = e.target.value)}
+        value={email}
+        onChange={e => setEmail(e.target.value)}
       />
 
       <input
         type="password"
+        name="password"
         autoComplete="current-password"
         placeholder="Password"
-        onChange={e => (passwordRef.current = e.target.value)}
+        value={password}
+        onChange={e => setPassword(e.target.value)}
       />
 
       <button onClick={handleLogin} disabled={loading}>
         {loading ? 'Signing in…' : 'Sign In'}
       </button>
 
-      {error && <p>{error}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {success && <p style={{ color: 'lime' }}>Login successful.</p>}
     </main>
   )
 }
