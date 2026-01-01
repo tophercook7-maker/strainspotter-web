@@ -49,6 +49,10 @@ export default function AIReportPanel({ scanId }: AIReportPanelProps) {
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<ReportData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackNote, setFeedbackNote] = useState('');
+  const [showFeedbackThankYou, setShowFeedbackThankYou] = useState(false);
 
   useEffect(() => {
     async function fetchReport() {
@@ -245,7 +249,89 @@ export default function AIReportPanel({ scanId }: AIReportPanelProps) {
           </p>
         )}
       </section>
+
+      {/* Feedback Section */}
+      {!feedbackSubmitted && (
+        <section className="pt-6 border-t border-[var(--botanical-border)] mt-6">
+          <h3 className="text-sm font-semibold mb-3 text-[var(--botanical-text-primary)]">
+            Was this analysis helpful?
+          </h3>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              onClick={() => handleFeedback('agree')}
+              disabled={feedbackLoading}
+              className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 rounded-lg text-sm text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              👍 Agree
+            </button>
+            <button
+              onClick={() => handleFeedback('unsure')}
+              disabled={feedbackLoading}
+              className="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/40 rounded-lg text-sm text-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              🤔 Unsure
+            </button>
+            <button
+              onClick={() => handleFeedback('disagree')}
+              disabled={feedbackLoading}
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-sm text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              👎 Disagree
+            </button>
+          </div>
+          <textarea
+            value={feedbackNote}
+            onChange={(e) => setFeedbackNote(e.target.value)}
+            placeholder="Optional note (private)"
+            disabled={feedbackLoading}
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+            rows={2}
+          />
+        </section>
+      )}
+
+      {showFeedbackThankYou && (
+        <section className="pt-4 border-t border-[var(--botanical-border)] mt-4">
+          <p className="text-sm text-emerald-400 italic">
+            Thank you for your feedback!
+          </p>
+        </section>
+      )}
     </div>
   );
+
+  async function handleFeedback(feedbackType: 'agree' | 'unsure' | 'disagree') {
+    setFeedbackLoading(true);
+    try {
+      const response = await fetch(`/api/scan/${scanId}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          feedback_type: feedbackType,
+          feedback_context: feedbackNote.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to submit feedback');
+      }
+
+      setFeedbackSubmitted(true);
+      setShowFeedbackThankYou(true);
+      
+      // Hide thank you message after 5 seconds
+      setTimeout(() => {
+        setShowFeedbackThankYou(false);
+      }, 5000);
+    } catch (err: unknown) {
+      console.error('[AIReportPanel] Feedback submission error:', err);
+      // Silently fail - don't disrupt user experience
+    } finally {
+      setFeedbackLoading(false);
+    }
+  }
 }
 
