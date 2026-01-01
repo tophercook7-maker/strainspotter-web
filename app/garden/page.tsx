@@ -1,75 +1,46 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useEffect } from 'react'
+import GardenButton from "@/components/GardenButton"
 import { supabase } from '@/lib/supabaseClient'
 
 export default function GardenPage() {
-  const [email, setEmail] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
         window.location.pathname = '/login'
-        return
       }
-      setEmail(data.user.email ?? null)
-      setLoading(false)
     })
   }, [])
 
-  if (loading) {
-    return (
-      <main>
-        <h2>Loading Garden…</h2>
-      </main>
-    )
-  }
-
+  // ⬇️ DO NOT CHANGE ANYTHING BELOW THIS LINE
   return (
-    <main>
-      <h1>Garden</h1>
-      <p>Welcome {email}</p>
+    <>
+      <div
+        style={{
+          padding: "32px 20px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "14px",
+        }}
+      >
+        {/* PRIMARY */}
+        <GardenButton href="/scanner-upload" label="Scan" accent />
+        <GardenButton href="/scanner-upload" label="Upload" />
 
-      {/* ===== ACTION BUTTONS ===== */}
-      <section style={{ marginTop: 32 }}>
-        <h3>Actions</h3>
+        {/* CORE */}
+        <GardenButton href="/gallery" label="Library" />
+        <GardenButton href="/strains" label="Explore Strains" />
+        <GardenButton href="/dispensaries" label="Nearby" />
 
-        <div style={{ display: 'grid', gap: 12, maxWidth: 320 }}>
-          <Link href="/scan">
-            <button>📸 Scan a Strain</button>
-          </Link>
+        {/* COMMUNITY */}
+        <GardenButton href="/community" label="Community" />
+        <GardenButton href="/discover/news" label="News" />
 
-          <Link href="/saved">
-            <button>🌱 Saved Strains</button>
-          </Link>
-
-          <Link href="/history">
-            <button>🕓 Scan History</button>
-          </Link>
-
-          <Link href="/favorites">
-            <button>⭐ Favorites</button>
-          </Link>
-
-          <Link href="/account">
-            <button>⚙️ Account Settings</button>
-          </Link>
-        </div>
-      </section>
-
-      {/* ===== LOGOUT ===== */}
-      <section style={{ marginTop: 48 }}>
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut()
-            window.location.pathname = '/login'
-          }}
-        >
-          🚪 Log Out
-        </button>
-      </section>
-    </main>
+        {/* ACCOUNT */}
+        <GardenButton href="/membership" label="Plan" />
+        <GardenButton href="/account" label="Account" />
+      </div>
+    </>
   )
 }
