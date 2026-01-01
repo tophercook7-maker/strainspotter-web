@@ -1,69 +1,39 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+export const dynamic = 'force-dynamic'
+
+import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [msg, setMsg] = useState('')
 
-  const handleLogin = async () => {
-    if (loading) return
-    setLoading(true)
-    setError(null)
-
+  const login = async () => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    setSuccess(true)
+    setMsg(error ? error.message : 'logged in')
   }
-
-  // ✅ redirect ONLY after success
-  useEffect(() => {
-    if (success) {
-      router.replace('/garden')
-    }
-  }, [success, router])
 
   return (
     <main>
-      <h2>Sign In</h2>
-
       <input
-        type="email"
-        autoComplete="email"
-        placeholder="Email"
         value={email}
         onChange={e => setEmail(e.target.value)}
+        placeholder="email"
       />
-
       <input
-        type="password"
-        autoComplete="current-password"
-        placeholder="Password"
         value={password}
         onChange={e => setPassword(e.target.value)}
+        placeholder="password"
+        type="password"
       />
-
-      <button onClick={handleLogin} disabled={loading}>
-        {loading ? 'Signing in…' : 'Sign In'}
-      </button>
-
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'lime' }}>Login successful.</p>}
+      <button onClick={login}>Sign In</button>
+      <p style={{ color: 'lime' }}>{msg}</p>
     </main>
   )
 }
