@@ -8,7 +8,8 @@ import { supabase } from '@/lib/supabaseClient'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [msg, setMsg] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loggedin' | 'error'>('idle')
+  const [message, setMessage] = useState('')
 
   const login = async () => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -17,24 +18,45 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setMsg(error.message)
+      setStatus('error')
+      setMessage(error.message)
       return
     }
 
-    setMsg('logged in')
+    setStatus('loggedin')
+    setMessage('LOGGED IN — NO NAVIGATION')
+  }
 
-    // HARD NAV AFTER AUTH (SAFE)
-    setTimeout(() => {
-      location.assign('/garden')
-    }, 200)
+  if (status === 'loggedin') {
+    return (
+      <main>
+        <h2>Success</h2>
+        <p style={{ color: 'lime' }}>{message}</p>
+        <p>This page will NOT redirect.</p>
+      </main>
+    )
   }
 
   return (
     <main>
-      <input value={email} onChange={e => setEmail(e.target.value)} />
-      <input value={password} onChange={e => setPassword(e.target.value)} type="password" />
+      <h2>Sign In</h2>
+
+      <input
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="email"
+      />
+
+      <input
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder="password"
+        type="password"
+      />
+
       <button onClick={login}>Sign In</button>
-      <p style={{ color: 'lime' }}>{msg}</p>
+
+      {status === 'error' && <p style={{ color: 'red' }}>{message}</p>}
     </main>
   )
 }

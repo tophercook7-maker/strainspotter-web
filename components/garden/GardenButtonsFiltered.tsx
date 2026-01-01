@@ -86,7 +86,7 @@ export default function GardenButtonsFiltered() {
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-              {group.buttons.map((btn) => (
+              {group.buttons.map((btn: Button) => (
                 <div
                   key={btn.id}
                   className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] animate-pulse"
