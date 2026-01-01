@@ -2,13 +2,16 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [msg, setMsg] = useState('')
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [message, setMessage] = useState('')
 
   const login = async () => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -16,8 +19,24 @@ export default function LoginPage() {
       password,
     })
 
-    setMsg(error ? error.message : 'logged in')
+    if (error) {
+      setStatus('error')
+      setMessage(error.message)
+    } else {
+      setStatus('success')
+      setMessage('logged in')
+    }
   }
+
+  // ✅ redirect ONLY after success render
+  useEffect(() => {
+    if (status === 'success') {
+      const t = setTimeout(() => {
+        router.replace('/garden')
+      }, 500) // small delay avoids hydration issues
+      return () => clearTimeout(t)
+    }
+  }, [status, router])
 
   return (
     <main>
@@ -33,7 +52,9 @@ export default function LoginPage() {
         type="password"
       />
       <button onClick={login}>Sign In</button>
-      <p style={{ color: 'lime' }}>{msg}</p>
+      <p style={{ color: status === 'success' ? 'lime' : 'red' }}>
+        {message}
+      </p>
     </main>
   )
 }
