@@ -15,7 +15,7 @@ export default function GardenPage() {
   return (
     <main>
       <h2>Garden</h2>
-      <p>User: {email ?? 'Not logged in'}</p>
+      <p>Welcome {email}</p>
     </main>
   )
 }

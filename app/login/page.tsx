@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,8 +29,14 @@ export default function LoginPage() {
     }
 
     setSuccess(true)
-    setLoading(false)
   }
+
+  // ✅ redirect ONLY after success
+  useEffect(() => {
+    if (success) {
+      router.replace('/garden')
+    }
+  }, [success, router])
 
   return (
     <main>
@@ -36,7 +44,6 @@ export default function LoginPage() {
 
       <input
         type="email"
-        name="email"
         autoComplete="email"
         placeholder="Email"
         value={email}
@@ -45,7 +52,6 @@ export default function LoginPage() {
 
       <input
         type="password"
-        name="password"
         autoComplete="current-password"
         placeholder="Password"
         value={password}
