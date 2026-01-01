@@ -1,24 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+
+  // 🔒 useRef so values survive remounts
+  const emailRef = useRef('')
+  const passwordRef = useRef('')
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
+
     setLoading(true)
     setError(null)
 
     const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: emailRef.current,
+      password: passwordRef.current,
     })
 
     if (error) {
@@ -40,8 +45,8 @@ export default function LoginPage() {
           name="email"
           autoComplete="email"
           placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
+          defaultValue=""
+          onChange={e => (emailRef.current = e.target.value)}
           required
         />
 
@@ -50,12 +55,12 @@ export default function LoginPage() {
           name="password"
           autoComplete="current-password"
           placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
+          defaultValue=""
+          onChange={e => (passwordRef.current = e.target.value)}
           required
         />
 
-        <button disabled={loading}>
+        <button type="submit" disabled={loading}>
           {loading ? 'Signing in…' : 'Sign In'}
         </button>
 
