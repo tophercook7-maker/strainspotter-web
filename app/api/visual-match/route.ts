@@ -14,6 +14,8 @@ import { scoreMatch, findBestMatch } from '@/lib/matcher/simpleMatcher';
 import { enrichIDScanResult } from '@/lib/scan/enrichment';
 import { fingerprintImageBuffer } from '@/lib/visual/fingerprint';
 import { matchScanToStrains } from '@/lib/visual/clusterMatch';
+import { generateScanReport } from '@/app/api/_utils/reportGenerator';
+import { saveReport } from '@/app/api/_utils/supabaseAdmin';
 import { OCR_WEIGHT, VISUAL_WEIGHT, MIN_COMBINED_SCORE, getCalibrationConfig, LOW_OCR_THRESHOLD, MID_VISUAL_DISTANCE, POPULARITY_WEIGHT, MAX_POPULARITY_BOOST, POPULARITY_MULTIPLIER, OBSCURE_PENALTY, OBSCURE_STRAIN_THRESHOLD } from '@/lib/visual/calibration';
 import { getPopularityPrior, isObscureStrain } from '@/lib/visual/popularity';
 import fs from 'fs';
@@ -361,6 +363,50 @@ export async function POST(req: NextRequest) {
         enrichment,
       },
     });
+
+    // PHASE 5: Generate AI report (non-blocking)
+    // This runs after matching completes and does not block the response
+    (async () => {
+      try {
+        console.log(`[visual-match] Generating AI report for scan: ${scan_id}`);
+        
+        // Build strain candidates from match result
+        const strainCandidates = matchResult.match
+          ? [{
+              name: matchResult.match.name,
+              slug: matchResult.match.name.toLowerCase().replace(/\s+/g, '-'),
+              confidence: matchResult.match.confidence,
+            }]
+          : [];
+        
+        // Add alternatives as candidates
+        if (matchResult.alternatives) {
+          matchResult.alternatives.forEach(alt => {
+            strainCandidates.push({
+              name: alt.name,
+              slug: alt.name.toLowerCase().replace(/\s+/g, '-'),
+              confidence: alt.confidence,
+            });
+          });
+        }
+
+        // Generate report
+        const { report, confidenceScore } = await generateScanReport(
+          scan,
+          enrichment,
+          matchResult,
+          strainCandidates
+        );
+
+        // Save report to database
+        await saveReport(scan_id, report as unknown as Record<string, unknown>, confidenceScore);
+        
+        console.log(`[visual-match] Report generated and saved for scan: ${scan_id}`);
+      } catch (reportError) {
+        // Non-blocking: log error but don't fail the match response
+        console.warn(`[visual-match] Report generation failed (non-blocking):`, reportError);
+      }
+    })();
 
     const response: any = {
       scan_id,

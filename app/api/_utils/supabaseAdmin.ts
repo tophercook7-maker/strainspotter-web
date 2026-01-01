@@ -143,6 +143,34 @@ export async function getScan(scanId: string) {
 }
 
 /**
+ * Save report to database
+ */
+export async function saveReport(
+  scanId: string,
+  reportJson: Record<string, unknown>,
+  confidenceScore: number
+): Promise<void> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not initialized');
+  }
+
+  const { error } = await supabaseAdmin
+    .from('reports')
+    .upsert({
+      scan_id: scanId,
+      report_json: reportJson,
+      confidence_score: confidenceScore,
+      generated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'scan_id',
+    });
+
+  if (error) {
+    throw new Error(`Failed to save report: ${error.message}`);
+  }
+}
+
+/**
  * Create scan record in database
  */
 export async function createScan(data: {
