@@ -6,6 +6,7 @@ import Link from 'next/link';
 import ImagePreview from '@/components/ImagePreview';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
 import MatchReasoning from '@/components/MatchReasoning';
+import AIReportPanel from '@/components/scan/AIReportPanel';
 import { supabase } from "@/lib/supabaseClient";
 import { useMembership } from '@/lib/membership/useMembership';
 
@@ -354,6 +355,12 @@ export default function ScanResultPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* AI Analysis Section */}
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-4">Detailed Analysis</h2>
+          <AIReportPanel scanId={scanId} />
         </div>
 
         {/* Scanner → Logbook Conversion CTA */}
