@@ -10,6 +10,7 @@ import { analyzeImage } from '@/app/api/_utils/vision';
 import { checkScanQuota, incrementScanUsage, ScanType, formatLimitReachedResponse } from '@/app/api/_utils/scanQuota';
 import { enrichDoctorScanResult } from '@/lib/scan/enrichment';
 import { assessImageQuality, extractVisualFeatures } from '@/app/api/_utils/imageIntelligence';
+import { detectPackaging, extractLabelInfo, checkLabelConsistency } from '@/app/api/_utils/packagingIntelligence';
 
 export async function POST(
   req: NextRequest,
@@ -103,6 +104,31 @@ export async function POST(
     const visionResults = await analyzeImage(scan.image_url);
     console.log(`[process] Vision results: ${visionResults.text.length} text lines, ${visionResults.labels.length} labels`);
 
+    // PHASE 1 & 2: Packaging detection and label extraction
+    let packagingDetected = false;
+    let packagingLabel = null;
+    let packagingConsistency = null;
+    try {
+      packagingDetected = detectPackaging(visionResults);
+      console.log(`[process] Packaging detected: ${packagingDetected}`);
+      
+      if (packagingDetected) {
+        packagingLabel = extractLabelInfo(visionResults);
+        console.log(`[process] Label info extracted:`, packagingLabel);
+        
+        // PHASE 3: Check consistency with visual phenotype (if available)
+        if (visualFeatures && packagingLabel.strain_label) {
+          // Get phenotype families from visual features (simplified - will be enhanced by report generator)
+          const phenotypeFamilies: string[] = []; // Will be populated by report generator
+          packagingConsistency = checkLabelConsistency(packagingLabel, phenotypeFamilies, visualFeatures);
+          console.log(`[process] Label consistency: ${packagingConsistency.consistency_score} - ${packagingConsistency.explanation}`);
+        }
+      }
+    } catch (packagingError) {
+      console.warn('[process] Packaging analysis failed (non-blocking):', packagingError);
+      // Continue processing even if packaging analysis fails
+    }
+
     // Enrich doctor scans with health analysis
     let existingEnrichment = scan.enrichment || null;
     if (scan.scan_type === 'doctor') {
@@ -123,6 +149,15 @@ export async function POST(
     }
     if (visualFeatures) {
       enrichment.visual_features = visualFeatures;
+    }
+    if (packagingDetected) {
+      enrichment.packaging_detected = true;
+      if (packagingLabel) {
+        enrichment.packaging_label = packagingLabel;
+      }
+      if (packagingConsistency) {
+        enrichment.packaging_consistency = packagingConsistency;
+      }
     }
 
     // Update scan row (preserve legacy vision and match fields)

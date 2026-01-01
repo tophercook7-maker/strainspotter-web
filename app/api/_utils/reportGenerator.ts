@@ -98,6 +98,12 @@ export interface ScanReport {
     observations: string;
     confidence: string;
   };
+  packaging_review?: {
+    label_summary: string;
+    visual_consistency: string;
+    confidence: string;
+    notes: string;
+  };
   disclaimer: string;
 }
 
@@ -124,6 +130,21 @@ export async function generateScanReport(
     // PHASE 2: Find phenotype-similar strains (descriptive, not identification)
     const visualFeatures = enrichment?.visual_features as VisualFeatures | undefined;
     const phenotypeContext = await findPhenotypeSimilarStrains(visualFeatures, 10);
+
+    // PHASE 1-3: Packaging detection and consistency check
+    const packagingDetected = enrichment?.packaging_detected === true;
+    const packagingLabel = enrichment?.packaging_label as any;
+    let packagingConsistency = enrichment?.packaging_consistency as any;
+    
+    // Re-check consistency with phenotype context if available
+    if (packagingDetected && packagingLabel && packagingLabel.strain_label && phenotypeContext.families.length > 0) {
+      const { checkLabelConsistency } = await import('./packagingIntelligence');
+      packagingConsistency = checkLabelConsistency(
+        packagingLabel,
+        phenotypeContext.families,
+        visualFeatures
+      );
+    }
 
     // Build structured input data
     const imageQuality = enrichment?.image_quality || {};
@@ -174,6 +195,14 @@ ${candidates ? `RELATED CANDIDATES: ${candidates}` : ''}
 
 ${phenotypeContextText}
 
+${packagingDetected && packagingLabel ? `PACKAGING & LABEL CONTEXT (OBSERVATIONAL ONLY):
+- Packaging detected: Yes
+- Brand name: ${packagingLabel.brand_name || 'Not detected'}
+- Strain label: ${packagingLabel.strain_label || 'Not detected'}
+- Batch/Lot: ${packagingLabel.batch || 'Not detected'}
+${packagingConsistency ? `- Visual consistency: ${packagingConsistency.explanation}` : ''}
+IMPORTANT: This is observational analysis only. No compliance claims or accusations are made.` : ''}
+
 Generate a report following the exact JSON structure:
 {
   "summary": {
@@ -198,7 +227,13 @@ Generate a report following the exact JSON structure:
   "handling_and_cure_notes": {
     "observations": "Observations about handling and cure quality",
     "confidence": "low" | "moderate" | "high"
-  },
+  }${packagingDetected ? `,
+  "packaging_review": {
+    "label_summary": "Summary of detected label information",
+    "visual_consistency": "Observational assessment of visual consistency with label",
+    "confidence": "low" | "moderate" | "high",
+    "notes": "Additional observational notes about packaging and label"
+  }` : ''},
   "disclaimer": "Standard disclaimer about visual analysis limitations"
 }`;
 
@@ -254,6 +289,18 @@ Generate a report following the exact JSON structure:
           ? reportJson.handling_and_cure_notes.confidence
           : 'low',
       },
+      ...(packagingDetected && reportJson.packaging_review ? {
+        packaging_review: {
+          label_summary: reportJson.packaging_review.label_summary || 
+            (packagingLabel ? `Label indicates: ${packagingLabel.strain_label || 'strain name not clearly detected'}. ${packagingLabel.brand_name ? `Brand: ${packagingLabel.brand_name}.` : ''} ${packagingLabel.batch ? `Batch: ${packagingLabel.batch}.` : ''}` : 'Packaging detected but label information not clearly extracted.'),
+          visual_consistency: reportJson.packaging_review.visual_consistency || 
+            (packagingConsistency ? packagingConsistency.explanation : 'Visual consistency assessment not available.'),
+          confidence: ['low', 'moderate', 'high'].includes(reportJson.packaging_review.confidence)
+            ? reportJson.packaging_review.confidence
+            : 'low',
+          notes: reportJson.packaging_review.notes || 'Packaging and label analysis completed. This is observational only, not a compliance assessment.',
+        },
+      } : {}),
       disclaimer: reportJson.disclaimer || 'This is a visual analysis only. Strain identification requires additional verification. No lab values or test results are provided.',
     };
 

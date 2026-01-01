@@ -26,6 +26,12 @@ interface ScanReport {
     observations: string;
     confidence: string;
   };
+  packaging_review?: {
+    label_summary: string;
+    visual_consistency: string;
+    confidence: string;
+    notes: string;
+  };
   disclaimer: string;
 }
 
