@@ -4,6 +4,7 @@
  */
 
 import OpenAI from 'openai';
+import { findPhenotypeSimilarStrains, VisualFeatures } from './strainPhenotypeIndex';
 
 const SYSTEM_PROMPT = `You are a cannabis visual analysis assistant providing objective, evidence-based observations.
 
@@ -120,8 +121,11 @@ export async function generateScanReport(
       apiKey: process.env.OPENAI_API_KEY,
     });
 
+    // PHASE 2: Find phenotype-similar strains (descriptive, not identification)
+    const visualFeatures = enrichment?.visual_features as VisualFeatures | undefined;
+    const phenotypeContext = await findPhenotypeSimilarStrains(visualFeatures, 10);
+
     // Build structured input data
-    const visualFeatures = enrichment?.visual_features || {};
     const imageQuality = enrichment?.image_quality || {};
     const vision = scan.vision || { text: [], labels: [], colors: { primary: '#4a5568', secondary: '#718096' } };
     
@@ -135,14 +139,23 @@ export async function generateScanReport(
       ? strainCandidates.map(c => `${c.name} (${Math.round(c.confidence * 100)}%)`).join(', ')
       : alternatives.slice(0, 3).map(a => `${a.name} (${Math.round(a.confidence * 100)}%)`).join(', ');
 
+    // Build phenotype context text (emphasize visual similarity, not identification)
+    const phenotypeContextText = phenotypeContext.families.length > 0
+      ? `PHENOTYPE SIMILARITY CONTEXT (VISUAL SIMILARITY ONLY, NOT IDENTIFICATIONS):
+- Visual features share similarities with strains in these families: ${phenotypeContext.families.join(', ')}
+- Common visual traits observed: ${phenotypeContext.common_traits.join(', ')}
+- Example strains with similar visual profiles (for reference only): ${phenotypeContext.example_strains.slice(0, 3).join(', ')}
+IMPORTANT: These are visual similarities only. This is NOT a strain identification.`
+      : '';
+
     // Construct user prompt with structured data
     const userPrompt = `Generate a visual analysis report based on these observations:
 
 VISUAL FEATURES:
-- Bud density: ${visualFeatures.bud_density || 'unknown'}
-- Bud shape: ${visualFeatures.bud_shape || 'unknown'}
-- Trichome coverage: ${visualFeatures.trichome_coverage || 'unknown'}
-- Secondary pigmentation: ${visualFeatures.secondary_pigmentation || 'unknown'}
+- Bud density: ${visualFeatures?.bud_density || 'unknown'}
+- Bud shape: ${visualFeatures?.bud_shape || 'unknown'}
+- Trichome coverage: ${visualFeatures?.trichome_coverage || 'unknown'}
+- Secondary pigmentation: ${visualFeatures?.secondary_pigmentation || 'unknown'}
 
 IMAGE QUALITY:
 - Overall: ${imageQuality.overall || 'unknown'}
@@ -159,6 +172,8 @@ ${matchName ? `POTENTIAL MATCH CONTEXT (NOT DEFINITIVE): ${matchName} (${Math.ro
 
 ${candidates ? `RELATED CANDIDATES: ${candidates}` : ''}
 
+${phenotypeContextText}
+
 Generate a report following the exact JSON structure:
 {
   "summary": {
@@ -172,13 +187,13 @@ Generate a report following the exact JSON structure:
     "structure": "Structural observations about bud shape and density"
   },
   "phenotype_context": {
-    "similar_profiles": "Description of similar visual phenotypes",
-    "common_traits": "Common traits observed in similar profiles",
-    "notable_deviations": "Any notable deviations from typical profiles"
+    "similar_profiles": "Description of similar visual phenotypes based on observed features. Emphasize these are visual similarities, not identifications.",
+    "common_traits": "Common visual traits observed. Focus on descriptive characteristics only.",
+    "notable_deviations": "Any notable deviations from typical profiles observed"
   },
   "strain_cross_reference": {
     "related_families": ["array", "of", "related", "strain", "families"],
-    "explanation": "Explanation of why these families are related (not identifications)"
+    "explanation": "Explanation of visual similarity to these families. MUST emphasize this is visual similarity only, NOT a strain identification. Use phrases like 'visually similar to', 'shares visual traits with', 'phenotypically resembles' - never claim identity."
   },
   "handling_and_cure_notes": {
     "observations": "Observations about handling and cure quality",
@@ -214,15 +229,24 @@ Generate a report following the exact JSON structure:
         structure: reportJson.visual_analysis?.structure || 'Structural observations.',
       },
       phenotype_context: {
-        similar_profiles: reportJson.phenotype_context?.similar_profiles || 'Similar visual profiles noted.',
-        common_traits: reportJson.phenotype_context?.common_traits || 'Common traits observed.',
+        similar_profiles: reportJson.phenotype_context?.similar_profiles || 
+          (phenotypeContext.families.length > 0 
+            ? `Visual features show similarity to ${phenotypeContext.families.join(', ')} family phenotypes. This is descriptive context only, not an identification.`
+            : 'Similar visual profiles noted.'),
+        common_traits: reportJson.phenotype_context?.common_traits || 
+          (phenotypeContext.common_traits.length > 0
+            ? `Common visual traits: ${phenotypeContext.common_traits.join(', ')}.`
+            : 'Common traits observed.'),
         notable_deviations: reportJson.phenotype_context?.notable_deviations || 'No notable deviations observed.',
       },
       strain_cross_reference: {
         related_families: Array.isArray(reportJson.strain_cross_reference?.related_families)
           ? reportJson.strain_cross_reference.related_families
-          : [],
-        explanation: reportJson.strain_cross_reference?.explanation || 'Related strain families based on visual characteristics.',
+          : (phenotypeContext.families.length > 0 ? phenotypeContext.families : []),
+        explanation: reportJson.strain_cross_reference?.explanation || 
+          (phenotypeContext.families.length > 0
+            ? `Visual characteristics show similarity to ${phenotypeContext.families.join(', ')} family strains. This is visual similarity only, NOT a strain identification.`
+            : 'Related strain families based on visual characteristics. Visual similarity only, not an identification.'),
       },
       handling_and_cure_notes: {
         observations: reportJson.handling_and_cure_notes?.observations || 'Handling and cure quality assessment.',
