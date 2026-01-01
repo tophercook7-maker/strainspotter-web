@@ -16,6 +16,7 @@ import { fingerprintImageBuffer } from '@/lib/visual/fingerprint';
 import { matchScanToStrains } from '@/lib/visual/clusterMatch';
 import { generateScanReport } from '@/app/api/_utils/reportGenerator';
 import { saveReport } from '@/app/api/_utils/supabaseAdmin';
+import { runShadowInference, computeComparisonMetrics, storeComparison } from '@/app/api/_utils/shadowModel';
 import { OCR_WEIGHT, VISUAL_WEIGHT, MIN_COMBINED_SCORE, getCalibrationConfig, LOW_OCR_THRESHOLD, MID_VISUAL_DISTANCE, POPULARITY_WEIGHT, MAX_POPULARITY_BOOST, POPULARITY_MULTIPLIER, OBSCURE_PENALTY, OBSCURE_STRAIN_THRESHOLD } from '@/lib/visual/calibration';
 import { getPopularityPrior, isObscureStrain } from '@/lib/visual/popularity';
 import fs from 'fs';
@@ -378,6 +379,56 @@ export async function POST(req: NextRequest) {
                 }
               } catch (signalError) {
                 console.warn('[visual-match] Matcher agreement signal update failed (non-blocking):', signalError);
+              }
+            })();
+
+            // PHASE 4: Silent A/B testing - shadow model evaluation (non-blocking, fire-and-forget)
+            (async () => {
+              try {
+                // Extract legacy metrics
+                const matchConfidence = matchResult.match?.confidence || 0;
+                const enrichment = scan.enrichment || {};
+                const visualFeatures = enrichment.visual_features || {};
+                const phenotypeContext = enrichment.phenotype_context || {};
+                const phenotypeAgreement = enrichment.phenotype_agreement as number | undefined || 0;
+                
+                // Get confidence signals for legacy metrics
+                const { data: signals } = await supabaseAdmin
+                  ?.from('scan_confidence_signals')
+                  .select('generated_confidence, phenotype_agreement')
+                  .eq('scan_id', scan_id)
+                  .maybeSingle() || { data: null };
+
+                const legacyMetrics = {
+                  confidence: signals?.generated_confidence || matchConfidence,
+                  phenotype_agreement: signals?.phenotype_agreement || phenotypeAgreement,
+                  similarity_score: matchConfidence, // Use match confidence as similarity proxy
+                  match_confidence: matchConfidence,
+                };
+
+                // Run shadow inference (silent, non-blocking)
+                const shadowMetrics = await runShadowInference(
+                  scan_id,
+                  scan.image_url,
+                  visualFeatures,
+                  phenotypeContext
+                );
+
+                // Compute comparison metrics
+                const comparison = computeComparisonMetrics(legacyMetrics, shadowMetrics);
+
+                // Store comparison (fire-and-forget)
+                await storeComparison(
+                  scan_id,
+                  comparison.legacy_metrics,
+                  comparison.shadow_metrics,
+                  comparison.delta_metrics
+                );
+
+                console.log(`[visual-match] Shadow model comparison stored for scan: ${scan_id}`);
+              } catch (shadowError) {
+                // Silently fail - must not affect pipeline
+                console.warn('[visual-match] Shadow model evaluation failed (non-blocking, silent):', shadowError);
               }
             })();
 
