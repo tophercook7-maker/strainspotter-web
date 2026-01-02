@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { gardenGroups } from '@/app/garden/gardenButtons';
-import { isFeatureEnabled } from '@/lib/featureFlags';
+import { isFeatureEnabled, type FeatureFlagKey } from '@/lib/featureFlags';
 
 interface Button {
   id: string;
@@ -47,7 +47,7 @@ export default function GardenButtonsFiltered() {
           
           if (flagKey) {
             // Check feature flag
-            const enabled = await isFeatureEnabled(flagKey as any, false);
+            const enabled = await isFeatureEnabled(flagKey as FeatureFlagKey, false);
             if (!enabled) {
               // Skip this button if flag is disabled
               continue;
@@ -85,7 +85,7 @@ export default function GardenButtonsFiltered() {
                 {group.label}
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {group.buttons.map((btn: Button) => (
                 <div
                   key={btn.id}
@@ -117,32 +117,37 @@ export default function GardenButtonsFiltered() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {group.buttons.map((btn) => {
                 const isPrimary = btn.isPrimary === true;
                 return (
                   <Link
                     key={btn.id}
                     href={btn.href}
-                    className={`
-                      rounded-xl
-                      backdrop-blur-md
-                      ${isPrimary ? 'bg-white/18 border-white/20' : 'bg-white/10 border-white/10'}
-                      border
-                      ${isPrimary ? 'p-7 min-h-[120px]' : 'p-6 min-h-[100px]'}
-                      hover:bg-white/15
-                      hover:border-white/20
-                      ${isPrimary ? 'hover:scale-[1.02] hover:bg-white/22' : ''}
-                      active:bg-white/12
-                      transition-all
-                      flex flex-col justify-center
-                    `}
+                    className="block group"
                   >
-                    <div className={`${isPrimary ? 'text-lg font-semibold' : 'text-base font-medium'} text-white`}>
-                      {btn.label}
-                    </div>
-                    <div className="text-sm text-white/70 mt-1.5">
-                      {btn.description}
+                    <div
+                      className={`
+                        relative h-full rounded-xl
+                        backdrop-blur-md
+                        border
+                        ${isPrimary ? 'bg-white/18 border-white/20' : 'bg-white/10 border-white/10'}
+                        ${isPrimary ? 'p-7 min-h-[120px]' : 'p-6 min-h-[100px]'}
+                        hover:bg-white/15
+                        hover:border-white/20
+                        ${isPrimary ? 'hover:scale-[1.02] hover:bg-white/22' : 'hover:-translate-y-0.5'}
+                        hover:shadow-xl
+                        active:bg-white/12
+                        transition-all
+                        flex flex-col justify-center
+                      `}
+                    >
+                      <h3 className={`${isPrimary ? 'text-lg font-semibold' : 'text-base font-medium'} text-white`}>
+                        {btn.label}
+                      </h3>
+                      <p className="mt-1.5 text-sm text-white/70">
+                        {btn.description}
+                      </p>
                     </div>
                   </Link>
                 );
