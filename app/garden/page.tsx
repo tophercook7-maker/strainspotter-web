@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import GardenButtonsFiltered from '@/components/garden/GardenButtonsFiltered'
+import GardenBackground from '@/components/garden/GardenBackground'
 import ResponsiveShell from '@/components/layout/ResponsiveShell'
 
 export default function GardenPage() {
@@ -17,12 +18,7 @@ export default function GardenPage() {
 
   return (
     <ResponsiveShell>
-      <div 
-        className="min-h-screen w-full"
-        style={{
-          background: "radial-gradient(circle at top, #062B18, #020B05)",
-        }}
-      >
+      <GardenBackground>
         <div className="max-w-7xl mx-auto px-4 py-8 md:px-8">
           {/* Hero Section */}
           <div className="mb-8 md:mb-12">
@@ -37,7 +33,7 @@ export default function GardenPage() {
           {/* Section Groups with Glass Cards */}
           <GardenButtonsFiltered />
         </div>
-      </div>
+      </GardenBackground>
     </ResponsiveShell>
   )
 }
