@@ -1,39 +1,41 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient'
-import GardenButtonsFiltered from '@/components/garden/GardenButtonsFiltered'
-import GardenBackground from '@/components/garden/GardenBackground'
-import ResponsiveShell from '@/components/layout/ResponsiveShell'
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
+import ResponsiveShell from "@/components/layout/ResponsiveShell";
+import GardenButtonsFiltered from "@/components/garden/GardenButtonsFiltered";
 
 export default function GardenPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) {
-        window.location.pathname = '/login'
-        return
+        router.replace("/login");
+      } else {
+        setLoading(false);
       }
-    })
-  }, [])
+    });
+  }, [router]);
+
+  if (loading) return null;
 
   return (
     <ResponsiveShell>
-      <GardenBackground>
-        <div className="max-w-7xl mx-auto px-4 py-8 md:px-8">
-          {/* Hero Section */}
-          <div className="mb-8 md:mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-2">
-              The Garden
-            </h1>
-            <p className="text-base md:text-lg text-white/70 max-w-2xl">
-              Everything related to your grow, tools
-            </p>
-          </div>
+      <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_#0b2f1a,_#020b05)]">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <h1 className="text-4xl font-semibold text-white mb-2">
+            The Garden
+          </h1>
+          <p className="text-white/70 mb-10">
+            Everything related to your grow, tools, and intelligence
+          </p>
 
-          {/* Section Groups with Glass Cards */}
           <GardenButtonsFiltered />
         </div>
-      </GardenBackground>
+      </div>
     </ResponsiveShell>
-  )
+  );
 }
