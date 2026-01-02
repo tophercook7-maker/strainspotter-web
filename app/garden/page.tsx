@@ -24,7 +24,7 @@ export default function GardenPage() {
             The Garden
           </h1>
           <p className="text-base md:text-lg text-white/70 max-w-2xl">
-            Everything related to your grow, tools, and knowledge in one place.
+            Everything related to your grow, tools
           </p>
         </div>
 
