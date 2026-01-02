@@ -32,7 +32,6 @@ export default function GardenPage() {
         <p className="text-white/70 mb-10">
           Everything related to your grow, tools, and intelligence
         </p>
-
         <GardenButtonsFiltered />
       </GardenHeroShell>
     </ResponsiveShell>
