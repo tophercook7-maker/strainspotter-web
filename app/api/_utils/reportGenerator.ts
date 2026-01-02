@@ -128,9 +128,10 @@ export async function generateScanReport(
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // PHASE 2: Find phenotype-similar strains (descriptive, not identification)
-    const visualFeatures = enrichment?.visual_features as VisualFeatures | undefined;
-    const phenotypeContext = await findPhenotypeSimilarStrains(visualFeatures, 10);
+      // PHASE 2: Find phenotype-similar strains (descriptive, not identification)
+      const visualFeatures = enrichment?.visual_features as VisualFeatures | undefined;
+      const scanId = (scan as ScanData & { id?: string }).id;
+      const phenotypeContext = await findPhenotypeSimilarStrains(visualFeatures, 10, scanId);
 
     // PHASE 1-3: Packaging detection and consistency check
     const packagingDetected = enrichment?.packaging_detected === true;

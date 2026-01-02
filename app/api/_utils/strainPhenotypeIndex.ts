@@ -5,6 +5,7 @@
  */
 
 import { supabaseAdmin } from './supabaseAdmin';
+import { isFeatureEnabled, FeatureFlagKey } from './featureFlags';
 
 export interface VisualFeatures {
   bud_density?: 'sparse' | 'moderate' | 'compact' | 'dense';
@@ -110,10 +111,10 @@ function normalizeVisualTraits(features: VisualFeatures): string[] {
 }
 
 /**
- * Score strain similarity based on visual features
+ * Score strain similarity based on visual features (LEGACY)
  * Returns a simple score (0-1) based on name/alias matching
  */
-function scoreStrainSimilarity(
+function scoreStrainSimilarityLegacy(
   strain: StrainRecord,
   traits: string[]
 ): number {
@@ -141,12 +142,80 @@ function scoreStrainSimilarity(
 }
 
 /**
+ * Score strain similarity using shadow model (V2)
+ * Enhanced scoring with improved trait matching and context awareness
+ */
+function scoreStrainSimilarityShadow(
+  strain: StrainRecord,
+  traits: string[],
+  visualFeatures: VisualFeatures
+): number {
+  let score = 0;
+  const nameLower = strain.name.toLowerCase();
+  const aliases = (strain.aliases || []).map(a => a.toLowerCase());
+  const allText = [nameLower, ...aliases].join(' ');
+  const description = (strain.description || '').toLowerCase();
+
+  // Enhanced trait matching with weighted scoring
+  for (const trait of traits) {
+    const traitText = trait.replace('_', ' ');
+    if (allText.includes(traitText)) {
+      score += 0.25; // Slightly higher weight
+    }
+    if (description.includes(traitText)) {
+      score += 0.15; // Description matches also count
+    }
+  }
+
+  // Context-aware matching based on visual features
+  if (visualFeatures.bud_density === 'dense' || visualFeatures.bud_density === 'compact') {
+    if (allText.includes('dense') || allText.includes('compact') || description.includes('dense')) {
+      score += 0.2;
+    }
+  }
+
+  if (visualFeatures.trichome_coverage === 'heavy') {
+    if (allText.includes('frosty') || allText.includes('trichome') || description.includes('frosty')) {
+      score += 0.2;
+    }
+  }
+
+  if (visualFeatures.secondary_pigmentation === 'purple_present') {
+    if (allText.includes('purple') || description.includes('purple')) {
+      score += 0.2;
+    }
+  }
+
+  // Boost for common descriptive terms (same as legacy)
+  const descriptiveTerms = ['purple', 'blue', 'white', 'pink', 'frosty', 'dense', 'compact'];
+  for (const term of descriptiveTerms) {
+    if (allText.includes(term)) {
+      score += 0.1;
+    }
+  }
+
+  // Type-based matching (indica/sativa/hybrid)
+  if (strain.type && visualFeatures.bud_shape) {
+    if (strain.type.toLowerCase() === 'indica' && visualFeatures.bud_shape === 'rounded_nug') {
+      score += 0.1; // Indicas often have rounded nugs
+    }
+    if (strain.type.toLowerCase() === 'sativa' && visualFeatures.bud_shape === 'elongated') {
+      score += 0.1; // Sativas often have elongated buds
+    }
+  }
+
+  return Math.min(1.0, score);
+}
+
+/**
  * Find phenotype-similar strains based on visual features
  * Returns descriptive context, NOT identifications
+ * Supports shadow model similarity scoring via feature flag
  */
 export async function findPhenotypeSimilarStrains(
   scanFeatures: VisualFeatures | null | undefined,
-  limit: number = 10
+  limit: number = 10,
+  scanId?: string
 ): Promise<PhenotypeContext> {
   if (!scanFeatures || !supabaseAdmin) {
     return {
@@ -157,6 +226,26 @@ export async function findPhenotypeSimilarStrains(
   }
 
   try {
+    // Check feature flag for shadow phenotype similarity v2
+    let useShadowScoring = false;
+    try {
+      useShadowScoring = await isFeatureEnabled(
+        'phenotype_similarity_v2' as FeatureFlagKey,
+        null,
+        null,
+        false // Default to false (legacy)
+      );
+      
+      // Log when shadow scoring is active
+      if (useShadowScoring && scanId) {
+        console.log(`[phenotypeIndex] phenotype_similarity_v2_active for scan: ${scanId}`);
+      }
+    } catch (flagError) {
+      // Fail safely - default to legacy
+      console.warn('[phenotypeIndex] Error checking feature flag, using legacy scoring:', flagError);
+      useShadowScoring = false;
+    }
+
     // Load all strains (with available phenotype data)
     const { data: strains, error } = await supabaseAdmin
       .from('strains')
@@ -184,11 +273,13 @@ export async function findPhenotypeSimilarStrains(
       };
     }
 
-    // Score and rank strains
+    // Score and rank strains (using shadow or legacy scoring)
     const scored = strains
       .map(strain => ({
         strain,
-        score: scoreStrainSimilarity(strain, traits),
+        score: useShadowScoring
+          ? scoreStrainSimilarityShadow(strain, traits, scanFeatures)
+          : scoreStrainSimilarityLegacy(strain, traits),
       }))
       .filter(item => item.score > 0)
       .sort((a, b) => b.score - a.score)
