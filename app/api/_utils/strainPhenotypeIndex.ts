@@ -227,18 +227,43 @@ export async function findPhenotypeSimilarStrains(
 
   try {
     // Check feature flag for shadow phenotype similarity v2
+    // Supports canary rollout: admins always enabled, ~10% random users
     let useShadowScoring = false;
+    let rolloutBucket: number | null = null;
+    let userId: string | null = null;
+
     try {
+      // Get user_id from scan if available (for canary logging)
+      if (scanId && supabaseAdmin) {
+        const { data: scan } = await supabaseAdmin
+          .from('scans')
+          .select('user_id')
+          .eq('id', scanId)
+          .maybeSingle();
+        userId = scan?.user_id || null;
+      }
+
       useShadowScoring = await isFeatureEnabled(
         'phenotype_similarity_v2' as FeatureFlagKey,
-        null,
+        userId,
         null,
         false // Default to false (legacy)
       );
-      
-      // Log when shadow scoring is active
-      if (useShadowScoring && scanId) {
-        console.log(`[phenotypeIndex] phenotype_similarity_v2_active for scan: ${scanId}`);
+
+      // Calculate rollout bucket for logging (deterministic hash)
+      if (userId && useShadowScoring) {
+        const userHash = Math.abs(
+          userId.split('').reduce((hash, char) => {
+            const charCode = char.charCodeAt(0);
+            return ((hash << 5) - hash) + charCode;
+          }, 0)
+        );
+        rolloutBucket = userHash % 100;
+      }
+
+      // Log canary event when shadow scoring is active
+      if (useShadowScoring && scanId && userId) {
+        console.log(`[phenotypeIndex] phenotype_similarity_v2_canary: user_id=${userId}, scan_id=${scanId}, rollout_bucket=${rolloutBucket}`);
       }
     } catch (flagError) {
       // Fail safely - default to legacy
