@@ -9,6 +9,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface AdminAlert {
+  alert_id: string;
+  alert_type: string;
+  severity: 'info' | 'warning';
+  message: string;
+  metrics?: Record<string, unknown>;
+  created_at: string;
+}
+
 interface OverallMetrics {
   total_comparisons: number;
   shadow_better_rate: number;
@@ -41,6 +50,7 @@ interface ReadinessData {
 
 export default function ModelReadinessPage() {
   const [data, setData] = useState<ReadinessData | null>(null);
+  const [alerts, setAlerts] = useState<AdminAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -48,23 +58,32 @@ export default function ModelReadinessPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch('/api/internal/model/readiness');
+        const [readinessRes, alertsRes] = await Promise.all([
+          fetch('/api/internal/model/readiness'),
+          fetch('/api/internal/canary-alerts?limit=5'),
+        ]);
 
-        if (response.status === 403) {
+        if (readinessRes.status === 403 || alertsRes.status === 403) {
           router.push('/garden'); // Redirect non-admins
           return;
         }
-        if (response.status === 401) {
+        if (readinessRes.status === 401 || alertsRes.status === 401) {
           router.push('/login'); // Redirect unauthenticated
           return;
         }
 
-        if (!response.ok) {
+        if (!readinessRes.ok) {
           throw new Error('Failed to fetch readiness data');
         }
 
-        const readinessData = await response.json();
+        const readinessData = await readinessRes.json();
         setData(readinessData);
+
+        // Alerts are optional - don't fail if they can't be fetched
+        if (alertsRes.ok) {
+          const alertsData = await alertsRes.json();
+          setAlerts(alertsData.alerts || []);
+        }
       } catch (err: unknown) {
         console.error('Error fetching readiness data:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -128,6 +147,36 @@ export default function ModelReadinessPage() {
             Observational dashboard for A/B test comparison data. No model promotion occurs automatically.
           </p>
         </div>
+
+        {/* Alerts Banner */}
+        {alerts.length > 0 && (
+          <div className="space-y-2">
+            {alerts.map((alert) => (
+              <div
+                key={alert.alert_id}
+                className={`rounded-lg border-2 p-4 ${
+                  alert.severity === 'warning'
+                    ? 'bg-red-900/30 border-red-500'
+                    : 'bg-blue-900/30 border-blue-500'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`text-xl ${
+                    alert.severity === 'warning' ? 'text-red-300' : 'text-blue-300'
+                  }`}>
+                    {alert.severity === 'warning' ? '⚠' : 'ℹ'}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-300">{alert.message}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(alert.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Recommendation Banner */}
         <div className={`rounded-lg border-2 p-4 ${recommendationColor}`}>
