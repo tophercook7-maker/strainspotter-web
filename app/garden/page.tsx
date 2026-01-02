@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import ResponsiveShell from "@/components/layout/ResponsiveShell";
 import GardenButtonsFiltered from "@/components/garden/GardenButtonsFiltered";
+import GardenHeroShell from "@/components/garden/GardenHeroShell";
 
 export default function GardenPage() {
   const router = useRouter();
@@ -24,18 +25,16 @@ export default function GardenPage() {
 
   return (
     <ResponsiveShell>
-      <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_#0b2f1a,_#020b05)]">
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <h1 className="text-4xl font-semibold text-white mb-2">
-            The Garden
-          </h1>
-          <p className="text-white/70 mb-10">
-            Everything related to your grow, tools, and intelligence
-          </p>
+      <GardenHeroShell>
+        <h1 className="text-4xl font-semibold text-white mb-2">
+          The Garden
+        </h1>
+        <p className="text-white/70 mb-10">
+          Everything related to your grow, tools, and intelligence
+        </p>
 
-          <GardenButtonsFiltered />
-        </div>
-      </div>
+        <GardenButtonsFiltered />
+      </GardenHeroShell>
     </ResponsiveShell>
   );
 }
