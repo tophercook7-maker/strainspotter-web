@@ -1,17 +1,18 @@
 /**
  * Strain Confidence Engine
  * 
- * Bridges Scanner results and Strain Explorer.
- * Quantifies confidence, uncertainty, and alternatives.
+ * Converts raw scanner results into clear, honest confidence signals.
+ * Explains how sure the system is — without pretending certainty.
  * 
  * PRINCIPLES:
  * - No definitive strain claims
  * - Confidence is EXPLAINED, not asserted
  * - Uncertainty is visible
- * - Alternatives are first-class citizens
+ * - No percentages shown to users
+ * - Never say "Confirmed" or "Definitely"
  */
 
-export type ConfidenceLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+export type ConfidenceLevel = 'VERY_LOW' | 'LOW' | 'MODERATE' | 'HIGH';
 
 export interface ConfidenceSignals {
   visualSimilarity?: number; // 0-1
@@ -48,13 +49,14 @@ export interface ConfidenceOutput {
 }
 
 // Configurable thresholds (0-1 scale)
-const LOW_THRESHOLD = 0.4; // Below this = LOW
-const HIGH_THRESHOLD = 0.7; // Above this = HIGH
-// Between = MEDIUM
+const LOW_THRESHOLD = 0.4; // Below this = VERY_LOW (fail-safe)
+const MODERATE_THRESHOLD = 0.6; // LOW to MODERATE boundary
+const HIGH_THRESHOLD = 0.75; // Above this = HIGH
+// Between thresholds = respective levels
 
 // Image quality caps
-const LOW_QUALITY_THRESHOLD = 0.5; // Below this caps at MEDIUM
-const VERY_POOR_QUALITY_THRESHOLD = 0.3; // Below this forces LOW
+const LOW_QUALITY_THRESHOLD = 0.5; // Below this caps at MODERATE
+const VERY_POOR_QUALITY_THRESHOLD = 0.3; // Below this forces LOW or VERY_LOW
 
 /**
  * Calculate internal confidence score from signals
@@ -105,9 +107,9 @@ function calculateInternalScore(signals: ConfidenceSignals): number {
 
   // Apply image quality cap
   if (imageQuality < VERY_POOR_QUALITY_THRESHOLD) {
-    score = Math.min(score, LOW_THRESHOLD - 0.1); // Force LOW
+    score = Math.min(score, LOW_THRESHOLD - 0.05); // Force LOW or VERY_LOW
   } else if (imageQuality < LOW_QUALITY_THRESHOLD) {
-    score = Math.min(score, HIGH_THRESHOLD - 0.1); // Cap at MEDIUM
+    score = Math.min(score, HIGH_THRESHOLD - 0.05); // Cap at MODERATE
   }
 
   return Math.max(0, Math.min(1, score));
@@ -118,28 +120,34 @@ function calculateInternalScore(signals: ConfidenceSignals): number {
  */
 function determineLevel(score: number): ConfidenceLevel {
   if (score < LOW_THRESHOLD) {
+    return 'VERY_LOW'; // Fail-safe state
+  } else if (score < MODERATE_THRESHOLD) {
     return 'LOW';
-  } else if (score >= HIGH_THRESHOLD) {
-    return 'HIGH';
+  } else if (score < HIGH_THRESHOLD) {
+    return 'MODERATE';
   } else {
-    return 'MEDIUM';
+    return 'HIGH';
   }
 }
 
 /**
  * Generate explanation for confidence level
+ * Uses allowed language: "Likely", "Similar to", "Matches known patterns"
+ * Never uses: "Is", "Definitely", "Confirmed"
  */
 function generateExplanation(level: ConfidenceLevel, signals: ConfidenceSignals): string {
   switch (level) {
     case 'HIGH':
-      return 'High confidence — visual traits and phenotype align consistently across scans.';
-    case 'MEDIUM':
-      return 'Medium confidence — strong phenotype alignment with some ambiguity.';
+      return 'Likely matches known patterns. Visual traits and phenotype align consistently.';
+    case 'MODERATE':
+      return 'Similar to known patterns. Strong phenotype alignment with some ambiguity.';
     case 'LOW':
       if (signals.imageQuality && signals.imageQuality < LOW_QUALITY_THRESHOLD) {
-        return 'Low confidence — image quality limits match certainty.';
+        return 'Similar to known patterns. Image quality limits match certainty.';
       }
-      return 'Low confidence — visual traits overlap many strains or insufficient data.';
+      return 'Similar to known patterns. Visual traits overlap many strains.';
+    case 'VERY_LOW':
+      return 'Insufficient data for reliable matching.';
   }
 }
 
@@ -188,8 +196,8 @@ function generateReasoning(level: ConfidenceLevel, signals: ConfidenceSignals): 
 function generateLimitations(level: ConfidenceLevel, signals: ConfidenceSignals): string[] | undefined {
   const limitations: string[] = [];
 
-  if (level === 'LOW') {
-    limitations.push('Multiple strains share similar visual characteristics');
+  if (level === 'LOW' || level === 'VERY_LOW') {
+    limitations.push('Multiple strains share similar characteristics');
   }
 
   if (signals.imageQuality !== undefined && signals.imageQuality < LOW_QUALITY_THRESHOLD) {
@@ -252,9 +260,26 @@ export function formatAlternatives(
 
 /**
  * Check if any match meets minimum confidence threshold
+ * Returns false for VERY_LOW (fail-safe state)
  */
 export function hasConfidentMatch(internalScore: number): boolean {
   return internalScore >= LOW_THRESHOLD;
+}
+
+/**
+ * Get user-facing label for confidence level
+ */
+export function getConfidenceLabel(level: ConfidenceLevel): string {
+  switch (level) {
+    case 'VERY_LOW':
+      return 'Very Low';
+    case 'LOW':
+      return 'Low';
+    case 'MODERATE':
+      return 'Moderate';
+    case 'HIGH':
+      return 'High';
+  }
 }
 
 /**
@@ -262,7 +287,7 @@ export function hasConfidentMatch(internalScore: number): boolean {
  */
 export function getConfidenceExplanationCopy(): {
   title: string;
-  levels: Array<{ level: ConfidenceLevel; description: string }>;
+  levels: Array<{ level: ConfidenceLevel; label: string; description: string }>;
   disclaimers: string[];
 } {
   return {
@@ -270,15 +295,23 @@ export function getConfidenceExplanationCopy(): {
     levels: [
       {
         level: 'HIGH',
+        label: 'High',
         description: 'Visual traits and phenotype align consistently across scans. This match appears reliably.',
       },
       {
-        level: 'MEDIUM',
+        level: 'MODERATE',
+        label: 'Moderate',
         description: 'Strong phenotype alignment with some ambiguity. Good match but alternatives exist.',
       },
       {
         level: 'LOW',
+        label: 'Low',
         description: 'Visual traits overlap many strains or insufficient data. Multiple possibilities exist.',
+      },
+      {
+        level: 'VERY_LOW',
+        label: 'Very Low',
+        description: 'Insufficient data for reliable matching. Consider taking another photo or viewing Strain Explorer manually.',
       },
     ],
     disclaimers: [

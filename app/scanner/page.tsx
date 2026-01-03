@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { checkScanGuard } from "@/lib/scanGuard";
 import NotEnoughCreditsModal from "@/components/NotEnoughCreditsModal";
 import ConfidenceDisplay from "@/components/ConfidenceDisplay";
+import ConfidenceSummaryCard from "@/components/ConfidenceSummaryCard";
 import { adaptScannerResponse } from "@/lib/confidence/adapter";
 
 export default function ScannerPage() {

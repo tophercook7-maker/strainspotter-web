@@ -132,6 +132,19 @@ export default function GardenPage() {
           </div>
         </section>
 
+        {/* INDUSTRY */}
+        <section className="garden-section mb-16">
+          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
+            INDUSTRY
+          </h2>
+          <div className="garden-card-grid">
+            <Link href="/ecosystem" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Industry Ecosystem</h3>
+              <p className="text-white/80 text-sm">Map of the cannabis industry landscape</p>
+            </Link>
+          </div>
+        </section>
+
         {/* COMMUNITY */}
         <section className="garden-section mb-16">
           <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">

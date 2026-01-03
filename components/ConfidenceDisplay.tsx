@@ -6,6 +6,7 @@ import {
   ConfidenceResult,
   AlternativeMatch,
   getConfidenceExplanationCopy,
+  getConfidenceLabel,
 } from '@/lib/confidence/engine';
 import ScanFeedbackCollector from './ScanFeedbackCollector';
 
@@ -30,8 +31,9 @@ export default function ConfidenceDisplay({
 }: ConfidenceDisplayProps) {
   const confidenceBadgeColor = {
     HIGH: 'bg-green-500/20 text-green-400 border-green-500/50',
-    MEDIUM: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50',
+    MODERATE: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50',
     LOW: 'bg-orange-500/20 text-orange-400 border-orange-500/50',
+    VERY_LOW: 'bg-gray-500/20 text-gray-400 border-gray-500/50',
   };
 
   const explanationCopy = getConfidenceExplanationCopy();
@@ -73,7 +75,7 @@ export default function ConfidenceDisplay({
               <span
                 className={`px-3 py-1 rounded text-sm font-medium border ${confidenceBadgeColor[primary.confidence.level]}`}
               >
-                {primary.confidence.level} Confidence
+                {getConfidenceLabel(primary.confidence.level)} Confidence
               </span>
             </div>
             <p className="text-gray-300 mb-4">{primary.confidence.explanation}</p>
@@ -148,7 +150,6 @@ export default function ConfidenceDisplay({
       {!noConfidentMatch && scanId && (
         <ScanFeedbackCollector
           scanId={scanId}
-          primaryStrainSlug={primary.slug}
           confidenceLevel={primary.confidence.level}
         />
       )}
