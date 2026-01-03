@@ -45,7 +45,7 @@ const COMMUNITY_NEWS = [
 
 export default function GardenPage() {
   return (
-    <div className="garden-page-content max-w-7xl mx-auto px-4 py-8 md:px-8">
+    <div className="garden-page-content">
       {/* Hero Section - Correct stacking order */}
       <div className="mb-12 flex flex-col items-center">
         {/* 1. Page Title */}
@@ -68,7 +68,7 @@ export default function GardenPage() {
         </p>
       </div>
 
-      {/* Content Container - Centered, above background */}
+      {/* Content Container - Centered, wraps ALL content below hero */}
       <div className="max-w-6xl mx-auto px-8 py-8">
         {/* ACTIONS */}
         <section className="mb-16">
