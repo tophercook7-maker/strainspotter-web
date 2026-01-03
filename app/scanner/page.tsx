@@ -5,14 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { checkScanGuard } from "@/lib/scanGuard";
 import NotEnoughCreditsModal from "@/components/NotEnoughCreditsModal";
-
-interface MatchResult {
-  match: {
-    name: string;
-    slug: string;
-    confidence: number;
-  };
-}
+import ConfidenceDisplay from "@/components/ConfidenceDisplay";
+import { adaptScannerResponse } from "@/lib/confidence/adapter";
 
 export default function ScannerPage() {
   const router = useRouter();
@@ -23,7 +17,15 @@ export default function ScannerPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<MatchResult[]>([]);
+  const [confidenceResult, setConfidenceResult] = useState<{
+    primary?: {
+      name: string;
+      slug: string;
+      confidence: any;
+    };
+    alternatives: any[];
+    noConfidentMatch: boolean;
+  } | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,7 +34,7 @@ export default function ScannerPage() {
 
     setFile(selectedFile);
     setError(null);
-    setResults([]);
+    setConfidenceResult(null);
 
     // Create preview
     const reader = new FileReader();
@@ -56,7 +58,7 @@ export default function ScannerPage() {
 
     setLoading(true);
     setError(null);
-    setResults([]);
+    setConfidenceResult(null);
 
     try {
       // Check scan credits before proceeding
@@ -89,10 +91,41 @@ export default function ScannerPage() {
       const data = await response.json();
       console.log("[SCANNER] Results received:", data);
 
-      if (data.matches && Array.isArray(data.matches)) {
-        setResults(data.matches);
+      // Adapt API response to confidence format
+      // Note: v3 API returns { match: { strain, score, breakdown }, alternatives: [...] }
+      // We need to fetch strain names from database
+      if (data.match) {
+        // Fetch strain name from database if we only have slug
+        let matchName = data.match.strain;
+        if (data.match.strain && !data.match.name) {
+          try {
+            const strainRes = await fetch(`/api/strain/${data.match.strain}`);
+            if (strainRes.ok) {
+              const strainData = await strainRes.json();
+              matchName = strainData.name || data.match.strain;
+            }
+          } catch (err) {
+            console.warn('[SCANNER] Failed to fetch strain name:', err);
+          }
+        }
+
+        const adapted = adaptScannerResponse({
+          match: {
+            strain: data.match.strain,
+            name: matchName,
+            score: data.match.score,
+            breakdown: data.match.breakdown,
+          },
+          alternatives: data.alternatives?.map((alt: any) => ({
+            strain: alt.strain,
+            score: alt.score,
+            breakdown: alt.breakdown,
+          })),
+        });
+
+        setConfidenceResult(adapted);
       } else {
-        throw new Error("Invalid response format");
+        throw new Error("No match found");
       }
     } catch (err: any) {
       console.error("[SCANNER] Error:", err);
@@ -104,7 +137,7 @@ export default function ScannerPage() {
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold">Scanner</h1>
 
         {/* File Input */}
@@ -160,34 +193,15 @@ export default function ScannerPage() {
           </div>
         )}
 
-        {/* Results */}
-        {results.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Results</h2>
-            {results.map((result, index) => (
-              <div
-                key={index}
-                className="bg-neutral-900 rounded-lg p-4 border border-neutral-700"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-emerald-400">
-                      {result.match.name}
-                    </h3>
-                    <p className="text-sm text-neutral-400">
-                      Confidence: {Math.round(result.match.confidence * 100)}%
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => router.push(`/strain/${result.match.slug}`)}
-                    className="px-4 py-2 bg-emerald-600 text-black font-semibold rounded hover:bg-emerald-500 transition"
-                  >
-                    View
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Confidence Results */}
+        {confidenceResult && (
+          <ConfidenceDisplay
+            primary={confidenceResult.primary!}
+            alternatives={confidenceResult.alternatives}
+            noConfidentMatch={confidenceResult.noConfidentMatch}
+            showExplanation={true}
+            scanId={null}
+          />
         )}
       </div>
 

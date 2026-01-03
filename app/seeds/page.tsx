@@ -11,13 +11,18 @@ interface SeedVendor {
 // Static seed vendor data
 const SEED_VENDORS: SeedVendor[] = [
   {
-    name: 'North Atlantic Seed Co',
-    description: 'US-based seed bank with fast shipping',
+    name: 'Grow STRNG Seeds',
+    description: 'Premium cannabis genetics and seeds',
+    url: 'https://growstrng.com',
+  },
+  {
+    name: 'North Atlantic Seed Co.',
+    description: 'Trusted seed bank with wide genetic selection',
     url: 'https://northatlanticseed.com',
   },
   {
     name: 'Seedsman',
-    description: 'International seed bank with large selection',
+    description: 'Global cannabis seed marketplace',
     url: 'https://www.seedsman.com',
   },
   {
@@ -31,9 +36,9 @@ const SEED_VENDORS: SeedVendor[] = [
     url: 'https://humboldtseedcompany.com',
   },
   {
-    name: 'Multiverse Beans',
-    description: 'Curated breeder drops and exclusives',
-    url: 'https://multiversebeans.com',
+    name: "Barney's Farm",
+    description: 'Award-winning genetics and premium seeds',
+    url: 'https://barneysfarm.com',
   },
 ];
 
@@ -53,6 +58,36 @@ export default function SeedVendorsPage() {
           <p className="text-white/70">
             Reputable seed banks and breeders for your grow
           </p>
+        </div>
+
+        {/* Featured Seed Vendor Section */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-white/90 mb-4 uppercase tracking-wider">
+            Featured Seed Vendor
+          </h2>
+          <div className="relative bg-[var(--botanical-bg-surface)] border-2 border-green-500/40 rounded-xl p-8 shadow-lg">
+            {/* Featured Badge */}
+            <div className="absolute top-4 right-4">
+              <span className="px-3 py-1 bg-green-500/20 border border-green-500/40 rounded-full text-xs font-semibold text-green-300 uppercase tracking-wider">
+                Featured
+              </span>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-white mb-3 pr-20">
+              Featured Seed Vendor
+            </h3>
+            <p className="text-[var(--botanical-text-secondary)] mb-6 max-w-2xl">
+              This premium placement highlights trusted seed vendors used by the grower community.
+            </p>
+            <a
+              href="mailto:partners@strainspotter.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-6 py-3 bg-emerald-600 text-black rounded-lg font-semibold hover:opacity-90 transition text-sm"
+            >
+              Become a Featured Vendor
+            </a>
+          </div>
         </div>
 
         {/* Vendor Cards */}
