@@ -68,24 +68,24 @@ export default function GardenPage() {
         </p>
       </div>
 
-      {/* Sections */}
-      <div>
+      {/* Content Container - Centered, above background */}
+      <div className="max-w-6xl mx-auto px-8 py-8">
         {/* ACTIONS */}
-        <section className="mb-8" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', borderRadius: '16px', padding: '24px' }}>
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-4">
+        <section className="mb-16">
+          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
             ACTIONS
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {ACTIONS.map((btn) => (
               <Link
                 key={btn.href}
                 href={btn.href}
                 className={`
                   rounded-xl backdrop-blur-md border
-                  ${btn.primary ? 'bg-white/18 border-white/20 p-7 min-h-[120px]' : 'bg-white/10 border-white/10 p-6 min-h-[100px]'}
-                  hover:bg-white/15 hover:border-white/20
-                  ${btn.primary ? 'hover:scale-[1.02] hover:bg-white/22' : ''}
-                  active:bg-white/12
+                  ${btn.primary ? 'bg-white/18 border-white/20 p-6 min-h-[120px]' : 'bg-white/10 border-white/10 p-6 min-h-[100px]'}
+                  hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10
+                  ${btn.primary ? 'hover:scale-[1.02] hover:bg-white/22' : 'hover:scale-[1.01]'}
+                  active:bg-white/12 active:scale-[0.99]
                   transition-all flex flex-col justify-center cursor-pointer block
                 `}
               >
@@ -101,16 +101,16 @@ export default function GardenPage() {
         </section>
 
         {/* RECORDS */}
-        <section className="mb-8" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', borderRadius: '16px', padding: '24px' }}>
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-4">
+        <section className="mb-16">
+          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
             RECORDS
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {RECORDS.map((btn) => (
               <Link
                 key={btn.href}
                 href={btn.href}
-                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 active:bg-white/12 transition-all flex flex-col justify-center cursor-pointer block"
+                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10 hover:scale-[1.01] active:bg-white/12 active:scale-[0.99] transition-all flex flex-col justify-center cursor-pointer block"
               >
                 <div className="text-base font-medium text-white mb-1.5">
                   {btn.label}
@@ -124,16 +124,16 @@ export default function GardenPage() {
         </section>
 
         {/* INTELLIGENCE */}
-        <section className="mb-8" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', borderRadius: '16px', padding: '24px' }}>
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-4">
+        <section className="mb-16">
+          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
             INTELLIGENCE
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {INTELLIGENCE.map((btn) => (
               <Link
                 key={btn.href}
                 href={btn.href}
-                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 active:bg-white/12 transition-all flex flex-col justify-center cursor-pointer block"
+                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10 hover:scale-[1.01] active:bg-white/12 active:scale-[0.99] transition-all flex flex-col justify-center cursor-pointer block"
               >
                 <div className="text-base font-medium text-white mb-1.5">
                   {btn.label}
@@ -147,16 +147,16 @@ export default function GardenPage() {
         </section>
 
         {/* FIND & BUY */}
-        <section className="mb-8" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', borderRadius: '16px', padding: '24px' }}>
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-4">
+        <section className="mb-16">
+          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
             FIND & BUY
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {FIND_BUY.map((btn) => (
               <Link
                 key={btn.href}
                 href={btn.href}
-                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 active:bg-white/12 transition-all flex flex-col justify-center cursor-pointer block"
+                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10 hover:scale-[1.01] active:bg-white/12 active:scale-[0.99] transition-all flex flex-col justify-center cursor-pointer block"
               >
                 <div className="text-base font-medium text-white mb-1.5">
                   {btn.label}
@@ -170,16 +170,16 @@ export default function GardenPage() {
         </section>
 
         {/* COMMUNITY & NEWS */}
-        <section className="mb-8" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', borderRadius: '16px', padding: '24px' }}>
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-4">
+        <section className="mb-16">
+          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
             COMMUNITY & NEWS
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {COMMUNITY_NEWS.map((btn) => (
               <Link
                 key={btn.href}
                 href={btn.href}
-                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 active:bg-white/12 transition-all flex flex-col justify-center cursor-pointer block"
+                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10 hover:scale-[1.01] active:bg-white/12 active:scale-[0.99] transition-all flex flex-col justify-center cursor-pointer block"
               >
                 <div className="text-base font-medium text-white mb-1.5">
                   {btn.label}
