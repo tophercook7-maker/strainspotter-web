@@ -85,3 +85,39 @@ button {
 .garden-page-content p {
   color: rgba(255, 255, 255, 0.8);
 }
+
+/* Garden Card Grid */
+.garden-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.garden-card {
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(14px);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+  display: block;
+}
+
+.garden-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0,255,128,0.15);
+}
+
+.garden-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: white;
+}
+
+.garden-card p {
+  font-size: 13px;
+  opacity: .8;
+  color: rgba(255, 255, 255, 0.8);
+}

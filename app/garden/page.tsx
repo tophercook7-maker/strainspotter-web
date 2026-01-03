@@ -9,39 +9,9 @@
  * CONTENT ONLY: Card buttons following canonical sections and routes.
  */
 
+'use client';
+
 import Link from "next/link";
-
-// Canonical Garden Sections and Routes
-const ACTIONS = [
-  { href: "/scanner", label: "Scan a Plant", description: "Identify strain or diagnose issues", primary: true },
-  { href: "/garden/logbook?new=true", label: "Log an Update", description: "Add a logbook entry" },
-  { href: "/garden/plants/new", label: "Add a Plant", description: "Start tracking a new plant" },
-  { href: "/garden/tasks/new", label: "Create a Task", description: "Add a task to your list" },
-];
-
-const RECORDS = [
-  { href: "/garden/logbook", label: "Grow Logbook", description: "Log entries and notes" },
-  { href: "/garden/plants", label: "My Plants", description: "Track your active grows" },
-  { href: "/garden/environment", label: "Grow Environment", description: "Track temperature, humidity, and more" },
-  { href: "/garden/tasks", label: "Tasks", description: "Your grow checklist" },
-  { href: "/garden/notes", label: "Grow Notes", description: "AI-assisted thinking layer" },
-  { href: "/strains", label: "Strain Explorer", description: "Factual strain reference and knowledge base" },
-];
-
-const INTELLIGENCE = [
-  { href: "/garden/grow-coach", label: "Grow Coach", description: "AI-powered growing advice" },
-  { href: "/garden/grow-doctor", label: "Grow Doctor", description: "Diagnose plant issues" },
-];
-
-const FIND_BUY = [
-  { href: "/garden/dispensaries", label: "Dispensary Finder", description: "Find dispensaries near you" },
-  { href: "/seeds", label: "Seed Finder", description: "Browse seed sellers and vendors" },
-];
-
-const COMMUNITY_NEWS = [
-  { href: "/community", label: "Community", description: "Discussion and tips" },
-  { href: "/discover/news", label: "Cannabis News", description: "Latest industry updates" },
-];
 
 export default function GardenPage() {
   return (
@@ -71,124 +41,111 @@ export default function GardenPage() {
       {/* Content Container - Centered, wraps ALL content below hero */}
       <div className="max-w-6xl mx-auto px-8 py-8">
         {/* ACTIONS */}
-        <section className="mb-16">
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
+        <section className="garden-section mb-16">
+          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
             ACTIONS
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {ACTIONS.map((btn) => (
-              <Link
-                key={btn.href}
-                href={btn.href}
-                className={`
-                  rounded-xl backdrop-blur-md border
-                  ${btn.primary ? 'bg-white/18 border-white/20 p-6 min-h-[120px]' : 'bg-white/10 border-white/10 p-6 min-h-[100px]'}
-                  hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10
-                  ${btn.primary ? 'hover:scale-[1.02] hover:bg-white/22' : 'hover:scale-[1.01]'}
-                  active:bg-white/12 active:scale-[0.99]
-                  transition-all flex flex-col justify-center cursor-pointer block
-                `}
-              >
-                <div className={`${btn.primary ? 'text-lg font-semibold' : 'text-base font-medium'} text-white mb-1.5`}>
-                  {btn.label}
-                </div>
-                <div className="text-sm text-white/70">
-                  {btn.description}
-                </div>
-              </Link>
-            ))}
+          <div className="garden-card-grid">
+            <Link href="/scanner" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Scan a Plant</h3>
+              <p className="text-white/80 text-sm">Identify strain or diagnose issues</p>
+            </Link>
+            <Link href="/garden/logbook/new" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Log an Update</h3>
+              <p className="text-white/80 text-sm">Add a logbook entry</p>
+            </Link>
+            <Link href="/garden/plants/new" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Add a Plant</h3>
+              <p className="text-white/80 text-sm">Start tracking a new plant</p>
+            </Link>
+            <Link href="/garden/tasks/new" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Create a Task</h3>
+              <p className="text-white/80 text-sm">Add a task to your list</p>
+            </Link>
           </div>
         </section>
 
         {/* RECORDS */}
-        <section className="mb-16">
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
+        <section className="garden-section mb-16">
+          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
             RECORDS
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {RECORDS.map((btn) => (
-              <Link
-                key={btn.href}
-                href={btn.href}
-                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10 hover:scale-[1.01] active:bg-white/12 active:scale-[0.99] transition-all flex flex-col justify-center cursor-pointer block"
-              >
-                <div className="text-base font-medium text-white mb-1.5">
-                  {btn.label}
-                </div>
-                <div className="text-sm text-white/70">
-                  {btn.description}
-                </div>
-              </Link>
-            ))}
+          <div className="garden-card-grid">
+            <Link href="/garden/logbook" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Grow Logbook</h3>
+              <p className="text-white/80 text-sm">Log entries and notes</p>
+            </Link>
+            <Link href="/garden/plants" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">My Plants</h3>
+              <p className="text-white/80 text-sm">Track your active grows</p>
+            </Link>
+            <Link href="/garden/environment" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Grow Environment</h3>
+              <p className="text-white/80 text-sm">Track temperature, humidity, and more</p>
+            </Link>
+            <Link href="/garden/tasks" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Tasks</h3>
+              <p className="text-white/80 text-sm">Your grow checklist</p>
+            </Link>
+            <Link href="/garden/notes" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Grow Notes</h3>
+              <p className="text-white/80 text-sm">AI-assisted thinking layer</p>
+            </Link>
           </div>
         </section>
 
         {/* INTELLIGENCE */}
-        <section className="mb-16">
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
+        <section className="garden-section mb-16">
+          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
             INTELLIGENCE
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {INTELLIGENCE.map((btn) => (
-              <Link
-                key={btn.href}
-                href={btn.href}
-                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10 hover:scale-[1.01] active:bg-white/12 active:scale-[0.99] transition-all flex flex-col justify-center cursor-pointer block"
-              >
-                <div className="text-base font-medium text-white mb-1.5">
-                  {btn.label}
-                </div>
-                <div className="text-sm text-white/70">
-                  {btn.description}
-                </div>
-              </Link>
-            ))}
+          <div className="garden-card-grid">
+            <Link href="/coach" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Grow Coach</h3>
+              <p className="text-white/80 text-sm">AI-powered growing advice</p>
+            </Link>
+            <Link href="/doctor" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Grow Doctor</h3>
+              <p className="text-white/80 text-sm">Diagnose plant issues</p>
+            </Link>
+            <Link href="/strain-explorer" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Strain Explorer</h3>
+              <p className="text-white/80 text-sm">Factual strain reference and knowledge base</p>
+            </Link>
           </div>
         </section>
 
         {/* FIND & BUY */}
-        <section className="mb-16">
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
+        <section className="garden-section mb-16">
+          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
             FIND & BUY
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {FIND_BUY.map((btn) => (
-              <Link
-                key={btn.href}
-                href={btn.href}
-                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10 hover:scale-[1.01] active:bg-white/12 active:scale-[0.99] transition-all flex flex-col justify-center cursor-pointer block"
-              >
-                <div className="text-base font-medium text-white mb-1.5">
-                  {btn.label}
-                </div>
-                <div className="text-sm text-white/70">
-                  {btn.description}
-                </div>
-              </Link>
-            ))}
+          <div className="garden-card-grid">
+            <Link href="/discover/dispensaries" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Dispensary Finder</h3>
+              <p className="text-white/80 text-sm">Find dispensaries near you</p>
+            </Link>
+            <Link href="/seeds" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Seed Finder</h3>
+              <p className="text-white/80 text-sm">Browse seed sellers and vendors</p>
+            </Link>
           </div>
         </section>
 
-        {/* COMMUNITY & NEWS */}
-        <section className="mb-16">
-          <h2 className="text-sm md:text-base font-semibold text-white uppercase tracking-wider mb-6">
-            COMMUNITY & NEWS
+        {/* COMMUNITY */}
+        <section className="garden-section mb-16">
+          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
+            COMMUNITY
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {COMMUNITY_NEWS.map((btn) => (
-              <Link
-                key={btn.href}
-                href={btn.href}
-                className="rounded-xl backdrop-blur-md bg-white/10 border border-white/10 p-6 min-h-[100px] hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:shadow-white/10 hover:scale-[1.01] active:bg-white/12 active:scale-[0.99] transition-all flex flex-col justify-center cursor-pointer block"
-              >
-                <div className="text-base font-medium text-white mb-1.5">
-                  {btn.label}
-                </div>
-                <div className="text-sm text-white/70">
-                  {btn.description}
-                </div>
-              </Link>
-            ))}
+          <div className="garden-card-grid">
+            <Link href="/community" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Community</h3>
+              <p className="text-white/80 text-sm">Discussion and tips</p>
+            </Link>
+            <Link href="/discover/news" className="garden-card">
+              <h3 className="text-white font-semibold mb-1.5">Cannabis News</h3>
+              <p className="text-white/80 text-sm">Latest industry updates</p>
+            </Link>
           </div>
         </section>
       </div>
