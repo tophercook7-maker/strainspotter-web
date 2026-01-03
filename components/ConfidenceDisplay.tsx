@@ -26,6 +26,7 @@ export default function ConfidenceDisplay({
   alternatives,
   noConfidentMatch = false,
   showExplanation = true,
+  scanId,
 }: ConfidenceDisplayProps) {
   const confidenceBadgeColor = {
     HIGH: 'bg-green-500/20 text-green-400 border-green-500/50',
