@@ -31,3 +31,57 @@ button {
 button {
   cursor: pointer;
 }
+
+/* Garden Hero - LOCKED: Hard size constraints and positioning */
+.garden-hero-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  margin-bottom: 20px;
+}
+
+.garden-hero {
+  width: 96px !important;
+  height: 96px !important;
+  max-width: 96px !important;
+  max-height: 96px !important;
+  object-fit: cover;
+  border-radius: 50%;
+  overflow: hidden;
+  background: transparent;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .garden-hero {
+    width: 72px !important;
+    height: 72px !important;
+    max-width: 72px !important;
+    max-height: 72px !important;
+  }
+}
+
+/* Garden Content Typography Reset */
+.garden-page-content {
+  /* Reset link styles - cards are styled blocks, not text links */
+}
+
+.garden-page-content a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.garden-page-content a:hover {
+  text-decoration: none;
+}
+
+/* Ensure card text is properly styled */
+.garden-page-content h1,
+.garden-page-content h2,
+.garden-page-content h3 {
+  color: white;
+}
+
+.garden-page-content p {
+  color: rgba(255, 255, 255, 0.8);
+}
