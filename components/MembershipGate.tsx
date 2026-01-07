@@ -8,7 +8,7 @@ import { useMembership } from "@/lib/hooks/useMembership";
 export default function MembershipGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { membership, loading: membershipLoading } = useMembership();
+  const { membership, loading: membershipLoading, error } = useMembership();
   const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
 
   if (isTauri) {
@@ -20,6 +20,9 @@ export default function MembershipGate({ children }: { children: React.ReactNode
     // If loading, wait
     if (authLoading || membershipLoading) {
       return;
+    }
+    if (error) {
+      return; // treat as free / render children
     }
 
     // If no user, AuthWall will handle redirect
@@ -43,6 +46,11 @@ export default function MembershipGate({ children }: { children: React.ReactNode
         </div>
       </div>
     );
+  }
+
+  // If membership fetch errored (including 401), treat as free and render.
+  if (error) {
+    return <>{children}</>;
   }
 
   // If no user, AuthWall will handle
