@@ -5,9 +5,7 @@
   "identifier": "app.strainspotter.desktop",
 
   "build": {
-    "beforeDevCommand": "",
-    "beforeBuildCommand": "",
-    "devUrl": "https://app.---.app"
+    "devUrl": "https://app.strainspotter.app"
   },
 
   "app": {
@@ -18,7 +16,7 @@
         "height": 800,
         "resizable": true,
         "fullscreen": false,
-        "url": "https://app.---.app",
+        "url": "https://app.strainspotter.app",
         "devtools": true
       }
     ],
