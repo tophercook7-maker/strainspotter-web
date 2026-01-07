@@ -1,16 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useMembership } from "@/lib/hooks/useMembership";
 
 export default function Page() {
   const { membership, loading } = useMembership();
+  const router = useRouter();
+  const [showGate, setShowGate] = useState(false);
 
   const gardenAllowed = useMemo(() => {
     if (loading) return false;
     return membership?.tier === "garden" || membership?.tier === "pro";
   }, [loading, membership]);
+
+  const handleGardenClick = useCallback(() => {
+    if (gardenAllowed) {
+      router.push("/garden");
+      return;
+    }
+    setShowGate(true);
+  }, [gardenAllowed, router]);
 
   return (
     <main className="relative min-h-screen w-full bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex flex-col items-center px-4 py-16">
@@ -46,13 +57,13 @@ export default function Page() {
             </span>
           </Link>
 
-          <Link
-            href={gardenAllowed ? "/garden" : "/pricing/professional"}
-            aria-disabled={!gardenAllowed}
+          <button
+            type="button"
+            onClick={handleGardenClick}
             className={`h-28 rounded-xl px-6 flex flex-col items-center justify-center text-center text-lg font-semibold transition backdrop-blur-md ${
               gardenAllowed
                 ? "bg-white/15 border border-white/25 text-white hover:bg-white/20 hover:border-white/35 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300/70 focus:ring-offset-2 focus:ring-offset-transparent active:translate-y-0"
-                : "bg-white/10 border border-white/20 text-white/60 cursor-not-allowed"
+                : "bg-white/10 border border-white/20 text-white/60 hover:bg-white/15 hover:border-white/30"
             }`}
           >
             Enter the Garden
@@ -61,9 +72,43 @@ export default function Page() {
                 ? "Full grow experience"
                 : "Requires Garden membership ($9.99+)"}
             </span>
-          </Link>
+          </button>
         </div>
       </div>
+
+      {showGate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
+          <div className="relative max-w-md w-full bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl text-white">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <img
+                src="/brand/core/hero.png"
+                alt="StrainSpotter"
+                className="w-20 h-20 drop-shadow-lg"
+              />
+              <div className="text-2xl font-semibold">Enter the Garden</div>
+              <p className="text-white/80 text-sm">
+                The Garden is a calm space for guided grows. Join to unlock it now, or come back anytime.
+              </p>
+              <div className="flex flex-col gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => router.push("/pricing/professional")}
+                  className="w-full px-4 py-3 rounded-xl bg-emerald-400 text-black font-semibold hover:bg-emerald-300 transition"
+                >
+                  Join the Garden – $9.99 / month
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowGate(false)}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/25 text-white hover:bg-white/15 transition"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
