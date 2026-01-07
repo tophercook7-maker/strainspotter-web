@@ -7,7 +7,7 @@
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
-    "devPath": "https://app.---.app"
+    "devUrl": "https://app.---.app"
   },
 
   "app": {
@@ -18,7 +18,8 @@
         "height": 800,
         "resizable": true,
         "fullscreen": false,
-        "url": "https://app.---.app"
+        "url": "https://app.---.app",
+        "devtools": true
       }
     ],
     "security": {
