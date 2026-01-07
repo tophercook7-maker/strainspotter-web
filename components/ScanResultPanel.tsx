@@ -30,17 +30,57 @@ interface ScanResult {
 interface ScanResultPanelProps {
   result: ScanResult;
   isDoctorScan?: boolean;
+  growId?: string;
+  tier?: "free" | "garden" | "pro" | null;
   onClose: () => void;
 }
 
-export default function ScanResultPanel({ result, isDoctorScan = false, onClose }: ScanResultPanelProps) {
+type Insight = {
+  title?: string;
+  summary?: string;
+  confidence?: "Low" | "Moderate" | "High";
+  relation?: "new" | "consistent" | "improving";
+  status?: "resolving" | "unresolved" | "resolved" | null;
+  evidencePreview?: string[];
+};
+
+export default function ScanResultPanel({
+  result,
+  isDoctorScan = false,
+  growId,
+  tier = "free",
+  onClose,
+}: ScanResultPanelProps) {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
+  const [insight, setInsight] = useState<Insight | null>(null);
 
   useEffect(() => {
     // animate in
     setTimeout(() => setVisible(true), 20);
   }, []);
+
+  useEffect(() => {
+    if (!growId) return;
+    let aborted = false;
+    const fetchInsight = async () => {
+      try {
+        const res = await fetch(`/api/grow-doctor/insight?growId=${growId}&tier=${tier}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (aborted) return;
+        if (data?.diagnosis) {
+          setInsight(data.diagnosis);
+        }
+      } catch (err) {
+        console.error("[GrowDoctor] insight fetch failed", err);
+      }
+    };
+    fetchInsight();
+    return () => {
+      aborted = true;
+    };
+  }, [growId, tier]);
 
   const strainName = result.name || result.strainName || "Unknown Strain";
   const types = Array.isArray(result.type) ? result.type : result.type ? [result.type] : [];
@@ -106,6 +146,35 @@ export default function ScanResultPanel({ result, isDoctorScan = false, onClose 
           <div className="ai-summary">
             <h2>AI Identification Summary</h2>
             <p>{result.summary}</p>
+          </div>
+        )}
+
+        {/* GROW DOCTOR INSIGHT */}
+        {insight && (
+          <div className="doctor-section">
+            <h2>Grow Doctor Insight</h2>
+            <div className="doctor-card">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-white/80">
+                  {insight.title || insight.summary || "Recent cultivation patterns reviewed."}
+                </div>
+                {insight.confidence && (
+                  <span className="px-2 py-1 rounded bg-white/10 text-xs text-white/80">
+                    Confidence: {insight.confidence}
+                  </span>
+                )}
+              </div>
+              {insight.relation && (
+                <div className="text-xs text-white/60 mt-2">Relation to previous scans: {insight.relation}</div>
+              )}
+              {insight.evidencePreview && insight.evidencePreview.length > 0 && (
+                <ul className="mt-2 text-sm text-white/70 list-disc list-inside space-y-1">
+                  {insight.evidencePreview.map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
 
