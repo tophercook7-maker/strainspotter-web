@@ -17,10 +17,17 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const isTauri = typeof window !== "undefined" && "__TAURI_IPC__" in window;
+  const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
 
   useEffect(() => {
     console.log("[AUTH:init]", { isTauri, ua: typeof navigator !== "undefined" ? navigator.userAgent : "server" });
+    if (isTauri) {
+      // In desktop, do not block rendering on auth; treat as signed-out by default.
+      setUser(null);
+      setLoading(false);
+      console.log("[AUTH:init:tauri-shortcircuit]");
+      return;
+    }
     // Initial user fetch
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user ?? null);

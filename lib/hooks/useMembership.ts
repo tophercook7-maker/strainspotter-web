@@ -20,7 +20,7 @@ export function useMembership(): UseMembershipReturn {
   const [membership, setMembership] = useState<MembershipData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const isTauri = typeof window !== "undefined" && "__TAURI_IPC__" in window;
+  const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
 
   const setFreeFallback = (reason: string) => {
     setMembership({
@@ -33,6 +33,13 @@ export function useMembership(): UseMembershipReturn {
   };
 
   const fetchMembership = useCallback(async () => {
+    if (isTauri) {
+      // In desktop, do not block rendering on membership; default to free view.
+      setMembership(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
