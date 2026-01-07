@@ -87,6 +87,29 @@ data-pipeline/
 dist/
 build/
 
+# Dependencies / builds / caches
+node_modules/
+.next/
+dist/
+build/
+out/
+*.log
+
+# Tauri / Rust build output
+src-tauri/target/
+src-tauri/.tauri/
+
+# OS / editor junk
+.DS_Store
+
+# ML artifacts (never commit)
+ml-training/ml-training-temp/
+ml-training/**/dataset/
+ml-training/**/datasets/
+ml-training/**/index/
+*.faiss
+*.fbin
+
 # ML training temp artifacts
 ml-training/ml-training-temp/
 ml-training/**/dataset/
