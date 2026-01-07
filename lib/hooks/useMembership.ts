@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export interface MembershipData {
   tier: 'free' | 'garden' | 'pro';
@@ -18,9 +18,10 @@ export interface UseMembershipReturn {
 
 export function useMembership(): UseMembershipReturn {
   const [membership, setMembership] = useState<MembershipData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
+  const abortRef = useRef<AbortController | null>(null);
 
   const setFreeFallback = (reason: string) => {
     setMembership({
@@ -34,22 +35,22 @@ export function useMembership(): UseMembershipReturn {
 
   const fetchMembership = useCallback(async () => {
     if (isTauri) {
-      // In desktop, do not block rendering on membership; default to free view.
+      // In desktop, do not block rendering on membership; default to free view without fetching.
       setMembership(null);
       setError(null);
       setLoading(false);
       return;
     }
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch('/api/membership/check');
+      const response = await fetch('/api/membership/check', { signal: controller.signal });
       if (!response.ok) {
-        if (response.status === 401 && isTauri) {
-          setFreeFallback("unauthorized in tauri (treated as free)");
-          return;
-        }
         throw new Error(`Failed to fetch membership data (${response.status})`);
       }
 
@@ -61,20 +62,20 @@ export function useMembership(): UseMembershipReturn {
         should_reset: data.should_reset || false,
       });
     } catch (err) {
-      if (isTauri) {
-        setFreeFallback(err instanceof Error ? err.message : "Unknown error in tauri");
-      } else {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+      if (controller.signal.aborted) {
+        return;
       }
+      setFreeFallback(err instanceof Error ? err.message : 'Unknown error');
       console.error('Error fetching membership:', err);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
     }
   }, [isTauri]);
-
-  useEffect(() => {
-    fetchMembership();
-  }, [fetchMembership]);
 
   return {
     membership,
