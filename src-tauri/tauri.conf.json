@@ -6,7 +6,8 @@
 
   "build": {
     "beforeDevCommand": "",
-    "beforeBuildCommand": ""
+    "beforeBuildCommand": "",
+    "devPath": "https://app.---.app"
   },
 
   "app": {
@@ -21,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:;"
+      "csp": null
     }
   },
 
