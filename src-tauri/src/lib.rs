@@ -2,6 +2,9 @@
 pub fn run() {
   tauri::Builder::default()
     .setup(|app| {
+      if let Some(window) = app.get_window("main") {
+        let _ = window.open_devtools();
+      }
       if cfg!(debug_assertions) {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()

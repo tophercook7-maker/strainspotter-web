@@ -20,6 +20,17 @@ export function useMembership(): UseMembershipReturn {
   const [membership, setMembership] = useState<MembershipData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isTauri = typeof window !== "undefined" && "__TAURI_IPC__" in window;
+
+  const setFreeFallback = (reason: string) => {
+    setMembership({
+      tier: "free",
+      scans_remaining: 0,
+      doctor_scans_remaining: 0,
+      should_reset: false,
+    });
+    setError(reason);
+  };
 
   const fetchMembership = useCallback(async () => {
     try {
@@ -28,7 +39,11 @@ export function useMembership(): UseMembershipReturn {
       
       const response = await fetch('/api/membership/check');
       if (!response.ok) {
-        throw new Error('Failed to fetch membership data');
+        if (response.status === 401 && isTauri) {
+          setFreeFallback("unauthorized in tauri (treated as free)");
+          return;
+        }
+        throw new Error(`Failed to fetch membership data (${response.status})`);
       }
 
       const data = await response.json();
@@ -39,12 +54,16 @@ export function useMembership(): UseMembershipReturn {
         should_reset: data.should_reset || false,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      if (isTauri) {
+        setFreeFallback(err instanceof Error ? err.message : "Unknown error in tauri");
+      } else {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      }
       console.error('Error fetching membership:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isTauri]);
 
   useEffect(() => {
     fetchMembership();
