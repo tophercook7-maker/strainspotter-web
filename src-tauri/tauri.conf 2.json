@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' https: data: blob:; connect-src 'self' https: wss: https://*.supabase.co https://*.googleapis.com https://*.googleusercontent.com https://app.---.app;"
+      "csp": null
     }
   },
   "plugins": {},
