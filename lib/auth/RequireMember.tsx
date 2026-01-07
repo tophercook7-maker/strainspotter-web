@@ -15,6 +15,12 @@ export default function RequireMember({ children }: { children: React.ReactNode 
 function MemberGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { loading, isMember } = useMembership();
+  const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
+
+  if (isTauri) {
+    // In desktop, do not block on membership; render content.
+    return <>{children}</>;
+  }
 
   useEffect(() => {
     if (!loading && !isMember) {

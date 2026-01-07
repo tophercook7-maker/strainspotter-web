@@ -9,6 +9,12 @@ export default function MembershipGate({ children }: { children: React.ReactNode
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { membership, loading: membershipLoading } = useMembership();
+  const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
+
+  if (isTauri) {
+    // In desktop, never block on auth/membership; treat as free and render.
+    return <>{children}</>;
+  }
 
   useEffect(() => {
     // If loading, wait

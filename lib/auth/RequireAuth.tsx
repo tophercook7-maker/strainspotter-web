@@ -7,6 +7,12 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
+
+  if (isTauri) {
+    // In desktop, never block on auth; render content.
+    return <>{children}</>;
+  }
 
   useEffect(() => {
     if (!loading && !user) {
