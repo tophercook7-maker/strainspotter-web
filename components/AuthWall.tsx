@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { useState } from "react";
 
 // Public routes that don't require auth
 const PUBLIC_ROUTES = ["/", "/login", "/auth/signup", "/auth/callback"];
@@ -12,18 +11,7 @@ export default function AuthWall({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const isTauri = typeof window !== "undefined" && "__TAURI_IPC__" in window;
-  const [forceBypass, setForceBypass] = useState(false);
-
-  useEffect(() => {
-    if (isTauri && loading && !forceBypass) {
-      const timer = setTimeout(() => {
-        console.log("[AUTHWALL] forcing bypass after 3s in Tauri", { pathname });
-        setForceBypass(true);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [isTauri, loading, forceBypass, pathname]);
+  const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
 
   useEffect(() => {
     console.log("[AUTHWALL]", {
@@ -31,11 +19,10 @@ export default function AuthWall({ children }: { children: React.ReactNode }) {
       pathname,
       loading,
       user: user?.email ?? null,
-      forceBypass,
     });
-  }, [isTauri, pathname, loading, user, forceBypass]);
+  }, [isTauri, pathname, loading, user]);
 
-  const effectiveLoading = loading && !forceBypass;
+  const effectiveLoading = loading && !isTauri;
 
   useEffect(() => {
     // Allow public routes
