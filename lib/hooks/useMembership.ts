@@ -13,7 +13,7 @@ export interface UseMembershipReturn {
   membership: MembershipData | null;
   loading: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<MembershipData | null>;
 }
 
 export function useMembership(): UseMembershipReturn {
@@ -33,13 +33,13 @@ export function useMembership(): UseMembershipReturn {
     setError(reason);
   };
 
-  const fetchMembership = useCallback(async () => {
+  const fetchMembership = useCallback(async (): Promise<MembershipData | null> => {
     if (isTauri) {
       // In desktop, do not block rendering on membership; default to free view without fetching.
       setMembership(null);
       setError(null);
       setLoading(false);
-      return;
+      return null;
     }
     if (abortRef.current) {
       abortRef.current.abort();
@@ -55,18 +55,21 @@ export function useMembership(): UseMembershipReturn {
       }
 
       const data = await response.json();
-      setMembership({
+      const next: MembershipData = {
         tier: data.membership,
         scans_remaining: data.scans_remaining,
         doctor_scans_remaining: data.doctor_scans_remaining,
         should_reset: data.should_reset || false,
-      });
+      };
+      setMembership(next);
+      return next;
     } catch (err) {
       if (controller.signal.aborted) {
-        return;
+        return null;
       }
       setFreeFallback(err instanceof Error ? err.message : 'Unknown error');
       console.error('Error fetching membership:', err);
+      return null;
     } finally {
       if (!controller.signal.aborted) {
         setLoading(false);

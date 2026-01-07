@@ -15,13 +15,19 @@ export default function Page() {
     return membership?.tier === "garden" || membership?.tier === "pro";
   }, [loading, membership]);
 
-  const handleGardenClick = useCallback(() => {
+  const handleGardenClick = useCallback(async () => {
     if (gardenAllowed) {
       router.push("/garden");
       return;
     }
+    const fetched = await refresh();
+    const nextTier = fetched?.tier ?? membership?.tier ?? "free";
+    if (nextTier === "garden" || nextTier === "pro") {
+      router.push("/garden");
+      return;
+    }
     setShowGate(true);
-  }, [gardenAllowed, router]);
+  }, [gardenAllowed, router, refresh, membership?.tier]);
 
   return (
     <main className="relative min-h-screen w-full bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex flex-col items-center px-4 py-16">
