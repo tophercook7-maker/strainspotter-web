@@ -1,167 +1,123 @@
-/**
- * ⚠️ GARDEN VISUALS LOCKED — CANONICAL IMPLEMENTATION
- * 
- * LOCKED ELEMENTS (DO NOT MODIFY):
- * - Layout structure (app/garden/layout.tsx)
- * - Hero component (garden-hero-wrapper, garden-hero)
- * - Background image and overlay
- * 
- * CONTENT ONLY: Card buttons following canonical sections and routes.
- */
+import React from 'react';
+import Link from 'next/link';
 
-'use client';
-
-import Link from "next/link";
+const sections = [
+  {
+    id: 'core',
+    title: 'Core',
+    actions: [
+      { label: 'Scan a Plant', href: '/scanner' },
+      { label: 'Visual Strain Matching', href: '/visual-match' },
+      { label: 'Strain Explorer', href: '/strain-explorer' },
+      { label: 'My Grows', href: '/garden' },
+      { label: 'Saved Scans', href: '/scanner/saved' },
+    ],
+  },
+  {
+    id: 'growing',
+    title: 'Growing',
+    actions: [
+      { label: 'Grow Logbook', href: '/garden/logbook' },
+      { label: 'Environment', href: '/garden/environment' },
+      { label: 'Tasks & Reminders', href: '/garden/tasks' },
+      { label: 'Grow Coach', href: '/garden/grow-coach' },
+      { label: 'Grow Doctor', href: '/garden/grow-doctor' },
+      { label: 'Grow Recipes', href: '/garden/recipes' },
+      { label: 'Nutrient Guide', href: '/garden/nutrients' },
+      { label: 'Issue Diagnostics', href: '/garden/diagnostics' },
+      { label: 'Yield Tracker', href: '/garden/yield' },
+    ],
+  },
+  {
+    id: 'science',
+    title: 'Science & Data',
+    actions: [
+      { label: 'Terpene Library', href: '/library/terpenes' },
+      { label: 'Cannabinoid Guide', href: '/library/cannabinoids' },
+      { label: 'Strain Genetics', href: '/library/genetics' },
+      { label: 'Confidence Engine' },
+      { label: 'Image Library', href: '/library/images' },
+    ],
+  },
+  {
+    id: 'discover',
+    title: 'Discover & Buy',
+    actions: [
+      { label: 'Dispensary Finder', href: '/garden/dispensaries' },
+      { label: 'Seed Finder', href: '/seeds' },
+      { label: 'Cannabis News', href: '/discover/news' },
+    ],
+  },
+  {
+    id: 'community',
+    title: 'Community & System',
+    actions: [
+      { label: 'Education Hub', href: '/education' },
+      { label: 'Community / Notes', href: '/community' },
+      { label: 'Settings & Preferences', href: '/settings' },
+    ],
+  },
+];
 
 export default function GardenPage() {
   return (
-    <div className="garden-page-content">
-      {/* Hero Section - Correct stacking order */}
-      <div className="mb-12 flex flex-col items-center">
-        {/* 1. Page Title */}
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-4 text-center">
-          The Garden
-        </h1>
-        
-        {/* 2. Hero Badge - Positioned UNDER title */}
-        <div className="garden-hero-wrapper">
-          <img
-            src="/brand/core/hero.png"
-            alt="StrainSpotter Leaf"
-            className="garden-hero"
-          />
-        </div>
-        
-        {/* 3. Subtitle - Under hero badge */}
-        <p className="text-sm text-white/80 text-center max-w-md mt-4">
-          Everything related to your grow, tools, and intelligence
-        </p>
-      </div>
+    <main className="relative min-h-screen w-full bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex flex-col items-center px-4 py-14">
+      <div className="absolute inset-0 bg-black/30" />
 
-      {/* Content Container - Centered, wraps ALL content below hero */}
-      <div className="max-w-6xl mx-auto px-8 py-8">
-        {/* ACTIONS */}
-        <section className="garden-section mb-16">
-          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
-            ACTIONS
-          </h2>
-          <div className="garden-card-grid">
-            <Link href="/scanner" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Scan a Plant</h3>
-              <p className="text-white/80 text-sm">Identify strain or diagnose issues</p>
-            </Link>
-            <Link href="/garden/logbook/new" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Log an Update</h3>
-              <p className="text-white/80 text-sm">Add a logbook entry</p>
-            </Link>
-            <Link href="/garden/plants/new" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Add a Plant</h3>
-              <p className="text-white/80 text-sm">Start tracking a new plant</p>
-            </Link>
-            <Link href="/garden/tasks/new" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Create a Task</h3>
-              <p className="text-white/80 text-sm">Add a task to your list</p>
-            </Link>
+      <div className="relative z-10 w-full max-w-6xl">
+        {/* HERO */}
+        <section className="text-center mb-8 flex flex-col items-center gap-3">
+          <div className="w-28 h-28 rounded-full overflow-hidden flex items-center justify-center bg-transparent">
+            <img
+              src="/brand/core/hero.png"
+              alt="StrainSpotter Garden Hero"
+              className="w-full h-full object-contain"
+            />
           </div>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+            The Garden
+          </h1>
+          <p className="text-white/80 max-w-2xl mx-auto text-base sm:text-lg">
+            A bright, intentional control panel for growing, care, guidance, and discovery.
+          </p>
         </section>
 
-        {/* RECORDS */}
-        <section className="garden-section mb-16">
-          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
-            RECORDS
-          </h2>
-          <div className="garden-card-grid">
-            <Link href="/garden/logbook" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Grow Logbook</h3>
-              <p className="text-white/80 text-sm">Log entries and notes</p>
-            </Link>
-            <Link href="/garden/plants" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">My Plants</h3>
-              <p className="text-white/80 text-sm">Track your active grows</p>
-            </Link>
-            <Link href="/garden/environment" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Grow Environment</h3>
-              <p className="text-white/80 text-sm">Track temperature, humidity, and more</p>
-            </Link>
-            <Link href="/garden/tasks" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Tasks</h3>
-              <p className="text-white/80 text-sm">Your grow checklist</p>
-            </Link>
-            <Link href="/garden/notes" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Grow Notes</h3>
-              <p className="text-white/80 text-sm">AI-assisted thinking layer</p>
-            </Link>
-          </div>
-        </section>
-
-        {/* INTELLIGENCE */}
-        <section className="garden-section mb-16">
-          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
-            INTELLIGENCE
-          </h2>
-          <div className="garden-card-grid">
-            <Link href="/coach" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Grow Coach</h3>
-              <p className="text-white/80 text-sm">AI-powered growing advice</p>
-            </Link>
-            <Link href="/doctor" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Grow Doctor</h3>
-              <p className="text-white/80 text-sm">Diagnose plant issues</p>
-            </Link>
-            <Link href="/strain-explorer" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Strain Explorer</h3>
-              <p className="text-white/80 text-sm">Factual strain reference and knowledge base</p>
-            </Link>
-          </div>
-        </section>
-
-        {/* FIND & BUY */}
-        <section className="garden-section mb-16">
-          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
-            FIND & BUY
-          </h2>
-          <div className="garden-card-grid">
-            <Link href="/discover/dispensaries" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Dispensary Finder</h3>
-              <p className="text-white/80 text-sm">Find dispensaries near you</p>
-            </Link>
-            <Link href="/seeds" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Seed Finder</h3>
-              <p className="text-white/80 text-sm">Browse seed sellers and vendors</p>
-            </Link>
-          </div>
-        </section>
-
-        {/* INDUSTRY */}
-        <section className="garden-section mb-16">
-          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
-            INDUSTRY
-          </h2>
-          <div className="garden-card-grid">
-            <Link href="/ecosystem" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Industry Ecosystem</h3>
-              <p className="text-white/80 text-sm">Map of the cannabis industry landscape</p>
-            </Link>
-          </div>
-        </section>
-
-        {/* COMMUNITY */}
-        <section className="garden-section mb-16">
-          <h2 className="garden-section-title text-sm md:text-base font-semibold text-white uppercase tracking-wider">
-            COMMUNITY
-          </h2>
-          <div className="garden-card-grid">
-            <Link href="/community" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Community</h3>
-              <p className="text-white/80 text-sm">Discussion and tips</p>
-            </Link>
-            <Link href="/discover/news" className="garden-card">
-              <h3 className="text-white font-semibold mb-1.5">Cannabis News</h3>
-              <p className="text-white/80 text-sm">Latest industry updates</p>
-            </Link>
-          </div>
+        {/* BUTTON WALL */}
+        <section className="space-y-6">
+          {sections.map((section) => (
+            <div key={section.id} className="space-y-3">
+              <div className="text-sm uppercase tracking-[0.08em] text-white/70">
+                {section.title}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                {section.actions.map((action) => (
+                  <ActionButton key={action.label} label={action.label} href={action.href} />
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
       </div>
-    </div>
+    </main>
+  );
+}
+
+function ActionButton({ label, href }: { label: string; href?: string }) {
+  const className =
+    'h-24 rounded-lg bg-white/20 border border-white/25 backdrop-blur-md px-4 flex items-center justify-center text-center text-sm sm:text-base font-semibold text-white transition ' +
+    'hover:bg-white/25 hover:border-white/35 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300/70 focus:ring-offset-2 focus:ring-offset-transparent active:translate-y-0';
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        <span className="leading-tight">{label}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" className={className}>
+      <span className="leading-tight">{label}</span>
+    </button>
   );
 }

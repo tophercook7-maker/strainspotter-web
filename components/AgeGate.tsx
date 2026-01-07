@@ -9,8 +9,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
   const [declined, setDeclined] = useState(false);
 
   useEffect(() => {
-    // Check localStorage on mount
-    const stored = localStorage.getItem(AGE_GATE_KEY);
+    const stored = typeof window !== "undefined" ? localStorage.getItem(AGE_GATE_KEY) : null;
     if (stored === "true") {
       setIsVerified(true);
     } else {
@@ -27,21 +26,25 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
     setDeclined(true);
   };
 
-  // Show nothing while checking
   if (isVerified === null) {
     return null;
   }
 
-  // Show blocked screen if declined
   if (declined) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-black text-white flex items-center justify-center">
-        <div className="text-center p-8 max-w-md">
+      <div className="fixed inset-0 z-[9999] bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <div className="relative text-center p-8 max-w-md">
+          <img
+            src="/brand/core/hero.png"
+            alt="StrainSpotter"
+            className="w-24 h-24 mx-auto mb-6 drop-shadow-lg"
+          />
           <h1 className="text-3xl font-bold mb-4">Access Restricted</h1>
-          <p className="text-lg text-gray-300 mb-6">
+          <p className="text-lg text-white/80 mb-6">
             You must be 21 or older to use StrainSpotter.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-white/70">
             Please refresh the page if you made a mistake.
           </p>
         </div>
@@ -49,27 +52,32 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Show age gate if not verified
   if (!isVerified) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm text-white flex items-center justify-center">
-        <div className="bg-neutral-900 rounded-lg p-8 max-w-md w-full mx-4 border border-neutral-700">
-          <h1 className="text-3xl font-bold mb-4 text-center">
+      <div className="fixed inset-0 z-[9999] bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+        <div className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl shadow-black/25 text-center">
+          <img
+            src="/brand/core/hero.png"
+            alt="StrainSpotter"
+            className="w-24 h-24 mx-auto mb-6 drop-shadow-lg"
+          />
+          <h1 className="text-3xl font-bold mb-3">
             Are you 21 or older?
           </h1>
-          <p className="text-gray-300 text-center mb-8">
-            You must be 21 or older to access StrainSpotter.
+          <p className="text-white/80 mb-8">
+            Confirm to enter StrainSpotter.
           </p>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               onClick={handleDecline}
-              className="flex-1 px-6 py-3 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition border border-red-500/30"
+              className="flex-1 px-6 py-3 bg-red-500/15 text-red-100 rounded-lg hover:bg-red-500/25 transition border border-red-300/30"
             >
               No
             </button>
             <button
               onClick={handleAccept}
-              className="flex-1 px-6 py-3 bg-emerald-600 text-black font-semibold rounded-lg hover:bg-emerald-500 transition"
+              className="flex-1 px-6 py-3 bg-emerald-400 text-black font-semibold rounded-lg hover:bg-emerald-300 transition shadow-lg shadow-emerald-500/40"
             >
               Yes, I'm 21+
             </button>
@@ -79,7 +87,6 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Verified - show children
   return <>{children}</>;
 }
 

@@ -86,11 +86,11 @@ const CATEGORIES: EcosystemCategory[] = [
 export default function EcosystemPage() {
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold mb-4">Cannabis Industry Ecosystem</h1>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+        <div className="mb-16 text-center">
+          <h1 className="text-3xl font-semibold text-white mb-3">Cannabis Industry Ecosystem</h1>
+          <p className="text-gray-400 max-w-2xl mx-auto">
             A neutral map of the modern cannabis landscape
           </p>
         </div>
@@ -101,9 +101,9 @@ export default function EcosystemPage() {
             <Link
               key={category.id}
               href={`/ecosystem/${category.slug}`}
-              className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-gray-700 hover:bg-gray-900/80 transition-all"
+              className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 hover:border-gray-700 hover:bg-gray-900/70 transition-all"
             >
-              <h3 className="text-xl font-semibold text-white mb-3">{category.name}</h3>
+              <h3 className="text-lg font-medium text-white mb-3">{category.name}</h3>
               <p className="text-sm text-gray-400 leading-relaxed">
                 {category.description}
               </p>

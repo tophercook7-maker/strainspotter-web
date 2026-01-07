@@ -13,7 +13,7 @@ const SEED_VENDORS: SeedVendor[] = [
   {
     name: 'Grow STRNG Seeds',
     description: 'Premium cannabis genetics and seeds',
-    url: 'https://growstrng.com',
+    url: 'https://strngseeds.com/',
   },
   {
     name: 'North Atlantic Seed Co.',

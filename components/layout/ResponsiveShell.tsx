@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { SearchIcon } from "../icons/SearchIcon";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { supabase } from "@/lib/supabaseClient";
 import BottomTabBar from "./BottomTabBar";
 import BrandIcon from "@/components/BrandIcon";
 
@@ -22,7 +21,6 @@ const topLevelNavItems = [
 
 export default function ResponsiveShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isDesktop, setIsDesktop] = useState(false);
   const { user, loading } = useAuth();
 
@@ -33,12 +31,6 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-  };
-
 
   // Hide sidebar and all layout on home page - home is completely isolated
   if (pathname === '/') {
@@ -97,16 +89,8 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
           <div className="mt-auto pt-4 border-t border-[var(--botanical-border)]">
             {loading ? null : (
               user ? (
-                <div className="space-y-2">
-                  <div className="text-xs text-[var(--botanical-text-secondary)] px-3 py-1">
-                    {user.email}
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-3 py-2 rounded-md transition-all flex items-center gap-2 hover:bg-red-500/10 text-red-400 text-sm"
-                  >
-                    Log out
-                  </button>
+                <div className="text-xs text-[var(--botanical-text-secondary)] px-3 py-2">
+                  {user.email}
                 </div>
               ) : (
                 <Link

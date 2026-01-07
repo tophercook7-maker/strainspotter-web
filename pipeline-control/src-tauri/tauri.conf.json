@@ -1,0 +1,43 @@
+{
+  "productName": "StrainSpotter Pipeline Control",
+  "version": "1.0.0",
+  "identifier": "com.strainspotter.pipeline-control",
+  "build": {
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "StrainSpotter — Pipeline Control",
+        "width": 600,
+        "height": 700,
+        "resizable": false,
+        "fullscreen": false,
+        "minimizable": true,
+        "maximizable": false,
+        "devtools": true
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "macOSPrivateApi": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png"
+    ],
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.13",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "entitlements": null
+    }
+  },
+  "plugins": {}
+}

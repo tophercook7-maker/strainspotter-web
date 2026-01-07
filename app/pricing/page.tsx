@@ -73,8 +73,8 @@ export default function PricingPage() {
       <div className="max-w-6xl mx-auto px-6 py-16">
         {/* Header */}
         <div className="mb-16 text-center">
-          <h1 className="text-4xl font-bold mb-4">Pricing & Business Model</h1>
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-6">
+          <h1 className="text-3xl font-semibold text-white mb-3">Pricing & Business Model</h1>
+          <p className="text-gray-400 max-w-3xl mx-auto mb-8">
             Knowledge remains free. Advanced capability is paid.
           </p>
           <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 max-w-2xl mx-auto">
@@ -97,11 +97,11 @@ export default function PricingPage() {
           <h2 className="text-2xl font-semibold mb-8">Revenue Pillars</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {PILLARS.map((pillar) => (
-              <Link
-                key={pillar.id}
-                href={pillar.href}
-                className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-gray-700 hover:bg-gray-900/80 transition-all"
-              >
+            <Link
+              key={pillar.id}
+              href={pillar.href}
+              className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 hover:border-gray-700 hover:bg-gray-900/70 transition-all"
+            >
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="text-xl font-semibold text-white">{pillar.title}</h3>
                   {pillar.status === 'coming-soon' && (

@@ -1,0 +1,27 @@
+{
+  "productName": "Test App",
+  "version": "1.0.0",
+  "identifier": "com.test.app",
+  "build": {
+    "devUrl": "http://localhost:1421",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Test App - Open/Close",
+        "width": 400,
+        "height": 300,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "targets": "all"
+  }
+}

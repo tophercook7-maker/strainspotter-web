@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/schema.json",
+  "productName": "StrainSpotter",
+  "version": "0.1.0",
+  "identifier": "app.strainspotter.desktop",
+
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+
+  "app": {
+    "windows": [
+      {
+        "title": "StrainSpotter",
+        "url": "https://app.strainspotter.app/garden",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "userAgent": "StrainSpotterDesktop/1.0",
+        "devtools": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' https: data: blob:; connect-src 'self' https://*.supabase.co https://*.googleapis.com https://*.googleusercontent.com;"
+    }
+  },
+  "plugins": {},
+
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/256x256.png",
+      "icons/512x512.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

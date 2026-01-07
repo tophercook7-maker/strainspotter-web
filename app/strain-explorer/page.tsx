@@ -109,26 +109,26 @@ export default function StrainExplorerPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Strain Explorer</h1>
+        <div className="mb-12">
+          <h1 className="text-3xl font-semibold text-white mb-2">Strain Explorer</h1>
           <p className="text-gray-400">Factual cannabis genetics and phenotype reference</p>
         </div>
 
         {/* Search Bar */}
-        <div className="mb-6">
+        <div className="mb-8">
           <input
             type="text"
             placeholder="Search by strain name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-96 px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500"
+            className="w-full md:w-96 px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors"
           />
         </div>
 
         {/* Filter Row */}
-        <div className="mb-8 space-y-4">
+        <div className="mb-12 space-y-4">
           <div className="flex flex-wrap gap-4">
             {/* Genetics Filter */}
             <div>
@@ -136,7 +136,7 @@ export default function StrainExplorerPage() {
               <select
                 value={geneticsFilter}
                 onChange={(e) => setGeneticsFilter(e.target.value as FilterType)}
-                className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-green-500"
+                className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-gray-600 transition-colors"
               >
                 <option value="all">All</option>
                 <option value="indica">Indica</option>
@@ -151,7 +151,7 @@ export default function StrainExplorerPage() {
               <select
                 value={flowerTypeFilter}
                 onChange={(e) => setFlowerTypeFilter(e.target.value as FlowerType)}
-                className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-green-500"
+                className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-gray-600 transition-colors"
               >
                 <option value="all">All</option>
                 <option value="bud">Bud</option>
@@ -188,7 +188,7 @@ export default function StrainExplorerPage() {
               <select
                 value={hasCbd}
                 onChange={(e) => setHasCbd(e.target.value)}
-                className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-green-500"
+                className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-gray-600 transition-colors"
               >
                 <option value="all">All</option>
                 <option value="yes">Has CBD</option>
@@ -222,7 +222,7 @@ export default function StrainExplorerPage() {
               return (
                 <Link
                   key={strain.id}
-                  href={`/strain-explorer/${strain.slug}`}
+                  href={`/strain/${strain.slug}`}
                   className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-green-500/50 transition-colors"
                 >
                   <div className="flex items-start justify-between mb-3">

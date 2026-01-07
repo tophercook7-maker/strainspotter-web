@@ -137,9 +137,20 @@ export default function ScannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold">Scanner</h1>
+    <div className="relative min-h-screen bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white">
+      <div className="absolute inset-0 bg-black/30" />
+      <div className="relative max-w-4xl mx-auto px-6 py-12 space-y-8">
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center bg-transparent">
+            <img
+              src="/brand/core/hero.png"
+              alt="StrainSpotter Hero"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <h1 className="text-3xl font-semibold text-white">Scanner</h1>
+          <p className="text-white/85">Identify strains and diagnose plant issues</p>
+        </div>
 
         {/* File Input */}
         <div>
@@ -152,7 +163,7 @@ export default function ScannerPage() {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full px-6 py-4 bg-emerald-600 text-black font-semibold rounded-lg hover:bg-emerald-500 transition"
+            className="w-full px-6 py-3.5 bg-gray-900 border border-gray-700 text-white font-medium rounded-lg hover:bg-gray-800 hover:border-gray-600 transition-colors"
           >
             {file ? "Select Different Image" : "Select Image"}
           </button>
@@ -173,7 +184,7 @@ export default function ScannerPage() {
         {file && !loading && (
           <button
             onClick={handleScan}
-            className="w-full px-6 py-4 bg-emerald-600 text-black font-semibold rounded-lg hover:bg-emerald-500 transition disabled:opacity-50"
+            className="w-full px-6 py-3.5 bg-green-500 text-black font-medium rounded-lg hover:bg-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Scan
           </button>
@@ -181,9 +192,9 @@ export default function ScannerPage() {
 
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-8">
-            <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p>Scanning image...</p>
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-400">Scanning image...</p>
           </div>
         )}
 

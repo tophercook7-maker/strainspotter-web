@@ -1,21 +1,69 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
+import Link from "next/link";
+import { useMemo } from "react";
+import { useMembership } from "@/lib/hooks/useMembership";
 
-export default function HomePage() {
+export default function Page() {
+  const { membership, loading } = useMembership();
+
+  const gardenAllowed = useMemo(() => {
+    if (loading) return false;
+    return membership?.tier === "garden" || membership?.tier === "pro";
+  }, [loading, membership]);
+
   return (
-    <main>
-      <h1>StrainSpotter</h1>
+    <main className="relative min-h-screen w-full bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex flex-col items-center px-4 py-16">
+      <div className="absolute inset-0 bg-black/30" />
 
-      <div style={{ display: 'grid', gap: 12, maxWidth: 320 }}>
-        <Link href="/garden">
-          <button>🌿 Enter the Garden</button>
-        </Link>
+      <div className="relative z-10 w-full max-w-4xl flex flex-col items-center text-center gap-6">
+        {/* Hero */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-28 h-28 rounded-full overflow-hidden flex items-center justify-center bg-transparent">
+            <img
+              src="/brand/core/hero.png"
+              alt="StrainSpotter Hero"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+            The Garden
+          </h1>
+          <p className="text-white/85 max-w-xl text-base sm:text-lg">
+            Choose where to start: scan now, or step into the Garden.
+          </p>
+        </div>
 
-        <Link href="/scan">
-          <button>📸 Scan a Strain</button>
-        </Link>
+        {/* Primary actions */}
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Link
+            href="/scanner"
+            className="h-28 rounded-xl bg-white/15 border border-white/25 backdrop-blur-md px-6 flex flex-col items-center justify-center text-center text-lg font-semibold text-white transition hover:bg-white/20 hover:border-white/35 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300/70 focus:ring-offset-2 focus:ring-offset-transparent active:translate-y-0"
+          >
+            Scan
+            <span className="mt-1 text-sm text-white/80 font-normal">
+              Use your scan pack to identify strains
+            </span>
+          </Link>
+
+          <Link
+            href={gardenAllowed ? "/garden" : "/pricing/professional"}
+            aria-disabled={!gardenAllowed}
+            className={`h-28 rounded-xl px-6 flex flex-col items-center justify-center text-center text-lg font-semibold transition backdrop-blur-md ${
+              gardenAllowed
+                ? "bg-white/15 border border-white/25 text-white hover:bg-white/20 hover:border-white/35 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300/70 focus:ring-offset-2 focus:ring-offset-transparent active:translate-y-0"
+                : "bg-white/10 border border-white/20 text-white/60 cursor-not-allowed"
+            }`}
+          >
+            Enter the Garden
+            <span className="mt-1 text-sm font-normal">
+              {gardenAllowed
+                ? "Full grow experience"
+                : "Requires Garden membership ($9.99+)"}
+            </span>
+          </Link>
+        </div>
       </div>
     </main>
-  )
+  );
 }
