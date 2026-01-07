@@ -5,6 +5,7 @@ export type DiagnosticResult = {
   confidence: "Low" | "Moderate" | "High";
   evidence: string[];
   actions: string[];
+  status?: "resolving" | "unresolved" | "resolved";
 };
 
 type Measurement = {
@@ -87,8 +88,11 @@ export async function getGrowDoctorReport(growId: string): Promise<{
     ...(measurements?.map((m) => m.created_at) ?? []),
   ]);
 
+  const previousOutcomes = await loadOutcomes(supabase, growId);
   const baselines = computeBaselines(measurements);
-  const diagnoses = runRuleEngine({ scans, logs, measurements, baselines });
+  const diagnoses = runRuleEngine({ growId, scans, logs, measurements, baselines, previousOutcomes });
+
+  void persistOutcomes(supabase, growId, diagnoses); // fire-and-forget, non-blocking
 
   return {
     diagnoses,
@@ -123,15 +127,19 @@ function computeBaselines(measurements: Measurement[]): Record<string, BaselineS
 }
 
 function runRuleEngine({
+  growId,
   scans,
   logs,
   measurements,
   baselines,
+  previousOutcomes,
 }: {
+  growId: string;
   scans: Scan[];
   logs: Log[];
   measurements: Measurement[];
   baselines: Record<string, BaselineStats>;
+  previousOutcomes: StoredOutcome[];
 }): DiagnosticResult[] {
   const results: DiagnosticResult[] = [];
 
@@ -145,7 +153,15 @@ function runRuleEngine({
   });
 
   const addDiagnosis = (title: string, confidence: DiagnosticResult["confidence"], evidence: string[], actions: string[]) => {
-    results.push({ title, confidence, evidence, actions });
+    const outcome = previousOutcomes.find((o) => o.diagnosis_title === title);
+    const trend = evaluateResponseSignals(title, { scans, logs, measurements, baselines });
+    const adjusted = adjustConfidenceWithOutcome(confidence, outcome, trend);
+    const status = determineStatus(outcome, trend);
+    const personalizedEvidence =
+      outcome && outcome.status
+        ? [`Previous status: ${outcome.status}`, ...evidence]
+        : evidence;
+    results.push({ title, confidence: adjusted, evidence: personalizedEvidence, actions, status });
   };
 
   // Rule: nitrogen deficiency hint
@@ -174,7 +190,7 @@ function runRuleEngine({
     const below = phosphorus.value! < phosphorusStats.avg * 0.85;
     if (below) {
       addDiagnosis(
-        "Possible phosphorus deficiency",
+        "Likely phosphorus deficiency",
         "Moderate",
         [
           "Phosphorus below your typical range",
@@ -193,7 +209,7 @@ function runRuleEngine({
     const below = potassium.value! < potassiumStats.avg * 0.85;
     if (below) {
       addDiagnosis(
-        "Possible potassium deficiency",
+        "Likely potassium deficiency",
         "Moderate",
         [
           "Potassium levels below your typical range",
@@ -247,7 +263,7 @@ function runRuleEngine({
   const lightStressLogs = keywordHits(logs, ["bleach", "light burn", "too bright"]);
   if ((temp && temp.value > 30) || lightStressLogs > 0) {
     addDiagnosis(
-      "Light stress pattern noted",
+      "Detected light stress pattern",
       temp && temp.value > 32 ? "High" : lightStressLogs > 0 ? "Moderate" : "Low",
       [
         "Symptoms align with elevated light or heat load",
@@ -263,7 +279,7 @@ function runRuleEngine({
   const airflowLogs = keywordHits(logs, ["stagnant", "airflow", "mildew", "powdery"]);
   if (humidityHigh || airflowLogs > 0) {
     addDiagnosis(
-      "Airflow may be insufficient",
+      "Airflow appears limited",
       humidityHigh && airflowLogs > 0 ? "Moderate" : "Low",
       [
         humidityHigh ? `Humidity elevated (${humidity?.value}%)` : "Recent notes mention airflow concerns",
@@ -277,7 +293,7 @@ function runRuleEngine({
   const overwaterLogs = keywordHits(logs, ["overwater", "soggy", "waterlogged"]);
   if (overwaterLogs >= 1) {
     addDiagnosis(
-      "Root zone may be oxygen-limited",
+      "Root zone shows low oxygen indicators",
       overwaterLogs >= 2 ? "Moderate" : "Low",
       [
         "Notes mention overwatering or soggy media",
@@ -359,5 +375,131 @@ function keywordHits(logs: Log[], keywords: string[]): number {
     const text = `${log.type ?? ""} ${log.content ?? ""}`.toLowerCase();
     return keywords.some((k) => text.includes(k.toLowerCase())) ? count + 1 : count;
   }, 0);
+}
+
+function evaluateResponseSignals(
+  diagnosisTitle: string,
+  {
+    scans,
+    logs,
+    measurements,
+    baselines,
+  }: { scans: Scan[]; logs: Log[]; measurements: Measurement[]; baselines: Record<string, BaselineStats> }
+): "improving" | "worsening" | "no_change" {
+  // Simple heuristics per diagnosis type
+  const lower = (type: string, threshold: number) => {
+    const latest = measurements.find((m) => m.type?.toLowerCase() === type && m.value != null);
+    const base = baselines[type];
+    if (!latest || !base) return "no_change";
+    return latest.value! < base.avg * threshold ? "improving" : "no_change";
+  };
+
+  const higher = (type: string, threshold: number) => {
+    const latest = measurements.find((m) => m.type?.toLowerCase() === type && m.value != null);
+    const base = baselines[type];
+    if (!latest || !base) return "no_change";
+    return latest.value! > base.avg * threshold ? "worsening" : "no_change";
+  };
+
+  const issueLogTrend = keywordHits(logs, ["issue", "deficiency", "burn", "stress"]);
+  if (issueLogTrend >= 4) return "worsening";
+
+  switch (diagnosisTitle.toLowerCase()) {
+    case "likely nitrogen deficiency":
+      return lower("nitrogen", 0.9);
+    case "likely phosphorus deficiency":
+      return lower("phosphorus", 0.9);
+    case "likely potassium deficiency":
+      return lower("potassium", 0.9);
+    case "detected light stress pattern":
+      return higher("temperature", 1.05);
+    case "airflow appears limited":
+      return higher("humidity", 1.02);
+    case "root zone shows low oxygen indicators":
+      return issueLogTrend >= 2 ? "worsening" : "no_change";
+    case "salt buildup pattern observed":
+      return higher("ec", 1.05);
+    case "mild stress signals accumulating":
+      return issueLogTrend >= 3 ? "worsening" : "no_change";
+    default:
+      return "no_change";
+  }
+}
+
+// ---------- Outcome tracking ----------
+
+type StoredOutcome = {
+  diagnosis_title: string;
+  confidence: DiagnosticResult["confidence"];
+  status: "resolving" | "unresolved" | "resolved" | null;
+  updated_at: string | null;
+};
+
+async function loadOutcomes(supabase: ReturnType<typeof getSupabaseServerClient>, growId: string): Promise<StoredOutcome[]> {
+  try {
+    const { data, error } = await supabase
+      .from("grow_doctor_outcomes")
+      .select("diagnosis_title, confidence, status, updated_at")
+      .eq("grow_id", growId)
+      .order("updated_at", { ascending: false });
+    if (error) {
+      console.error("[GrowDoctor] loadOutcomes", error);
+      return [];
+    }
+    return data ?? [];
+  } catch (err) {
+    console.error("[GrowDoctor] loadOutcomes unexpected", err);
+    return [];
+  }
+}
+
+function adjustConfidenceWithOutcome(
+  base: DiagnosticResult["confidence"],
+  outcome: StoredOutcome | undefined,
+  trend: "improving" | "worsening" | "no_change"
+): DiagnosticResult["confidence"] {
+  const upward = () => (base === "Low" ? "Moderate" : base === "Moderate" ? "High" : "High");
+  const downward = () => (base === "High" ? "Moderate" : base === "Moderate" ? "Low" : "Low");
+  if (trend === "improving") return downward();
+  if (trend === "worsening") return upward();
+  if (outcome?.status === "resolving" || outcome?.status === "resolved") return downward();
+  if (outcome?.status === "unresolved") return upward();
+  return base;
+}
+
+function determineStatus(
+  outcome: StoredOutcome | undefined,
+  trend: "improving" | "worsening" | "no_change"
+): DiagnosticResult["status"] {
+  if (trend === "improving") return "resolving";
+  if (trend === "worsening") return "unresolved";
+  if (outcome?.status) return outcome.status;
+  return undefined;
+}
+
+async function persistOutcomes(
+  supabase: ReturnType<typeof getSupabaseServerClient>,
+  growId: string,
+  diagnoses: DiagnosticResult[]
+) {
+  try {
+    const now = new Date().toISOString();
+    const rows = diagnoses.map((d) => ({
+      grow_id: growId,
+      diagnosis_title: d.title,
+      confidence: d.confidence,
+      status: d.status ?? null,
+      actions: d.actions,
+      updated_at: now,
+    }));
+    const { error } = await supabase.from("grow_doctor_outcomes").upsert(rows, {
+      onConflict: "grow_id,diagnosis_title",
+    });
+    if (error) {
+      console.error("[GrowDoctor] persistOutcomes", error);
+    }
+  } catch (err) {
+    console.error("[GrowDoctor] persistOutcomes unexpected", err);
+  }
 }
 
