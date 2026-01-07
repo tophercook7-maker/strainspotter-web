@@ -85,9 +85,10 @@ export default function Page() {
                 alt="StrainSpotter"
                 className="w-20 h-20 drop-shadow-lg"
               />
-              <div className="text-2xl font-semibold">Enter the Garden</div>
-              <p className="text-white/80 text-sm">
-                The Garden is a calm space for guided grows. Join to unlock it now, or come back anytime.
+              <div className="text-2xl font-semibold">The Garden</div>
+              <p className="text-white/80 text-sm text-center">
+                The Garden is your personal space for grows, logs, and long-term insight.
+                It’s available with a Garden membership.
               </p>
               <div className="flex flex-col gap-3 w-full">
                 <button
