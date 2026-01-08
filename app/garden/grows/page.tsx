@@ -33,10 +33,20 @@ export default function MyGrowsPage() {
   const [form, setForm] = useState<GrowFormState>({ name: '', medium: '', start_date: '', status: 'Active', notes: '' });
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<{ name: string; status: StatusOption; strain_name?: string }>({
+  const [editDraft, setEditDraft] = useState<{
+    name: string;
+    status: StatusOption;
+    strain_name?: string;
+    medium?: string;
+    source?: string;
+    notes?: string;
+  }>({
     name: '',
     status: 'Active',
     strain_name: '',
+    medium: '',
+    source: '',
+    notes: '',
   });
   const [timedOut, setTimedOut] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -127,6 +137,10 @@ export default function MyGrowsPage() {
     setEditDraft({
       name: grow.strain_name || grow.name || '',
       status: statusFromStage(grow.stage),
+      strain_name: grow.strain_name || '',
+      medium: grow.medium || '',
+      source: (grow as any).source || '',
+      notes: (grow as any).notes || '',
     });
   };
 
