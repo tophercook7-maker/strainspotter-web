@@ -271,10 +271,11 @@ function runRuleEngine({
 
   // Rule: light stress
   const lightStressLogs = keywordHits(logs, ["bleach", "light burn", "too bright"]);
-  if ((temp && temp.value > 30) || lightStressLogs > 0) {
+  const tempValue = typeof temp?.value === "number" ? temp.value : null;
+  if ((tempValue !== null && tempValue > 30) || lightStressLogs > 0) {
     addDiagnosis(
       "Detected light stress pattern",
-      temp && temp.value > 32 ? "High" : lightStressLogs > 0 ? "Moderate" : "Low",
+      tempValue !== null && tempValue > 32 ? "High" : lightStressLogs > 0 ? "Moderate" : "Low",
       [
         "Symptoms align with elevated light or heat load",
         lightStressLogs > 0 ? "Recent notes mention light stress cues" : "Consider checking canopy distance",
