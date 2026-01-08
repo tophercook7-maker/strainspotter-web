@@ -6,7 +6,7 @@ export async function createSupabaseServer() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase env not available at build");
+    throw new Error("Supabase server env vars missing at runtime");
   }
 
   const cookieStore = await cookies();
