@@ -7,6 +7,10 @@ import { cookies } from "next/headers";
 
 async function getAuthenticatedSupabase() {
   const cookieStore = await cookies();
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("build-skip");
+  }
   
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -58,10 +62,11 @@ export async function GET() {
       doctor_left: data.doctor_left ?? 0,
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { tier: 0, error: error?.message || "Internal server error" },
-      { status: 500 }
-    );
+    const message = error?.message || "Internal server error";
+    if (message === "build-skip") {
+      return NextResponse.json({ tier: 0, reason: "build-skip" }, { status: 200 });
+    }
+    return NextResponse.json({ tier: 0, error: message }, { status: 500 });
   }
 }
 

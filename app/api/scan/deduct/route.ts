@@ -13,6 +13,13 @@ export async function POST(req: Request) {
 
   const { userId, type } = body;
 
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json(
+      { success: false, message: "build-skip" },
+      { status: 200 }
+    );
+  }
+
 
 
   if (!userId || !type) {

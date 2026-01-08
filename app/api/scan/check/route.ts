@@ -6,6 +6,13 @@ import { checkScanGuard } from '@/lib/scanGuard';
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET(req: Request) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response(
+      JSON.stringify({ ok: false, reason: "build-skip" }),
+      { status: 200 }
+    );
+  }
+
   // Supabase server client
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

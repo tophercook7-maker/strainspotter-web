@@ -7,6 +7,10 @@ import { cookies } from "next/headers";
 
 async function getAuthenticatedSupabase() {
   const cookieStore = await cookies();
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("build-skip");
+  }
   
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,10 +77,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error: any) {
-    return NextResponse.json(
-      { ok: false, error: error?.message || "Internal server error" },
-      { status: 500 }
-    );
+    const message = error?.message || "Internal server error";
+    if (message === "build-skip") {
+      return NextResponse.json({ ok: false, reason: "build-skip" }, { status: 200 });
+    }
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
 

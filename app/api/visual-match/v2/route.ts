@@ -75,7 +75,11 @@ async function loadManifests(): Promise<Manifest[]> {
 
   try {
     // Try to load from Supabase Storage first
-    const supabase = createClient(supabaseUrl, supabaseKey);
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({ error: "build-skip" }, { status: 200 });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
     const { data: files, error } = await supabase.storage
       .from('strains')
       .list('manifests', {
