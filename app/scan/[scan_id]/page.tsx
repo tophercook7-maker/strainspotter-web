@@ -11,7 +11,6 @@ import { supabase } from "@/lib/supabaseClient";
 import { useMembership } from '@/lib/membership/useMembership';
 import ScanConfirmation from '@/components/scan/ScanConfirmation';
 import VisualSimilarity from '@/components/scan/VisualSimilarity';
-import Link from 'next/link';
 
 interface ScanData {
   id: string;
