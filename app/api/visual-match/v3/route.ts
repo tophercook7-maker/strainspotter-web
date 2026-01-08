@@ -22,11 +22,11 @@ async function loadManifests(includePrivate = false, userId?: string): Promise<M
 
   try {
     // Load public manifests
-  if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.json({ error: "build-skip" }, { status: 200 });
-  }
+    if (!supabaseUrl || !supabaseKey) {
+      return manifests;
+    }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey);
     const { data: files } = await supabase.storage
       .from('strains')
       .list('manifests', { limit: 1000 });
