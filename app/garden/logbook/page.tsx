@@ -9,7 +9,16 @@ import { useSelectedGrow } from '@/components/garden/SelectedGrowProvider';
 type TimelineItem =
   | { type: 'log'; id: string; text: string; created_at: string; tag?: string | null; label?: string | null; referenced_by_doctor?: boolean }
   | { type: 'scan'; id: string; summary: string; created_at: string; confidence?: number | null; image_url?: string | null; label?: string | null; referenced_by_doctor?: boolean }
-  | { type: 'measurement'; id: string; created_at: string; mtype: string | null; value: number | null; unit: string | null; referenced_by_doctor?: boolean }
+  | {
+      type: 'measurement';
+      id: string;
+      created_at: string;
+      mtype: string | null;
+      value: number | null;
+      unit: string | null;
+      label?: string;
+      referenced_by_doctor?: boolean;
+    }
   | { type: 'doctor'; id: string; created_at: string; title: string; confidence?: string | null; status?: string | null; referenced_by_doctor?: boolean };
 
 export default function LogbookPage() {
