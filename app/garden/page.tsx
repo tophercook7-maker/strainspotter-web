@@ -43,6 +43,7 @@ export default function GardenPage() {
               <ActionButton label="Personal Notes" href="/garden/notes" />
               <ActionButton label="Garden Chat" href="/garden/chat" />
               <ActionButton label="My Grows" href="/garden/grows" />
+              <ActionButton label="Session Journal" href="/garden/sessions" />
             </div>
           </div>
 
