@@ -19,6 +19,7 @@ const sections = [
     title: 'Growing',
     actions: [
       { label: 'Grow Logbook', href: '/garden/logbook' },
+      { label: 'Personal Notes', href: '/garden/notes' },
       { label: 'Environment', href: '/garden/environment' },
       { label: 'Tasks & Reminders', href: '/garden/tasks' },
       { label: 'Grow Coach', href: '/garden/grow-coach' },
