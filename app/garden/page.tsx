@@ -5,9 +5,6 @@ import MembershipExplanation from '@/components/membership/MembershipExplanation
 export default function GardenPage() {
   return (
     <main className="relative min-h-screen w-full bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex flex-col items-center px-4 py-14">
-      <div style={{ padding: 8, background: 'rgba(220,38,38,0.9)', color: 'white', textAlign: 'center', width: '100%', maxWidth: '32rem', borderRadius: 8, marginBottom: 12 }}>
-        ACTIVE GARDEN: app/garden/page.tsx
-      </div>
       <div className="absolute inset-0 bg-black/30" />
 
       <div className="relative z-10 w-full max-w-6xl space-y-8">
