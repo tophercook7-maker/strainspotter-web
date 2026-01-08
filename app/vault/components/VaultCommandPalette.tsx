@@ -32,6 +32,10 @@ interface Command {
 }
 
 export default function VaultCommandPalette() {
+  // Temporarily disabled due to Headless UI combobox export issue.
+  // TODO: Re-enable VaultCommandPalette after Headless UI fix.
+  return null;
+
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const router = useRouter();

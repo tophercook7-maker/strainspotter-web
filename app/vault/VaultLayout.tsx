@@ -9,7 +9,8 @@ import { useEffect, useState } from 'react';
 import VaultSidebar from "./components/VaultSidebar";
 import VaultSectionBar from "./components/VaultSectionBar";
 import VaultDock from "./components/VaultDock";
-import VaultCommandPalette from "./components/VaultCommandPalette";
+// TODO: Re-enable VaultCommandPalette after Headless UI combobox fix.
+// import VaultCommandPalette from "./components/VaultCommandPalette";
 import VaultTerminal from "./components/VaultTerminal";
 import VaultSpotlight from "./components/VaultSpotlight";
 import VaultVoiceAssistant from "./components/VaultVoiceAssistant";
@@ -48,7 +49,7 @@ export default function VaultLayout({ children }: { children: React.ReactNode })
       </div>
 
       <VaultDock />
-      <VaultCommandPalette />
+      {/* <VaultCommandPalette /> */}
       <VaultTerminal isOpen={terminalOpen} onClose={() => setTerminalOpen(false)} />
       <VaultSpotlight />
       <VaultVoiceAssistant />
