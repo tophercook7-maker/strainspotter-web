@@ -3,21 +3,17 @@ import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
 import { checkScanGuard } from '@/lib/scanGuard';
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return new Response(
-      JSON.stringify({ ok: false, reason: "build-skip" }),
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return NextResponse.json(
+      { ok: false, reason: "build-skip" },
       { status: 200 }
     );
   }
 
-  // Supabase server client
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabase = await createSupabaseServer();
 
   // The client will send ?user=<id> OR we will extract from auth later
   const { searchParams } = new URL(req.url);
