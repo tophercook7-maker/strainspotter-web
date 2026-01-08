@@ -3,7 +3,7 @@ export const gardenGroups = [
     id: "actions",
     label: "ACTIONS",
     buttons: [
-      { id: "scanner", href: "/scanner", label: "Scan a Plant", description: "Identify strain or diagnose issues", isPrimary: true },
+      { id: "scanner", href: "/scanner", label: "Document plant", description: "Add visual context to your grow’s history.", isPrimary: true },
       { id: "log-update", href: "/garden/logbook?new=true", label: "Log an Update", description: "Add a logbook entry" },
       { id: "add-plant", href: "/garden/plants/new", label: "Add a Plant", description: "Start tracking a new plant" },
       { id: "create-task", href: "/garden/tasks/new", label: "Create a Task", description: "Add a task to your list" },

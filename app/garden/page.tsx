@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import MembershipExplanation from '@/components/membership/MembershipExplanation';
 
 const sections = [
   {
@@ -9,7 +10,7 @@ const sections = [
       { label: 'Scan a Plant', href: '/scanner' },
       { label: 'Visual Strain Matching', href: '/visual-match' },
       { label: 'Strain Explorer', href: '/strain-explorer' },
-      { label: 'My Grows', href: '/garden' },
+      { label: 'My Grows', href: '/garden/grows' },
       { label: 'Saved Scans', href: '/scanner/saved' },
     ],
   },
@@ -55,6 +56,7 @@ const sections = [
       { label: 'Education Hub', href: '/education' },
       { label: 'Community / Notes', href: '/community' },
       { label: 'Settings & Preferences', href: '/settings' },
+      { label: 'Membership', href: '/garden/membership' },
     ],
   },
 ];
@@ -78,7 +80,7 @@ export default function GardenPage() {
             The Garden
           </h1>
           <p className="text-white/80 max-w-2xl mx-auto text-base sm:text-lg">
-            A bright, intentional control panel for growing, care, guidance, and discovery.
+            A living space where cultivation insight, care, and discovery come together.
           </p>
         </section>
 
@@ -97,6 +99,15 @@ export default function GardenPage() {
             </div>
           ))}
         </section>
+
+        <div className="mt-8">
+          <MembershipExplanation
+            tier={null}
+            showLearnMore={true}
+            learnMoreHref="/garden/membership"
+            collapsedByDefault={true}
+          />
+        </div>
       </div>
     </main>
   );

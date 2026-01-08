@@ -78,11 +78,23 @@ export async function PATCH(
     if (body.strain !== undefined) {
       updates.strain = body.strain?.trim() || null;
     }
-    if (body.stage !== undefined) {
-      const validStages = ["seed", "veg", "flower", "harvest"];
-      if (validStages.includes(body.stage)) {
-        updates.stage = body.stage;
+    if (body.stage !== undefined || body.status !== undefined) {
+      const desired = (body.status || body.stage || "").toString().toLowerCase();
+      const validStages = ["seed", "veg", "flower", "harvest", "paused", "active", "completed"];
+      if (validStages.includes(desired)) {
+        if (desired === "completed") updates.stage = "harvest";
+        else if (desired === "active") updates.stage = "veg";
+        else updates.stage = desired;
       }
+    }
+    if (body.medium !== undefined) {
+      updates.medium = body.medium?.trim() || null;
+    }
+    if (body.source !== undefined) {
+      updates.source = body.source?.toString().trim() || null;
+    }
+    if (body.notes !== undefined) {
+      updates.notes = body.notes?.toString().trim() || null;
     }
 
     const { data, error } = await supabase

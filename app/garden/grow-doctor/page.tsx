@@ -2,6 +2,9 @@
 "use client";
 
 import Link from "next/link";
+import MembershipExplanation from "@/components/membership/MembershipExplanation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSelectedGrow } from "@/components/garden/SelectedGrowProvider";
 
 type Diagnosis = {
   title: string;
@@ -46,6 +49,41 @@ type GrowDoctorPageProps = {
 
 export default function GrowDoctorPage({ tier = "free" }: GrowDoctorPageProps) {
   const hasGarden = tier === "garden" || tier === "pro";
+  const { selectedGrow } = useSelectedGrow();
+  const [loading, setLoading] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const growNeeded = !selectedGrow;
+
+  const loadData = async () => {
+    setLoading(true);
+    setTimedOut(false);
+    setError(null);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setTimedOut(true);
+      setLoading(false);
+    }, 10000);
+    // placeholder for future fetch; keep sample data if fetch skipped
+    try {
+      // no-op: using sampleDiagnoses/sampleActions as placeholder
+    } catch (err: any) {
+      setError(err.message || "failed");
+    } finally {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!growNeeded) {
+      void loadData();
+    }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [growNeeded]);
 
   return (
     <main className="relative min-h-screen w-full bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex flex-col items-center px-4 py-14">
@@ -65,31 +103,84 @@ export default function GrowDoctorPage({ tier = "free" }: GrowDoctorPageProps) {
           <p className="text-white/85 max-w-2xl mx-auto text-base sm:text-lg">
             Cultivation diagnostics based on your grow’s data.
           </p>
+          <div className="mt-2">
+            <Link
+              href="/garden/chat?diagnosis_id=current"
+              className="text-emerald-300 text-sm hover:text-emerald-200 underline underline-offset-4"
+            >
+              Garden Chat
+            </Link>
+          </div>
         </header>
 
-        {/* Section 1: Since Last Check */}
-        <section className="space-y-3">
-          <div className="text-sm uppercase tracking-[0.08em] text-white/70">Since last check</div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { label: "Timeline summary", detail: "No major changes noted" },
-              { label: "New scans", detail: "2 new scans logged" },
-              { label: "New logs / measurements", detail: "3 updates added" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-4 flex flex-col gap-1"
-              >
-                <div className="text-white/70 text-sm">{item.label}</div>
-                <div className="text-white font-semibold">{item.detail}</div>
-              </div>
-            ))}
+        {growNeeded && (
+          <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 text-center space-y-2">
+            <h2 className="text-xl font-semibold text-white">Choose a grow</h2>
+            <p className="text-sm text-white/70">Grow Doctor insights are tied to a specific grow.</p>
+            <Link
+              href="/garden/grows?prompt=Choose%20a%20grow%20for%20Grow%20Doctor"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-500 text-black font-semibold hover:bg-emerald-400"
+            >
+              Select a grow
+            </Link>
           </div>
-        </section>
+        )}
 
-        <GrowDoctorDiagnosisSection hasGarden={hasGarden} diagnoses={sampleDiagnoses} />
+        {!growNeeded && loading && !timedOut && (
+          <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 text-center space-y-2">
+            <p className="text-sm text-white/80">Gathering insight…</p>
+          </div>
+        )}
 
-        <RecommendedActionsSection hasGarden={hasGarden} actions={sampleActions} />
+        {!growNeeded && timedOut && (
+          <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-6 text-center space-y-3">
+            <p className="text-lg font-semibold text-white">Still gathering insight</p>
+            <p className="text-sm text-white/70">Your grow’s history is intact. Insight will appear shortly.</p>
+            <Link
+              href="/garden"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-white/10 text-white border border-white/15 hover:bg-white/15"
+            >
+              Back to Garden
+            </Link>
+          </div>
+        )}
+
+        {!growNeeded && !loading && !timedOut && (
+          <>
+            {/* Section 1: Since Last Check */}
+            <section className="space-y-3">
+              <div className="text-sm uppercase tracking-[0.08em] text-white/70">Since last check</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { label: "Timeline summary", detail: "Observing your recent updates" },
+                  { label: "New scans", detail: "Scans are being documented" },
+                  { label: "New logs / measurements", detail: "Updates recorded over time" },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-4 flex flex-col gap-1"
+                  >
+                    <div className="text-white/70 text-sm">{item.label}</div>
+                    <div className="text-white font-semibold">{item.detail}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <GrowDoctorDiagnosisSection hasGarden={hasGarden} diagnoses={sampleDiagnoses} />
+
+            <RecommendedActionsSection hasGarden={hasGarden} actions={sampleActions} />
+          </>
+        )}
+
+        {!hasGarden && (
+          <MembershipExplanation
+            tier={tier}
+            showLearnMore={true}
+            learnMoreHref="/garden/membership"
+            collapsedByDefault={true}
+          />
+        )}
 
         {/* Footer disclaimer */}
         <footer className="text-center text-white/60 text-xs">
@@ -109,7 +200,8 @@ function GrowDoctorDiagnosisSection({
 }) {
   return (
     <section className="space-y-3">
-      <div className="text-sm uppercase tracking-[0.08em] text-white/70">Grow Doctor’s Diagnosis</div>
+      <div className="text-sm uppercase tracking-[0.08em] text-white/70">Grow Doctor Insight</div>
+      <p className="text-xs text-white/70">This pattern has been observed across recent activity. Changes related to this condition typically appear gradually.</p>
       {!hasGarden ? (
         <FreeGate />
       ) : diagnoses.length === 0 ? (
@@ -162,10 +254,10 @@ function DiagnosticCard({ diagnosis }: { diagnosis: Diagnosis }) {
     <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md p-5 space-y-4">
       <div className="flex flex-col gap-2">
         <div className="text-lg font-semibold text-white">{diagnosis.title}</div>
-        <DiagnosisConfidence level={diagnosis.confidence} />
+        <div className="text-sm text-white/80">Confidence: {diagnosis.confidence}</div>
       </div>
       <div className="space-y-2">
-        <div className="text-white/70 text-sm">Why this diagnosis was made</div>
+        <div className="text-white/70 text-sm">This pattern has been observed across recent activity.</div>
         <ul className="list-disc list-inside text-white/80 space-y-1">
           {diagnosis.evidence.map((item) => (
             <li key={item}>{item}</li>
@@ -173,7 +265,7 @@ function DiagnosticCard({ diagnosis }: { diagnosis: Diagnosis }) {
         </ul>
       </div>
       <div className="space-y-2">
-        <div className="text-white/70 text-sm">Recommended Actions</div>
+        <div className="text-white/70 text-sm">Some growers address this by…</div>
         <ul className="list-disc list-inside text-white/80 space-y-1">
           {sampleActions.map((action) => (
             <li key={action.text}>{action.text}</li>

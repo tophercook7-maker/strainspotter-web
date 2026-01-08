@@ -3,9 +3,11 @@ import { getSupabaseServerClient } from "@/lib/supabaseServer";
 export type DiagnosticResult = {
   title: string;
   confidence: "Low" | "Moderate" | "High";
+  severity: "Early" | "Progressing" | "Resolving";
   evidence: string[];
   actions: string[];
   status?: "resolving" | "unresolved" | "resolved";
+  confidence_note?: string;
 };
 
 type Measurement = {
@@ -157,11 +159,19 @@ function runRuleEngine({
     const trend = evaluateResponseSignals(title, { scans, logs, measurements, baselines });
     const adjusted = adjustConfidenceWithOutcome(confidence, outcome, trend);
     const status = determineStatus(outcome, trend);
-    const personalizedEvidence =
-      outcome && outcome.status
-        ? [`Previous status: ${outcome.status}`, ...evidence]
-        : evidence;
-    results.push({ title, confidence: adjusted, evidence: personalizedEvidence, actions, status });
+    const severity = deriveSeverity(status, trend);
+    const personalizedEvidence = buildEvidence(title, evidence, outcome, trend, adjusted, confidence, severity);
+    const personalizedActions = personalizeActions(actions, outcome, trend);
+
+    results.push({
+      title,
+      confidence: adjusted,
+      severity,
+      evidence: personalizedEvidence,
+      actions: personalizedActions,
+      status,
+      confidence_note: adjusted !== confidence ? `Adjusted from ${confidence} based on recent signals` : undefined,
+    });
   };
 
   // Rule: nitrogen deficiency hint
@@ -432,6 +442,7 @@ type StoredOutcome = {
   diagnosis_title: string;
   confidence: DiagnosticResult["confidence"];
   status: "resolving" | "unresolved" | "resolved" | null;
+  actions?: string[] | null;
   updated_at: string | null;
 };
 
@@ -439,7 +450,7 @@ async function loadOutcomes(supabase: ReturnType<typeof getSupabaseServerClient>
   try {
     const { data, error } = await supabase
       .from("grow_doctor_outcomes")
-      .select("diagnosis_title, confidence, status, updated_at")
+      .select("diagnosis_title, confidence, status, actions, updated_at")
       .eq("grow_id", growId)
       .order("updated_at", { ascending: false });
     if (error) {
@@ -475,6 +486,108 @@ function determineStatus(
   if (trend === "worsening") return "unresolved";
   if (outcome?.status) return outcome.status;
   return undefined;
+}
+
+function deriveSeverity(
+  status: DiagnosticResult["status"],
+  trend: "improving" | "worsening" | "no_change"
+): DiagnosticResult["severity"] {
+  if (status === "resolving" || status === "resolved" || trend === "improving") return "Resolving";
+  if (status === "unresolved" || trend === "worsening") return "Progressing";
+  return "Early";
+}
+
+function buildEvidence(
+  title: string,
+  baseEvidence: string[],
+  outcome: StoredOutcome | undefined,
+  trend: "improving" | "worsening" | "no_change",
+  adjusted: DiagnosticResult["confidence"],
+  original: DiagnosticResult["confidence"],
+  severity: DiagnosticResult["severity"]
+): string[] {
+  const history: string[] = [];
+  const headline = formatHeadline(title, adjusted, severity);
+  if (headline) history.push(headline);
+
+  if (severity === "Early") history.push("Early signs; beginning to show this pattern.");
+  if (severity === "Progressing") history.push("Continuing pattern noted; has not resolved yet.");
+  if (severity === "Resolving") history.push("Appears to be improving and returning toward your typical range.");
+
+  if (outcome?.status) {
+    history.push(`Previous status: ${outcome.status}${outcome.updated_at ? ` (${formatDate(outcome.updated_at)})` : ""}`);
+  }
+  if (outcome?.actions && outcome.actions.length > 0) {
+    history.push(`Last recommended actions tracked (${outcome.actions.length} steps).`);
+  }
+  if (trend === "improving") history.push("Recent signals show improvement after last recommendation.");
+  if (trend === "worsening") history.push("Signals indicate the pattern may be persisting; consider measured adjustments.");
+  if (adjusted !== original) {
+    history.push(`Confidence adjusted from ${original} to ${adjusted} based on latest readings.`);
+  }
+  return [...history, ...baseEvidence];
+}
+
+function personalizeActions(
+  baseActions: string[],
+  outcome: StoredOutcome | undefined,
+  trend: "improving" | "worsening" | "no_change"
+): string[] {
+  const escalations = ["worsening", "unresolved"];
+  const soften = trend === "improving" || outcome?.status === "resolving" || outcome?.status === "resolved";
+
+  if (soften) {
+    return [
+      "Continue the current plan; signals show improvement.",
+      ...baseActions.slice(0, 2),
+      "Log observations after 48 hours to confirm resolution.",
+    ];
+  }
+
+  if (trend === "worsening" || escalations.includes(outcome?.status ?? "")) {
+    return [
+      "Pattern is continuing; increase attention calmly.",
+      baseActions[0] ?? "Step up remediation steps in a measured way.",
+      baseActions[1] ?? "Re-check environment and nutrition balance.",
+      "Capture a fresh scan and log notes after adjustments.",
+    ].filter(Boolean);
+  }
+
+  return [
+    ...baseActions.slice(0, 3),
+    "Re-scan or log a follow-up within 48 hours to track response.",
+  ];
+}
+
+function formatDate(ts?: string | null): string {
+  if (!ts) return "";
+  try {
+    return new Date(ts).toLocaleDateString();
+  } catch {
+    return ts.slice(0, 10);
+  }
+}
+
+function formatHeadline(
+  title: string,
+  confidence: DiagnosticResult["confidence"],
+  severity: DiagnosticResult["severity"]
+): string {
+  const severityPrefix =
+    severity === "Early"
+      ? "Early signs consistent with"
+      : severity === "Progressing"
+      ? "Continuing pattern consistent with"
+      : "Appears to be improving; still consistent with";
+
+  if (confidence === "Low") {
+    return `${severityPrefix} ${title}.`;
+  }
+  if (confidence === "Moderate") {
+    return `${severity === "Early" ? "Likely" : "Consistent with"} ${title}.`;
+  }
+  // High
+  return `Strongly consistent with ${title}.`;
 }
 
 async function persistOutcomes(

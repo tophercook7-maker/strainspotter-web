@@ -11,8 +11,8 @@ export type GardenItem = {
 export const ACTIONS: GardenItem[] = [
   {
     id: "scan",
-    title: "Scan a Plant",
-    description: "Identify and analyze a plant or bud",
+    title: "Document plant",
+    description: "Add visual context to your grow’s history.",
     href: "/scanner",
     icon: "camera",
   },
@@ -20,7 +20,7 @@ export const ACTIONS: GardenItem[] = [
     id: "log-update",
     title: "Log an Update",
     description: "Add notes, photos, or observations",
-    href: "/garden/log",
+    href: "/garden/logbook",
     icon: "edit",
   },
   {

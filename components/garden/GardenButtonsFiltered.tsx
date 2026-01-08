@@ -4,11 +4,11 @@ import Link from "next/link";
 
 const sections = [
   {
-    title: "Scan & Identify",
+    title: "Document",
     items: [
       {
-        title: "Scan a Plant",
-        description: "Identify plants, buds, packaging, and issues",
+        title: "Document plant",
+        description: "Add visual context to your grow’s history.",
         href: "/scanner",
         primary: true,
       },
@@ -20,7 +20,7 @@ const sections = [
       {
         title: "Grow Logbook",
         description: "Track plants, logs, notes, and grow activity",
-        href: "/gallery",
+        href: "/garden/logbook",
       },
     ],
   },

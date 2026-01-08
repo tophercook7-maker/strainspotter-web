@@ -1,4 +1,5 @@
 import MembershipGate from "@/components/MembershipGate";
+import { SelectedGrowProvider } from "@/components/garden/SelectedGrowProvider";
 
 export default function GardenLayout({
   children,
@@ -7,9 +8,11 @@ export default function GardenLayout({
 }) {
   return (
     <MembershipGate>
-      <section className="min-h-screen text-white">
-        {children}
-      </section>
+      <SelectedGrowProvider>
+        <section className="min-h-screen text-white">
+          {children}
+        </section>
+      </SelectedGrowProvider>
     </MembershipGate>
   );
 }

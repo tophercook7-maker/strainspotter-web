@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const { garden_id, entry_type, text, related_plant_id } = body;
+    const { garden_id, entry_type, text, related_plant_id, label } = body;
 
     if (!garden_id || !entry_type || !text) {
       return NextResponse.json(
@@ -61,6 +61,7 @@ export async function POST(req: Request) {
         user_id: user.id,
         entry_type,
         text: text.trim(),
+        label: label?.trim() || null,
         related_plant_id: related_plant_id || null,
       })
       .select()

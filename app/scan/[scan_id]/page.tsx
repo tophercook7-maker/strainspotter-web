@@ -9,12 +9,17 @@ import MatchReasoning from '@/components/MatchReasoning';
 import AIReportPanel from '@/components/scan/AIReportPanel';
 import { supabase } from "@/lib/supabaseClient";
 import { useMembership } from '@/lib/membership/useMembership';
+import ScanConfirmation from '@/components/scan/ScanConfirmation';
+import VisualSimilarity from '@/components/scan/VisualSimilarity';
+import Link from 'next/link';
 
 interface ScanData {
   id: string;
   image_url: string;
   status: string;
   scan_type?: 'id' | 'doctor';
+  grow_id?: string | null;
+  payload?: Record<string, any>;
   vision_results?: any;
   match_result?: {
     match: {
@@ -41,15 +46,32 @@ interface ScanData {
   created_at: string;
 }
 
+type GrowDoctorInsight = {
+  title?: string;
+  summary?: string;
+  confidence?: string;
+  relation?: 'new' | 'consistent' | 'improving';
+  status?: string | null;
+};
+
 export default function ScanResultPage() {
   const params = useParams();
   const router = useRouter();
   const scanId = params.scan_id as string;
-  const { isMember, loading: membershipLoading } = useMembership();
+  const { isMember } = useMembership();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scan, setScan] = useState<ScanData | null>(null);
+  const [doctorInsight, setDoctorInsight] = useState<GrowDoctorInsight | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [scannedRecently, setScannedRecently] = useState(false);
+  const [labelOpen, setLabelOpen] = useState(false);
+  const [labelValue, setLabelValue] = useState('');
+  const [labelSaving, setLabelSaving] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [growOptions, setGrowOptions] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadScan() {
@@ -79,6 +101,7 @@ export default function ScanResultPage() {
         // Support both new and legacy field names
         const matchData = scanData.match || scanData.match_result;
         const visionData = scanData.vision || scanData.vision_results;
+        if (scanData.label) setLabelValue(scanData.label);
         
         // If scan doesn't have match yet but has vision, try to match
         if (!matchData && visionData) {
@@ -113,6 +136,75 @@ export default function ScanResultPage() {
 
     loadScan();
   }, [scanId, router]);
+
+  const growId = scan
+    ? (scan as any).grow_id || (scan as any)?.payload?.grow_id || null
+    : null;
+
+  useEffect(() => {
+    if (!growId) {
+      setDoctorInsight(null);
+      return;
+    }
+
+    const resolvedTier = ((scan as any)?.membership_tier ||
+      (isMember ? 'garden' : 'free')) as 'free' | 'garden' | 'pro';
+
+    let aborted = false;
+    setInsightLoading(true);
+    setDoctorInsight(null);
+
+    const fetchInsight = async () => {
+      try {
+        const res = await fetch(`/api/grow-doctor/insight?growId=${growId}&tier=${resolvedTier}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (aborted) return;
+        if (data?.diagnosis) {
+          setDoctorInsight(data.diagnosis);
+        }
+      } catch (err) {
+        console.warn('[GrowDoctor] insight fetch failed', err);
+      } finally {
+        if (!aborted) {
+          setInsightLoading(false);
+        }
+      }
+    };
+
+    fetchInsight();
+    return () => {
+      aborted = true;
+    };
+  }, [growId, isMember, scan]);
+
+  useEffect(() => {
+    if (!growId) {
+      setScannedRecently(false);
+      return;
+    }
+    const key = `scan:last:${growId}`;
+    const last = localStorage.getItem(key);
+    if (last) {
+      const deltaHours = (Date.now() - Number(last)) / (1000 * 60 * 60);
+      setScannedRecently(deltaHours < 12);
+    }
+  }, [growId]);
+
+  useEffect(() => {
+    if (!linkOpen) return;
+    const fetchGrows = async () => {
+      try {
+        const res = await fetch('/api/garden/grows');
+        if (!res.ok) return;
+        const data = await res.json();
+        setGrowOptions(data || []);
+      } catch (err) {
+        console.warn('[scan] grow fetch failed', err);
+      }
+    };
+    fetchGrows();
+  }, [linkOpen]);
 
   if (loading) {
     return (
@@ -151,19 +243,74 @@ export default function ScanResultPage() {
   // Get enrichment data (graceful fallback if missing)
   const enrichment = (scan as any).enrichment || matchData?.enrichment || null;
 
+  const relationCopy: Record<NonNullable<GrowDoctorInsight["relation"]>, string> = {
+    new: "New issue detected since your last check",
+    consistent: "Consistent with your recent scans",
+    improving: "Showing signs of improvement",
+  };
+
   return (
     <div className="min-h-screen bg-[var(--botanical-bg-deep)] text-white p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <Link
-            href="/scanner"
-            className="text-green-400 hover:text-green-300 mb-4 inline-block"
-          >
-            ← Back to Scanner
-          </Link>
-          <h1 className="text-3xl font-bold">Scan Result</h1>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <Link
+                href="/scanner"
+                className="text-green-400 hover:text-green-300 mb-2 inline-block"
+              >
+                ← Back to Scanner
+              </Link>
+              <h1 className="text-3xl font-bold">Scan Result</h1>
+            </div>
+            <Link
+              href={`/garden/chat?scan_id=${scanId}${growId ? `&grow_id=${growId}` : ''}`}
+              className="text-emerald-300 text-sm hover:text-emerald-200 underline underline-offset-4"
+            >
+              Garden Chat
+            </Link>
+          </div>
         </div>
+
+        {/* Grow Doctor Insight */}
+        {!doctorInsight && growId && insightLoading && (
+          <div className="mb-6">
+            <div className="bg-[var(--botanical-bg-surface)] border border-[var(--botanical-border)] rounded-lg p-4 flex items-center gap-2 text-sm text-[var(--botanical-text-secondary)]">
+              <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              Checking Grow Doctor memory...
+            </div>
+          </div>
+        )}
+        {doctorInsight && (
+          <div className="mb-6">
+            <div className="bg-[var(--botanical-bg-surface)] border border-[var(--botanical-border)] rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-wide text-emerald-300/80">Grow Doctor Insight</p>
+                <p className="text-sm text-[var(--botanical-text-primary)]">
+                  {doctorInsight.title || doctorInsight.summary || 'Recent cultivation patterns reviewed.'}
+                </p>
+                {doctorInsight.relation && (
+                  <p className="text-xs text-[var(--botanical-text-secondary)]">
+                    {relationCopy[doctorInsight.relation] ?? `Relation: ${doctorInsight.relation}`}
+                  </p>
+                )}
+              </div>
+              {doctorInsight.confidence && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-200">
+                  {doctorInsight.confidence} confidence
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        {!doctorInsight && !insightLoading && (
+          <div className="mb-6">
+            <div className="bg-[var(--botanical-bg-surface)] border border-[var(--botanical-border)] rounded-lg p-4 text-sm text-[var(--botanical-text-secondary)]">
+              Insight will appear when available.
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Column: Image */}
@@ -172,6 +319,111 @@ export default function ScanResultPage() {
             <div className="relative w-full aspect-square rounded-lg overflow-hidden">
               <ImagePreview src={scan.image_url} alt="Scanned image" className="w-full h-full" />
             </div>
+              <div className="mt-4">
+                <ScanConfirmation
+                  growName={(scan as any)?.grow_name || undefined}
+                  diagnosisSummary={doctorInsight?.summary || doctorInsight?.title || undefined}
+                  confidenceLabel={doctorInsight?.confidence || undefined}
+                  scannedRecently={scannedRecently}
+                  seed={scanId}
+                />
+
+                {!growId && (
+                  <div className="mt-3 bg-white/5 border border-white/10 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm text-white/80">Save this scan to a grow</p>
+                      <button
+                        onClick={() => setLinkOpen((s) => !s)}
+                        className="text-xs text-emerald-300 hover:text-emerald-200 underline underline-offset-4"
+                      >
+                        {linkOpen ? 'Hide' : 'Choose grow'}
+                      </button>
+                    </div>
+                    {linkOpen && (
+                      <div className="space-y-2">
+                        {growOptions.length === 0 && (
+                          <p className="text-xs text-white/60">Load your grows to link this scan.</p>
+                        )}
+                        {growOptions.map((g) => (
+                          <button
+                            key={g.id}
+                            onClick={async () => {
+                              setLinking(true);
+                              try {
+                                const res = await fetch(`/api/scans/${scanId}/link`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ grow_id: g.id }),
+                                });
+                                if (!res.ok) throw new Error('Failed to save');
+                                setScan((prev: any) => ({ ...(prev || {}), grow_id: g.id, grow_name: g.strain_name || g.name }));
+                                setLinkOpen(false);
+                              } catch (err) {
+                                console.warn('[scan] link failed', err);
+                              } finally {
+                                setLinking(false);
+                              }
+                            }}
+                            disabled={linking}
+                            className="w-full text-left px-3 py-2 rounded-md bg-white/10 border border-white/15 text-sm text-white hover:bg-white/15"
+                          >
+                            {g.strain_name || g.name || 'Unnamed grow'}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+            <div className="mt-3 bg-white/5 border border-white/10 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-white/80">Add a label (optional)</p>
+                <button
+                  onClick={() => setLabelOpen((s) => !s)}
+                  className="text-xs text-emerald-300 hover:text-emerald-200 underline underline-offset-4"
+                >
+                  {labelOpen ? 'Hide' : 'Edit'}
+                </button>
+              </div>
+              {labelOpen && (
+                <div className="space-y-2">
+                  <input
+                    value={labelValue}
+                    onChange={(e) => setLabelValue(e.target.value)}
+                    placeholder="Use any name that helps you recognize this plant."
+                    className="w-full rounded-md bg-black/40 border border-white/15 px-3 py-2 text-sm text-white"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={async () => {
+                        setLabelSaving(true);
+                        try {
+                          const res = await fetch(`/api/scans/${scanId}/label`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ label: labelValue }),
+                          });
+                          if (!res.ok) {
+                            const data = await res.json().catch(() => ({}));
+                            throw new Error(data.error || 'Failed to save label');
+                          }
+                          setLabelOpen(false);
+                        } catch (err) {
+                          console.warn('[label] save failed', err);
+                        } finally {
+                          setLabelSaving(false);
+                        }
+                      }}
+                      disabled={labelSaving}
+                      className="px-3 py-1 rounded-md bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400 disabled:opacity-60"
+                    >
+                      {labelSaving ? 'Saving...' : 'Save label'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+              </div>
           </div>
 
           {/* Right Column: Match Details */}
@@ -354,6 +606,9 @@ export default function ScanResultPage() {
                 </div>
               </div>
             )}
+
+            {/* Visual Similarity */}
+            <VisualSimilarity />
           </div>
         </div>
 

@@ -55,7 +55,16 @@ export async function POST(req: Request) {
     // Accept both 'name'/'strain' (legacy) and 'strain_name' (current schema)
     const strainName = body.strain_name || body.name || body.strain;
     const startDate = body.start_date || new Date().toISOString().slice(0, 10);
-    const stage = body.stage || 'veg';
+    const status = (body.status || body.stage || 'active').toString().toLowerCase();
+    const stage =
+      status === 'completed'
+        ? 'harvest'
+        : status === 'paused'
+        ? 'paused'
+        : status === 'active'
+        ? 'veg'
+        : body.stage || 'veg';
+    const medium = body.medium || null;
     
     if (!strainName) {
       return NextResponse.json(
@@ -78,6 +87,9 @@ export async function POST(req: Request) {
         strain_name: strainName,
         start_date: startDate,
         stage: stage,
+        medium: medium,
+        source: body.source || null,
+        notes: body.notes || null,
       })
       .select("*")
       .single();
