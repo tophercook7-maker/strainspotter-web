@@ -49,9 +49,6 @@ export default function DesktopAccessGate({ children }: { children: React.ReactN
 
   return (
     <>
-      <div style={{ background: 'orange', color: 'white', padding: 6, textAlign: 'center' }}>
-        ACTIVE SHELL: components/DesktopAccessGate.tsx
-      </div>
       {children}
     </>
   );

@@ -9,9 +9,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-black text-white">
-        <div style={{ background: 'purple', color: 'white', padding: 6, textAlign: 'center' }}>
-          ACTIVE LAYOUT: app/layout.tsx
-        </div>
         <AgeGate>{children}</AgeGate>
       </body>
     </html>
