@@ -54,6 +54,9 @@ type GrowDoctorInsight = {
 };
 
 export default function ScanResultPage() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
   const params = useParams();
   const router = useRouter();
   const scanId = params.scan_id as string;
@@ -71,6 +74,10 @@ export default function ScanResultPage() {
   const [linkOpen, setLinkOpen] = useState(false);
   const [linking, setLinking] = useState(false);
   const [growOptions, setGrowOptions] = useState<any[]>([]);
+  
+  if (!scan && !loading) {
+    return <div className="text-white p-6">Preparing scan…</div>;
+  }
 
   useEffect(() => {
     async function loadScan() {
