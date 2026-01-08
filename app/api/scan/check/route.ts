@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import "server-only";
 // app/api/scan/check/route.ts
 
@@ -6,9 +8,11 @@ import { checkScanGuard } from '@/lib/scanGuard';
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!supabaseUrl) {
     return NextResponse.json(
-      { ok: false, reason: "build-skip" },
+      { ok: false, reason: "runtime-only" },
       { status: 200 }
     );
   }
