@@ -2,7 +2,7 @@ import { getSupabaseServerClient } from "@/lib/supabaseServer";
 
 export type DiagnosticResult = {
   title: string;
-  confidence: "Low" | "Moderate" | "High";
+  confidence: "Observational" | "Contextual" | "Emerging";
   severity: "Early" | "Progressing" | "Resolving";
   evidence: string[];
   actions: string[];
@@ -182,7 +182,7 @@ function runRuleEngine({
     if (below) {
       addDiagnosis(
         "Likely nitrogen deficiency",
-        "Moderate",
+        "Contextual",
         [
           "Nitrogen levels below your typical range",
           "Recent measurement deviates from baseline",
@@ -201,7 +201,7 @@ function runRuleEngine({
     if (below) {
       addDiagnosis(
         "Likely phosphorus deficiency",
-        "Moderate",
+        "Contextual",
         [
           "Phosphorus below your typical range",
           "Recent value is notably under baseline",
@@ -220,7 +220,7 @@ function runRuleEngine({
     if (below) {
       addDiagnosis(
         "Likely potassium deficiency",
-        "Moderate",
+        "Contextual",
         [
           "Potassium levels below your typical range",
           "Edge stress often links to low K",
@@ -243,7 +243,7 @@ function runRuleEngine({
     if (avg > 0 && spread / avg > 0.35) {
       addDiagnosis(
         "Micronutrient balance needs attention",
-        "Low",
+        "Observational",
         [
           "Micro readings vary more than usual",
           "Imbalances can limit uptake even at normal macros",
@@ -258,8 +258,8 @@ function runRuleEngine({
   const temp = latestByType["temp"] || latestByType["temperature"];
   if (temp && temp.value && temp.value > 30) {
     addDiagnosis(
-      "Early heat stress detected",
-      temp.value > 32 ? "High" : "Moderate",
+        "Early heat stress detected",
+        temp.value > 32 ? "Emerging" : "Contextual",
       [
         "Canopy temperature trending above your baseline",
         "Slight leaf curl noted in recent log",
@@ -275,7 +275,7 @@ function runRuleEngine({
   if ((tempValue !== null && tempValue > 30) || lightStressLogs > 0) {
     addDiagnosis(
       "Detected light stress pattern",
-      tempValue !== null && tempValue > 32 ? "High" : lightStressLogs > 0 ? "Moderate" : "Low",
+      tempValue !== null && tempValue > 32 ? "Emerging" : lightStressLogs > 0 ? "Contextual" : "Observational",
       [
         "Symptoms align with elevated light or heat load",
         lightStressLogs > 0 ? "Recent notes mention light stress cues" : "Consider checking canopy distance",
@@ -291,7 +291,7 @@ function runRuleEngine({
   if (humidityHigh || airflowLogs > 0) {
     addDiagnosis(
       "Airflow appears limited",
-      humidityHigh && airflowLogs > 0 ? "Moderate" : "Low",
+      humidityHigh && airflowLogs > 0 ? "Contextual" : "Observational",
       [
         humidityHigh ? `Humidity elevated (${humidity?.value}%)` : "Recent notes mention airflow concerns",
         airflowLogs > 0 ? "Logs reference airflow or mildew risk" : "Consider improving circulation",
@@ -305,7 +305,7 @@ function runRuleEngine({
   if (overwaterLogs >= 1) {
     addDiagnosis(
       "Root zone shows low oxygen indicators",
-      overwaterLogs >= 2 ? "Moderate" : "Low",
+      overwaterLogs >= 2 ? "Contextual" : "Observational",
       [
         "Notes mention overwatering or soggy media",
         "Low oxygen can slow uptake even when feed is adequate",
@@ -320,7 +320,7 @@ function runRuleEngine({
   if (ec && ec.value && ecStats && ec.value > ecStats.avg * 1.2) {
     addDiagnosis(
       "Salt buildup pattern observed",
-      ec.value > ecStats.avg * 1.35 ? "Moderate" : "Low",
+      ec.value > ecStats.avg * 1.35 ? "Contextual" : "Observational",
       [
         `EC above your recent baseline (${ec.value})`,
         "High EC can reduce uptake efficiency",
@@ -334,7 +334,7 @@ function runRuleEngine({
   if (mildSignals >= 3) {
     addDiagnosis(
       "Mild stress signals accumulating",
-      "Low",
+      "Observational",
       [
         "Several mild conditions detected simultaneously",
         "Stacked stress can slow growth over time",
@@ -348,7 +348,7 @@ function runRuleEngine({
   if (ph && ph.value && (ph.value < 5.8 || ph.value > 6.8)) {
     addDiagnosis(
       "pH imbalance affecting nutrient uptake",
-      "Moderate",
+      "Contextual",
       [
         `Recent pH reading at ${ph.value}`,
         "Outside typical 5.8–6.8 range for uptake",
@@ -363,7 +363,7 @@ function runRuleEngine({
   if (issueLogs.length >= 3) {
     addDiagnosis(
       "Repeated issues noted in recent logs",
-      "Low",
+      "Observational",
       [
         `Multiple issue-tagged logs in the last 14 days (${issueLogs.length})`,
         "Consider addressing recurring themes from notes",
@@ -470,8 +470,10 @@ function adjustConfidenceWithOutcome(
   outcome: StoredOutcome | undefined,
   trend: "improving" | "worsening" | "no_change"
 ): DiagnosticResult["confidence"] {
-  const upward = () => (base === "Low" ? "Moderate" : base === "Moderate" ? "High" : "High");
-  const downward = () => (base === "High" ? "Moderate" : base === "Moderate" ? "Low" : "Low");
+  const upward = () =>
+    base === "Observational" ? "Contextual" : base === "Contextual" ? "Emerging" : "Emerging";
+  const downward = () =>
+    base === "Emerging" ? "Contextual" : base === "Contextual" ? "Observational" : "Observational";
   if (trend === "improving") return downward();
   if (trend === "worsening") return upward();
   if (outcome?.status === "resolving" || outcome?.status === "resolved") return downward();
@@ -511,6 +513,8 @@ function buildEvidence(
   const headline = formatHeadline(title, adjusted, severity);
   if (headline) history.push(headline);
 
+  history.push("Data considered: recent scans, measurements, and notes from the last 14 days.");
+
   if (severity === "Early") history.push("Early signs; beginning to show this pattern.");
   if (severity === "Progressing") history.push("Continuing pattern noted; has not resolved yet.");
   if (severity === "Resolving") history.push("Appears to be improving and returning toward your typical range.");
@@ -524,7 +528,7 @@ function buildEvidence(
   if (trend === "improving") history.push("Recent signals show improvement after last recommendation.");
   if (trend === "worsening") history.push("Signals indicate the pattern may be persisting; consider measured adjustments.");
   if (adjusted !== original) {
-    history.push(`Confidence adjusted from ${original} to ${adjusted} based on latest readings.`);
+    history.push(`Confidence framing adjusted from ${original} to ${adjusted} based on latest readings.`);
   }
   return [...history, ...baseEvidence];
 }
@@ -537,26 +541,33 @@ function personalizeActions(
   const escalations = ["worsening", "unresolved"];
   const soften = trend === "improving" || outcome?.status === "resolving" || outcome?.status === "resolved";
 
+  const softenAction = (text: string) => {
+    const trimmed = text.trim();
+    const lowered = trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
+    return `You may want to ${lowered}`;
+  };
+  const softened = baseActions.map(softenAction);
+
   if (soften) {
     return [
-      "Continue the current plan; signals show improvement.",
-      ...baseActions.slice(0, 2),
-      "Log observations after 48 hours to confirm resolution.",
+      "Signals show improvement; continue observing calmly.",
+      ...softened.slice(0, 2),
+      "You may want to log observations after 48 hours to confirm improvement.",
     ];
   }
 
   if (trend === "worsening" || escalations.includes(outcome?.status ?? "")) {
     return [
-      "Pattern is continuing; increase attention calmly.",
-      baseActions[0] ?? "Step up remediation steps in a measured way.",
-      baseActions[1] ?? "Re-check environment and nutrition balance.",
-      "Capture a fresh scan and log notes after adjustments.",
+      "Pattern appears to be continuing; consider monitoring more closely.",
+      softened[0] ?? "You may want to review environment factors calmly.",
+      softened[1] ?? "You may want to re-check environment and nutrition balance.",
+      "You may want to capture a fresh scan or note after adjustments.",
     ].filter(Boolean);
   }
 
   return [
-    ...baseActions.slice(0, 3),
-    "Re-scan or log a follow-up within 48 hours to track response.",
+    ...softened.slice(0, 3),
+    "You may want to add a follow-up scan or note within 48 hours to track response.",
   ];
 }
 
@@ -574,21 +585,21 @@ function formatHeadline(
   confidence: DiagnosticResult["confidence"],
   severity: DiagnosticResult["severity"]
 ): string {
-  const severityPrefix =
+  const severityNote =
     severity === "Early"
       ? "Early signs consistent with"
       : severity === "Progressing"
-      ? "Continuing pattern consistent with"
-      : "Appears to be improving; still consistent with";
+      ? "Continuing pattern related to"
+      : "Appears to be improving; still related to";
 
-  if (confidence === "Low") {
-    return `${severityPrefix} ${title}.`;
-  }
-  if (confidence === "Moderate") {
-    return `${severity === "Early" ? "Likely" : "Consistent with"} ${title}.`;
-  }
-  // High
-  return `Strongly consistent with ${title}.`;
+  const confidencePrefix =
+    confidence === "Observational"
+      ? "Observational note"
+      : confidence === "Contextual"
+      ? "Contextual pattern"
+      : "Emerging pattern";
+
+  return `${confidencePrefix}: ${severityNote} ${title}.`;
 }
 
 async function persistOutcomes(
