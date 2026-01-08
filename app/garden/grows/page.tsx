@@ -33,9 +33,10 @@ export default function MyGrowsPage() {
   const [form, setForm] = useState<GrowFormState>({ name: '', medium: '', start_date: '', status: 'Active', notes: '' });
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<{ name: string; status: StatusOption }>({
+  const [editDraft, setEditDraft] = useState<{ name: string; status: StatusOption; strain_name?: string }>({
     name: '',
     status: 'Active',
+    strain_name: '',
   });
   const [timedOut, setTimedOut] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
