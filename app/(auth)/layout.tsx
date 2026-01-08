@@ -11,6 +11,9 @@ export default function AuthLayout({
         width: "100%",
       }}
     >
+      <div style={{ background: 'teal', color: 'white', padding: 6, textAlign: 'center' }}>
+        ACTIVE LAYOUT: app/(auth)/layout.tsx
+      </div>
       {children}
     </div>
   );

@@ -3,5 +3,12 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <div style={{ background: 'brown', color: 'white', padding: 6, textAlign: 'center' }}>
+        ACTIVE LAYOUT: app/(public)/layout.tsx
+      </div>
+      {children}
+    </>
+  );
 }
