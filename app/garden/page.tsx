@@ -19,6 +19,7 @@ const sections = [
       { label: 'Measurements', href: '/garden/measurements' },
       { label: 'Personal Notes', href: '/garden/notes' },
       { label: 'Garden Chat', href: '/garden/chat' },
+      { label: 'My Grows', href: '/garden/grows' },
     ],
   },
   {
@@ -61,7 +62,7 @@ export default function GardenPage() {
               <div className="text-sm uppercase tracking-[0.08em] text-white/70">
                 {section.title}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {section.actions.map((action) => (
                   <ActionButton key={action.label} label={action.label} href={action.href} />
                 ))}
