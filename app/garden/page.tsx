@@ -4,60 +4,29 @@ import MembershipExplanation from '@/components/membership/MembershipExplanation
 
 const sections = [
   {
-    id: 'core',
-    title: 'Core',
+    id: 'primary',
+    title: 'Primary',
     actions: [
-      { label: 'Scan a Plant', href: '/scanner' },
-      { label: 'Visual Strain Matching', href: '/visual-match' },
-      { label: 'Strain Explorer', href: '/strain-explorer' },
-      { label: 'My Grows', href: '/garden/grows' },
-      { label: 'Saved Scans', href: '/scanner/saved' },
+      { label: 'Document plant', href: '/scanner', primary: true },
+      { label: 'Grow Doctor', href: '/garden/grow-doctor', primary: true },
     ],
   },
   {
-    id: 'growing',
-    title: 'Growing',
+    id: 'reflection',
+    title: 'Reflection & History',
     actions: [
       { label: 'Grow Logbook', href: '/garden/logbook' },
+      { label: 'Measurements', href: '/garden/measurements' },
       { label: 'Personal Notes', href: '/garden/notes' },
-      { label: 'Environment', href: '/garden/environment' },
-      { label: 'Tasks & Reminders', href: '/garden/tasks' },
-      { label: 'Grow Coach', href: '/garden/grow-coach' },
-      { label: 'Grow Doctor', href: '/garden/grow-doctor' },
-      { label: 'Grow Recipes', href: '/garden/recipes' },
-      { label: 'Nutrient Guide', href: '/garden/nutrients' },
-      { label: 'Issue Diagnostics', href: '/garden/diagnostics' },
-      { label: 'Yield Tracker', href: '/garden/yield' },
+      { label: 'Garden Chat', href: '/garden/chat' },
     ],
   },
   {
-    id: 'science',
-    title: 'Science & Data',
+    id: 'reference',
+    title: 'Reference & Info',
     actions: [
-      { label: 'Terpene Library', href: '/library/terpenes' },
-      { label: 'Cannabinoid Guide', href: '/library/cannabinoids' },
-      { label: 'Strain Genetics', href: '/library/genetics' },
-      { label: 'Confidence Engine' },
-      { label: 'Image Library', href: '/library/images' },
-    ],
-  },
-  {
-    id: 'discover',
-    title: 'Discover & Buy',
-    actions: [
-      { label: 'Dispensary Finder', href: '/garden/dispensaries' },
-      { label: 'Seed Finder', href: '/seeds' },
-      { label: 'Cannabis News', href: '/discover/news' },
-    ],
-  },
-  {
-    id: 'community',
-    title: 'Community & System',
-    actions: [
-      { label: 'Education Hub', href: '/education' },
-      { label: 'Community / Notes', href: '/community' },
-      { label: 'Settings & Preferences', href: '/settings' },
-      { label: 'Membership', href: '/garden/membership' },
+      { label: 'Strain Explorer', href: '/strain-explorer' },
+      { label: 'Garden Access', href: '/garden/membership' },
     ],
   },
 ];
@@ -92,7 +61,7 @@ export default function GardenPage() {
               <div className="text-sm uppercase tracking-[0.08em] text-white/70">
                 {section.title}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {section.actions.map((action) => (
                   <ActionButton key={action.label} label={action.label} href={action.href} />
                 ))}
