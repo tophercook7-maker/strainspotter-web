@@ -17,12 +17,20 @@ type Grow = {
 
 type StatusOption = 'Active' | 'Paused' | 'Completed';
 
+type GrowFormState = {
+  name: string;
+  medium: string;
+  start_date: string;
+  status: StatusOption;
+  notes?: string;
+};
+
 export default function MyGrowsPage() {
   const { selectedGrow, setSelectedGrow } = useSelectedGrow();
   const [grows, setGrows] = useState<Grow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', medium: '', start_date: '', status: 'Active' as StatusOption });
+  const [form, setForm] = useState<GrowFormState>({ name: '', medium: '', start_date: '', status: 'Active', notes: '' });
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<{ name: string; status: StatusOption }>({
@@ -104,7 +112,7 @@ export default function MyGrowsPage() {
         throw new Error(data.error || 'Failed to create grow');
       }
       setGrows((prev) => [data, ...prev]);
-      setForm({ name: '', medium: '', start_date: '', status: 'Active' });
+      setForm({ name: '', medium: '', start_date: '', status: 'Active', notes: '' });
       setSelectedGrow({ id: data.id, name: data.strain_name || data.name || form.name, stage: data.stage });
     } catch (err: any) {
       setError(err.message || 'Failed to create grow');
