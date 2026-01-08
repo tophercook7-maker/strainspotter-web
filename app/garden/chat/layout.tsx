@@ -26,6 +26,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
       .insert({
         id: user.id,
         email: user.email,
+        role: "user",
         tier: "free",
       })
       .select()
