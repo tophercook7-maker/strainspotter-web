@@ -6,25 +6,61 @@ type Props = {
   descriptors?: string[];
   confidence?: 'observational';
   growContext?: string[];
+  scanId?: string;
 };
 
 // TODO: Replace placeholders with model-generated descriptors, embeddings, and personal notes context when available.
-export default function VisualSimilarityPanel({ descriptors, confidence = 'observational', growContext }: Props) {
+export default function VisualSimilarityPanel({ descriptors, confidence = 'observational', growContext, scanId }: Props) {
   const [showContext, setShowContext] = useState(false);
+  const [fetched, setFetched] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let canceled = false;
+    const load = async () => {
+      if (!scanId) return;
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 1000);
+        const res = await fetch(`/api/scan/similarity?scan_id=${encodeURIComponent(scanId)}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error('failed');
+        const data = await res.json();
+        if (!canceled && data?.descriptors) {
+          setFetched(data.descriptors as string[]);
+        }
+      } catch {
+        if (!canceled) setFetched([]);
+      }
+    };
+    load();
+    return () => {
+      canceled = true;
+    };
+  }, [scanId]);
 
   const displayDescriptors = useMemo(() => {
-    const source = descriptors && descriptors.length > 0 ? descriptors : undefined;
-    const base = source ?? [
-      'Leaf margin curl under sustained light exposure',
-      'Surface texture often seen in late vegetative growth',
-      'Color distribution typical of nitrogen-rich environments',
-      'Canopy shape commonly associated with even light spread',
-    ];
+    const source = (descriptors && descriptors.length > 0 ? descriptors : fetched) ?? undefined;
+    const base =
+      source && source.length > 0
+        ? source
+        : [
+            'Leaf margin curl under sustained light exposure',
+            'Surface texture often seen in late vegetative growth',
+            'Color distribution typical of nitrogen-rich environments',
+            'Canopy shape commonly associated with even light spread',
+          ];
     const list = base.slice(0, 4);
     return list.length >= 2 ? list : base;
-  }, [descriptors]);
+  }, [descriptors, fetched]);
 
-  const hasDescriptors = (descriptors && descriptors.length > 0) ?? false;
+  const hasDescriptors = useMemo(() => {
+    if (descriptors && descriptors.length > 0) return true;
+    if (fetched && fetched.length > 0) return true;
+    return false;
+  }, [descriptors, fetched]);
+
   const hasGrowContext = Array.isArray(growContext) && growContext.length > 0;
 
   return (

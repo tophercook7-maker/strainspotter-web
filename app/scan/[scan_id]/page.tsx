@@ -329,11 +329,7 @@ export default function ScanResultPage() {
 
                 <div className="mt-4">
                   <VisualSimilarityPanel
-                    descriptors={[
-                      'Leaf margin curl under sustained light exposure',
-                      'Surface texture often seen in late vegetative growth',
-                      'Color distribution typical of nitrogen-rich environments',
-                    ]}
+                    scanId={scanId}
                     confidence="observational"
                     growContext={
                       doctorInsight?.summary
