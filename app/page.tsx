@@ -19,6 +19,19 @@ export default function Page() {
 
   if (ageConfirmed !== true) {
     return (
+      <>
+        <div style={{
+          position: 'fixed',
+          bottom: 10,
+          right: 10,
+          background: 'red',
+          color: 'white',
+          padding: '6px 10px',
+          fontSize: '12px',
+          zIndex: 9999
+        }}>
+          DEPLOY CHECK v1
+        </div>
       <main className="relative min-h-screen w-full bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex items-center justify-center px-4 py-16">
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 max-w-md w-full bg-white/10 border border-white/20 rounded-2xl p-8 text-center space-y-4">
@@ -42,10 +55,24 @@ export default function Page() {
           </div>
         </div>
       </main>
+      </>
     );
   }
 
   return (
+    <>
+      <div style={{
+        position: 'fixed',
+        bottom: 10,
+        right: 10,
+        background: 'red',
+        color: 'white',
+        padding: '6px 10px',
+        fontSize: '12px',
+        zIndex: 9999
+      }}>
+        DEPLOY CHECK v1
+      </div>
     <main className="relative min-h-screen w-full bg-[url('/backgrounds/garden-field.jpg')] bg-cover bg-center text-white flex flex-col items-center px-4 py-16">
       <div className="absolute inset-0 bg-black/30" />
 
@@ -82,5 +109,6 @@ export default function Page() {
         </div>
       </div>
     </main>
+    </>
   );
 }
