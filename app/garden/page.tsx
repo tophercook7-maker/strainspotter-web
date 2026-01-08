@@ -59,6 +59,7 @@ export default function GardenPage() {
             <div className="text-sm uppercase tracking-[0.08em] text-white/70">Discovery & Industry</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               <ActionButton label="COA Explainer" href="/garden/coa" />
+              <ActionButton label="Industry Hub" href="/garden/industry" />
             </div>
           </div>
         </section>
