@@ -30,8 +30,10 @@ export default function GardenPage() {
           <div className="space-y-3">
             <div className="text-sm uppercase tracking-[0.08em] text-white/70">Primary</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              <ActionButton label="Document Plant" href="/scanner" primary />
+              <ActionButton label="Scan a Plant" href="/scanner" primary />
               <ActionButton label="Grow Doctor" href="/garden/grow-doctor" primary />
+              <ActionButton label="Grow Coach" href="/garden/grow-doctor" />
+              <ActionButton label="Scan History" href="/garden/logbook" />
             </div>
           </div>
 
@@ -52,6 +54,8 @@ export default function GardenPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               <ActionButton label="Strain Explorer" href="/strain-explorer" />
               <ActionButton label="Garden Access" href="/garden/membership" />
+              <ActionButton label="Seed Finder" href="/seeds" />
+              <ActionButton label="Dispensary Finder" href="/discover" />
             </div>
           </div>
 
