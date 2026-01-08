@@ -10,7 +10,7 @@ import AIReportPanel from '@/components/scan/AIReportPanel';
 import { supabase } from "@/lib/supabaseClient";
 import { useMembership } from '@/lib/membership/useMembership';
 import ScanConfirmation from '@/components/scan/ScanConfirmation';
-import VisualSimilarity from '@/components/scan/VisualSimilarity';
+import VisualSimilarityPanel from '@/components/scan/VisualSimilarityPanel';
 
 interface ScanData {
   id: string;
@@ -327,6 +327,22 @@ export default function ScanResultPage() {
                   seed={scanId}
                 />
 
+                <div className="mt-4">
+                  <VisualSimilarityPanel
+                    descriptors={[
+                      'Leaf margin curl under sustained light exposure',
+                      'Surface texture often seen in late vegetative growth',
+                      'Color distribution typical of nitrogen-rich environments',
+                    ]}
+                    confidence="observational"
+                    growContext={
+                      doctorInsight?.summary
+                        ? [`Recent insight: ${doctorInsight.summary}`, doctorInsight.confidence ? `Confidence noted as ${doctorInsight.confidence}.` : undefined].filter(Boolean) as string[]
+                        : undefined
+                    }
+                  />
+                </div>
+
                 {!growId && (
                   <div className="mt-3 bg-white/5 border border-white/10 rounded-lg p-3 space-y-2">
                     <div className="flex items-center justify-between gap-2">
@@ -606,8 +622,6 @@ export default function ScanResultPage() {
               </div>
             )}
 
-            {/* Visual Similarity */}
-            <VisualSimilarity />
           </div>
         </div>
 
