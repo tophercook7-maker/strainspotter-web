@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useChatUser } from '@/components/garden/ChatUserProvider';
 
 type Message = { id: string; role: 'assistant' | 'user' | 'system'; content: string; created_at: string };
 type Group = { id: string; title: string; intro: string };
@@ -22,6 +23,7 @@ const CONTACTS: Contact[] = [
 ];
 
 export default function GardenChatPage() {
+  const chatUser = useChatUser();
   const [tab, setTab] = useState<'groups' | 'messages'>('groups');
   const [selectedGroup, setSelectedGroup] = useState<Group>(GROUPS[0]);
   const [messagesByGroup, setMessagesByGroup] = useState<Record<string, Message[]>>(() =>
@@ -217,6 +219,9 @@ export default function GardenChatPage() {
             <h1 className="text-3xl font-bold text-emerald-300">Garden Chat</h1>
             <p className="text-sm text-slate-300/80">Topic groups and calm 1:1 messages with AI only when asked.</p>
             <p className="text-xs text-white/60">This space supports learning from scans and grows.</p>
+            {chatUser && (
+              <p className="text-xs text-white/50">Signed in as {chatUser.displayName || chatUser.email}</p>
+            )}
           </div>
           <Link href="/garden" className="text-emerald-300 text-sm hover:text-emerald-200 underline underline-offset-4">
             ← Back to Garden
@@ -272,7 +277,7 @@ export default function GardenChatPage() {
 
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                 {groupMessages.length === 0 && (
-                  <div className="text-sm text-white/60">This space starts with a question.</div>
+                  <div className="text-sm text-white/60">Start with a question. The Garden will respond.</div>
                 )}
                 {groupMessages.map((m) => (
                   <div key={m.id} className="space-y-1">
@@ -348,8 +353,20 @@ export default function GardenChatPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-2">
-              <h2 className="text-sm uppercase tracking-[0.08em] text-white/70">Messages</h2>
-              <p className="text-[11px] text-white/50">Direct conversations begin after shared discussion.</p>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-sm uppercase tracking-[0.08em] text-white/70">Messages</h2>
+                  <p className="text-[11px] text-white/50">Direct conversations begin after shared discussion.</p>
+                </div>
+                <button
+                  type="button"
+                  className="text-xs text-emerald-300 hover:text-emerald-200 underline underline-offset-4"
+                  disabled
+                  title="Direct messages are available after shared discussion."
+                >
+                  Message Someone You’ve Met
+                </button>
+              </div>
               <div className="space-y-2">
                 {CONTACTS.map((c) => (
                   <button

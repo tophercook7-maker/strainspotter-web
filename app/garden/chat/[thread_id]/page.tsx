@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { useChatUser } from '@/components/garden/ChatUserProvider';
 
 type Message = { id: string; role: 'assistant' | 'user' | 'system'; content: string; created_at: string };
 type Thread = { id: string; name: string | null; type: 'group' | 'direct' };
@@ -11,6 +12,7 @@ type Thread = { id: string; name: string | null; type: 'group' | 'direct' };
 export default function ThreadPage() {
   const params = useParams();
   const threadId = params?.thread_id as string;
+  const chatUser = useChatUser();
   const [thread, setThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -222,6 +224,9 @@ export default function ThreadPage() {
             <h1 className="text-2xl font-semibold text-white">{title}</h1>
             <p className="text-xs text-white/60">{thread?.type === 'group' ? 'Group discussion' : 'Direct message'}</p>
             <p className="text-xs text-white/50">{headerNote}</p>
+            {chatUser && (
+              <p className="text-[11px] text-white/50">Signed in as {chatUser.displayName || chatUser.email}</p>
+            )}
           </div>
           <Link href="/garden/chat" className="text-emerald-300 text-sm hover:text-emerald-200 underline underline-offset-4">
             ← Back to Chat
