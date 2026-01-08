@@ -5,7 +5,6 @@ import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
 import { checkScanGuard } from '@/lib/scanGuard';
-import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -17,6 +16,7 @@ export async function GET(req: Request) {
     );
   }
 
+  const { createSupabaseServer } = await import("@/lib/supabase/server");
   const supabase = await createSupabaseServer();
 
   // The client will send ?user=<id> OR we will extract from auth later
