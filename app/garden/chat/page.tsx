@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
-type Message = { id: string; role: 'assistant' | 'user'; content: string; created_at: string };
+type Message = { id: string; role: 'assistant' | 'user' | 'system'; content: string; created_at: string };
 type Group = { id: string; title: string; intro: string };
-type Contact = { id: string; name: string; role: 'peer' | 'professional' };
+type Contact = { id: string; name: string; role: 'peer' | 'professional'; moderator?: boolean };
 
 const GROUPS: Group[] = [
   { id: 'new-growers', title: 'New Growers', intro: 'Starter guidance for those beginning their cultivation journey.' },
@@ -17,7 +17,7 @@ const GROUPS: Group[] = [
 
 const CONTACTS: Contact[] = [
   { id: 'ally-grower', name: 'Grower Ally', role: 'peer' },
-  { id: 'lab-liaison', name: 'Lab Liaison', role: 'professional' },
+  { id: 'lab-liaison', name: 'Lab Liaison', role: 'professional', moderator: true },
   { id: 'dispensary-contact', name: 'Dispensary Contact', role: 'professional' },
 ];
 
@@ -58,11 +58,20 @@ export default function GardenChatPage() {
   );
 
   const [groupInput, setGroupInput] = useState('');
+  const [groupQuestionOpen, setGroupQuestionOpen] = useState(false);
+  const [discussionOpened, setDiscussionOpened] = useState(false);
   const [dmInput, setDmInput] = useState('');
   const [askStatus, setAskStatus] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const [aiDailyRemaining, setAiDailyRemaining] = useState(3);
   const [reportNotice, setReportNotice] = useState<string | null>(null);
+  const [hasSharedDiscussion, setHasSharedDiscussion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = window.localStorage.getItem('garden_shared_discussion');
+    if (stored === 'true') setHasSharedDiscussion(true);
+  }, []);
 
   const groupMessages = messagesByGroup[selectedGroup.id] || [];
   const dmMessages = messagesByContact[selectedContact.id] || [];
@@ -75,6 +84,10 @@ export default function GardenChatPage() {
     if (groupAskDisabled) return;
     const text = groupInput.trim();
     setGroupInput('');
+    setGroupQuestionOpen(false);
+    setDiscussionOpened(true);
+    setHasSharedDiscussion(true);
+    if (typeof window !== 'undefined') window.localStorage.setItem('garden_shared_discussion', 'true');
     const userMsg: Message = { id: `u-${Date.now()}`, role: 'user', content: text, created_at: new Date().toISOString() };
     setMessagesByGroup((prev) => ({
       ...prev,
@@ -83,23 +96,64 @@ export default function GardenChatPage() {
     setAsking(true);
     setAskStatus(null);
     try {
-      const res = await fetch('/api/garden/chat/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, group_id: selectedGroup.id }),
-      });
-      const data = await res.json();
-      if (res.ok && data.reply) {
-        const aiMsg: Message = { id: `ai-${Date.now()}`, role: 'assistant', content: data.reply, created_at: new Date().toISOString() };
+      const attempt = async () => {
+        const res = await fetch('/api/garden/chat/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, group_id: selectedGroup.id }),
+        });
+        const data = await res.json();
+        return { ok: res.ok, reply: data.reply as string | undefined };
+      };
+      const first = await attempt();
+      let reply = first.reply;
+      if (!first.ok || !reply) {
+        const second = await attempt();
+        reply = second.reply;
+      }
+      if (reply) {
+        const aiMsg: Message = { id: `ai-${Date.now()}`, role: 'assistant', content: reply, created_at: new Date().toISOString() };
         setMessagesByGroup((prev) => ({
           ...prev,
           [selectedGroup.id]: [...prev[selectedGroup.id], aiMsg],
         }));
+        // System moderator gentle summary after AI if thread is getting long
+        const userCount = [...groupMessages, userMsg].filter((m) => m.role === 'user').length;
+        if (userCount >= 2) {
+          const systemMsg: Message = {
+            id: `sys-${Date.now()}`,
+            role: 'system',
+            content: 'To keep the discussion focused, here’s a brief summary so far. Feel free to share concise follow-ups.',
+            created_at: new Date().toISOString(),
+          };
+          setMessagesByGroup((prev) => ({
+            ...prev,
+            [selectedGroup.id]: [...prev[selectedGroup.id], systemMsg],
+          }));
+        }
       } else {
-        setAskStatus('The Garden will respond when available.');
+        const fallback: Message = {
+          id: `ai-fallback-${Date.now()}`,
+          role: 'assistant',
+          content: 'Here is a calm, initial perspective while others join: your question is noted. The Garden suggests keeping observations concise and focused.',
+          created_at: new Date().toISOString(),
+        };
+        setMessagesByGroup((prev) => ({
+          ...prev,
+          [selectedGroup.id]: [...prev[selectedGroup.id], fallback],
+        }));
       }
     } catch {
-      setAskStatus('The Garden will respond when available.');
+      const fallback: Message = {
+        id: `ai-fallback-${Date.now()}`,
+        role: 'assistant',
+        content: 'Here is a calm, initial perspective while others join: your question is noted. The Garden suggests keeping observations concise and focused.',
+        created_at: new Date().toISOString(),
+      };
+      setMessagesByGroup((prev) => ({
+        ...prev,
+        [selectedGroup.id]: [...prev[selectedGroup.id], fallback],
+      }));
     } finally {
       setAsking(false);
     }
@@ -114,6 +168,8 @@ export default function GardenChatPage() {
       ...prev,
       [selectedContact.id]: [...dmMessages, userMsg],
     }));
+    setHasSharedDiscussion(true);
+    if (typeof window !== 'undefined') window.localStorage.setItem('garden_shared_discussion', 'true');
   };
 
   const handleAskDm = async () => {
@@ -149,6 +205,10 @@ export default function GardenChatPage() {
     setTimeout(() => setReportNotice(null), 2000);
   };
 
+  const dmAllowed =
+    hasSharedDiscussion ||
+    selectedContact.role === 'professional';
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -156,6 +216,7 @@ export default function GardenChatPage() {
           <div>
             <h1 className="text-3xl font-bold text-emerald-300">Garden Chat</h1>
             <p className="text-sm text-slate-300/80">Topic groups and calm 1:1 messages with AI only when asked.</p>
+            <p className="text-xs text-white/60">This space supports learning from scans and grows.</p>
           </div>
           <Link href="/garden" className="text-emerald-300 text-sm hover:text-emerald-200 underline underline-offset-4">
             ← Back to Garden
@@ -181,6 +242,7 @@ export default function GardenChatPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-2">
               <h2 className="text-sm uppercase tracking-[0.08em] text-white/70">Groups</h2>
+              <p className="text-[11px] text-white/50">These are guided discussions. Ask a question to begin.</p>
               <div className="space-y-2">
                 {GROUPS.map((g) => (
                   <button
@@ -209,13 +271,26 @@ export default function GardenChatPage() {
               </div>
 
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+                {groupMessages.length === 0 && (
+                  <div className="text-sm text-white/60">This space starts with a question.</div>
+                )}
                 {groupMessages.map((m) => (
                   <div key={m.id} className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400">{m.role === 'assistant' ? 'Garden' : 'You'}</span>
+                      <span className="text-xs text-slate-400">
+                        {m.role === 'assistant' ? 'Garden' : m.role === 'system' ? 'System' : 'You'}
+                      </span>
                       <span className="text-[11px] text-slate-500">{new Date(m.created_at).toLocaleString()}</span>
                     </div>
-                    <div className={`text-sm leading-relaxed ${m.role === 'assistant' ? 'text-slate-200' : 'text-slate-100'}`}>
+                    <div
+                      className={`text-sm leading-relaxed ${
+                        m.role === 'assistant'
+                          ? 'text-slate-200'
+                          : m.role === 'system'
+                          ? 'text-white/60 italic'
+                          : 'text-slate-100'
+                      }`}
+                    >
                       {m.content}
                     </div>
                   </div>
@@ -224,25 +299,49 @@ export default function GardenChatPage() {
               </div>
 
               <div className="space-y-2">
-                <textarea
-                  value={groupInput}
-                  onChange={(e) => setGroupInput(e.target.value)}
-                  placeholder="Ask the group a calm, topic-focused question…"
-                  className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
-                  rows={2}
-                />
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleAskGroup}
-                    disabled={groupAskDisabled}
-                    className="px-4 py-2 rounded-md bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400 disabled:opacity-60"
-                  >
-                    {asking ? 'Thinking…' : 'Ask the Group'}
-                  </button>
-                  <span className="text-xs text-white/50">
-                    AI replies only when asked; long threads are summarized into one response.
-                  </span>
-                </div>
+                {!groupQuestionOpen ? (
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setGroupQuestionOpen(true)}
+                      className="px-4 py-2 rounded-md bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400"
+                    >
+                      Ask a Question
+                    </button>
+                    <p className="text-xs text-white/60">The Garden will respond first. Others may join in.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-white/60">Ask a clear question. The Garden will respond first.</p>
+                    <textarea
+                      value={groupInput}
+                      onChange={(e) => setGroupInput(e.target.value)}
+                      placeholder="Ask the group a calm, topic-focused question…"
+                      className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
+                      rows={2}
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleAskGroup}
+                        disabled={groupAskDisabled}
+                        className="px-4 py-2 rounded-md bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400 disabled:opacity-60"
+                      >
+                        {asking ? 'Thinking…' : 'Send question'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setGroupQuestionOpen(false);
+                          setGroupInput('');
+                        }}
+                        className="text-sm text-emerald-300 hover:text-emerald-200 underline underline-offset-4"
+                      >
+                        Cancel
+                      </button>
+                      <span className="text-xs text-white/50">
+                        AI replies only when asked; long threads are summarized into one response.
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -250,6 +349,7 @@ export default function GardenChatPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-2">
               <h2 className="text-sm uppercase tracking-[0.08em] text-white/70">Messages</h2>
+              <p className="text-[11px] text-white/50">Direct conversations begin after shared discussion.</p>
               <div className="space-y-2">
                 {CONTACTS.map((c) => (
                   <button
@@ -260,7 +360,9 @@ export default function GardenChatPage() {
                     }`}
                   >
                     <div className="font-semibold">{c.name}</div>
-                    <div className="text-[11px] text-white/60">{c.role === 'professional' ? 'Professional' : 'Peer'}</div>
+                    <div className="text-[11px] text-white/60">
+                      {c.role === 'professional' ? 'Professional moderator' : 'Peer'}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -286,6 +388,7 @@ export default function GardenChatPage() {
               </div>
 
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+                {dmMessages.length === 0 && <div className="text-sm text-white/60">This space starts with a question.</div>}
                 {dmMessages.map((m) => (
                   <div key={m.id} className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -299,33 +402,48 @@ export default function GardenChatPage() {
                 ))}
               </div>
 
-              <div className="space-y-2">
-                <textarea
-                  value={dmInput}
-                  onChange={(e) => setDmInput(e.target.value)}
-                  placeholder="Send a calm, text-only note…"
-                  className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
-                  rows={2}
-                />
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={handleSendDm}
-                    disabled={dmSendDisabled}
-                    className="px-4 py-2 rounded-md bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400 disabled:opacity-60"
-                  >
-                    Send
-                  </button>
-                  <button
-                    onClick={handleAskDm}
-                    disabled={dmAskDisabled}
-                    className="text-sm text-emerald-300 hover:text-emerald-200 underline underline-offset-4"
-                  >
-                    {aiDailyRemaining <= 0 ? 'AI limit reached' : 'Ask the Garden'}
-                  </button>
-                  <span className="text-xs text-white/50">AI summaries capped per day; never responds unprompted.</span>
-                  {askStatus && <span className="text-xs text-white/60">{askStatus}</span>}
+              {dmAllowed ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={dmInput}
+                    onChange={(e) => setDmInput(e.target.value)}
+                    placeholder="Send a calm, text-only note…"
+                    className="w-full rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
+                    rows={2}
+                  />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handleSendDm}
+                      disabled={dmSendDisabled}
+                      className="px-4 py-2 rounded-md bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400 disabled:opacity-60"
+                    >
+                      Send
+                    </button>
+                    <button
+                      onClick={handleAskDm}
+                      disabled={dmAskDisabled}
+                      className="text-sm text-emerald-300 hover:text-emerald-200 underline underline-offset-4"
+                    >
+                      {aiDailyRemaining <= 0 ? 'AI limit reached' : 'Ask the Garden'}
+                    </button>
+                    {selectedContact.moderator && (
+                      <button
+                        onClick={handleAskDm}
+                        disabled={dmAskDisabled}
+                        className="text-sm text-white/60 hover:text-white underline underline-offset-4"
+                      >
+                        Request AI summary
+                      </button>
+                    )}
+                    <span className="text-xs text-white/50">AI summaries capped per day; never responds unprompted.</span>
+                    {askStatus && <span className="text-xs text-white/60">{askStatus}</span>}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-sm text-white/60">
+                  Direct messages are available after shared discussion.
+                </div>
+              )}
             </div>
           </div>
         )}
