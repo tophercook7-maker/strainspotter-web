@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,     // ❌ STOP DOUBLE MOUNT / RELOAD
-  experimental: {
-    turbo: false              // ❌ DISABLE TURBOPACK (CAUSES FLASH)
-  }
-}
+  reactStrictMode: false,
+  experimental: {},
+};
 
-export default nextConfig
+export default nextConfig;
