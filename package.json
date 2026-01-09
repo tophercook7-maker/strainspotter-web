@@ -1,48 +1,14 @@
 {
   "name": "strainspotter-web",
-  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "CI=false tauri build",
-    "screenshots:garden": "node tools/capture-garden-screenshots.mjs"
+    "start": "next start"
   },
   "dependencies": {
-    "@google-cloud/vision": "^5.3.4",
-    "@headlessui/react": "^2.2.9",
-    "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.45.4",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.23.25",
-    "lucide-react": "^0.556.0",
     "next": "16.0.7",
-    "openai": "^6.10.0",
-    "react": "19.2.0",
-    "react-dnd": "^16.0.1",
-    "react-dnd-html5-backend": "^16.0.1",
-    "react-dom": "19.2.0",
-    "sharp": "^0.33.1",
-    "styled-jsx": "^5.1.7",
-    "swr": "^2.3.7",
-    "tesseract.js": "^6.0.1"
-  },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.9.6",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.23",
-    "eslint": "^9",
-    "eslint-config-next": "16.0.7",
-    "playwright": "^1.50.1",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5",
-    "vercel": "^50.1.2"
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
   }
 }
