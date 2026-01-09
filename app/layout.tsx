@@ -1,5 +1,9 @@
 import "./globals.css";
-import AgeGate from "@/components/AgeGate";
+
+export const metadata = {
+  title: 'StrainSpotter',
+  description: 'A living cannabis intelligence ecosystem',
+};
 
 export default function RootLayout({
   children,
@@ -9,7 +13,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-black text-white">
-        <AgeGate>{children}</AgeGate>
+        {children}
       </body>
     </html>
   );
