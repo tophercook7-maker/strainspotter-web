@@ -1,9 +1,9 @@
-'use client';
-
-export default function RootPage() {
+export default function Home() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-black text-white">
-      <p className="text-sm opacity-70">Routing confirmed. App Router entry is live.</p>
+    <main style={{ padding: 40 }}>
+      <h1>STRAINSPOTTER LIVE</h1>
+      <p>If you see this, routing is fixed.</p>
+      <a href="/health">Go to health check</a>
     </main>
   );
 }
