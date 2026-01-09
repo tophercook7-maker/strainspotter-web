@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/schema.json",
-  "productName": "StrainSpotter",
+  "productName": "StrainSpotter AI",
   "version": "0.1.0",
   "identifier": "app.strainspotter.desktop",
 
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "StrainSpotter",
+        "title": "StrainSpotter AI",
         "width": 1280,
         "height": 800,
         "resizable": true,

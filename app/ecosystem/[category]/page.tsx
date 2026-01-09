@@ -269,7 +269,7 @@ export default function EcosystemCategoryPage() {
             How It Connects
           </h2>
           <p className="text-gray-400 text-sm mb-4">
-            How this category interacts with StrainSpotter features.
+            How this category interacts with StrainSpotter AI features.
           </p>
           <div className="space-y-4">
             {category.connections.scanner && (

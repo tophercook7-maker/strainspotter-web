@@ -80,7 +80,7 @@ export default function PricingPage() {
           <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 max-w-2xl mx-auto">
             <h2 className="text-lg font-semibold text-white mb-3">Our Commitment</h2>
             <p className="text-sm text-gray-300 leading-relaxed mb-4">
-              StrainSpotter never sells accuracy, visibility, rankings, or outcomes. 
+              StrainSpotter AI never sells accuracy, visibility, rankings, or outcomes. 
               All scan results remain free and unbiased.
             </p>
             <div className="space-y-2 text-sm text-gray-400">

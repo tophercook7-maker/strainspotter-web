@@ -2,7 +2,13 @@ import "./globals.css";
 
 export const metadata = {
   title: 'StrainSpotter AI',
-  description: 'A living cannabis intelligence ecosystem',
+  applicationName: 'StrainSpotter AI',
+  description: 'StrainSpotter AI is a living cannabis intelligence ecosystem.',
+  openGraph: {
+    title: 'StrainSpotter AI',
+    siteName: 'StrainSpotter AI',
+    description: 'StrainSpotter AI is a living cannabis intelligence ecosystem.',
+  },
 };
 
 export default function RootLayout({

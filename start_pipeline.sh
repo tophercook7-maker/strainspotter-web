@@ -5,7 +5,7 @@
 
 cd ~/Desktop/strainspotter-web || exit 1
 
-echo "🚀 Starting StrainSpotter pipeline..."
+echo "🚀 Starting StrainSpotter AI pipeline..."
 echo ""
 
 # Create logs directory

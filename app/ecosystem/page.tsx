@@ -2,7 +2,7 @@
  * Cannabis Industry Ecosystem Map
  * 
  * Neutral, comprehensive map of the marijuana industry ecosystem.
- * StrainSpotter becomes the one-stop reference layer.
+ * StrainSpotter AI becomes the one-stop reference layer.
  * 
  * NOT a marketplace. NOT ads. NOT affiliate-driven.
  * It is an ecosystem index + navigation hub.

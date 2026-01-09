@@ -5,7 +5,7 @@
 
 cd ~/Desktop/strainspotter-web || exit 1
 
-echo "🛑 Stopping StrainSpotter pipeline..."
+echo "🛑 Stopping StrainSpotter AI pipeline..."
 echo ""
 
 echo "  • Stopping Dashboard API..."

@@ -1,8 +1,8 @@
 [package]
 name = "strainspotter-desktop"
 version = "0.1.0"
-description = "StrainSpotter Desktop App"
-authors = ["StrainSpotter Team"]
+description = "StrainSpotter AI Desktop App"
+authors = ["StrainSpotter AI Team"]
 license = "MIT"
 repository = ""
 edition = "2021"

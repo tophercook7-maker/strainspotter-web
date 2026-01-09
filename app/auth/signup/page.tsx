@@ -87,7 +87,7 @@ export default function SignupPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2">Create Account</h1>
-          <p className="text-gray-400">Join StrainSpotter and start growing</p>
+          <p className="text-gray-400">Join StrainSpotter AI and start growing</p>
         </div>
 
         {/* Sign Up Form */}

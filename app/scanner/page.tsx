@@ -263,7 +263,7 @@ export default function ScannerPage() {
           <div className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center bg-transparent">
             <img
               src="/brand/core/hero.png"
-              alt="StrainSpotter Hero"
+              alt="StrainSpotter AI Hero"
               className="w-full h-full object-contain"
             />
           </div>

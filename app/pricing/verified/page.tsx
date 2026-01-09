@@ -44,7 +44,7 @@ export default function VerifiedPricingPage() {
             <li>✗ Ranked higher in search results</li>
             <li>✗ Promoted or featured</li>
             <li>✗ Recommended over others</li>
-            <li>✗ Endorsed by StrainSpotter</li>
+            <li>✗ Endorsed by StrainSpotter AI</li>
           </ul>
         </div>
 

@@ -148,7 +148,7 @@ function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>StrainSpotter — Pipeline Control</h1>
+        <h1>StrainSpotter AI — Pipeline Control</h1>
         <p className="subtitle">Local Dataset Operations</p>
         <button 
           onClick={async () => {

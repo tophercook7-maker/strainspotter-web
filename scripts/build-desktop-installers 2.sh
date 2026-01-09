@@ -4,7 +4,7 @@
 
 set -e
 
-echo "🔨 Building StrainSpotter Desktop Installers..."
+echo "🔨 Building StrainSpotter AI Desktop Installers..."
 echo ""
 
 # Check if we're in the right directory
@@ -57,7 +57,7 @@ echo ""
 echo "✅ Build complete!"
 echo ""
 echo "📦 Installers:"
-echo "  macOS: src-tauri/target/release/bundle/macos/StrainSpotter.app"
+echo "  macOS: src-tauri/target/release/bundle/macos/StrainSpotter AI.app"
 echo "  macOS DMG: src-tauri/target/release/bundle/dmg/"
 echo "  Windows: src-tauri/target/release/bundle/msi/"
 echo ""
