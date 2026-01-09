@@ -1,13 +1,9 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/garden');
-  }, [router]);
-
-  return null;
+  return (
+    <div style={{ padding: 40, fontFamily: "system-ui" }}>
+      <h1>StrainSpotter AI</h1>
+      <p>✅ Routing confirmed</p>
+      <p>If you can see this, Vercel is serving the correct repository.</p>
+    </div>
+  );
 }
-

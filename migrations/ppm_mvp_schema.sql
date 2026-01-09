@@ -1,0 +1,1 @@
+-- PPM MVP schema reconciliation (idempotent, non-breaking)
