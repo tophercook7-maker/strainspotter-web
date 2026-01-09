@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: 'StrainSpotter',
+  title: 'StrainSpotter AI',
   description: 'A living cannabis intelligence ecosystem',
 };
 

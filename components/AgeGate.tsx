@@ -37,12 +37,12 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
         <div className="relative text-center p-8 max-w-md">
           <img
             src="/brand/core/hero.png"
-            alt="StrainSpotter"
+            alt="StrainSpotter AI"
             className="w-24 h-24 mx-auto mb-6 drop-shadow-lg"
           />
           <h1 className="text-3xl font-bold mb-4">Access Restricted</h1>
           <p className="text-lg text-white/80 mb-6">
-            You must be 21 or older to use StrainSpotter.
+            You must be 21 or older to use StrainSpotter AI.
           </p>
           <p className="text-sm text-white/70">
             Please refresh the page if you made a mistake.
@@ -59,14 +59,14 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
         <div className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl shadow-black/25 text-center">
           <img
             src="/brand/core/hero.png"
-            alt="StrainSpotter"
+            alt="StrainSpotter AI"
             className="w-24 h-24 mx-auto mb-6 drop-shadow-lg"
           />
           <h1 className="text-3xl font-bold mb-3">
             Are you 21 or older?
           </h1>
           <p className="text-white/80 mb-8">
-            Confirm to enter StrainSpotter.
+            Confirm to enter StrainSpotter AI.
           </p>
           <div className="flex gap-3">
             <button

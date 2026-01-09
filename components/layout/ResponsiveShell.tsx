@@ -105,12 +105,12 @@ export default function ResponsiveShell({ children }: { children: React.ReactNod
 
           {/* Footer */}
           <div className="mt-4 space-y-2 text-xs text-[var(--botanical-text-muted)]">
-            <div>© {new Date().getFullYear()} StrainSpotter</div>
+            <div>© {new Date().getFullYear()} StrainSpotter AI</div>
             <Link 
               href="/about" 
               className="block hover:text-[var(--botanical-accent)] transition"
             >
-              What StrainSpotter Is / Isn't
+              What StrainSpotter AI Is / Isn't
             </Link>
           </div>
         </aside>

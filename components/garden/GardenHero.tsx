@@ -15,7 +15,7 @@ export default function GardenHero() {
       <div className="garden-hero-wrapper">
         <img
           src="/brand/core/hero.png"
-          alt="StrainSpotter Leaf"
+          alt="StrainSpotter AI Leaf"
           className="garden-hero"
         />
       </div>
