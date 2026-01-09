@@ -1,19 +1,19 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function HomePage() {
+export default function RootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // TEMP: prove routing works, then redirect
+    // Temporary hard redirect to verify routing
     router.replace('/garden');
   }, [router]);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-black text-white">
-      <p>Routing confirmed. Redirecting…</p>
+      <p className="text-sm opacity-70">Routing confirmed. Redirecting…</p>
     </main>
   );
 }
