@@ -1,5 +1,8 @@
 'use client';
 
+export const dynamic = "force-dynamic";
+'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 
 type Terpene = { name: string; percent: string };
