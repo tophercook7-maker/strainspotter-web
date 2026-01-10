@@ -3,37 +3,36 @@ export type Dispensary = {
   name: string;
   city: string;
   state: string;
-  type: "Recreational" | "Medical" | "Both";
-  rating?: number;
-  hours?: string;
+  type: string;
 };
 
 export const DISPENSARIES: Dispensary[] = [
   {
-    id: "co-1",
-    name: "Green Valley Dispensary",
+    id: "1",
+    name: "Green Leaf Dispensary",
     city: "Denver",
     state: "CO",
-    type: "Both",
-    rating: 4.6,
-    hours: "Open until 9pm",
+    type: "Recreational",
   },
   {
-    id: "co-2",
-    name: "Bloom Cannabis",
+    id: "2",
+    name: "Highland Cannabis",
     city: "Boulder",
     state: "CO",
-    type: "Recreational",
-    rating: 4.4,
-    hours: "Open until 10pm",
+    type: "Medical & Recreational",
   },
   {
-    id: "ca-1",
-    name: "Sunset Herbal",
+    id: "3",
+    name: "Urban Bloom",
     city: "Los Angeles",
     state: "CA",
-    type: "Both",
-    rating: 4.5,
-    hours: "Open until 8pm",
+    type: "Recreational",
+  },
+  {
+    id: "4",
+    name: "River City Remedies",
+    city: "Portland",
+    state: "OR",
+    type: "Medical",
   },
 ];
