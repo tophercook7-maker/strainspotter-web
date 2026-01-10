@@ -1,106 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { DISPENSARIES } from "@/lib/data/dispensaries";
 
 export default function DispensaryFinderPage() {
-  const [mapUrl, setMapUrl] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setMapUrl(
-        "https://www.google.com/maps?q=cannabis+dispensary+near+me&output=embed"
-      );
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setMapUrl(
-          `https://www.google.com/maps?q=cannabis+dispensary&ll=${latitude},${longitude}&z=13&output=embed`
-        );
-      },
-      () => {
-        setMapUrl(
-          "https://www.google.com/maps?q=cannabis+dispensary+near+me&output=embed"
-        );
-      }
-    );
-  }, []);
+  const filtered = DISPENSARIES.filter((d) =>
+    `${d.name} ${d.city} ${d.state}`
+      .toLowerCase()
+      .includes(query.toLowerCase())
+  );
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "black",
-        color: "#E6FFE6",
-        padding: "2rem 1rem",
-        fontFamily: "system-ui, sans-serif",
-      }}
-    >
-      <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem", textAlign: "center" }}>
+    <main className="min-h-screen bg-black text-white px-4 py-8">
+      <h1 className="text-3xl font-bold text-center mb-2">
         🏪 Dispensary Finder
       </h1>
 
-      <p
-        style={{
-          textAlign: "center",
-          opacity: 0.8,
-          marginBottom: "1.5rem",
-        }}
-      >
-        Licensed dispensaries near you. Live map. No tracking.
+      <p className="text-center text-white/70 mb-6">
+        Verified dispensaries — curated and expanding.
       </p>
 
-      <p
-        style={{
-          textAlign: "center",
-          opacity: 0.65,
-          fontSize: "0.9rem",
-          margin: "0 auto 2rem",
-          maxWidth: 720,
-        }}
-      >
-        Location is used only in your browser to load this map. Nothing is stored or sent to our servers.
-      </p>
+      <input
+        placeholder="Search by name, city, or state"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        className="w-full mb-6 rounded-lg bg-white/5 border border-white/10 px-4 py-2 text-white"
+      />
 
-      {!mapUrl && (
-        <div style={{ textAlign: "center", opacity: 0.6 }}>
-          Loading nearby dispensaries…
-        </div>
-      )}
+      <div className="space-y-4">
+        {filtered.map((d) => (
+          <div
+            key={d.id}
+            className="rounded-xl border border-white/10 bg-white/5 p-4"
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">{d.name}</h2>
+              <span className="text-xs text-green-400">{d.type}</span>
+            </div>
 
-      {mapUrl && (
-        <div
-          style={{
-            width: "100%",
-            height: "75vh",
-            borderRadius: 12,
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <iframe
-            src={mapUrl}
-            width="100%"
-            height="100%"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            style={{ border: 0 }}
-          />
-        </div>
-      )}
+            <p className="text-sm text-white/70">
+              {d.city}, {d.state}
+            </p>
 
-      <div
-        style={{
-          marginTop: "1.5rem",
-          textAlign: "center",
-          opacity: 0.5,
-          fontSize: "0.85rem",
-        }}
-      >
-        Status: In-app map active
+            {d.rating && (
+              <p className="text-sm mt-1">⭐ {d.rating}</p>
+            )}
+
+            {d.hours && (
+              <p className="text-xs text-white/60 mt-1">{d.hours}</p>
+            )}
+          </div>
+        ))}
+
+        {filtered.length === 0 && (
+          <p className="text-center text-white/50">
+            No dispensaries found.
+          </p>
+        )}
       </div>
+
+      <p className="text-center text-xs text-white/40 mt-8">
+        Status: Directory mode active
+      </p>
     </main>
   );
 }
