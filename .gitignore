@@ -14,6 +14,7 @@ dist
 supabase/functions
 supabase/.temp
 supabase/.branches
+supabase/_shared
 
 # =====================
 # Quarantined / disabled code
@@ -61,3 +62,4 @@ logs/
 # ML / experiments (not web)
 # =====================
 ml-training/
+ml-training-temp/
