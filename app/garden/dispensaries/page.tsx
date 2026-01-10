@@ -1,6 +1,60 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+type Dispensary = {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+};
+
+export default function DispensaryFinderPage() {
+  const [dispensaries, setDispensaries] = useState<Dispensary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/dispensaries");
+        if (!res.ok) throw new Error("Failed to load");
+        const data = await res.json();
+        setDispensaries(data);
+      } catch (e) {
+        setError("Unable to load dispensaries");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) return <div className="p-6">Loading dispensaries…</div>;
+  if (error) return <div className="p-6 text-red-400">{error}</div>;
+
+  return (
+    <main className="p-6 space-y-4">
+      <h1 className="text-3xl font-bold">Nearby Dispensaries</h1>
+
+      {dispensaries.map((d) => (
+        <div
+          key={d.id}
+          className="border border-white/10 rounded-lg p-4 bg-black/40"
+        >
+          <div className="font-semibold">{d.name}</div>
+          <div className="text-sm text-white/70">
+            {d.address}, {d.city}, {d.state}
+          </div>
+        </div>
+      ))}
+    </main>
+  );
+}
+"use client";
+
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Dispensary = {
