@@ -9,9 +9,11 @@
     "node_modules",
     "pipeline-control",
     "__quarantine__",
+    "scripts",
+    "**/scripts/**",
     "**/__quarantine__/**",
     "**/_app_disabled/**",
-    "**/*.backup.tsx",
-    "**/*.backup.ts"
+    "**/*.backup.ts",
+    "**/*.backup.tsx"
   ]
 }
