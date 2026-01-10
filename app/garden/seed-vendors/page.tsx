@@ -7,9 +7,7 @@ export default function SeedVendorsPage() {
   const [query, setQuery] = useState("");
 
   const filtered = SEED_VENDORS.filter((v) =>
-    `${v.name} ${v.region} ${v.specialties.join(" ")}`
-      .toLowerCase()
-      .includes(query.toLowerCase())
+    `${v.name}`.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
