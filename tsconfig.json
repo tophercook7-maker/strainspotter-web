@@ -7,6 +7,7 @@
   "exclude": [
     "node_modules",
     "__quarantine__",
-    "pipeline-control"
+    "pipeline-control",
+    "scripts"
   ]
 }
