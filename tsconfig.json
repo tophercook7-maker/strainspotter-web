@@ -4,5 +4,12 @@
     "paths": {
       "@/*": ["./*"]
     }
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "__quarantine__",
+    "_app_disabled",
+    "**/__quarantine__/**",
+    "**/_app_disabled/**"
+  ]
 }
