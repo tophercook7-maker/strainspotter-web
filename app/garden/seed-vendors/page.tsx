@@ -36,7 +36,7 @@ export default function SeedVendorsPage() {
             <h2 className="text-lg font-semibold">{v.name}</h2>
 
             <p className="text-sm text-white/70">
-              {v.region} • {v.shipping}
+              Online seed vendor
             </p>
 
             <p className="text-sm mt-2">
