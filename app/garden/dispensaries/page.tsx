@@ -7,6 +7,124 @@ type Dispensary = {
   id: string;
   name: string;
   address: string;
+  phone?: string;
+};
+
+export default function DispensaryFinderPage() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [dispensaries, setDispensaries] = useState<Dispensary[]>([]);
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  /* ------------------ GEOLOCATION ------------------ */
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
+      setLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+      },
+      () => {
+        setError("Location permission denied");
+        setLoading(false);
+      }
+    );
+  }, []);
+
+  /* ------------------ FETCH DISPENSARIES ------------------ */
+  useEffect(() => {
+    if (!coords) return;
+
+    const runFetch = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `/api/dispensaries?lat=${coords.latitude}&lng=${coords.longitude}&radius=60`
+        );
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error || "Unable to load dispensaries");
+          setDispensaries([]);
+        } else {
+          setDispensaries(data.dispensaries || []);
+        }
+      } catch {
+        setError("Unable to load dispensaries");
+        setDispensaries([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    runFetch();
+  }, [coords]);
+
+  return (
+    <main className="min-h-screen bg-black text-white px-4 py-8 max-w-4xl mx-auto">
+      <button
+        onClick={() => router.back()}
+        className="mb-6 text-sm text-green-400 hover:text-green-300"
+      >
+        ← Back
+      </button>
+
+      <h1 className="text-3xl font-bold mb-6">Nearby Dispensaries</h1>
+
+      {loading && <p className="text-white/60">Loading…</p>}
+      {error && <p className="text-red-400">{error}</p>}
+
+      <div className="space-y-4">
+        {dispensaries.map((d) => (
+          <div
+            key={d.id}
+            className="bg-white/5 border border-white/10 rounded-lg p-4"
+          >
+            <h2 className="font-semibold">{d.name}</h2>
+            <p className="text-sm text-white/70">{d.address}</p>
+
+            <div className="mt-2 flex gap-4 text-sm">
+              <a
+                href={`https://www.google.com/maps/search/?query=${encodeURIComponent(d.address)}`}
+                target="_blank"
+                className="text-green-400 hover:underline"
+              >
+                Open in Google
+              </a>
+
+              {d.phone && (
+                <a
+                  href={`tel:${d.phone}`}
+                  className="text-green-400 hover:underline"
+                >
+                  Call
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+type Dispensary = {
+  id: string;
+  name: string;
+  address: string;
   distanceMiles?: number;
   phone?: string;
 };
