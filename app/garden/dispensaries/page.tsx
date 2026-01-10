@@ -1,3 +1,20 @@
+export default function DispensaryFinderPage() {
+  return (
+    <main className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+        <h1 className="text-2xl font-bold mb-4">Dispensary Finder</h1>
+
+        <p className="text-white/70">
+          This feature is temporarily disabled while the app is stabilized.
+        </p>
+
+        <p className="mt-4 text-green-400 font-mono text-sm">
+          Status: Locked
+        </p>
+      </div>
+    </main>
+  );
+}
 "use client";
 
 import { useEffect, useState } from "react";
