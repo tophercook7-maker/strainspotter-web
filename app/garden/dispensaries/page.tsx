@@ -23,13 +23,17 @@ export default function DispensaryFinderPage() {
     setError("");
     try {
       const res = await fetch(`/api/places?lat=${lat}&lng=${lng}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch places");
-      }
       const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to load dispensaries");
+        setDispensaries([]);
+        return;
+      }
+
       setDispensaries(data);
-    } catch (e) {
-      setError("Unable to load nearby dispensaries right now.");
+    } catch {
+      setError("Network error loading dispensaries");
       setDispensaries([]);
     } finally {
       setLoading(false);
