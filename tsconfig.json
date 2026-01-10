@@ -6,6 +6,7 @@
   },
   "exclude": [
     "node_modules",
-    "__quarantine__"
+    "__quarantine__",
+    "pipeline-control"
   ]
 }
