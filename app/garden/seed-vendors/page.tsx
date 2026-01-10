@@ -39,11 +39,6 @@ export default function SeedVendorsPage() {
               Online seed vendor
             </p>
 
-            {v.reputation && (
-              <p className="text-xs text-white/60 mt-2">
-                {v.reputation}
-              </p>
-            )}
           </div>
         ))}
 
