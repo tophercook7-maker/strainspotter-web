@@ -27,14 +27,12 @@ export default function DispensaryFinderPage() {
 
       if (!res.ok) {
         setError(data.error || "Failed to load dispensaries");
-        setDispensaries([]);
         return;
       }
 
       setDispensaries(data);
     } catch {
       setError("Network error loading dispensaries");
-      setDispensaries([]);
     } finally {
       setLoading(false);
     }
