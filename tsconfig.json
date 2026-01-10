@@ -1,21 +1,8 @@
 {
   "compilerOptions": {
-    "skipLibCheck": true,
-    "strict": false,
-    "jsx": "react-jsx"
-  },
-  "exclude": [
-    "node_modules",
-    "__quarantine__",
-    "pipeline-control",
-    "scripts",
-    "src",
-    "supabase",
-    "tailwind.config 2.ts",
-    "tailwind.config.ts",
-    "tailwind.config.js",
-    "tailwind.config 3.ts",
-    "tailwind.config 2.ts",
-    "test-app"
-  ]
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
 }
