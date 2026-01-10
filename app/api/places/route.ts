@@ -11,51 +11,50 @@ export async function GET(req: Request) {
     const lng = searchParams.get("lng");
 
     if (!lat || !lng) {
-      return NextResponse.json({ error: "Missing location" }, { status: 400 });
+      return NextResponse.json({ error: "Missing coordinates" }, { status: 400 });
     }
 
-    const key = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    // Overpass query: cannabis dispensaries near user
+    const query = `
+      [out:json];
+      (
+        node["shop"="cannabis"](around:25000,${lat},${lng});
+        way["shop"="cannabis"](around:25000,${lat},${lng});
+        relation["shop"="cannabis"](around:25000,${lat},${lng});
+      );
+      out center tags;
+    `;
 
-    if (!key) {
-      return NextResponse.json({ error: "Google API key missing" }, { status: 500 });
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query,
+      headers: { "Content-Type": "text/plain" },
+      next: { revalidate: 86400 },
+    });
+
+    if (!res.ok) {
+      return NextResponse.json({ error: "Overpass request failed" }, { status: 502 });
     }
 
-    const url =
-      `https://maps.googleapis.com/maps/api/place/nearbysearch/json` +
-      `?location=${lat},${lng}` +
-      `&radius=60000` +
-      `&keyword=cannabis%20dispensary` +
-      `&key=${key}`;
-
-    const res = await fetch(url);
     const data = await res.json();
 
-    if (data.status !== "OK") {
-      return NextResponse.json(
-        { error: data.error_message || data.status || "Unknown error" },
-        { status: 500 }
-      );
-    }
+    const dispensaries =
+      data.elements?.map((el: any) => ({
+        id: el.id,
+        name: el.tags?.name ?? "Unnamed Dispensary",
+        address: [
+          el.tags?.["addr:housenumber"],
+          el.tags?.["addr:street"],
+          el.tags?.["addr:city"],
+          el.tags?.["addr:state"],
+        ]
+          .filter(Boolean)
+          .join(" "),
+        lat: el.lat ?? el.center?.lat,
+        lng: el.lon ?? el.center?.lon,
+      })) ?? [];
 
-    const results =
-      data.results
-        ?.filter((p: any) => {
-          const name = (p.name || "").toLowerCase();
-          return (
-            name.includes("cannabis") ||
-            name.includes("dispensary") ||
-            name.includes("marijuana")
-          );
-        })
-        .map((p: any) => ({
-          id: p.place_id,
-          name: p.name,
-          address: p.vicinity,
-          rating: p.rating,
-          openNow: p.opening_hours?.open_now ?? null,
-        })) ?? [];
-
-    return NextResponse.json({ results });
+    return NextResponse.json({ dispensaries });
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message || "Unexpected error" },
