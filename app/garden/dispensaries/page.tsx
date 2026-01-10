@@ -1,5 +1,27 @@
 "use client";
 
+export default function DispensaryFinderPage() {
+  return (
+    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6">
+      <h1 className="text-4xl font-bold mb-4">Dispensary Finder</h1>
+
+      <p className="text-white/70 text-center max-w-md">
+        This page is temporarily in safe mode while we restore functionality.
+      </p>
+
+      <div className="mt-8 px-6 py-4 rounded-xl bg-white/5 border border-white/10">
+        <p className="text-sm text-white/60">
+          ✅ Build stability confirmed
+        </p>
+        <p className="text-sm text-white/60">
+          🚧 ZIP-based search coming next
+        </p>
+      </div>
+    </main>
+  );
+}
+"use client";
+
 import { useState } from "react";
 
 type Dispensary = {
