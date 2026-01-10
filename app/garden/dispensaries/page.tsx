@@ -52,6 +52,18 @@ export default function DispensaryFinderPage() {
         Licensed dispensaries near you. Live map. No tracking.
       </p>
 
+      <p
+        style={{
+          textAlign: "center",
+          opacity: 0.65,
+          fontSize: "0.9rem",
+          margin: "0 auto 2rem",
+          maxWidth: 720,
+        }}
+      >
+        Location is used only in your browser to load this map. Nothing is stored or sent to our servers.
+      </p>
+
       {!mapUrl && (
         <div style={{ textAlign: "center", opacity: 0.6 }}>
           Loading nearby dispensaries…
