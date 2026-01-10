@@ -5,6 +5,46 @@ import { useEffect, useState } from "react";
 type Dispensary = {
   id: number;
   name: string;
+  city: string;
+  state: string;
+};
+
+export default function DispensaryFinderPage() {
+  const [dispensaries, setDispensaries] = useState<Dispensary[]>([]);
+
+  useEffect(() => {
+    setDispensaries([
+      { id: 1, name: "Local Dispensary", city: "Nearby", state: "Your Area" },
+    ]);
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-black text-white p-6">
+      <h1 className="text-3xl font-bold mb-6">Dispensary Finder</h1>
+
+      <div className="space-y-4">
+        {dispensaries.map((d) => (
+          <div
+            key={d.id}
+            className="border border-white/20 rounded-lg p-4"
+          >
+            <h2 className="text-xl font-semibold">{d.name}</h2>
+            <p className="text-sm text-white/70">
+              {d.city}, {d.state}
+            </p>
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Dispensary = {
+  id: number;
+  name: string;
   address: string;
   city: string;
   state: string;
