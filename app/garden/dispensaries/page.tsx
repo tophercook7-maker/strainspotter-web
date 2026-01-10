@@ -1,5 +1,62 @@
 "use client";
 
+import { useState } from "react";
+
+type Dispensary = {
+  id: number;
+  name: string;
+  city: string;
+  state: string;
+};
+
+const SAMPLE_DISPENSARIES: Dispensary[] = [
+  { id: 1, name: "Green Valley Dispensary", city: "Denver", state: "CO" },
+  { id: 2, name: "Sunrise Cannabis", city: "Boulder", state: "CO" },
+  { id: 3, name: "Pacific Herbal", city: "Portland", state: "OR" },
+];
+
+export default function DispensaryFinderPage() {
+  const [query, setQuery] = useState("");
+
+  const filtered = SAMPLE_DISPENSARIES.filter((d) =>
+    `${d.name} ${d.city} ${d.state}`
+      .toLowerCase()
+      .includes(query.toLowerCase())
+  );
+
+  return (
+    <main className="min-h-screen bg-black text-white px-6 py-10">
+      <h1 className="text-3xl font-bold mb-6">Dispensary Finder</h1>
+
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search by name, city, or state"
+        className="w-full max-w-md px-4 py-2 mb-6 rounded bg-white text-black"
+      />
+
+      <div className="space-y-4">
+        {filtered.map((d) => (
+          <div
+            key={d.id}
+            className="p-4 rounded bg-white/10 border border-white/10"
+          >
+            <div className="font-semibold">{d.name}</div>
+            <div className="text-sm text-white/70">
+              {d.city}, {d.state}
+            </div>
+          </div>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="text-white/60">No dispensaries found.</div>
+        )}
+      </div>
+    </main>
+  );
+}
+"use client";
+
 import { useEffect, useState } from "react";
 
 type Dispensary = {
