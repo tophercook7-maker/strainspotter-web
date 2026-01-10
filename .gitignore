@@ -148,3 +148,43 @@ ml-training/**/datasets/
 ml-training/**/index/
 *.faiss
 *.fbin
+# =====================
+# Node / Next
+# =====================
+node_modules
+.next
+out
+dist
+.env
+.env.local
+
+# =====================
+# Supabase (NOT for Vercel web build)
+# =====================
+supabase/functions
+supabase/.temp
+supabase/.branches
+
+# =====================
+# Quarantined / disabled code
+# =====================
+__quarantine__
+
+# =====================
+# Scripts & tooling (not web)
+# =====================
+scripts
+pipeline-control
+tools
+
+# =====================
+# Tauri / Desktop
+# =====================
+src-tauri
+*.rs
+
+# =====================
+# Logs
+# =====================
+*.log
+npm-debug.log*
