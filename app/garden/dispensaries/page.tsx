@@ -44,9 +44,6 @@ export default function DispensaryFinderPage() {
               {d.city}, {d.state}
             </p>
 
-            {d.hours && (
-              <p className="text-xs text-white/60 mt-1">{d.hours}</p>
-            )}
           </div>
         ))}
 
