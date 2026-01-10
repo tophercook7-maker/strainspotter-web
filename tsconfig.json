@@ -8,7 +8,9 @@
   "exclude": [
     "node_modules",
     "pipeline-control",
-    "**/pipeline-control/**",
+    "__quarantine__",
+    "**/__quarantine__/**",
+    "**/_app_disabled/**",
     "**/*.backup.tsx",
     "**/*.backup.ts"
   ]

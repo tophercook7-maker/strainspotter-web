@@ -1,3 +1,5 @@
 pipeline-control/
+__quarantine__/
+**/_app_disabled/**
 **/*.backup.tsx
 **/*.backup.ts
