@@ -1,65 +1,39 @@
-# =====================
-# Node / Next
-# =====================
-node_modules
-.next
-out
-dist
-.env
-.env.local
+# ===============================
+# BLOCK EVERYTHING THAT IS NOT THE NEXT.JS WEB APP
+# ===============================
 
-# =====================
-# Supabase (NOT for Vercel web build)
-# =====================
-supabase/functions
-supabase/.temp
-supabase/.branches
-supabase/_shared
-
-# =====================
-# Quarantined / disabled code
-# =====================
-__quarantine__
-
-# =====================
-# Scripts & tooling (not web)
-# =====================
-scripts
-pipeline-control
-tools
-
-# =====================
-# Tauri / Desktop
-# =====================
-src-tauri
-*.rs
-
-# =====================
-# Logs
-# =====================
-*.log
-npm-debug.log*
-
-# =====================
-# OS / Editor junk
-# =====================
-.DS_Store
-.vscode/
-.idea/
-
-# =====================
-# Vercel local
-# =====================
-.vercel/
-
-# =====================
-# Local env & logs
-# =====================
+# Tooling / experiments
+pipeline-control/
+scripts/
+ml-training/
+supabase/functions/
+supabase/_shared/
+__quarantine__/
 env/
 logs/
 
-# =====================
-# ML / experiments (not web)
-# =====================
-ml-training/
-ml-training-temp/
+# Desktop / native
+src-tauri/
+tauri.conf.json
+
+# Local/editor
+.vscode/
+.DS_Store
+
+# Node noise
+node_modules/
+
+# Ignore everything by default
+*
+
+# ===============================
+# ALLOW ONLY THE WEB APP
+# ===============================
+!app/
+!public/
+!next.config.*
+!package.json
+!package-lock.json
+!tsconfig.json
+!postcss.config.js
+!tailwind.config.js
