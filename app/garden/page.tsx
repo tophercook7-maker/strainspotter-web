@@ -37,20 +37,44 @@ export default function GardenPage() {
           maxWidth: 720,
         }}
       >
-        {buttons.map((label) => (
-          <div
-            key={label}
-            style={{
-              border: "1px solid rgba(124,255,178,0.4)",
-              borderRadius: 12,
-              padding: "1.25rem",
-              textAlign: "center",
-              opacity: 0.9,
-            }}
-          >
-            {label}
-          </div>
-        ))}
+        {buttons.map((label) => {
+          if (label === "Strain Browser") {
+            return (
+              <a
+                key={label}
+                href="/garden/strains"
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <div
+                  style={{
+                    border: "1px solid rgba(124,255,178,0.4)",
+                    borderRadius: 12,
+                    padding: "1.25rem",
+                    textAlign: "center",
+                    opacity: 0.9,
+                  }}
+                >
+                  {label}
+                </div>
+              </a>
+            );
+          }
+
+          return (
+            <div
+              key={label}
+              style={{
+                border: "1px solid rgba(124,255,178,0.4)",
+                borderRadius: 12,
+                padding: "1.25rem",
+                textAlign: "center",
+                opacity: 0.9,
+              }}
+            >
+              {label}
+            </div>
+          );
+        })}
       </div>
 
       <div style={{ marginTop: "3rem", opacity: 0.6 }}>
