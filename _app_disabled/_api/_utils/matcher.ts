@@ -145,7 +145,7 @@ export async function matchStrain(
   });
 
   // Sort by score descending
-  scored.sort((a, b) => b.score - a.score);
+  scored.sort((a: { score: number }, b: { score: number }) => b.score - a.score);
 
   // Filter out scores below threshold (40)
   const aboveThreshold = scored.filter(s => s.score >= 40);

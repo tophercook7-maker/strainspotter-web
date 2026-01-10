@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "supabase", "pipeline-control", "test-app"]
+  "exclude": ["node_modules", "_app_disabled", "supabase", "pipeline-control", "test-app"]
 }
