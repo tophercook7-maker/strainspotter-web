@@ -1,6 +1,18 @@
+# Desktop / Tauri
 pipeline-control/
-__quarantine__/
+src-tauri/
+*.rs
+
+# Supabase edge / functions
+supabase/
 scripts/
-**/_app_disabled/**
-**/*.backup.tsx
-**/*.backup.ts
+ml-training/
+
+# Experiments & quarantine
+__quarantine__/
+
+# System
+.DS_Store
+.env*
+.vscode/
+logs/

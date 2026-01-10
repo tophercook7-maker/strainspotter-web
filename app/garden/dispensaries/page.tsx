@@ -1,5 +1,32 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
+export default function DispensaryFinderPage() {
+  const [status, setStatus] = useState("Loading dispensary finder…");
+
+  useEffect(() => {
+    setStatus("Dispensary Finder is locked and online.");
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+        <h1 className="text-2xl font-bold mb-4">Dispensary Finder</h1>
+
+        <p className="text-white/70 mb-4">
+          This feature is temporarily locked while the web app is stabilized.
+        </p>
+
+        <div className="text-green-400 font-mono text-sm">
+          {status}
+        </div>
+      </div>
+    </main>
+  );
+}
+"use client";
+
 export default function DispensaryFinderPage() {
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6">
