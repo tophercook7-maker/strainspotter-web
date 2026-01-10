@@ -15,6 +15,7 @@
     "tailwind.config.ts",
     "tailwind.config.js",
     "tailwind.config 3.ts",
-    "tailwind.config 2.ts"
+    "tailwind.config 2.ts",
+    "test-app"
   ]
 }
