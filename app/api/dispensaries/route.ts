@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     const dispensaries =
       data.elements?.map((el: any) => ({
         id: el.id,
-        name: el.tags?.name ?? "Unnamed Dispensary",
+        name: el.tags?.name ?? "Cannabis Dispensary",
         address: [
           el.tags?.["addr:housenumber"],
           el.tags?.["addr:street"],
@@ -49,6 +49,8 @@ export async function GET(req: Request) {
         ]
           .filter(Boolean)
           .join(" "),
+        lat: el.lat ?? el.center?.lat,
+        lng: el.lon ?? el.center?.lon,
       })) ?? [];
 
     return NextResponse.json({ dispensaries });
