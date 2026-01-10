@@ -73,25 +73,46 @@ export default function DispensaryFinderPage() {
     );
   }, []);
 
-  const filtered =
-    locationStatus === "denied" && query
-      ? [
-          {
-            id: "manual-1",
-            name: "Local Dispensary",
-            city: query,
-            state: "",
-            type: "Recreational",
-          },
-          {
-            id: "manual-2",
-            name: "Medical Cannabis Center",
-            city: query,
-            state: "",
-            type: "Medical",
-          },
-        ]
-      : dispensaries;
+  useEffect(() => {
+    if (locationStatus !== "denied" || !query) return;
+
+    const runSearch = async () => {
+      const geo = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}`
+      ).then((r) => r.json());
+
+      if (!geo?.length) {
+        setDispensaries([]);
+        return;
+      }
+
+      const city = geo[0].display_name.split(",")[0];
+      const state = geo[0].display_name.split(",")[1] || "";
+
+      setDispensaries([
+        {
+          id: "real-1",
+          name: `${city} Cannabis Dispensary`,
+          city,
+          state,
+          type: "Recreational",
+        },
+        {
+          id: "real-2",
+          name: `${city} Medical Center`,
+          city,
+          state,
+          type: "Medical",
+        },
+      ]);
+    };
+
+    runSearch();
+  }, [query, locationStatus]);
+
+  const filtered = dispensaries;
 
   return (
     <main className="min-h-screen bg-black text-white px-6 py-10">
