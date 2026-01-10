@@ -1,4 +1,16 @@
 export default function GardenPage() {
+  const buttons = [
+    "Strain Browser",
+    "Scanner",
+    "Grow Logs",
+    "Grow Coach",
+    "Garden Chat",
+    "Dispensary Finder",
+    "Seed Vendors",
+    "My History",
+    "Notes",
+  ];
+
   return (
     <main
       style={{
@@ -8,23 +20,41 @@ export default function GardenPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        padding: "4rem 1rem",
         fontFamily: "system-ui, sans-serif",
-        textAlign: "center",
       }}
     >
-      <h1 style={{ fontSize: "2.25rem", marginBottom: "1rem" }}>
+      <h1 style={{ fontSize: "2.5rem", marginBottom: "2rem" }}>
         🌱 The Garden
       </h1>
 
-      <p style={{ opacity: 0.85, maxWidth: 520 }}>
-        This is your personal cannabis ecosystem.
-        <br />
-        Modules will grow here safely, one by one.
-      </p>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "1rem",
+          width: "100%",
+          maxWidth: 720,
+        }}
+      >
+        {buttons.map((label) => (
+          <div
+            key={label}
+            style={{
+              border: "1px solid rgba(124,255,178,0.4)",
+              borderRadius: 12,
+              padding: "1.25rem",
+              textAlign: "center",
+              opacity: 0.9,
+            }}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
 
-      <div style={{ marginTop: "2rem", opacity: 0.6 }}>
-        Status: Garden shell online
+      <div style={{ marginTop: "3rem", opacity: 0.6 }}>
+        Status: Garden map restored (visual only)
       </div>
     </main>
   );
