@@ -7,9 +7,9 @@
   },
   "exclude": [
     "node_modules",
-    "__quarantine__",
-    "_app_disabled",
-    "**/__quarantine__/**",
-    "**/_app_disabled/**"
+    "pipeline-control",
+    "**/pipeline-control/**",
+    "**/*.backup.tsx",
+    "**/*.backup.ts"
   ]
 }

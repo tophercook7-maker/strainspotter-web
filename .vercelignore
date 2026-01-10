@@ -1,0 +1,3 @@
+pipeline-control/
+**/*.backup.tsx
+**/*.backup.ts
