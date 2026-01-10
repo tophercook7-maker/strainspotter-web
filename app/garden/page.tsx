@@ -60,6 +60,28 @@ export default function GardenPage() {
             );
           }
 
+          if (label === "Scanner") {
+            return (
+              <a
+                key={label}
+                href="/garden/scanner"
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <div
+                  style={{
+                    border: "1px solid rgba(124,255,178,0.4)",
+                    borderRadius: 12,
+                    padding: "1.25rem",
+                    textAlign: "center",
+                    opacity: 0.9,
+                  }}
+                >
+                  {label}
+                </div>
+              </a>
+            );
+          }
+
           return (
             <div
               key={label}
