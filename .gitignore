@@ -37,3 +37,10 @@ node_modules/
 !tsconfig.json
 !postcss.config.js
 !tailwind.config.js
+!desktop/strainspotter-desktop/**
+# ===============================
+# ALLOW DESKTOP APP
+# ===============================
+!desktop/
+!desktop/strainspotter-desktop/
+!desktop/strainspotter-desktop/**
