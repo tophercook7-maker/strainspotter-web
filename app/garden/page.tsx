@@ -1,47 +1,66 @@
-export default function GardenPage() {
-  const items = [
-    { label: "Strain Browser", path: "/garden/strains", icon: "🌿" },
-    { label: "Scanner", path: "/garden/scanner", icon: "📷" },
-    { label: "History", path: "/garden/history", icon: "🕘" },
-    { label: "Grow Coach", path: "/garden/grow-coach", icon: "🧑‍🌾" },
-    { label: "Dispensary Finder", path: "/garden/dispensaries", icon: "🏪" },
-    { label: "Seed Vendors", path: "/garden/seed-vendors", icon: "🌱" },
-  ];
+"use client";
 
+import Image from "next/image";
+
+export default function GardenPage() {
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center px-4 py-16">
-      
-      {/* HERO */}
-      <div className="flex flex-col items-center mb-16">
-        <div className="w-28 h-28 rounded-full bg-green-600/20 flex items-center justify-center mb-6 backdrop-blur">
-          <span className="text-green-400 text-5xl">🍃</span>
+    <main className="relative min-h-screen text-white">
+      {/* BACKGROUND */}
+      <Image
+        src="/garden-bg.jpg"
+        alt="Garden background"
+        fill
+        priority
+        className="object-cover"
+      />
+      <div className="absolute inset-0 bg-black/55" />
+
+      {/* CONTENT */}
+      <div className="relative z-10 flex flex-col items-center px-6 py-16">
+        {/* HERO */}
+        <div className="mb-12 flex flex-col items-center">
+          <div className="relative w-40 h-40 mb-6">
+            <Image
+              src="/hero.jpg"
+              alt="StrainSpotter Hero"
+              fill
+              className="object-contain rounded-full"
+            />
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight">
+            The Garden
+          </h1>
+          <p className="mt-3 text-white/80 text-center max-w-xl">
+            Your personal cannabis ecosystem — calm, grounded, and private.
+          </p>
         </div>
 
-        <h1 className="text-5xl font-extrabold mb-3">The Garden</h1>
-
-        <p className="text-white/70 text-center max-w-xl">
-          Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
-        </p>
+        {/* BUTTON GRID */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 w-full max-w-3xl">
+          {[
+            "Dispensaries",
+            "Seed Vendors",
+            "Strains",
+            "My Collection",
+            "Grow Tools",
+            "Education",
+            "Journal",
+            "Settings",
+          ].map((label) => (
+            <button
+              key={label}
+              className="flex flex-col items-center justify-center
+                         rounded-2xl border border-white/20
+                         bg-white/10 backdrop-blur-md
+                         py-6 text-lg font-semibold
+                         hover:bg-white/20 transition"
+            >
+              🌿
+              <span className="mt-2">{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
-
-      {/* GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl">
-        {items.map((item) => (
-          <a
-            key={item.label}
-            href={item.path}
-            className="group relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl px-6 py-8 hover:border-green-400/40 hover:bg-green-500/10 transition-all"
-          >
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">{item.icon}</span>
-              <span className="text-xl font-semibold">{item.label}</span>
-            </div>
-
-            <div className="absolute inset-0 rounded-2xl ring-1 ring-white/5 group-hover:ring-green-400/30 transition"></div>
-          </a>
-        ))}
-      </div>
-
     </main>
   );
 }
