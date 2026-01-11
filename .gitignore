@@ -30,6 +30,7 @@ node_modules/
 # ALLOW ONLY THE WEB APP
 # ===============================
 !app/
+!app/**
 !public/
 !next.config.*
 !package.json
@@ -37,7 +38,6 @@ node_modules/
 !tsconfig.json
 !postcss.config.js
 !tailwind.config.js
-!desktop/strainspotter-desktop/**
 # ===============================
 # ALLOW DESKTOP APP
 # ===============================
