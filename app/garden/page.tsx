@@ -2,70 +2,65 @@
 
 import Image from "next/image";
 
+const BUTTONS = [
+  "Dispensaries",
+  "Seed Vendors",
+  "Strains",
+  "Grow Help",
+  "My Garden",
+  "Journal",
+  "Learn",
+  "Tools",
+  "Settings",
+];
+
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen text-white overflow-hidden">
+    <main className="relative min-h-screen text-white overflow-hidden flex items-center justify-center">
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
         alt="Garden background"
         fill
         priority
-        className="object-cover"
+        className="object-cover -z-10"
       />
 
-      {/* DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/40" />
+      {/* CONTENT WRAPPER */}
+      <div className="relative z-10 flex flex-col items-center px-6 w-full max-w-5xl">
 
-      {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6">
         {/* HERO */}
-        <div className="flex flex-col items-center mb-14">
-          <div className="relative w-36 h-36 mb-6">
-            <Image
-              src="/hero.png"
-              alt="StrainSpotter Hero"
-              fill
-              className="object-contain drop-shadow-2xl"
-            />
-          </div>
-
-          <h1 className="text-5xl font-extrabold drop-shadow-lg mb-3">
-            The Garden
-          </h1>
-
-          <p className="text-white/80 text-center max-w-xl">
-            Your personal cannabis ecosystem.
-          </p>
+        <div className="mb-12">
+          <Image
+            src="/hero.png"
+            alt="Garden Hero"
+            width={160}
+            height={160}
+            className="rounded-full shadow-xl"
+          />
         </div>
 
-        {/* GLASS BUTTON GRID */}
-        <div className="grid grid-cols-3 gap-10">
-          {[
-            "Dispensaries",
-            "Seed Vendors",
-            "Strains",
-            "My Garden",
-            "Grow Tools",
-            "Scanner",
-            "Journal",
-            "Learn",
-            "Settings",
-          ].map((label) => (
+        {/* BUTTON GRID */}
+        <div className="grid grid-cols-3 gap-8 w-full max-w-3xl">
+          {BUTTONS.map((label) => (
             <button
               key={label}
               className="
-                w-32 h-32 rounded-2xl
-                bg-white/15 backdrop-blur-xl
+                flex flex-col items-center justify-center
+                h-28 w-full
+                rounded-2xl
+                bg-white/10
+                backdrop-blur-md
                 border border-white/20
                 shadow-lg
-                flex items-center justify-center
-                text-sm font-semibold
-                hover:bg-white/25 hover:scale-105
+                hover:bg-white/20
+                hover:scale-[1.03]
                 transition-all
+                text-sm font-semibold
               "
             >
-              {label}
+              <span className="text-lg">🌿</span>
+              <span className="mt-2">{label}</span>
             </button>
           ))}
         </div>
