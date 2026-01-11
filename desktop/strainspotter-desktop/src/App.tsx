@@ -1,19 +1,20 @@
-export default function App() {
+import "./App.css";
+
+function App() {
   return (
-    <div
-      style={{
-        backgroundColor: "red",
-        color: "white",
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "28px",
-        fontWeight: "bold",
-        fontFamily: "monospace",
-      }}
-    >
-      🚨 THIS IS THE LOCAL DESKTOP SOURCE 🚨
+    <div style={{
+      background: "red",
+      color: "white",
+      height: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "32px",
+      fontWeight: "bold"
+    }}>
+      🔥 DESKTOP IS LOADING LOCAL DEV SERVER 🔥
     </div>
   );
 }
+
+export default App;
