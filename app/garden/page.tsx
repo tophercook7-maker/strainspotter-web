@@ -17,7 +17,6 @@ const BUTTONS = [
 export default function GardenPage() {
   return (
     <main className="relative min-h-screen w-full overflow-hidden text-white">
-      
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
@@ -27,47 +26,50 @@ export default function GardenPage() {
         className="object-cover"
       />
 
-      {/* DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      {/* OVERLAY */}
+      <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-8">
         {/* HERO */}
-        <div className="mb-12 text-center">
-          <div className="mx-auto mb-6 h-28 w-28 rounded-full bg-white/15 backdrop-blur-xl flex items-center justify-center border border-white/20 shadow-2xl">
+        <div className="mb-14 text-center">
+          <div className="mx-auto mb-6 h-32 w-32 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center">
             <Image
               src="/hero.png"
               alt="Hero"
-              width={72}
-              height={72}
+              width={80}
+              height={80}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
             />
           </div>
 
           <h1 className="text-5xl font-extrabold tracking-tight">
             The Garden
           </h1>
-          <p className="mt-3 text-white/80 text-lg">
+          <p className="mt-4 text-white/80 text-lg">
             Your personal cannabis ecosystem
           </p>
         </div>
 
-        {/* ICON GRID */}
-        <div className="grid grid-cols-3 gap-12">
+        {/* BUTTON GRID */}
+        <div className="grid grid-cols-3 gap-x-16 gap-y-14">
           {BUTTONS.map((b) => (
             <button
               key={b.label}
               className="
-                h-36 w-36 rounded-3xl
-                bg-white/15 backdrop-blur-xl
-                border border-white/20
-                shadow-2xl
+                h-40 w-40 rounded-3xl
+                bg-white/20 backdrop-blur-2xl
+                border border-white/30
+                shadow-[0_30px_80px_rgba(0,0,0,0.6)]
                 flex flex-col items-center justify-center
-                hover:bg-white/25 hover:scale-105
-                transition
+                hover:bg-white/30 hover:-translate-y-1 hover:shadow-[0_40px_100px_rgba(0,0,0,0.8)]
+                transition-all duration-300
               "
             >
-              <span className="text-4xl mb-3">{b.icon}</span>
-              <span className="text-sm font-semibold text-white/90 text-center">
+              <span className="text-5xl mb-4">{b.icon}</span>
+              <span className="text-sm font-semibold tracking-wide text-white/95 text-center">
                 {b.label}
               </span>
             </button>
