@@ -1,10 +1,10 @@
 import "./App.css";
 
-function App() {
+export default function App() {
   return (
     <div
       style={{
-        backgroundColor: "black",
+        backgroundColor: "#000",
         color: "#22c55e",
         height: "100vh",
         display: "flex",
@@ -14,9 +14,7 @@ function App() {
         fontFamily: "monospace",
       }}
     >
-      ✅ DESKTOP APP — LOCAL SOURCE CONFIRMED
+      🧠 LOCAL DESKTOP UI — NO WEBVIEW
     </div>
   );
 }
-
-export default App;
