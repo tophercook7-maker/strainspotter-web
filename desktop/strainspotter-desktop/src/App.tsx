@@ -1,25 +1,42 @@
-import { useEffect } from "react";
+import "./App.css";
 
-export default function App() {
-  useEffect(() => {
-    // Point the desktop app at the live Garden web app
-    window.location.href = "https://strainspotter-web.vercel.app/garden";
-  }, []);
-
+function App() {
   return (
-    <div
+    <main
       style={{
-        backgroundColor: "black",
+        minHeight: "100vh",
+        backgroundColor: "#000",
         color: "#22c55e",
-        height: "100vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "monospace",
-        fontSize: "14px",
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont",
       }}
     >
-      Loading The Garden…
-    </div>
+      <div style={{ textAlign: "center" }}>
+        <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+          🌱 StrainSpotter AI
+        </h1>
+
+        <p style={{ opacity: 0.8, marginBottom: "1.5rem" }}>
+          Garden shell online
+        </p>
+
+        <div
+          style={{
+            padding: "1rem 1.5rem",
+            border: "1px solid #22c55e33",
+            borderRadius: "12px",
+            background: "#22c55e0a",
+          }}
+        >
+          Desktop app is stable.
+          <br />
+          Features will be enabled step by step.
+        </div>
+      </div>
+    </main>
   );
 }
+
+export default App;
