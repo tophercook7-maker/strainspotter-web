@@ -2,38 +2,67 @@
 
 import Image from "next/image";
 
-const BUTTONS = [
-  { label: "Dispensaries", icon: "🏪" },
-  { label: "Seed Vendors", icon: "🌱" },
-  { label: "Strains", icon: "🧬" },
-  { label: "My Garden", icon: "🌿" },
-  { label: "Grow Tools", icon: "🛠️" },
-  { label: "Scanner", icon: "📷" },
-  { label: "Journal", icon: "📓" },
-  { label: "Learn", icon: "📚" },
-  { label: "Settings", icon: "⚙️" },
-];
-
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen w-full overflow-hidden text-white">
+    <div
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        width: "100%",
+        backgroundColor: "#000",
+        overflow: "hidden",
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont",
+      }}
+    >
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
-        alt="Garden background"
+        alt="Garden Background"
         fill
         priority
-        className="object-cover"
+        style={{ objectFit: "cover" }}
       />
 
-      {/* OVERLAY */}
-      <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
+      {/* DARK OVERLAY */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(2px)",
+        }}
+      />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-8">
+      <div
+        style={{
+          position: "relative",
+          zIndex: 10,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+        }}
+      >
         {/* HERO */}
-        <div className="mb-14 text-center">
-          <div className="mx-auto mb-6 h-32 w-32 rounded-full bg-white/20 backdrop-blur-2xl border border-white/30 shadow-[0_20px_60px_rgba(0,0,0,0.6)] flex items-center justify-center">
+        <div style={{ textAlign: "center", marginBottom: 60 }}>
+          <div
+            style={{
+              width: 140,
+              height: 140,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.2)",
+              backdropFilter: "blur(18px)",
+              border: "1px solid rgba(255,255,255,0.35)",
+              margin: "0 auto 24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 25px 70px rgba(0,0,0,0.6)",
+            }}
+          >
             <Image
               src="/hero.png"
               alt="Hero"
@@ -45,37 +74,55 @@ export default function GardenPage() {
             />
           </div>
 
-          <h1 className="text-5xl font-extrabold tracking-tight">
-            The Garden
-          </h1>
-          <p className="mt-4 text-white/80 text-lg">
+          <h1 style={{ fontSize: 48, fontWeight: 800 }}>The Garden</h1>
+          <p style={{ marginTop: 12, opacity: 0.85 }}>
             Your personal cannabis ecosystem
           </p>
         </div>
 
         {/* BUTTON GRID */}
-        <div className="grid grid-cols-3 gap-x-16 gap-y-14">
-          {BUTTONS.map((b) => (
-            <button
-              key={b.label}
-              className="
-                h-40 w-40 rounded-3xl
-                bg-white/20 backdrop-blur-2xl
-                border border-white/30
-                shadow-[0_30px_80px_rgba(0,0,0,0.6)]
-                flex flex-col items-center justify-center
-                hover:bg-white/30 hover:-translate-y-1 hover:shadow-[0_40px_100px_rgba(0,0,0,0.8)]
-                transition-all duration-300
-              "
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 160px)",
+            gap: "48px 64px",
+          }}
+        >
+          {[
+            ["🏪", "Dispensaries"],
+            ["🌱", "Seed Vendors"],
+            ["🧬", "Strains"],
+            ["🌿", "My Garden"],
+            ["🛠️", "Grow Tools"],
+            ["📷", "Scanner"],
+            ["📓", "Journal"],
+            ["📚", "Learn"],
+            ["⚙️", "Settings"],
+          ].map(([icon, label]) => (
+            <div
+              key={label}
+              style={{
+                width: 160,
+                height: 160,
+                borderRadius: 28,
+                background: "rgba(255,255,255,0.22)",
+                backdropFilter: "blur(22px)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 35px 90px rgba(0,0,0,0.65)",
+                cursor: "pointer",
+                transition: "transform 0.25s ease",
+              }}
             >
-              <span className="text-5xl mb-4">{b.icon}</span>
-              <span className="text-sm font-semibold tracking-wide text-white/95 text-center">
-                {b.label}
-              </span>
-            </button>
+              <div style={{ fontSize: 42, marginBottom: 14 }}>{icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div>
+            </div>
           ))}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
