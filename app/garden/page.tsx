@@ -26,15 +26,15 @@ export default function GardenPage() {
         className="object-cover"
       />
 
-      {/* DARK OVERLAY */}
+      {/* OVERLAY */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center px-6 py-20">
+      <div className="relative z-10 flex flex-col items-center px-8 py-24">
         {/* HERO */}
-        <div className="mb-16 flex flex-col items-center">
-          <div className="w-32 h-32 rounded-full bg-green-500/20 backdrop-blur-md flex items-center justify-center mb-6 border border-green-400/30">
-            <span className="text-5xl">🍃</span>
+        <div className="mb-20 flex flex-col items-center">
+          <div className="w-36 h-36 rounded-full bg-green-500/20 backdrop-blur-xl flex items-center justify-center mb-6 border border-green-400/30 shadow-2xl">
+            <span className="text-6xl">🍃</span>
           </div>
 
           <h1 className="text-5xl font-extrabold mb-3">The Garden</h1>
@@ -43,21 +43,28 @@ export default function GardenPage() {
           </p>
         </div>
 
-        {/* BUTTON GRID */}
-        <div className="grid grid-cols-3 gap-10 max-w-3xl">
+        {/* GLASS BUTTON GRID */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
           {BUTTONS.map((b) => (
             <button
               key={b.label}
               className="
-                flex flex-col items-center justify-center
-                w-32 h-32 rounded-2xl
-                bg-white/10 backdrop-blur-md
+                group
+                w-44 h-44 md:w-48 md:h-48
+                rounded-3xl
+                bg-white/10 backdrop-blur-xl
                 border border-white/20
-                hover:bg-white/20 transition
+                shadow-xl
+                flex flex-col items-center justify-center
+                transition-all duration-300
+                hover:bg-white/20 hover:scale-105
               "
             >
-              <span className="text-4xl mb-2">{b.icon}</span>
-              <span className="text-sm font-medium text-white/90 text-center">
+              <span className="text-6xl mb-4 drop-shadow-lg">
+                {b.icon}
+              </span>
+
+              <span className="text-sm font-semibold text-white/90 text-center px-3">
                 {b.label}
               </span>
             </button>
