@@ -2,6 +2,24 @@
 
 import Image from "next/image";
 
+/* ======================================================
+   ICON DEFINITIONS (MUST BE ABOVE THE COMPONENT)
+====================================================== */
+const BUTTONS = [
+  { label: "Dispensaries", icon: "🏪" },
+  { label: "Seed Vendors", icon: "🌱" },
+  { label: "Strains", icon: "🧬" },
+  { label: "My Garden", icon: "🌿" },
+  { label: "Grow Tools", icon: "🪴" },
+  { label: "Scanner", icon: "📷" },
+  { label: "Journal", icon: "📓" },
+  { label: "Learn", icon: "📚" },
+  { label: "Settings", icon: "⚙️" },
+];
+
+/* ======================================================
+   PAGE
+====================================================== */
 export default function GardenPage() {
   return (
     <main className="relative min-h-screen text-white overflow-hidden">
@@ -42,15 +60,14 @@ export default function GardenPage() {
             <button
               key={b.label}
               className="
-                group
                 w-28 h-28
                 rounded-3xl
                 bg-white/10
                 backdrop-blur-xl
                 border border-white/20
                 flex flex-col items-center justify-center
-                hover:bg-white/20
                 transition
+                hover:bg-white/20
               "
             >
               <span className="text-4xl">{b.icon}</span>
