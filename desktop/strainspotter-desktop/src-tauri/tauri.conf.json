@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "strainspotter-ai",
+  "productName": "StrainSpotter-LOCAL-PROOF",
   "version": "0.1.0",
   "identifier": "com.christophercook.strainspotter-ai",
   "build": {
