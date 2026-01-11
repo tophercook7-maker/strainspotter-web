@@ -13,16 +13,16 @@ export default function GardenPage() {
         priority
         className="object-cover"
       />
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 bg-black/55" />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center px-6 py-20">
+      <div className="relative z-10 flex flex-col items-center px-6 pt-24 pb-16">
         {/* HERO */}
-        <div className="mb-14 flex flex-col items-center">
-          <div className="relative w-44 h-44 rounded-full overflow-hidden border border-white/30 bg-black">
+        <div className="flex flex-col items-center mb-16">
+          <div className="relative w-40 h-40 rounded-full overflow-hidden border border-white/30">
             <Image
               src="/hero.jpg"
-              alt="StrainSpotter Hero"
+              alt="Hero"
               fill
               className="object-cover"
             />
@@ -31,38 +31,32 @@ export default function GardenPage() {
           <h1 className="mt-6 text-4xl font-extrabold tracking-tight">
             The Garden
           </h1>
-          <p className="mt-3 text-white/80 text-center max-w-xl">
-            Your personal cannabis ecosystem — calm, grounded, and private.
+          <p className="mt-3 text-white/75 text-center max-w-lg">
+            Your personal cannabis ecosystem.
           </p>
         </div>
 
-        {/* BUTTON GRID */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 w-full max-w-4xl">
-          {[
-            "Dispensaries",
-            "Seed Vendors",
-            "Strains",
-            "My Collection",
-            "Grow Tools",
-            "Education",
-            "Journal",
-            "Settings",
-          ].map((label) => (
+        {/* ICON GRID */}
+        <div className="grid grid-cols-3 gap-8">
+          {BUTTONS.map((b) => (
             <button
-              key={label}
+              key={b.label}
               className="
-                flex flex-col items-center justify-center
-                min-h-[120px]
-                rounded-2xl
+                group
+                w-28 h-28
+                rounded-3xl
+                bg-white/10
+                backdrop-blur-xl
                 border border-white/20
-                bg-white/10 backdrop-blur-md
-                text-lg font-semibold
+                flex flex-col items-center justify-center
                 hover:bg-white/20
                 transition
               "
             >
-              <span className="text-3xl">🌿</span>
-              <span className="mt-3">{label}</span>
+              <span className="text-4xl">{b.icon}</span>
+              <span className="mt-2 text-sm font-semibold text-white/90">
+                {b.label}
+              </span>
             </button>
           ))}
         </div>
