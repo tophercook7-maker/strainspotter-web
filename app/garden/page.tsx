@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen text-white">
+    <main className="relative min-h-screen text-white overflow-hidden">
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
@@ -13,21 +13,22 @@ export default function GardenPage() {
         priority
         className="object-cover"
       />
-      <div className="absolute inset-0 bg-black/55" />
+      <div className="absolute inset-0 bg-black/60" />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center px-6 py-16">
+      <div className="relative z-10 flex flex-col items-center px-6 py-20">
         {/* HERO */}
-        <div className="mb-12 flex flex-col items-center">
-          <div className="relative w-40 h-40 mb-6">
+        <div className="mb-14 flex flex-col items-center">
+          <div className="relative w-44 h-44 rounded-full overflow-hidden border border-white/30 bg-black">
             <Image
               src="/hero.jpg"
               alt="StrainSpotter Hero"
               fill
-              className="object-contain rounded-full"
+              className="object-cover"
             />
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight">
+
+          <h1 className="mt-6 text-4xl font-extrabold tracking-tight">
             The Garden
           </h1>
           <p className="mt-3 text-white/80 text-center max-w-xl">
@@ -36,7 +37,7 @@ export default function GardenPage() {
         </div>
 
         {/* BUTTON GRID */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 w-full max-w-3xl">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 w-full max-w-4xl">
           {[
             "Dispensaries",
             "Seed Vendors",
@@ -49,14 +50,19 @@ export default function GardenPage() {
           ].map((label) => (
             <button
               key={label}
-              className="flex flex-col items-center justify-center
-                         rounded-2xl border border-white/20
-                         bg-white/10 backdrop-blur-md
-                         py-6 text-lg font-semibold
-                         hover:bg-white/20 transition"
+              className="
+                flex flex-col items-center justify-center
+                min-h-[120px]
+                rounded-2xl
+                border border-white/20
+                bg-white/10 backdrop-blur-md
+                text-lg font-semibold
+                hover:bg-white/20
+                transition
+              "
             >
-              🌿
-              <span className="mt-2">{label}</span>
+              <span className="text-3xl">🌿</span>
+              <span className="mt-3">{label}</span>
             </button>
           ))}
         </div>
