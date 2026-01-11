@@ -2,21 +2,9 @@
 
 import Image from "next/image";
 
-const BUTTONS = [
-  { label: "Strain Browser", icon: "🌿" },
-  { label: "Scanner", icon: "📷" },
-  { label: "Dispensaries", icon: "🏪" },
-  { label: "Seed Vendors", icon: "🌱" },
-  { label: "Grow Coach", icon: "🧠" },
-  { label: "History", icon: "📜" },
-  { label: "Lab Results", icon: "🧪" },
-  { label: "Community", icon: "💬" },
-  { label: "Settings", icon: "⚙️" },
-];
-
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen text-white overflow-hidden">
+    <main className="relative min-h-screen overflow-hidden text-white">
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
@@ -26,45 +14,73 @@ export default function GardenPage() {
         className="object-cover"
       />
 
-      {/* OVERLAY */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
       {/* CONTENT */}
       <div className="relative z-10 flex flex-col items-center px-8 py-24">
-        {/* HERO */}
-        <div className="mb-20 flex flex-col items-center">
-          <div className="w-36 h-36 rounded-full bg-green-500/20 backdrop-blur-xl flex items-center justify-center mb-6 border border-green-400/30 shadow-2xl">
-            <span className="text-6xl">🍃</span>
+        {/* HERO IMAGE */}
+        <div className="mb-24 flex flex-col items-center">
+          <div className="
+            relative
+            w-48 h-48
+            rounded-full
+            overflow-hidden
+            border border-green-400/40
+            shadow-[0_0_90px_rgba(34,197,94,0.35)]
+            mb-10
+          ">
+            <Image
+              src="/hero.jpg"
+              alt="Garden Hero"
+              fill
+              className="object-cover"
+            />
           </div>
 
-          <h1 className="text-5xl font-extrabold mb-3">The Garden</h1>
-          <p className="text-white/70 text-center max-w-xl">
+          <h1 className="text-6xl font-extrabold tracking-tight mb-4">
+            The Garden
+          </h1>
+
+          <p className="text-white/70 text-center max-w-xl text-lg">
             Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
           </p>
         </div>
 
-        {/* GLASS BUTTON GRID */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
-          {BUTTONS.map((b) => (
+        {/* GLASS ICON GRID */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-16">
+          {[
+            { label: "Strain Browser", icon: "🌿" },
+            { label: "Scanner", icon: "📷" },
+            { label: "Dispensaries", icon: "🏪" },
+            { label: "Seed Vendors", icon: "🌱" },
+            { label: "Grow Coach", icon: "🧠" },
+            { label: "History", icon: "📜" },
+            { label: "Lab Results", icon: "🧪" },
+            { label: "Community", icon: "💬" },
+            { label: "Settings", icon: "⚙️" },
+          ].map((b) => (
             <button
               key={b.label}
               className="
-                group
-                w-44 h-44 md:w-48 md:h-48
-                rounded-3xl
-                bg-white/10 backdrop-blur-xl
-                border border-white/20
-                shadow-xl
+                w-60 h-60
+                rounded-[36px]
+                bg-white/10
+                backdrop-blur-2xl
+                border border-white/25
+                shadow-[0_25px_80px_rgba(0,0,0,0.7)]
                 flex flex-col items-center justify-center
-                transition-all duration-300
-                hover:bg-white/20 hover:scale-105
+                transition-all duration-300 ease-out
+                hover:bg-white/20
+                hover:scale-105
+                hover:shadow-[0_35px_120px_rgba(34,197,94,0.25)]
               "
             >
-              <span className="text-6xl mb-4 drop-shadow-lg">
+              <span className="text-7xl mb-6 drop-shadow-xl">
                 {b.icon}
               </span>
 
-              <span className="text-sm font-semibold text-white/90 text-center px-3">
+              <span className="text-lg font-semibold tracking-wide text-white/90 text-center px-4">
                 {b.label}
               </span>
             </button>
