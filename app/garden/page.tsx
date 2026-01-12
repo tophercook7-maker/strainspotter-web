@@ -29,44 +29,44 @@ export default function GardenPage() {
         className="object-cover"
       />
 
-      {/* DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+      {/* OVERLAY */}
+      <div className="absolute inset-0 bg-black/35 backdrop-blur-[2px]" />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-start px-6 pt-24">
+      <div className="relative z-10 flex min-h-screen flex-col items-center px-6 pt-20">
         {/* HERO */}
-        <div className="mb-6 flex flex-col items-center">
+        <div className="mb-10 flex flex-col items-center">
           <Image
-            src="/brand/hero.png"
+            src="/brand/core/hero.png"
             alt="StrainSpotter Hero"
-            width={120}
-            height={120}
+            width={110}
+            height={110}
             priority
-            className="mb-4"
           />
-          <h1 className="text-5xl font-extrabold tracking-tight">
+
+          <h1 className="mt-4 text-5xl font-extrabold tracking-tight">
             The Garden
           </h1>
+
           <p className="mt-3 max-w-xl text-center text-white/80">
             Your personal cannabis ecosystem — calm, grounded, and built on
             supported truth.
           </p>
         </div>
 
-        {/* GLASS GRID */}
-        <div className="mt-12 grid grid-cols-3 gap-10">
+        {/* GLASS BUTTON GRID */}
+        <div className="grid grid-cols-3 gap-x-14 gap-y-14">
           {BUTTONS.map((b) => (
             <button
               key={b.label}
               onClick={() => router.push(b.path)}
               className="
-                group
-                h-36 w-36
+                h-32 w-32
                 rounded-3xl
                 bg-white/15
                 backdrop-blur-xl
-                border border-white/20
-                shadow-lg
+                border border-white/25
+                shadow-xl
                 transition-all
                 hover:bg-white/25
                 hover:scale-105
