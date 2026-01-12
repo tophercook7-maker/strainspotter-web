@@ -1,117 +1,79 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const BUTTONS = [
-  "Strain Browser",
-  "Scanner",
-  "History",
-  "Grow Coach",
-  "Dispensaries",
-  "Seed Vendors",
-  "Favorites",
-  "Learn",
-  "Settings",
+  { label: "Dispensaries", icon: "🌿", href: "/garden/dispensaries" }, // LIVE
+  { label: "Seed Vendors", icon: "🌱", href: "/garden/seed-vendors" }, // LIVE
+  { label: "Strain Browser", icon: "🧬", href: "/garden/strains" }, // PREVIEW
+  { label: "Scanner", icon: "📷", href: "/garden/scanner" }, // LOCKED
+  { label: "History", icon: "📜", href: "/garden/history" }, // PREVIEW
+  { label: "Grow Coach", icon: "🌾", href: "/garden/grow-coach" }, // LOCKED
+  { label: "Settings", icon: "⚙️", href: "/garden/settings" }, // LIVE
+  { label: "Ecosystem", icon: "🌎", href: "/garden/ecosystem" }, // LIVE
+  { label: "About", icon: "ℹ️", href: "/garden/about" }, // LIVE
 ];
 
 export default function GardenPage() {
+  const router = useRouter();
+
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        width: "100vw",
-        position: "relative",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        paddingTop: 80,
-        color: "white",
-      }}
-    >
+    <main className="relative min-h-screen text-white overflow-hidden">
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
-        alt="Garden Background"
+        alt="Garden background"
         fill
         priority
-        style={{ objectFit: "cover", zIndex: -2 }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(0,0,0,0.35)",
-          zIndex: -1,
-        }}
+        className="object-cover"
       />
 
-      {/* HERO */}
-      <div
-        style={{
-          width: 220,
-          height: 220,
-          borderRadius: "50%",
-          border: "6px solid #00ff66",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 24,
-          background: "black",
-        }}
-      >
-        <Image
-          src="/brand/core/hero.png"
-          alt="Hero"
-          width={160}
-          height={160}
-          style={{ objectFit: "contain" }}
-        />
-      </div>
-
-      {/* TITLE */}
-      <h1
-        style={{
-          fontSize: 56,
-          fontWeight: 900,
-          marginBottom: 60,
-          textShadow: "0 4px 20px rgba(0,0,0,0.6)",
-        }}
-      >
-        The Garden
-      </h1>
-
-      {/* ICON GRID */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 72,
-          paddingBottom: 120,
-        }}
-      >
-        {BUTTONS.map((label) => (
-          <div
-            key={label}
-            style={{
-              width: 180,
-              height: 180,
-              borderRadius: 36,
-              background: "rgba(255,255,255,0.22)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              boxShadow: "0 25px 45px rgba(0,0,0,0.45)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 20,
-              fontWeight: 700,
-              textAlign: "center",
-            }}
-          >
-            {label}
+      {/* OVERLAY */}
+      <div className="relative z-10 flex flex-col items-center px-6 py-14">
+        {/* HERO */}
+        <div className="flex flex-col items-center mb-10">
+          <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-green-400 shadow-2xl">
+            <Image
+              src="/brand/hero.png"
+              alt="Hero"
+              fill
+              className="object-cover"
+            />
           </div>
-        ))}
+          <h1 className="mt-6 text-4xl font-extrabold tracking-tight">
+            The Garden
+          </h1>
+          <p className="mt-2 text-white/80 text-center max-w-md">
+            Your personal cannabis ecosystem.
+          </p>
+        </div>
+
+        {/* ICON GRID */}
+        <div className="mt-6 grid grid-cols-3 md:grid-cols-4 gap-10 max-w-4xl">
+          {BUTTONS.map((b) => (
+            <button
+              key={b.label}
+              onClick={() => router.push(b.href)}
+              className="
+                flex flex-col items-center justify-center
+                w-32 h-32
+                rounded-3xl
+                bg-white/20
+                backdrop-blur-xl
+                border border-white/30
+                shadow-xl
+                hover:bg-white/30
+                transition
+              "
+            >
+              <div className="text-4xl mb-2">{b.icon}</div>
+              <div className="text-sm font-semibold tracking-wide text-white/90">
+                {b.label}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </main>
   );
