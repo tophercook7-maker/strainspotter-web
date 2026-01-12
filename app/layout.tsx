@@ -9,7 +9,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body
+        style={{
+          margin: 0,
+          padding: 0,
+          background: "black",
+          overflowX: "hidden",
+        }}
+      >
+        {children}
+      </body>
     </html>
   );
 }
