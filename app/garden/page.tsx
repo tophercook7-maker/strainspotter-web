@@ -1,74 +1,69 @@
 "use client";
 
+const BUTTONS = [
+  { label: "Strain Browser", icon: "🌿" },
+  { label: "Scanner", icon: "📷" },
+  { label: "History", icon: "📜" },
+  { label: "Grow Coach", icon: "🌱" },
+  { label: "Dispensaries", icon: "🏪" },
+  { label: "Seed Vendors", icon: "🌰" },
+  { label: "Favorites", icon: "⭐" },
+  { label: "Learn", icon: "📚" },
+  { label: "Settings", icon: "⚙️" },
+];
+
 export default function GardenPage() {
   return (
     <main
+      className="relative min-h-screen w-full overflow-y-auto text-white"
       style={{
-        minHeight: "100vh",
-        width: "100vw",
         backgroundImage: "url('/garden-bg.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        paddingTop: "64px",
       }}
     >
-      {/* HERO */}
-      <div
-        style={{
-          width: 220,
-          height: 220,
-          borderRadius: "50%",
-          backgroundImage: "url('/brand/core/hero.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          marginBottom: 24,
-        }}
-      />
+      <div className="relative z-10 flex flex-col items-center px-6 py-16">
+        {/* HERO */}
+        <div
+          style={{
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            backgroundImage: "url('/brand/core/hero.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            marginBottom: 24,
+          }}
+        />
 
-      {/* TITLE */}
-      <h1 style={{ fontSize: 56, fontWeight: 700, marginBottom: 12 }}>
-        The Garden
-      </h1>
+        {/* TITLE */}
+        <h1 className="text-5xl font-bold drop-shadow mb-3">The Garden</h1>
 
-      {/* ICON GRID */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 160px)",
-          gap: 48,
-          marginTop: 48,
-        }}
-      >
-        {[
-          "Strain Browser",
-          "Scanner",
-          "History",
-          "Grow Coach",
-          "Dispensaries",
-          "Seed Vendors",
-          "Favorites",
-          "Learn",
-          "Settings",
-        ].map((label) => (
-          <button
-            key={label}
-            style={{
-              width: 160,
-              height: 160,
-              borderRadius: 32,
-              background: "rgba(255,255,255,0.25)",
-              backdropFilter: "blur(18px)",
-              border: "1px solid rgba(255,255,255,0.4)",
-              fontSize: 16,
-              fontWeight: 600,
-            }}
-          >
-            {label}
-          </button>
-        ))}
+        {/* ICON GRID */}
+        <div className="mt-10 grid grid-cols-3 gap-10 sm:grid-cols-3 md:grid-cols-4 max-w-4xl mx-auto">
+          {BUTTONS.map((b) => (
+            <button
+              key={b.label}
+              className="
+  flex flex-col items-center justify-center
+  w-32 h-32
+  rounded-3xl
+  bg-white/20
+  backdrop-blur-xl
+  shadow-xl
+  border border-white/30
+  text-white
+  hover:bg-white/30
+  transition
+"
+            >
+              <div className="text-4xl mb-2">{b.icon}</div>
+              <div className="text-sm font-semibold tracking-wide text-white/90">
+                {b.label}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </main>
   );
