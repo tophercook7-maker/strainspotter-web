@@ -3,13 +3,9 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-type GardenButton = {
-  label: string;
-  icon: string;
-  href: string;
-};
+type Btn = { label: string; icon: string; href: string };
 
-const BUTTONS: GardenButton[] = [
+const BUTTONS: Btn[] = [
   { label: "Dispensaries", icon: "📍", href: "/garden/dispensaries" },
   { label: "Seed Vendors", icon: "🌱", href: "/garden/seeds" },
   { label: "Strains", icon: "🍃", href: "/garden/strains" },
@@ -34,13 +30,13 @@ export default function GardenPage() {
         priority
         className="object-cover"
       />
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/35" />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-10">
-        {/* HERO */}
-        <div className="mb-6 flex flex-col items-center">
-          <div className="relative h-28 w-28 overflow-hidden rounded-full border border-white/25 bg-black/40 shadow-2xl backdrop-blur-xl">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-6 py-10">
+        {/* HERO + TITLE */}
+        <div className="flex flex-col items-center">
+          <div className="relative h-28 w-28 overflow-hidden rounded-full border border-white/25 bg-black/30 shadow-2xl backdrop-blur-xl">
             <Image
               src="/brand/core/hero.png"
               alt="Hero"
@@ -50,16 +46,17 @@ export default function GardenPage() {
             />
           </div>
 
-          <h1 className="mt-4 text-5xl font-extrabold tracking-tight drop-shadow">
+          <h1 className="mt-5 text-6xl font-extrabold tracking-tight text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]">
             The Garden
           </h1>
-          <p className="mt-2 max-w-xl text-center text-white/80">
+
+          <p className="mt-2 max-w-2xl text-center text-lg text-white/85 drop-shadow">
             Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
           </p>
         </div>
 
-        {/* iPAD ICON GRID */}
-        <div className="mt-6 grid w-full max-w-5xl grid-cols-3 gap-10 sm:gap-12 md:grid-cols-4">
+        {/* ICON GRID (REAL APP ICONS) */}
+        <div className="mt-10 grid w-full grid-cols-3 place-items-center gap-10 sm:gap-12 md:grid-cols-4">
           {BUTTONS.map((b) => (
             <button
               key={b.label}
@@ -68,21 +65,22 @@ export default function GardenPage() {
                 group
                 flex flex-col items-center justify-center
                 h-28 w-28 sm:h-32 sm:w-32
-                rounded-[28px]
-                bg-white/18
+                rounded-[30px]
+                bg-white/16
                 backdrop-blur-2xl
-                shadow-2xl
+                shadow-[0_18px_45px_rgba(0,0,0,0.45)]
                 border border-white/25
-                hover:bg-white/26
+                hover:bg-white/24
                 hover:border-white/35
                 active:scale-[0.98]
                 transition
+                select-none
               "
             >
-              <div className="text-4xl sm:text-5xl leading-none drop-shadow mb-2">
+              <div className="text-5xl leading-none drop-shadow mb-2">
                 {b.icon}
               </div>
-              <div className="text-[12px] sm:text-sm font-semibold tracking-wide text-white/95 drop-shadow">
+              <div className="text-sm font-semibold tracking-wide text-white/95 drop-shadow">
                 {b.label}
               </div>
             </button>
