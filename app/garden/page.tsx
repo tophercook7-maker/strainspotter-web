@@ -3,82 +3,70 @@
 import Image from "next/image";
 
 const BUTTONS = [
-  "Strain Browser",
-  "Scanner",
-  "Dispensary Finder",
-  "Seed Vendors",
-  "Grow Coach",
-  "History",
-  "Favorites",
-  "Settings",
-  "Profile",
+  { label: "Strain Browser", icon: "🌿" },
+  { label: "Scanner", icon: "📸" },
+  { label: "History", icon: "🧾" },
+  { label: "Grow Coach", icon: "🪴" },
+  { label: "Dispensaries", icon: "🏪" },
+  { label: "Seed Vendors", icon: "🌱" },
+  { label: "Favorites", icon: "⭐" },
+  { label: "Learn", icon: "📚" },
+  { label: "Settings", icon: "⚙️" },
 ];
 
 export default function GardenPage() {
   return (
     <main className="relative min-h-screen w-full overflow-y-auto text-white">
+      
       {/* BACKGROUND */}
-      <Image
-        src="/garden-bg.jpg"
-        alt="Garden background"
-        fill
-        priority
-        className="object-cover"
-      />
-
-      {/* OVERLAY */}
-      <div className="absolute inset-0 bg-black/35" />
+      <div className="fixed inset-0 -z-10">
+        <Image
+          src="/garden-bg.jpg"
+          alt="Garden background"
+          fill
+          priority
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40" />
+      </div>
 
       {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center px-10 py-20">
-        
-        {/* HERO (FIXED) */}
-        <div className="mb-20">
-          <div className="w-56 h-56 rounded-full overflow-hidden bg-black">
+      <div className="flex flex-col items-center px-6 pt-16 pb-24">
+
+        {/* HERO */}
+        <div className="mb-14">
+          <div className="relative w-36 h-36 rounded-full overflow-hidden ring-4 ring-green-400/60 bg-black/30 backdrop-blur-md">
             <Image
-              src="/brand/core/hero.png"
+              src="/brand/hero.png"
               alt="StrainSpotter Hero"
-              width={224}
-              height={224}
-              priority
+              fill
               className="object-cover"
             />
           </div>
         </div>
 
-        {/* APP ICON GRID */}
-        <div
-          className="
-            grid
-            grid-cols-3
-            gap-16
-            w-full
-            max-w-6xl
-          "
-        >
-          {BUTTONS.map((label) => (
+        {/* ICON GRID */}
+        <div className="grid grid-cols-3 gap-12 max-w-5xl">
+          {BUTTONS.map((b) => (
             <button
-              key={label}
+              key={b.label}
               className="
-                aspect-square
+                flex flex-col items-center justify-center
+                w-40 h-40
                 rounded-3xl
-                bg-white/20
-                backdrop-blur-2xl
-                border
-                border-white/25
-                shadow-2xl
-                flex
-                flex-col
-                items-center
-                justify-center
-                text-xl
-                font-semibold
-                hover:bg-white/30
+                bg-white/10
+                backdrop-blur-xl
+                border border-white/20
+                shadow-xl
                 transition
+                hover:scale-105 hover:bg-white/20
+                active:scale-95
               "
             >
-              <span className="text-4xl mb-4">🌿</span>
-              {label}
+              <span className="text-5xl mb-4">{b.icon}</span>
+              <span className="text-lg font-semibold text-white/90 text-center">
+                {b.label}
+              </span>
             </button>
           ))}
         </div>
