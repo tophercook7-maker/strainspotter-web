@@ -9,11 +9,14 @@ const BUTTONS = [
   { label: "Grow Coach", icon: "🌱" },
   { label: "Dispensaries", icon: "🏪" },
   { label: "Seed Vendors", icon: "🌰" },
+  { label: "Journal", icon: "📓" },
+  { label: "Learn", icon: "📘" },
+  { label: "Settings", icon: "⚙️" },
 ];
 
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen text-white overflow-hidden">
+    <main className="relative min-h-screen text-white">
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
@@ -23,44 +26,44 @@ export default function GardenPage() {
         className="object-cover -z-10"
       />
 
-      {/* PAGE CONTENT */}
+      {/* CONTENT */}
       <div
         style={{
-          maxWidth: "1100px",
+          maxWidth: "1200px",
           margin: "0 auto",
-          paddingTop: "96px",
-          paddingBottom: "140px",
+          paddingTop: "80px",
+          paddingBottom: "160px",
           paddingLeft: "24px",
           paddingRight: "24px",
         }}
       >
-        {/* HERO (REAL IMAGE, NO BLUR CIRCLE) */}
+        {/* HERO */}
         <div
           style={{
             display: "flex",
             justifyContent: "center",
-            marginBottom: "96px",
+            marginBottom: "80px",
           }}
         >
           <Image
-            src="/hero.png"   // must exist in /public
+            src="/hero.png"
             alt="Hero"
-            width={180}
-            height={180}
+            width={160}
+            height={160}
             priority
             style={{
               borderRadius: "999px",
-              boxShadow: "0 30px 90px rgba(0,0,0,0.7)",
+              boxShadow: "0 30px 90px rgba(0,0,0,0.75)",
             }}
           />
         </div>
 
-        {/* ICON GRID */}
+        {/* GLASS BUTTON GRID */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "120px",
+            gap: "96px",
             justifyItems: "center",
           }}
         >
@@ -68,12 +71,12 @@ export default function GardenPage() {
             <button
               key={b.label}
               style={{
-                width: "200px",
-                height: "200px",
-                borderRadius: "32px",
+                width: "180px",
+                height: "180px",
+                borderRadius: "28px",
                 background: "rgba(255,255,255,0.14)",
-                backdropFilter: "blur(28px)",
-                WebkitBackdropFilter: "blur(28px)",
+                backdropFilter: "blur(30px)",
+                WebkitBackdropFilter: "blur(30px)",
                 border: "1px solid rgba(255,255,255,0.25)",
                 boxShadow: "0 40px 120px rgba(0,0,0,0.85)",
                 display: "flex",
@@ -83,12 +86,12 @@ export default function GardenPage() {
                 cursor: "pointer",
               }}
             >
-              <div style={{ fontSize: "56px", marginBottom: "16px" }}>
+              <div style={{ fontSize: "48px", marginBottom: "14px" }}>
                 {b.icon}
               </div>
               <div
                 style={{
-                  fontSize: "16px",
+                  fontSize: "15px",
                   fontWeight: 600,
                   opacity: 0.95,
                 }}
