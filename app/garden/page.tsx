@@ -55,32 +55,39 @@ export default function GardenPage() {
           </p>
         </div>
 
-        {/* SPREAD-OUT ICON FIELD */}
-        <div className="mt-16 grid w-full max-w-7xl grid-cols-3 gap-x-24 gap-y-20 md:grid-cols-3 lg:grid-cols-3">
-          {BUTTONS.map((b) => (
+        <div className="mt-12 grid grid-cols-3 gap-16 max-w-5xl mx-auto">
+          {[
+            { label: "Strain Browser", icon: "🌿", path: "/garden/strains" },
+            { label: "Scanner", icon: "📷", path: "/garden/scanner" },
+            { label: "Dispensaries", icon: "📍", path: "/garden/dispensaries" },
+            { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
+            { label: "Grow Coach", icon: "🪴", path: "/garden/grow-coach" },
+            { label: "History", icon: "📜", path: "/garden/history" },
+            { label: "Favorites", icon: "⭐", path: "/garden/favorites" },
+            { label: "Ecosystem", icon: "🌎", path: "/garden/ecosystem" },
+            { label: "Settings", icon: "⚙️", path: "/garden/settings" },
+          ].map((item) => (
             <button
-              key={b.label}
+              key={item.label}
               type="button"
-              onClick={() => router.push(b.href)}
+              onClick={() => router.push(item.path)}
               className="
-                flex flex-col items-center justify-center
-                h-32 w-32
-                rounded-[32px]
-                bg-white/18
-                backdrop-blur-2xl
-                shadow-[0_22px_55px_rgba(0,0,0,0.5)]
-                border border-white/30
-                hover:bg-white/28
-                hover:border-white/45
-                active:scale-[0.97]
-                transition
-                cursor-pointer
-                focus:outline-none
-              "
+        flex flex-col items-center justify-center
+        w-36 h-36
+        rounded-3xl
+        bg-white/20
+        backdrop-blur-xl
+        border border-white/30
+        shadow-2xl
+        text-white
+        hover:bg-white/30
+        transition
+        cursor-pointer
+      "
             >
-              <div className="text-5xl mb-2 drop-shadow">{b.icon}</div>
-              <div className="text-sm font-semibold tracking-wide text-white/95 drop-shadow">
-                {b.label}
+              <div className="text-5xl mb-3">{item.icon}</div>
+              <div className="text-sm font-semibold tracking-wide text-white/90">
+                {item.label}
               </div>
             </button>
           ))}
