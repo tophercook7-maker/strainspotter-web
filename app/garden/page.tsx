@@ -6,15 +6,15 @@ import { useRouter } from "next/navigation";
 type Btn = { label: string; icon: string; href: string };
 
 const BUTTONS: Btn[] = [
-  { label: "Dispensaries", icon: "📍", href: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", href: "/garden/seeds" },
-  { label: "Strains", icon: "🍃", href: "/garden/strains" },
+  { label: "Strain Browser", icon: "🍃", href: "/garden/strains" },
   { label: "Scanner", icon: "📷", href: "/garden/scanner" },
+  { label: "Dispensaries", icon: "📍", href: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🌱", href: "/garden/seed-vendors" },
+  { label: "Grow Coach", icon: "🪴", href: "/garden/grow-coach" },
   { label: "History", icon: "📜", href: "/garden/history" },
-  { label: "Grow Coach", icon: "🪴", href: "/garden/grow" },
+  { label: "Favorites", icon: "⭐", href: "/garden/favorites" },
   { label: "Ecosystem", icon: "🌍", href: "/garden/ecosystem" },
   { label: "Settings", icon: "⚙️", href: "/garden/settings" },
-  { label: "Profile", icon: "👤", href: "/garden/profile" },
 ];
 
 export default function GardenPage() {
@@ -60,6 +60,7 @@ export default function GardenPage() {
           {BUTTONS.map((b) => (
             <button
               key={b.label}
+              type="button"
               onClick={() => router.push(b.href)}
               className="
                 flex flex-col items-center justify-center
@@ -73,6 +74,8 @@ export default function GardenPage() {
                 hover:border-white/45
                 active:scale-[0.97]
                 transition
+                cursor-pointer
+                focus:outline-none
               "
             >
               <div className="text-5xl mb-2 drop-shadow">{b.icon}</div>
