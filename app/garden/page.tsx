@@ -16,7 +16,7 @@ const BUTTONS = [
 
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen w-full overflow-auto">
+    <main className="relative min-h-screen w-full overflow-y-auto">
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
@@ -27,58 +27,54 @@ export default function GardenPage() {
       />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center pt-12 pb-24">
+      <div className="relative z-10 flex flex-col items-center px-8 py-16">
         {/* HERO */}
-        <div className="mb-10">
+        <div className="mb-14">
           <Image
             src="/brand/core/hero.png"
             alt="StrainSpotter Hero"
-            width={180}
-            height={180}
-            className="rounded-full shadow-2xl"
+            width={220}
+            height={220}
+            className="rounded-full bg-black shadow-[0_0_40px_rgba(0,255,120,0.45)]"
           />
         </div>
 
         {/* TITLE */}
-        <h1 className="text-5xl font-bold text-white drop-shadow mb-2">
+        <h1 className="text-5xl font-bold text-white drop-shadow mb-3">
           The Garden
         </h1>
-        <p className="text-white/80 mb-12 text-lg">
+        <p className="text-white/85 text-xl mb-20 text-center max-w-xl">
           Your personal cannabis ecosystem
         </p>
 
         {/* ICON GRID */}
-        <div
-          className="
-            grid
-            grid-cols-3
-            gap-12
-            px-16
-            max-w-5xl
-          "
-        >
+        <div className="grid grid-cols-3 gap-16 max-w-6xl">
           {BUTTONS.map((b) => (
             <button
               key={b.label}
               className="
-                w-40
-                h-40
-                rounded-3xl
-                bg-white/20
-                backdrop-blur-xl
+                w-52
+                h-52
+                rounded-[32px]
+                bg-white/25
+                backdrop-blur-2xl
                 border border-white/30
-                shadow-xl
+                shadow-2xl
                 flex
                 flex-col
                 items-center
                 justify-center
                 text-white
-                hover:scale-105
-                transition
+                hover:scale-110
+                hover:bg-white/30
+                transition-all
+                duration-300
               "
             >
-              <div className="text-5xl mb-3">{b.icon}</div>
-              <div className="text-lg font-semibold">{b.label}</div>
+              <div className="text-6xl mb-4">{b.icon}</div>
+              <div className="text-xl font-semibold tracking-wide">
+                {b.label}
+              </div>
             </button>
           ))}
         </div>
