@@ -33,10 +33,10 @@ export default function GardenPage() {
       <div className="absolute inset-0 bg-black/35" />
 
       {/* CONTENT */}
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-6 py-10">
-        {/* HERO + TITLE */}
+      <div className="relative z-10 flex min-h-screen flex-col items-center px-10 py-10">
+        {/* HERO */}
         <div className="flex flex-col items-center">
-          <div className="relative h-28 w-28 overflow-hidden rounded-full border border-white/25 bg-black/30 shadow-2xl backdrop-blur-xl">
+          <div className="relative h-28 w-28 overflow-hidden rounded-full border border-white/30 bg-black/40 shadow-2xl backdrop-blur-xl">
             <Image
               src="/brand/core/hero.png"
               alt="Hero"
@@ -46,7 +46,7 @@ export default function GardenPage() {
             />
           </div>
 
-          <h1 className="mt-5 text-6xl font-extrabold tracking-tight text-white drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]">
+          <h1 className="mt-5 text-6xl font-extrabold tracking-tight drop-shadow-[0_6px_18px_rgba(0,0,0,0.7)]">
             The Garden
           </h1>
 
@@ -55,31 +55,27 @@ export default function GardenPage() {
           </p>
         </div>
 
-        {/* ICON GRID (REAL APP ICONS) */}
-        <div className="mt-10 grid w-full grid-cols-3 place-items-center gap-10 sm:gap-12 md:grid-cols-4">
+        {/* SPREAD-OUT ICON FIELD */}
+        <div className="mt-16 grid w-full max-w-7xl grid-cols-3 gap-x-24 gap-y-20 md:grid-cols-3 lg:grid-cols-3">
           {BUTTONS.map((b) => (
             <button
               key={b.label}
               onClick={() => router.push(b.href)}
               className="
-                group
                 flex flex-col items-center justify-center
-                h-28 w-28 sm:h-32 sm:w-32
-                rounded-[30px]
-                bg-white/16
+                h-32 w-32
+                rounded-[32px]
+                bg-white/18
                 backdrop-blur-2xl
-                shadow-[0_18px_45px_rgba(0,0,0,0.45)]
-                border border-white/25
-                hover:bg-white/24
-                hover:border-white/35
-                active:scale-[0.98]
+                shadow-[0_22px_55px_rgba(0,0,0,0.5)]
+                border border-white/30
+                hover:bg-white/28
+                hover:border-white/45
+                active:scale-[0.97]
                 transition
-                select-none
               "
             >
-              <div className="text-5xl leading-none drop-shadow mb-2">
-                {b.icon}
-              </div>
+              <div className="text-5xl mb-2 drop-shadow">{b.icon}</div>
               <div className="text-sm font-semibold tracking-wide text-white/95 drop-shadow">
                 {b.label}
               </div>
