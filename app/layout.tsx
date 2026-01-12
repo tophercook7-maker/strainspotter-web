@@ -1,5 +1,3 @@
-"use client";
-
 import "./globals.css";
 
 export default function RootLayout({
@@ -9,14 +7,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          padding: 0,
-          background: "black",
-          overflowX: "hidden",
-        }}
-      >
+      <body className="m-0 p-0 min-h-screen w-full bg-transparent overflow-auto">
         {children}
       </body>
     </html>
