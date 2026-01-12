@@ -55,7 +55,20 @@ export default function GardenPage() {
           </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-3 gap-16 max-w-5xl mx-auto">
+        <div
+          className="
+    mt-16
+    w-full
+    max-w-6xl
+    mx-auto
+    grid
+    grid-cols-3
+    gap-x-24
+    gap-y-20
+    px-16
+    place-items-center
+  "
+        >
           {[
             { label: "Strain Browser", icon: "🌿", path: "/garden/strains" },
             { label: "Scanner", icon: "📷", path: "/garden/scanner" },
@@ -72,21 +85,22 @@ export default function GardenPage() {
               type="button"
               onClick={() => router.push(item.path)}
               className="
-        flex flex-col items-center justify-center
-        w-36 h-36
-        rounded-3xl
-        bg-white/20
-        backdrop-blur-xl
-        border border-white/30
-        shadow-2xl
-        text-white
-        hover:bg-white/30
-        transition
-        cursor-pointer
-      "
+  flex flex-col items-center justify-center
+  w-40 h-40
+  rounded-[32px]
+  bg-white/25
+  backdrop-blur-2xl
+  border border-white/30
+  shadow-2xl
+  text-white
+  hover:bg-white/35
+  transition-all
+  duration-200
+  cursor-pointer
+"
             >
-              <div className="text-5xl mb-3">{item.icon}</div>
-              <div className="text-sm font-semibold tracking-wide text-white/90">
+              <div className="text-6xl mb-4">{item.icon}</div>
+              <div className="text-base font-semibold tracking-wide text-white">
                 {item.label}
               </div>
             </button>
