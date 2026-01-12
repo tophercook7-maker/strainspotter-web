@@ -8,55 +8,54 @@ const BUTTONS = [
   { label: "Grow Coach", icon: "🧠" },
   { label: "Strains", icon: "🍃" },
   { label: "Journal", icon: "📓" },
-  { label: "Settings", icon: "⚙️" },
-  { label: "Community", icon: "💬" },
   { label: "Learn", icon: "📚" },
+  { label: "Community", icon: "💬" },
   { label: "Profile", icon: "👤" },
+  { label: "Settings", icon: "⚙️" },
 ];
 
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen w-full overflow-y-auto text-white">
+    <main className="relative w-screen min-h-screen overflow-y-auto text-white">
 
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
-        alt="Garden Background"
+        alt="Garden background"
         fill
         priority
         className="object-cover"
       />
 
-      {/* OVERLAY */}
-      <div className="relative z-10 flex flex-col items-center px-6 py-16">
+      {/* CONTENT */}
+      <div className="relative z-10 flex flex-col items-center py-20">
 
         {/* HERO */}
-        <div className="mb-12">
+        <div className="mb-10">
           <Image
             src="/brand/hero.png"
             alt="Hero"
-            width={180}
-            height={180}
+            width={200}
+            height={200}
             className="rounded-full"
           />
         </div>
 
         {/* TITLE */}
-        <h1 className="text-5xl font-extrabold mb-12 tracking-tight">
+        <h1 className="text-6xl font-extrabold tracking-tight mb-14">
           The Garden
         </h1>
 
-        {/* ICON GRID — UNCONSTRAINED, IPAD SCALE */}
+        {/* ICON GRID — ABSOLUTE SCALE */}
         <div
           className="
             grid
             grid-cols-3
-            gap-12
-            sm:grid-cols-3
             md:grid-cols-4
             lg:grid-cols-5
+            gap-16
             w-full
-            max-w-none
+            px-20
             justify-items-center
           "
         >
@@ -65,7 +64,7 @@ export default function GardenPage() {
               key={b.label}
               className="
                 flex flex-col items-center justify-center
-                w-40 h-40
+                w-44 h-44
                 rounded-3xl
                 bg-white/25
                 backdrop-blur-2xl
@@ -82,7 +81,6 @@ export default function GardenPage() {
             </button>
           ))}
         </div>
-
       </div>
     </main>
   );
