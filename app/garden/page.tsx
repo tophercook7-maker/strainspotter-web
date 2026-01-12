@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const BUTTONS = [
   { label: "Dispensaries", icon: "🌿", href: "/garden/dispensaries" }, // LIVE
@@ -16,8 +16,6 @@ const BUTTONS = [
 ];
 
 export default function GardenPage() {
-  const router = useRouter();
-
   return (
     <main className="relative min-h-screen text-white overflow-hidden">
       {/* BACKGROUND */}
@@ -52,10 +50,9 @@ export default function GardenPage() {
         {/* ICON GRID */}
         <div className="mt-6 grid grid-cols-3 md:grid-cols-4 gap-10 max-w-4xl">
           {BUTTONS.map((b) => (
-            <button
-              key={b.label}
-              onClick={() => router.push(b.href)}
-              className="
+            <Link key={b.label} href={b.href}>
+              <button
+                className="
                 flex flex-col items-center justify-center
                 w-32 h-32
                 rounded-3xl
@@ -66,12 +63,13 @@ export default function GardenPage() {
                 hover:bg-white/30
                 transition
               "
-            >
-              <div className="text-4xl mb-2">{b.icon}</div>
-              <div className="text-sm font-semibold tracking-wide text-white/90">
-                {b.label}
-              </div>
-            </button>
+              >
+                <div className="text-4xl mb-2">{b.icon}</div>
+                <div className="text-sm font-semibold tracking-wide text-white/90">
+                  {b.label}
+                </div>
+              </button>
+            </Link>
           ))}
         </div>
       </div>
