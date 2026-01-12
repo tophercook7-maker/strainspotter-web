@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 type GardenButton = {
@@ -10,114 +8,104 @@ type GardenButton = {
 };
 
 const BUTTONS: GardenButton[] = [
-  { label: "Strains", icon: "🌿", href: "/garden/strains" },
-  { label: "Dispensaries", icon: "📍", href: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", href: "/garden/seeds" },
-  { label: "My Stash", icon: "🫙", href: "/garden/stash" },
-  { label: "Grow Log", icon: "🗓️", href: "/garden/grow-log" },
-  { label: "Terpenes", icon: "🧪", href: "/garden/terpenes" },
-  { label: "Effects", icon: "✨", href: "/garden/effects" },
-  { label: "Favorites", icon: "⭐", href: "/garden/favorites" },
+  { label: "Strain Browser", icon: "🌿", href: "/garden/strains" },
+  { label: "Scanner", icon: "📷", href: "/garden/scanner" },
+  { label: "History", icon: "🧾", href: "/garden/history" },
+  { label: "Grow Coach", icon: "🌱", href: "/garden/grow-coach" },
+  { label: "Dispensaries", icon: "🏪", href: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🫘", href: "/garden/seeds" },
+  { label: "Lab Results", icon: "🧪", href: "/garden/labs" },
+  { label: "Community", icon: "👥", href: "/garden/community" },
   { label: "Settings", icon: "⚙️", href: "/garden/settings" },
 ];
 
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen text-white overflow-hidden">
-      {/* FULL BACKGROUND IMAGE */}
-      <div className="absolute inset-0 -z-10">
-        {/* Use <img> so it NEVER fails due to next/image config */}
-        <img
-          src="/garden-bg.jpg"
-          alt="Garden background"
-          className="h-full w-full object-cover"
-        />
-        {/* Darken + soften so glass pops */}
-        <div className="absolute inset-0 bg-black/55" />
-        <div className="absolute inset-0 backdrop-blur-[2px]" />
-      </div>
+    <main
+      className="relative min-h-screen text-white overflow-hidden"
+      style={{
+        backgroundImage: "url(/garden-bg.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* Soft dark overlay (NO black header block) */}
+      <div className="absolute inset-0 bg-black/35" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/10 to-black/55" />
 
-      {/* CONTENT WRAP (no black header bar) */}
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 pt-10 sm:pt-12 pb-16">
-        {/* HERO */}
-        <div className="flex flex-col items-center text-center mb-10 sm:mb-12">
-          {/* If your hero file is named differently, change ONLY this src:
-              examples: /hero.jpg  /hero.png  /garden-hero.png
-          */}
-          <div className="relative h-28 w-28 sm:h-32 sm:w-32 rounded-full overflow-hidden ring-1 ring-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
+      {/* Content */}
+      <div className="relative mx-auto max-w-5xl px-6 py-10">
+        {/* Top cluster */}
+        <div className="flex flex-col items-center text-center gap-4">
+          {/* HERO (use plain img so it ALWAYS renders) */}
+          <div className="h-24 w-24 md:h-28 md:w-28 rounded-full overflow-hidden ring-1 ring-white/25 shadow-2xl bg-black/20 backdrop-blur">
             <img
-              src="/hero.png"
+              src="/brand/hero.png"
               alt="Hero"
               className="h-full w-full object-cover"
+              loading="eager"
             />
-            {/* subtle glass sheen */}
-            <div className="absolute inset-0 bg-white/10" />
           </div>
 
-          <h1 className="mt-5 text-4xl sm:text-5xl font-extrabold tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow">
             The Garden
           </h1>
-          <p className="mt-2 text-white/75 max-w-xl">
+          <p className="text-white/80 max-w-xl">
             Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
           </p>
         </div>
 
-        {/* GLASS PANEL (shrunk + centered, not huge white box) */}
-        <section className="mx-auto w-full max-w-3xl rounded-3xl border border-white/15 bg-white/10 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.55)]">
-          <div className="p-5 sm:p-7">
+        {/* Glass panel wrapper (shrinks page + keeps UI centered) */}
+        <div className="mt-8 md:mt-10 rounded-3xl border border-white/15 bg-black/25 backdrop-blur-2xl shadow-[0_20px_80px_-20px_rgba(0,0,0,0.8)]">
+          <div className="p-6 md:p-10">
             {/* ICON GRID — BIG, SEPARATED, GLASSY */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7 md:gap-10">
               {BUTTONS.map((b) => {
-                const common =
-                  "group relative flex flex-col items-center justify-center text-center " +
-                  "rounded-2xl border border-white/15 bg-white/10 backdrop-blur-xl " +
-                  "shadow-[0_10px_30px_rgba(0,0,0,0.35)] " +
-                  "transition-transform duration-200 active:scale-[0.98] " +
-                  "hover:bg-white/15 hover:border-white/25 " +
-                  "min-h-[120px] sm:min-h-[140px] px-4";
-
                 const inner = (
-                  <>
-                    {/* top glow */}
-                    <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/20 to-transparent opacity-70" />
-                    {/* icon */}
-                    <div className="relative text-3xl sm:text-4xl drop-shadow">
-                      {b.icon}
+                  <div
+                    className={[
+                      "group w-full rounded-3xl",
+                      "border border-white/15",
+                      "bg-white/10 backdrop-blur-xl",
+                      "shadow-[0_12px_40px_-18px_rgba(0,0,0,0.85)]",
+                      "transition transform-gpu",
+                      "hover:bg-white/14 hover:border-white/25 hover:-translate-y-0.5",
+                      "active:translate-y-0",
+                      b.disabled ? "opacity-45 cursor-not-allowed pointer-events-none" : "",
+                    ].join(" ")}
+                  >
+                    <div className="flex flex-col items-center justify-center h-[140px] md:h-[160px] gap-3">
+                      <div className="text-3xl md:text-4xl drop-shadow">
+                        {b.icon}
+                      </div>
+                      <div className="text-sm md:text-base font-semibold tracking-wide text-white/90">
+                        {b.label}
+                      </div>
                     </div>
-                    {/* label */}
-                    <div className="relative mt-3 text-sm sm:text-base font-semibold tracking-wide text-white">
-                      {b.label}
-                    </div>
-                  </>
+                  </div>
                 );
 
-                if (b.disabled) {
+                if (b.href && !b.disabled) {
                   return (
-                    <button
-                      key={b.label}
-                      disabled
-                      className={common + " opacity-45 cursor-not-allowed"}
-                      aria-disabled="true"
-                    >
+                    <Link key={b.label} href={b.href} className="block">
                       {inner}
-                    </button>
+                    </Link>
                   );
                 }
 
                 return (
-                  <Link key={b.label} href={b.href || "/garden"} className={common}>
+                  <div key={b.label} className="block">
                     {inner}
-                  </Link>
+                  </div>
                 );
               })}
             </div>
-
-            {/* footer spacing */}
-            <div className="mt-6 sm:mt-7 text-center text-xs sm:text-sm text-white/60">
-              Tip: if the hero still doesn’t show, rename your hero file to <span className="font-semibold text-white/80">hero.png</span> inside <span className="font-semibold text-white/80">/public</span>.
-            </div>
           </div>
-        </section>
+        </div>
+
+        {/* Bottom breathing room */}
+        <div className="h-10" />
       </div>
     </main>
   );
