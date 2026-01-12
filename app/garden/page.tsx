@@ -2,6 +2,18 @@
 
 import Image from "next/image";
 
+const BUTTONS = [
+  { label: "Strain Browser", icon: "🌿" },
+  { label: "Scanner", icon: "📷" },
+  { label: "Dispensaries", icon: "🏪" },
+  { label: "Seed Vendors", icon: "🌱" },
+  { label: "Grow Coach", icon: "🧠" },
+  { label: "History", icon: "📜" },
+  { label: "Lab Results", icon: "🧪" },
+  { label: "Community", icon: "💬" },
+  { label: "Settings", icon: "⚙️" },
+];
+
 export default function GardenPage() {
   return (
     <main className="relative min-h-screen overflow-hidden text-white">
@@ -14,25 +26,17 @@ export default function GardenPage() {
         className="object-cover"
       />
 
-      {/* DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      {/* OVERLAY */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
 
       {/* CONTENT */}
       <div className="relative z-10 flex flex-col items-center px-8 py-24">
-        {/* HERO IMAGE */}
-        <div className="mb-24 flex flex-col items-center">
-          <div className="
-            relative
-            w-48 h-48
-            rounded-full
-            overflow-hidden
-            border border-green-400/40
-            shadow-[0_0_90px_rgba(34,197,94,0.35)]
-            mb-10
-          ">
+        {/* HERO */}
+        <div className="mb-20 flex flex-col items-center">
+          <div className="relative w-48 h-48 rounded-full overflow-hidden border border-green-400/40 shadow-[0_0_80px_rgba(34,197,94,0.35)] mb-10">
             <Image
               src="/hero.jpg"
-              alt="Garden Hero"
+              alt="Hero"
               fill
               className="object-cover"
             />
@@ -48,35 +52,25 @@ export default function GardenPage() {
         </div>
 
         {/* GLASS ICON GRID */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-16">
-          {[
-            { label: "Strain Browser", icon: "🌿" },
-            { label: "Scanner", icon: "📷" },
-            { label: "Dispensaries", icon: "🏪" },
-            { label: "Seed Vendors", icon: "🌱" },
-            { label: "Grow Coach", icon: "🧠" },
-            { label: "History", icon: "📜" },
-            { label: "Lab Results", icon: "🧪" },
-            { label: "Community", icon: "💬" },
-            { label: "Settings", icon: "⚙️" },
-          ].map((b) => (
+        <div className="grid grid-cols-3 gap-x-20 gap-y-24">
+          {BUTTONS.map((b) => (
             <button
               key={b.label}
               className="
-                w-60 h-60
-                rounded-[36px]
-                bg-white/10
+                w-56 h-56
+                rounded-[32px]
+                bg-white/15
                 backdrop-blur-2xl
-                border border-white/25
-                shadow-[0_25px_80px_rgba(0,0,0,0.7)]
+                border border-white/30
+                shadow-[0_30px_90px_rgba(0,0,0,0.65)]
                 flex flex-col items-center justify-center
                 transition-all duration-300 ease-out
-                hover:bg-white/20
+                hover:bg-white/25
                 hover:scale-105
-                hover:shadow-[0_35px_120px_rgba(34,197,94,0.25)]
+                hover:shadow-[0_40px_130px_rgba(34,197,94,0.3)]
               "
             >
-              <span className="text-7xl mb-6 drop-shadow-xl">
+              <span className="text-7xl mb-6">
                 {b.icon}
               </span>
 
