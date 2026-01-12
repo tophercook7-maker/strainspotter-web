@@ -1,77 +1,80 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 
 const BUTTONS = [
-  { label: "Dispensaries", icon: "🌿", href: "/garden/dispensaries" }, // LIVE
-  { label: "Seed Vendors", icon: "🌱", href: "/garden/seed-vendors" }, // LIVE
-  { label: "Strain Browser", icon: "🧬", href: "/garden/strains" }, // PREVIEW
-  { label: "Scanner", icon: "📷", href: "/garden/scanner" }, // LOCKED
-  { label: "History", icon: "📜", href: "/garden/history" }, // PREVIEW
-  { label: "Grow Coach", icon: "🌾", href: "/garden/grow-coach" }, // LOCKED
-  { label: "Settings", icon: "⚙️", href: "/garden/settings" }, // LIVE
-  { label: "Ecosystem", icon: "🌎", href: "/garden/ecosystem" }, // LIVE
-  { label: "About", icon: "ℹ️", href: "/garden/about" }, // LIVE
+  { label: "Dispensaries", icon: "🌿", href: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🌱", href: "/garden/seed-vendors" },
+  { label: "Strains", icon: "🧬", href: "/garden/strains" },
+  { label: "Scanner", icon: "📷", href: "/garden/scanner" },
+  { label: "History", icon: "📜", href: "/garden/history" },
+  { label: "Grow Coach", icon: "🧠", href: "/garden/grow-coach" },
+  { label: "Ecosystem", icon: "🌎", href: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", href: "/garden/settings" },
+  { label: "Profile", icon: "👤", href: "/garden/profile" },
 ];
 
 export default function GardenPage() {
   return (
-    <main className="relative min-h-screen text-white overflow-hidden">
+    <main className="relative min-h-screen bg-black text-white overflow-hidden">
+      
       {/* BACKGROUND */}
       <Image
         src="/garden-bg.jpg"
         alt="Garden background"
         fill
         priority
-        className="object-cover"
+        className="object-cover opacity-60"
       />
 
-      {/* OVERLAY */}
-      <div className="relative z-10 flex flex-col items-center px-6 py-14">
+      {/* CONTENT */}
+      <div className="relative z-10 flex flex-col items-center px-6 py-20">
+
         {/* HERO */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-green-400 shadow-2xl">
+        <div className="mb-10 flex flex-col items-center">
+          <div className="w-28 h-28 rounded-full overflow-hidden mb-4 border border-white/30 backdrop-blur-xl">
             <Image
               src="/brand/hero.png"
               alt="Hero"
-              fill
+              width={112}
+              height={112}
               className="object-cover"
             />
           </div>
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight">
+          <h1 className="text-4xl font-extrabold tracking-tight">
             The Garden
           </h1>
-          <p className="mt-2 text-white/80 text-center max-w-md">
-            Your personal cannabis ecosystem.
-          </p>
         </div>
 
         {/* ICON GRID */}
-        <div className="mt-6 grid grid-cols-3 md:grid-cols-4 gap-10 max-w-4xl">
+        <div className="grid grid-cols-3 gap-10 sm:grid-cols-3 md:grid-cols-4 max-w-4xl mx-auto">
           {BUTTONS.map((b) => (
             <Link key={b.label} href={b.href}>
-              <button
+              <div
                 className="
-                flex flex-col items-center justify-center
-                w-32 h-32
-                rounded-3xl
-                bg-white/20
-                backdrop-blur-xl
-                border border-white/30
-                shadow-xl
-                hover:bg-white/30
-                transition
-              "
+                  flex flex-col items-center justify-center
+                  w-32 h-32
+                  rounded-3xl
+                  bg-white/20
+                  backdrop-blur-xl
+                  shadow-xl
+                  border border-white/30
+                  text-white
+                  hover:bg-white/30
+                  transition
+                  cursor-pointer
+                "
               >
                 <div className="text-4xl mb-2">{b.icon}</div>
                 <div className="text-sm font-semibold tracking-wide text-white/90">
                   {b.label}
                 </div>
-              </button>
+              </div>
             </Link>
           ))}
         </div>
+
       </div>
     </main>
   );
