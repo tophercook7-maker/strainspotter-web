@@ -52,7 +52,7 @@ export default function GardenPage() {
         </div>
 
         {/* GLASS ICON GRID */}
-        <div className="grid grid-cols-3 gap-x-20 gap-y-24">
+        <div className="grid grid-cols-3 gap-x-32 gap-y-32 mt-24">
           {BUTTONS.map((b) => (
             <button
               key={b.label}
@@ -62,19 +62,19 @@ export default function GardenPage() {
                 bg-white/15
                 backdrop-blur-2xl
                 border border-white/30
-                shadow-[0_30px_90px_rgba(0,0,0,0.65)]
+                shadow-[0_40px_120px_rgba(0,0,0,0.7)]
                 flex flex-col items-center justify-center
                 transition-all duration-300 ease-out
                 hover:bg-white/25
                 hover:scale-105
-                hover:shadow-[0_40px_130px_rgba(34,197,94,0.3)]
+                hover:shadow-[0_60px_160px_rgba(34,197,94,0.35)]
               "
             >
-              <span className="text-7xl mb-6">
+              <span className="text-7xl mb-8">
                 {b.icon}
               </span>
 
-              <span className="text-lg font-semibold tracking-wide text-white/90 text-center px-4">
+              <span className="text-lg font-semibold tracking-wide text-white/90 text-center px-6">
                 {b.label}
               </span>
             </button>
