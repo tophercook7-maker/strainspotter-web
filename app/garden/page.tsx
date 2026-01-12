@@ -1,75 +1,74 @@
 "use client";
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-
-const BUTTONS = [
-  { label: "Strain Browser", icon: "🌿", href: "/strains" },
-  { label: "Scanner", icon: "📷", href: "/scanner" },
-  { label: "History", icon: "📜", href: "/history" },
-  { label: "Grow Coach", icon: "🌱", href: "/grow" },
-  { label: "Dispensaries", icon: "🏪", href: "/dispensaries" },
-  { label: "Seed Vendors", icon: "🌰", href: "/seed-vendors" },
-  { label: "Favorites", icon: "⭐", href: "/favorites" },
-  { label: "Learn", icon: "📘", href: "/learn" },
-  { label: "Settings", icon: "⚙️", href: "/settings" },
-];
-
 export default function GardenPage() {
-  const router = useRouter();
-
   return (
-    <main className="relative min-h-screen w-full overflow-y-auto text-white">
-      <Image
-        src="/garden-bg.jpg"
-        alt="Garden background"
-        fill
-        priority
-        className="object-cover"
+    <main
+      style={{
+        minHeight: "100vh",
+        width: "100vw",
+        backgroundImage: "url('/garden-bg.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        paddingTop: "64px",
+      }}
+    >
+      {/* HERO */}
+      <div
+        style={{
+          width: 220,
+          height: 220,
+          borderRadius: "50%",
+          backgroundImage: "url('/brand/core/hero.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          marginBottom: 24,
+        }}
       />
 
-      <div className="absolute inset-0 bg-black/40" />
+      {/* TITLE */}
+      <h1 style={{ fontSize: 56, fontWeight: 700, marginBottom: 12 }}>
+        The Garden
+      </h1>
 
-      <div className="relative z-10 flex flex-col items-center px-8 pt-16 pb-32">
-        <div className="mb-8">
-          <div className="relative w-44 h-44 rounded-full overflow-hidden ring-4 ring-green-500 shadow-2xl">
-            <Image
-              src="/brand/core/hero.png"
-              alt="StrainSpotter Hero"
-              fill
-              className="object-cover"
-            />
-          </div>
-        </div>
-
-        <h1 className="text-6xl font-extrabold mb-3">The Garden</h1>
-        <p className="text-lg text-white/80 mb-16 text-center max-w-xl">
-          Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
-        </p>
-
-        <div className="grid grid-cols-3 gap-16">
-          {BUTTONS.map((b) => (
-            <button
-              key={b.label}
-              onClick={() => router.push(b.href)}
-              className="
-                w-48 h-48
-                rounded-[2.5rem]
-                bg-white/25 backdrop-blur-2xl
-                border border-white/30
-                shadow-2xl
-                flex flex-col items-center justify-center
-                hover:scale-110 hover:bg-white/35
-                transition-all duration-200
-              "
-            >
-              <div className="text-7xl mb-4">{b.icon}</div>
-              <span className="text-lg font-semibold text-center">
-                {b.label}
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* ICON GRID */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 160px)",
+          gap: 48,
+          marginTop: 48,
+        }}
+      >
+        {[
+          "Strain Browser",
+          "Scanner",
+          "History",
+          "Grow Coach",
+          "Dispensaries",
+          "Seed Vendors",
+          "Favorites",
+          "Learn",
+          "Settings",
+        ].map((label) => (
+          <button
+            key={label}
+            style={{
+              width: 160,
+              height: 160,
+              borderRadius: 32,
+              background: "rgba(255,255,255,0.25)",
+              backdropFilter: "blur(18px)",
+              border: "1px solid rgba(255,255,255,0.4)",
+              fontSize: 16,
+              fontWeight: 600,
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
     </main>
   );
