@@ -32,47 +32,43 @@ export default function GardenPage() {
         <img
           src="/hero.png"
           alt="StrainSpotter"
-          className="w-24 h-24 object-contain"
+          className="w-20 h-20 object-contain"
           draggable={false}
         />
       </div>
 
       {/* TITLE */}
-      <h1 className="mt-4 text-5xl font-semibold text-white drop-shadow-lg text-center">
+      <h1 className="mt-4 mb-8 text-6xl font-semibold text-white text-center drop-shadow-lg">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="mt-10 flex justify-center">
-        <div className="grid grid-cols-3 gap-x-16 gap-y-14">
+      <div className="flex justify-center">
+        <div className="grid grid-cols-3 gap-x-20 gap-y-16">
           {Object.entries(ROUTES).map(([key, route]) => (
             <button
               key={key}
               onClick={() => router.push(route.path)}
               className="group flex flex-col items-center"
             >
-              <div className="
-                w-24 h-24
-                rounded-[22px]
-                bg-white/70
-                backdrop-blur-md
-                shadow-[0_12px_30px_rgba(0,0,0,0.25)]
-                border border-white/40
-                flex items-center justify-center
-                transition
-                group-hover:scale-105
-                group-active:scale-95
-              ">
-                <span className="text-3xl">{route.icon}</span>
+              <div
+                className="
+                  w-28 h-28
+                  rounded-[26px]
+                  bg-white/80
+                  backdrop-blur-xl
+                  shadow-[0_18px_40px_rgba(0,0,0,0.35)]
+                  border border-white/50
+                  flex items-center justify-center
+                  transition-transform duration-200
+                  group-hover:scale-110
+                  group-active:scale-95
+                "
+              >
+                <span className="text-4xl">{route.icon}</span>
               </div>
 
-              <span className="
-                mt-3
-                text-sm
-                font-medium
-                text-white
-                drop-shadow
-              ">
+              <span className="mt-4 text-base font-medium text-white drop-shadow">
                 {route.label}
               </span>
             </button>
