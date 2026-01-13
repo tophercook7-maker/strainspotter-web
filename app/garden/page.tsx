@@ -1,19 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import GardenIcon from "./_components/GardenIcon";
 
-const ROUTES = {
-  strains: { path: "/strains", label: "Strains", icon: "🌿" },
-  scanner: { path: "/scanner", label: "Scanner", icon: "📸" },
-  dispensaries: { path: "/garden/dispensaries", label: "Dispensaries", icon: "📍" },
-  seedVendors: { path: "/seed-vendors", label: "Seed Vendors", icon: "🌱" },
-  growCoach: { path: "/grow-coach", label: "Grow Coach", icon: "🧑‍🌾" },
-  history: { path: "/history", label: "History", icon: "🕘" },
-  favorites: { path: "/favorites", label: "Favorites", icon: "⭐" },
-  ecosystem: { path: "/ecosystem", label: "Ecosystem", icon: "🌐" },
-  settings: { path: "/settings", label: "Settings", icon: "⚙️" },
-} as const;
+const ROUTES = [
+  { label: "Strains", icon: "🌿", href: "/strains" },
+  { label: "Scanner", icon: "📸", href: "/scanner" },
+  { label: "Dispensaries", icon: "📍", href: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🌱", href: "/seed-vendors" },
+  { label: "Grow Coach", icon: "🧑‍🌾", href: "/grow-coach" },
+  { label: "History", icon: "🕘", href: "/history" },
+  { label: "Favorites", icon: "⭐", href: "/favorites" },
+  { label: "Ecosystem", icon: "🌐", href: "/ecosystem" },
+  { label: "Settings", icon: "⚙️", href: "/settings" },
+];
 
 export default function GardenPage() {
   const router = useRouter();
@@ -33,7 +32,7 @@ export default function GardenPage() {
       </div>
 
       {/* HERO ICON */}
-      <div className="mt-8 mb-3 flex justify-center">
+      <div className="mt-6 mb-3 flex justify-center">
         <img
           src="/hero.png"
           alt="StrainSpotter"
@@ -47,21 +46,29 @@ export default function GardenPage() {
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="mt-10 grid grid-cols-3 gap-x-16 gap-y-14 place-items-center">
-        {Object.entries(ROUTES).map(([key, route]) =>
-          key === "strains" ? (
-            <button key={key} className="w-40 h-40 bg-red-500">
-              TEST ICON
-            </button>
-          ) : (
-            <GardenIcon
-              key={key}
-              label={route.label}
-              icon={route.icon}
-              onClick={() => router.push(route.path)}
-            />
-          )
-        )}
+      <div className="mt-6 grid grid-cols-3 gap-x-10 gap-y-10 justify-items-center">
+        {ROUTES.map((item) => (
+          <button
+            key={item.label}
+            onClick={() => router.push(item.href)}
+            className="
+              w-28 h-28
+              rounded-[28px]
+              bg-white/70
+              backdrop-blur-xl
+              shadow-[0_12px_30px_rgba(0,0,0,0.25)]
+              flex flex-col items-center justify-center
+              transition-transform duration-200
+              hover:scale-105
+              active:scale-95
+            "
+          >
+            <div className="text-3xl mb-1">{item.icon}</div>
+            <div className="text-sm font-medium text-black/80 text-center px-2">
+              {item.label}
+            </div>
+          </button>
+        ))}
       </div>
 
     </main>
