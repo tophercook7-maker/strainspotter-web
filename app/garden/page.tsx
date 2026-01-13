@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import GardenIcon from "./_components/GardenIcon";
 
 const ICONS = [
   { label: "Strains", icon: "🌿", route: "/garden/strains" },
@@ -19,61 +20,46 @@ export default function GardenPage() {
 
   return (
     <main className="min-h-screen w-full bg-black text-white overflow-y-auto">
-      
-      {/* HERO / TITLE — FIXED, SMALL */}
-      <header className="w-full flex flex-col items-center pt-10 pb-10">
-        <img
-          src="/brand/core/hero.png"
-          alt="StrainSpotter"
-          className="w-20 h-20 object-contain"
-        />
+      {/* BACKGROUND IMAGE (LOCKED) */}
+      <div
+        className="fixed inset-0 -z-10 bg-center bg-cover"
+        style={{ backgroundImage: "url(/brand/core/hero.png)" }}
+      />
+      {/* DARK OVERLAY (LOCKED) */}
+      <div className="fixed inset-0 -z-10 bg-black/35" />
 
-        <h1 className="mt-4 text-5xl font-extrabold tracking-tight">
-          StrainSpotter
-        </h1>
-
-        <p className="mt-2 text-white/60 text-center max-w-xl">
-          Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
-        </p>
-      </header>
-
-      {/* ICON GRID — NORMAL FLOW, NEVER FLOATS */}
-      <section className="w-full flex justify-center">
-        <div
-          className="
-            grid
-            grid-cols-3
-            gap-x-24
-            gap-y-20
-            justify-items-center
-            pb-24
-          "
-        >
-          {ICONS.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => router.push(item.route)}
-              className="
-                w-32 h-32
-                rounded-3xl
-                bg-white/20
-                backdrop-blur-xl
-                border border-white/30
-                shadow-xl
-                flex flex-col items-center justify-center
-                hover:bg-white/30
-                transition
-              "
-            >
-              <span className="text-5xl mb-3">{item.icon}</span>
-              <span className="text-sm font-semibold tracking-wide">
-                {item.label}
-              </span>
-            </button>
-          ))}
+      {/* CONTENT (NORMAL FLOW — NO FLOATING / NO BOTTOM STICKING) */}
+      <div className="w-full flex flex-col items-center px-8 pb-24">
+        {/* SMALL HERO TOP */}
+        <div className="pt-10 flex flex-col items-center">
+          <img
+            src="/brand/core/hero.png"
+            alt="StrainSpotter"
+            className="w-20 h-20 object-contain"
+            draggable={false}
+          />
+          <h1 className="mt-4 text-6xl font-extrabold tracking-tight drop-shadow">
+            StrainSpotter
+          </h1>
+          <p className="mt-2 text-white/70 text-center max-w-2xl">
+            Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
+          </p>
         </div>
-      </section>
 
+        {/* ICON GRID — PERFECT ROWS + EVEN SPACING */}
+        <div className="w-full max-w-5xl mt-12">
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-x-14 gap-y-12 justify-items-center">
+            {ICONS.map((item) => (
+              <GardenIcon
+                key={item.route}
+                label={item.label}
+                icon={item.icon}
+                onClick={() => router.push(item.route)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
