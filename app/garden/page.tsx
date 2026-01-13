@@ -2,46 +2,64 @@
 
 import { useRouter } from "next/navigation";
 
+const ICONS = [
+  { label: "Strains", icon: "🌿", route: "/garden/strains" },
+  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
+  { label: "Dispensaries", icon: "📍", route: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
+  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
+  { label: "History", icon: "🕓", route: "/garden/history" },
+  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🌍", route: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
+];
+
 export default function GardenPage() {
   const router = useRouter();
 
-  const items = [
-    { label: "Strains", icon: "🌿", path: "/garden/strains" },
-    { label: "Scanner", icon: "📷", path: "/garden/scanner" },
-    { label: "Dispensaries", icon: "📍", path: "/garden/dispensaries" },
-    { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
-    { label: "Grow Coach", icon: "🧑‍🌾", path: "/garden/grow-coach" },
-    { label: "History", icon: "📖", path: "/garden/history" },
-    { label: "Favorites", icon: "⭐", path: "/garden/favorites" },
-    { label: "Ecosystem", icon: "🌍", path: "/garden/ecosystem" },
-    { label: "Settings", icon: "⚙️", path: "/garden/settings" },
-  ];
-
   return (
-    <main className="min-h-screen w-full bg-black text-white overflow-y-auto">
+    <main className="min-h-screen w-full bg-black text-white flex flex-col items-center">
       
       {/* HERO */}
-      <img
-        src="/brand/core/hero.png"
-        alt="StrainSpotter"
-        className="w-28 h-28 mb-4"
-      />
-
-      <h1 className="text-5xl font-extrabold mb-12">StrainSpotter</h1>
+      <div className="mt-10 flex flex-col items-center">
+        <img
+          src="/brand/core/hero.png"
+          alt="StrainSpotter"
+          className="w-32 h-32 object-contain"
+        />
+        <h1 className="mt-4 text-5xl font-extrabold tracking-tight">
+          StrainSpotter
+        </h1>
+        <p className="mt-2 text-white/70">
+          Your personal cannabis ecosystem
+        </p>
+      </div>
 
       {/* ICON GRID */}
-      <div className="grid grid-cols-3 gap-x-20 gap-y-16">
-        {items.map((item) => (
+      <div className="mt-16 grid grid-cols-3 gap-x-16 gap-y-12">
+        {ICONS.map((item) => (
           <button
             key={item.label}
-            onClick={() => router.push(item.path)}
-            className="w-32 h-32 rounded-3xl bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl flex flex-col items-center justify-center hover:bg-white/30 transition"
+            onClick={() => router.push(item.route)}
+            className="
+              w-28 h-28
+              rounded-3xl
+              bg-white/15
+              backdrop-blur-xl
+              border border-white/30
+              flex flex-col items-center justify-center
+              hover:bg-white/25
+              transition
+            "
           >
-            <div className="text-4xl mb-2">{item.icon}</div>
-            <div className="text-sm font-semibold">{item.label}</div>
+            <span className="text-4xl">{item.icon}</span>
+            <span className="mt-2 text-sm font-semibold">
+              {item.label}
+            </span>
           </button>
         ))}
       </div>
+
     </main>
   );
 }
