@@ -31,44 +31,47 @@ export default function GardenPage() {
         GARDEN PAGE ACTIVE
       </div>
 
-      {/* HERO ICON */}
-      <div className="mt-4 mb-2 flex justify-center">
-        <img
-          src="/hero.png"
-          alt="StrainSpotter"
-          className="w-20 h-20 object-contain"
-          draggable={false}
-        />
+      {/* HERO ICON (MASKED) */}
+      <div className="mt-10 mb-6 flex justify-center">
+        <div className="w-[180px] h-[180px] overflow-hidden rounded-full flex items-center justify-center">
+          <img
+            src="/hero.png"
+            alt="StrainSpotter"
+            className="w-[240px] h-[240px] object-cover translate-y-2"
+            draggable={false}
+          />
+        </div>
       </div>
 
-      <h1 className="mt-2 mb-8 text-center text-4xl font-semibold tracking-tight text-white drop-shadow">
+      <h1 className="mt-2 mb-10 text-[44px] font-semibold tracking-tight text-white text-center drop-shadow-sm">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="grid grid-cols-3 gap-x-12 gap-y-12 justify-items-center">
-        {ROUTES.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => router.push(item.href)}
-            className="
-              w-32 h-32
-              rounded-[30px]
-              bg-white/75
-              backdrop-blur-2xl
-              shadow-[0_18px_40px_rgba(0,0,0,0.35)]
-              flex flex-col items-center justify-center
-              transition-all duration-200 ease-out
-              hover:scale-[1.06]
-              active:scale-[0.94]
-            "
-          >
-            <div className="text-4xl mb-2">{item.icon}</div>
-            <div className="text-sm font-medium text-black/80 text-center px-2">
-              {item.label}
-            </div>
-          </button>
-        ))}
+      <div className="flex justify-center w-full">
+        <div className="grid grid-cols-4 gap-x-14 gap-y-14 justify-center">
+          {ROUTES.map((route) => (
+            <button
+              key={route.label}
+              onClick={() => router.push(route.path)}
+              className="
+                w-[120px] h-[120px]
+                rounded-[28px]
+                bg-white/70
+                backdrop-blur-xl
+                shadow-[0_20px_40px_rgba(0,0,0,0.25)]
+                flex flex-col items-center justify-center
+                transition-transform duration-200
+                hover:scale-105 active:scale-95
+              "
+            >
+              <span className="text-3xl mb-2">{route.icon}</span>
+              <span className="text-[13px] font-medium text-black/80">
+                {route.label}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
     </main>
