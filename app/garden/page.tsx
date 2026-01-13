@@ -1,65 +1,69 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import GardenIcon from "./_components/GardenIcon";
 
-const ICONS = [
-  { label: "Strains", icon: "🌿", route: "/garden/strains" },
-  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
-  { label: "Dispensaries", icon: "📍", route: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "Grow Coach", icon: "🧑‍🌾", route: "/garden/grow-coach" },
-  { label: "History", icon: "📜", route: "/garden/history" },
-  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🌐", route: "/garden/ecosystem" },
-  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
+const ROUTES = [
+  { label: "Strains", icon: "🌿", path: "/garden/strains" },
+  { label: "Scanner", icon: "📷", path: "/garden/scanner" },
+  { label: "Dispensaries", icon: "📍", path: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
+  { label: "Grow Coach", icon: "🧑‍🌾", path: "/garden/grow-coach" },
+  { label: "History", icon: "🕓", path: "/garden/history" },
+  { label: "Favorites", icon: "⭐", path: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🌐", path: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", path: "/garden/settings" },
 ];
 
 export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen w-full bg-black text-white overflow-y-auto">
-      {/* BACKGROUND IMAGE (LOCKED) */}
-      <div
-        className="fixed inset-0 -z-10 bg-center bg-cover"
-        style={{ backgroundImage: "url(/brand/core/hero.png)" }}
-      />
-      {/* DARK OVERLAY (LOCKED) */}
-      <div className="fixed inset-0 -z-10 bg-black/35" />
+    <main className="min-h-screen w-full bg-gradient-to-b from-black via-black/95 to-black text-white flex flex-col items-center">
 
-      {/* CONTENT (NORMAL FLOW — NO FLOATING / NO BOTTOM STICKING) */}
-      <div className="w-full flex flex-col items-center px-8 pb-24">
-        {/* SMALL HERO TOP */}
-        <div className="pt-10 flex flex-col items-center">
-          <img
-            src="/brand/core/hero.png"
-            alt="StrainSpotter"
-            className="w-12 h-12 object-contain"
-            draggable={false}
-          />
-          <h1 className="mt-4 text-6xl font-extrabold tracking-tight drop-shadow">
-            StrainSpotter
-          </h1>
-          <p className="mt-2 text-white/70 text-center max-w-2xl">
-            Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
-          </p>
-        </div>
-
-        {/* ICON GRID — PERFECT ROWS + EVEN SPACING */}
-        <div className="w-full max-w-5xl mt-12">
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-x-14 gap-y-12 justify-items-center">
-            {ICONS.map((item) => (
-              <GardenIcon
-                key={item.route}
-                label={item.label}
-                icon={item.icon}
-                onClick={() => router.push(item.route)}
-              />
-            ))}
-          </div>
-        </div>
+      {/* HERO (SMALL, CONTROLLED, NOT BACKGROUND) */}
+      <div className="mt-10 flex flex-col items-center">
+        <img
+          src="/brand/hero-leaf.png"
+          alt="StrainSpotter"
+          className="w-40 h-40 object-contain"
+        />
+        <h1 className="mt-4 text-5xl font-extrabold tracking-tight">
+          StrainSpotter
+        </h1>
+        <p className="mt-2 text-white/70 text-center max-w-xl">
+          Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
+        </p>
       </div>
+
+      {/* ICON GRID — IPAD STYLE, EVEN ROWS */}
+      <div className="mt-16 grid grid-cols-3 gap-x-20 gap-y-16 place-items-center">
+        {ROUTES.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            onClick={() => router.push(item.path)}
+            className="
+              flex flex-col items-center justify-center
+              w-32 h-32
+              rounded-3xl
+              bg-white/15
+              backdrop-blur-xl
+              border border-white/25
+              shadow-xl
+              hover:bg-white/25
+              transition
+              cursor-pointer
+            "
+          >
+            <span className="text-4xl mb-2">{item.icon}</span>
+            <span className="text-sm font-semibold tracking-wide">
+              {item.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="h-24" />
     </main>
   );
 }
