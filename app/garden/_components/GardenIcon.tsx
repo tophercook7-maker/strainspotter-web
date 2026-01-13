@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 export default function GardenIcon({
   label,
   icon,
@@ -13,28 +11,25 @@ export default function GardenIcon({
 }) {
   return (
     <button
-      type="button"
       onClick={onClick}
       className="
-        group
-        w-36 h-36
-        rounded-[28px]
-        bg-white/18
+        w-28 h-28
+        rounded-[22px]
+        bg-white/80
         backdrop-blur-xl
-        border border-white/25
-        shadow-2xl
+        shadow-lg
         flex flex-col items-center justify-center
-        hover:bg-white/26
-        select-none
-        active:scale-[0.98]
-        transition
-        focus:outline-none focus:ring-2 focus:ring-white/40
+        transition-transform duration-200
+        hover:scale-105
+        active:scale-95
+        focus:outline-none
       "
+      type="button"
     >
-      <div className="text-5xl mb-3 leading-none">{icon}</div>
-      <div className="text-base font-semibold tracking-wide text-white/90">
+      <div className="text-3xl mb-2">{icon}</div>
+      <span className="text-sm font-medium text-black">
         {label}
-      </div>
+      </span>
     </button>
   );
 }

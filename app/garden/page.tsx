@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import GardenIcon from "./_components/GardenIcon";
 
@@ -23,40 +22,29 @@ export default function GardenPage() {
 
   return (
     <main className="min-h-screen w-full flex flex-col items-center justify-start pt-10">
-      {/* HERO (small, top) */}
-      <div className="mb-5">
-        <Image
+      {/* HERO */}
+      <div className="flex flex-col items-center mt-8 mb-6">
+        <img
           src="/hero.png"
           alt="StrainSpotter"
-          width={64}
-          height={64}
-          priority
-          className="opacity-95"
+          className="w-20 h-20 object-contain"
         />
+        <h1 className="mt-4 text-5xl font-bold tracking-tight">
+          StrainSpotter
+        </h1>
       </div>
 
-      {/* TITLE (big) */}
-      <h1 className="text-6xl font-extrabold tracking-tight mb-16">
-        StrainSpotter
-      </h1>
-
-      {/* ICON GRID (perfect rows, fixed spacing) */}
-      <section
-        className="
-          grid grid-cols-3
-          gap-x-24 gap-y-16
-          place-items-center
-        "
-      >
-        {ICONS.map((item) => (
+      {/* ICON GRID */}
+      <div className="mt-10 grid grid-cols-3 gap-x-16 gap-y-12 place-items-center">
+        {ICONS.map(({ label, icon, route }) => (
           <GardenIcon
-            key={item.label}
-            label={item.label}
-            icon={item.icon}
-            onClick={() => router.push(item.route)}
+            key={label}
+            label={label}
+            icon={icon}
+            onClick={() => router.push(route)}
           />
         ))}
-      </section>
+      </div>
     </main>
   );
 }
