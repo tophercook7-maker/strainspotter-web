@@ -18,7 +18,10 @@ export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen w-full text-white">
+    <main
+      className="min-h-screen w-full text-white bg-cover bg-center"
+      style={{ backgroundImage: "url('/background.jpg')" }}
+    >
       {/* HERO */}
       <div className="flex flex-col items-center pt-10">
         <img
@@ -28,28 +31,34 @@ export default function GardenPage() {
           draggable={false}
         />
 
-        <h1 className="mt-4 mb-14 text-[56px] font-semibold tracking-tight text-center">
+        <h1 className="mt-2 mb-10 text-4xl font-semibold text-green-400 text-center tracking-tight">
           StrainSpotter
         </h1>
       </div>
 
       {/* ICON GRID */}
       <div className="w-full flex justify-center">
-        <div className="grid grid-cols-3 md:grid-cols-4 gap-x-24 gap-y-24 pb-24">
+        <div className="grid grid-cols-3 gap-x-16 gap-y-14 justify-items-center mt-8">
           {ROUTES.map((route) => (
             <button
               key={route.label}
               type="button"
               onClick={() => router.push(route.path)}
               className="
-                w-[150px] h-[150px]
-                rounded-[36px]
-                bg-white/75
-                backdrop-blur-2xl
-                shadow-[0_35px_70px_rgba(0,0,0,0.4)]
-                flex flex-col items-center justify-center
-                transition-all duration-200
-                hover:scale-110 active:scale-95
+                w-32 h-32
+                rounded-[32px]
+                bg-white/85
+                backdrop-blur-xl
+                shadow-[0_18px_40px_rgba(0,0,0,0.28)]
+                hover:scale-105
+                active:scale-95
+                transition-all
+                duration-200
+                flex
+                flex-col
+                items-center
+                justify-center
+                cursor-pointer
               "
             >
               <div className="text-[40px] mb-3">{route.icon}</div>
