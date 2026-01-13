@@ -32,7 +32,7 @@ export default function GardenPage() {
         <img
           src="/hero.png"
           alt="StrainSpotter"
-          className="w-16 h-16 object-contain"
+          className="w-[220px] max-w-[70vw] object-contain"
           draggable={false}
         />
       </div>
