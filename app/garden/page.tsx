@@ -3,15 +3,15 @@
 import { useRouter } from "next/navigation";
 
 const ROUTES = {
-  strains: "/strains",
-  scanner: "/scanner",
-  dispensaries: "/garden/dispensaries",
-  seedVendors: "/seed-vendors",
-  growCoach: "/grow-coach",
-  history: "/history",
-  favorites: "/favorites",
-  ecosystem: "/ecosystem",
-  settings: "/settings",
+  strains: { path: "/strains", label: "Strains", icon: "🌿" },
+  scanner: { path: "/scanner", label: "Scanner", icon: "📸" },
+  dispensaries: { path: "/garden/dispensaries", label: "Dispensaries", icon: "📍" },
+  seedVendors: { path: "/seed-vendors", label: "Seed Vendors", icon: "🌱" },
+  growCoach: { path: "/grow-coach", label: "Grow Coach", icon: "🧑‍🌾" },
+  history: { path: "/history", label: "History", icon: "🕘" },
+  favorites: { path: "/favorites", label: "Favorites", icon: "⭐" },
+  ecosystem: { path: "/ecosystem", label: "Ecosystem", icon: "🌐" },
+  settings: { path: "/settings", label: "Settings", icon: "⚙️" },
 } as const;
 
 export default function GardenPage() {
@@ -32,70 +32,52 @@ export default function GardenPage() {
         <img
           src="/hero.png"
           alt="StrainSpotter"
-          className="w-[220px] max-w-[70vw] object-contain"
+          className="w-24 h-24 object-contain"
           draggable={false}
         />
       </div>
 
       {/* TITLE */}
-      <h1 className="mt-4 mb-10 text-5xl font-semibold text-white text-center tracking-tight">
+      <h1 className="mt-4 text-5xl font-semibold text-white drop-shadow-lg text-center">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="grid grid-cols-3 gap-x-20 gap-y-16 justify-items-center">
-        {[
-          ["Strains", "🌿", ROUTES.strains],
-          ["Scanner", "📸", ROUTES.scanner],
-          ["Dispensaries", "📍", ROUTES.dispensaries],
-          ["Seed Vendors", "🌱", ROUTES.seedVendors],
-          ["Grow Coach", "🧑‍🌾", ROUTES.growCoach],
-          ["History", "🕘", ROUTES.history],
-          ["Favorites", "⭐", ROUTES.favorites],
-          ["Ecosystem", "🌐", ROUTES.ecosystem],
-          ["Settings", "⚙️", ROUTES.settings],
-        ].map(([label, icon, route]) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => router.push(route as string)}
-            className="
-              w-32 h-32
-              rounded-[28px]
-              bg-white/75
-              backdrop-blur-xl
-              shadow-[0_12px_30px_rgba(0,0,0,0.25)]
-              flex flex-col items-center justify-center
-              text-[15px] font-medium text-black
-              hover:scale-105
-              active:scale-100
-              transition-transform duration-150
-            "
-          >
-            {/* iPad-style icon tile */}
-            <div
-              className="
-                w-24 h-24
-                rounded-[26px]
-                bg-white/80
-                backdrop-blur-md
-                ring-1 ring-white/40
-                shadow-[0_18px_40px_rgba(0,0,0,0.35)]
-                flex items-center justify-center
-                transition-transform duration-200
-                hover:scale-105
-                active:scale-95
-              "
+      <div className="mt-10 flex justify-center">
+        <div className="grid grid-cols-3 gap-x-16 gap-y-14">
+          {Object.entries(ROUTES).map(([key, route]) => (
+            <button
+              key={key}
+              onClick={() => router.push(route.path)}
+              className="group flex flex-col items-center"
             >
-              <span className="mb-3 w-9 h-9">{icon}</span>
-            </div>
+              <div className="
+                w-24 h-24
+                rounded-[22px]
+                bg-white/70
+                backdrop-blur-md
+                shadow-[0_12px_30px_rgba(0,0,0,0.25)]
+                border border-white/40
+                flex items-center justify-center
+                transition
+                group-hover:scale-105
+                group-active:scale-95
+              ">
+                <span className="text-3xl">{route.icon}</span>
+              </div>
 
-            {/* label */}
-            <span className="mt-3 text-sm font-medium text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.70)]">
-              {label}
-            </span>
-          </button>
-        ))}
+              <span className="
+                mt-3
+                text-sm
+                font-medium
+                text-white
+                drop-shadow
+              ">
+                {route.label}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
     </main>
