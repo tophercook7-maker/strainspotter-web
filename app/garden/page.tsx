@@ -55,16 +55,15 @@ export default function GardenPage() {
               className="
                 w-28 h-28
                 rounded-[28px]
-                bg-white/80
+                bg-white/85
                 backdrop-blur-md
-                ring-1 ring-white/35
-                shadow-[0_14px_34px_rgba(0,0,0,0.30)]
+                ring-1 ring-white/40
+                shadow-[0_16px_36px_rgba(0,0,0,0.35)]
                 flex items-center justify-center
                 text-4xl
                 transition-transform duration-200
                 hover:scale-105
                 active:scale-95
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70
               "
             >
               {app.icon}
