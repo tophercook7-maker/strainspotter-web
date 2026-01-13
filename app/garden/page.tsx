@@ -22,57 +22,54 @@ export default function GardenPage() {
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center">
-      
+
       {/* HERO */}
-      <div className="mt-10 mb-4">
+      <div className="mt-8 mb-4">
         <Image
           src="/hero.png"
           alt="StrainSpotter"
-          width={96}
-          height={96}
+          width={80}
+          height={80}
           priority
         />
       </div>
 
       {/* TITLE */}
-      <h1 className="text-4xl font-extrabold tracking-tight mb-12">
+      <h1 className="text-5xl font-extrabold tracking-tight mb-16">
         StrainSpotter
       </h1>
 
-      {/* ICON GRID */}
+      {/* ICON GRID — IPAD STYLE */}
       <div
         className="
           grid
           grid-cols-3
-          gap-x-24
-          gap-y-20
+          gap-x-32
+          gap-y-24
           place-items-center
         "
       >
         {ICONS.map(({ label, icon, route }) => (
           <button
             key={label}
-            type="button"
             onClick={() => router.push(route)}
             className="
-              w-28 h-28
-              rounded-3xl
+              w-36 h-36
+              rounded-[32px]
               bg-white/15
               backdrop-blur-xl
-              border border-white/25
-              shadow-xl
+              border border-white/30
+              shadow-2xl
               flex flex-col
               items-center
               justify-center
               hover:bg-white/25
               transition
-              focus:outline-none
-              focus:ring-2
-              focus:ring-white/40
+              cursor-pointer
             "
           >
-            <div className="text-4xl mb-2">{icon}</div>
-            <div className="text-sm font-semibold tracking-wide">
+            <div className="text-5xl mb-3">{icon}</div>
+            <div className="text-base font-semibold tracking-wide text-white/90">
               {label}
             </div>
           </button>
