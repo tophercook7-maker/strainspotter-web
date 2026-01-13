@@ -32,38 +32,38 @@ export default function GardenPage() {
       </div>
 
       {/* HERO ICON */}
-      <div className="mt-6 mb-3 flex justify-center">
+      <div className="mt-4 mb-2 flex justify-center">
         <img
           src="/hero.png"
           alt="StrainSpotter"
-          className="w-24 h-24 object-contain"
+          className="w-20 h-20 object-contain"
           draggable={false}
         />
       </div>
 
-      <h1 className="mt-2 mb-8 text-center text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">
+      <h1 className="mt-2 mb-8 text-center text-4xl font-semibold tracking-tight text-white drop-shadow">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="mt-6 grid grid-cols-3 gap-x-10 gap-y-10 justify-items-center">
+      <div className="grid grid-cols-3 gap-x-12 gap-y-12 justify-items-center">
         {ROUTES.map((item) => (
           <button
             key={item.label}
             onClick={() => router.push(item.href)}
             className="
-              w-28 h-28
-              rounded-[28px]
-              bg-white/70
-              backdrop-blur-xl
-              shadow-[0_12px_30px_rgba(0,0,0,0.25)]
+              w-32 h-32
+              rounded-[30px]
+              bg-white/75
+              backdrop-blur-2xl
+              shadow-[0_18px_40px_rgba(0,0,0,0.35)]
               flex flex-col items-center justify-center
-              transition-transform duration-200
-              hover:scale-105
-              active:scale-95
+              transition-all duration-200 ease-out
+              hover:scale-[1.06]
+              active:scale-[0.94]
             "
           >
-            <div className="text-3xl mb-1">{item.icon}</div>
+            <div className="text-4xl mb-2">{item.icon}</div>
             <div className="text-sm font-medium text-black/80 text-center px-2">
               {item.label}
             </div>
