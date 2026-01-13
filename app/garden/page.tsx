@@ -27,31 +27,50 @@ export default function GardenPage() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* HERO ICON — CLEAN, NO BACKGROUND */}
-      <div className="mt-12 mb-6">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl">
-          🌿
-        </div>
+      {/* HERO ICON */}
+      <div className="mt-10 mb-4 flex justify-center">
+        <img
+          src="/hero.png"
+          alt="StrainSpotter"
+          className="w-14 h-14 object-contain"
+          draggable={false}
+        />
       </div>
 
       {/* TITLE */}
-      <h1 className="text-5xl font-extrabold tracking-tight mb-16 drop-shadow">
+      <h1 className="text-5xl font-semibold tracking-tight mb-16 text-center text-white drop-shadow-sm">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="grid grid-cols-3 gap-x-24 gap-y-20">
+      <div className="grid grid-cols-3 gap-x-28 gap-y-24 place-items-center">
         {APPS.map(app => (
           <button
             key={app.label}
             onClick={() => router.push(app.route)}
             type="button"
-            className="flex flex-col items-center focus:outline-none"
+            className="flex flex-col items-center select-none"
           >
-            <div className="w-28 h-28 rounded-3xl bg-white/80 backdrop-blur shadow-xl flex items-center justify-center text-4xl hover:scale-105 transition">
+            <div
+              className="
+                w-28 h-28
+                rounded-[28px]
+                bg-white/80
+                backdrop-blur-md
+                ring-1 ring-white/35
+                shadow-[0_14px_34px_rgba(0,0,0,0.30)]
+                flex items-center justify-center
+                text-4xl
+                transition-transform duration-200
+                hover:scale-105
+                active:scale-95
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70
+              "
+            >
               {app.icon}
             </div>
-            <span className="mt-4 text-sm text-white drop-shadow">
+
+            <span className="mt-4 text-sm font-medium text-white drop-shadow">
               {app.label}
             </span>
           </button>
