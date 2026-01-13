@@ -28,7 +28,7 @@ export default function GardenPage() {
       }}
     >
       {/* HERO ICON */}
-      <div className="mt-10 mb-4 flex justify-center">
+      <div className="mt-8 mb-3 flex justify-center">
         <img
           src="/hero.png"
           alt="StrainSpotter"
@@ -37,43 +37,32 @@ export default function GardenPage() {
         />
       </div>
 
-      {/* TITLE */}
-      <h1 className="mt-4 mb-8 text-6xl font-semibold text-white text-center drop-shadow-lg">
+      <h1 className="mt-2 mb-10 text-center text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="flex justify-center">
-        <div className="grid grid-cols-3 gap-x-20 gap-y-16">
-          {Object.entries(ROUTES).map(([key, route]) => (
-            <button
-              key={key}
-              onClick={() => router.push(route.path)}
-              className="group flex flex-col items-center"
-            >
-              <div
-                className="
-                  w-28 h-28
-                  rounded-[26px]
-                  bg-white/80
-                  backdrop-blur-xl
-                  shadow-[0_18px_40px_rgba(0,0,0,0.35)]
-                  border border-white/50
-                  flex items-center justify-center
-                  transition-transform duration-200
-                  group-hover:scale-110
-                  group-active:scale-95
-                "
-              >
-                <span className="text-4xl">{route.icon}</span>
-              </div>
-
-              <span className="mt-4 text-base font-medium text-white drop-shadow">
-                {route.label}
-              </span>
-            </button>
-          ))}
-        </div>
+      <div className="grid grid-cols-3 gap-x-14 gap-y-12 place-items-center">
+        {Object.entries(ROUTES).map(([key, route]) => (
+          <button
+            key={key}
+            onClick={() => router.push(route.path)}
+            className="
+              w-28 h-28
+              rounded-[28px]
+              bg-white/70
+              backdrop-blur-md
+              shadow-xl shadow-black/30
+              flex flex-col items-center justify-center
+              transition-all duration-200
+              hover:scale-105 hover:bg-white/80
+              active:scale-95
+            "
+          >
+            <span className="text-3xl mb-2">{route.icon}</span>
+            <span className="text-sm font-semibold text-black">{route.label}</span>
+          </button>
+        ))}
       </div>
 
     </main>
