@@ -35,7 +35,7 @@ export default function GardenPage() {
           <img
             src="/brand/core/hero.png"
             alt="StrainSpotter"
-            className="w-20 h-20 object-contain"
+            className="w-12 h-12 object-contain"
             draggable={false}
           />
           <h1 className="mt-4 text-6xl font-extrabold tracking-tight drop-shadow">
