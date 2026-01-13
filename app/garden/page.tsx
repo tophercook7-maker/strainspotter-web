@@ -8,7 +8,7 @@ const ICONS = [
   { label: "Dispensaries", icon: "📍", route: "/garden/dispensaries" },
   { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
   { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
-  { label: "History", icon: "🕘", route: "/garden/history" },
+  { label: "History", icon: "🕓", route: "/garden/history" },
   { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
   { label: "Ecosystem", icon: "🌐", route: "/garden/ecosystem" },
   { label: "Settings", icon: "⚙️", route: "/garden/settings" },
@@ -18,31 +18,31 @@ export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen w-full bg-black text-white flex flex-col items-center">
+    <main className="min-h-screen bg-black text-white px-8 pt-10">
       
       {/* HERO */}
-      <div className="mt-8 flex flex-col items-center">
-        <div className="w-20 h-20 rounded-full bg-black/70 flex items-center justify-center">
-          <span className="text-3xl">🌿</span>
+      <div className="flex flex-col items-center mb-10">
+        <div className="w-24 h-24 rounded-3xl bg-green-500/20 flex items-center justify-center mb-4">
+          <span className="text-4xl">🌿</span>
         </div>
 
-        <h1 className="mt-4 text-6xl font-extrabold tracking-tight">
+        <h1 className="text-5xl font-extrabold tracking-tight mb-2">
           StrainSpotter
         </h1>
 
-        <p className="mt-2 text-white/60">
+        <p className="text-white/60 text-sm">
           Your personal cannabis ecosystem
         </p>
       </div>
 
       {/* ICON GRID */}
-      <div className="mt-20 grid grid-cols-3 gap-x-24 gap-y-20">
-        {ICONS.map(({ label, icon, route }) => (
+      <div className="grid grid-cols-3 gap-14 max-w-4xl mx-auto place-items-center mt-16">
+        {ICONS.map((item) => (
           <button
-            key={label}
-            onClick={() => router.push(route)}
+            key={item.label}
+            onClick={() => router.push(item.route)}
             className="
-              w-36 h-36
+              w-32 h-32
               rounded-3xl
               bg-white/15
               backdrop-blur-xl
@@ -53,10 +53,10 @@ export default function GardenPage() {
               transition
             "
           >
-            <span className="text-5xl mb-3">{icon}</span>
-            <span className="text-base font-semibold tracking-wide">
-              {label}
-            </span>
+            <div className="text-4xl mb-2">{item.icon}</div>
+            <div className="text-sm font-semibold text-white/90">
+              {item.label}
+            </div>
           </button>
         ))}
       </div>
