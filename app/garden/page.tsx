@@ -18,30 +18,31 @@ export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="relative min-h-screen bg-black text-white overflow-hidden">
+    <main className="min-h-screen bg-black text-white">
 
-      {/* BACKGROUND ONLY */}
+      {/* HERO BACKGROUND (LOCKED HEIGHT) */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/garden-hero.png')" }}
-      />
-      <div className="absolute inset-0 bg-black/70" />
+        className="relative w-full h-[360px] bg-cover bg-center"
+        style={{ backgroundImage: "url('/hero.png')" }}
+      >
+        <div className="absolute inset-0 bg-black/60" />
+      </div>
 
-      {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center">
+      {/* CONTENT COLUMN */}
+      <div className="relative z-10 flex flex-col items-center -mt-24">
 
-        {/* SMALL HERO MARK */}
-        <div className="mt-10 mb-4 h-20 w-20 rounded-full bg-black/60 flex items-center justify-center">
+        {/* HERO MARK */}
+        <div className="mb-6 h-20 w-20 rounded-full bg-black/70 flex items-center justify-center shadow-xl">
           <span className="text-3xl">🌿</span>
         </div>
 
         {/* TITLE */}
-        <h1 className="text-5xl font-extrabold tracking-wide mb-16">
+        <h1 className="text-6xl font-extrabold tracking-tight mb-20">
           StrainSpotter
         </h1>
 
         {/* ICON GRID */}
-        <section className="grid grid-cols-3 gap-x-24 gap-y-16 pb-24">
+        <section className="grid grid-cols-3 gap-x-24 gap-y-20 pb-32">
           {ROUTES.map(({ label, icon, path }) => (
             <button
               key={label}
