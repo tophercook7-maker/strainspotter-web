@@ -22,14 +22,21 @@ export default function GardenPage() {
 
       {/* HERO (SMALL, CONTROLLED, NOT BACKGROUND) */}
       <div className="mt-10 flex flex-col items-center">
-        <img
-          src="/brand/hero-leaf.png"
-          alt="StrainSpotter"
-          className="w-40 h-40 object-contain"
-        />
-        <h1 className="mt-4 text-5xl font-extrabold tracking-tight">
+        <div className="w-32 h-32 rounded-full bg-black/40 flex items-center justify-center">
+          <img
+            src="/brand/core/hero.png"
+            alt="StrainSpotter"
+            className="w-28 h-28 object-contain"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        </div>
+
+        <h1 className="mt-6 text-5xl font-extrabold tracking-tight">
           StrainSpotter
         </h1>
+
         <p className="mt-2 text-white/70 text-center max-w-xl">
           Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
         </p>
