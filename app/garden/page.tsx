@@ -2,55 +2,71 @@
 
 import { useRouter } from "next/navigation";
 
-const ICONS = [
-  { label: "Strains", icon: "🌿", route: "/garden/strains" },
-  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
-  { label: "Dispensaries", icon: "📍", route: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "Grow Coach", icon: "🧑‍🌾", route: "/garden/grow-coach" },
-  { label: "History", icon: "📖", route: "/garden/history" },
-  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🌍", route: "/garden/ecosystem" },
-  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
+const ROUTES = [
+  { label: "Strains", icon: "🌿", path: "/garden/strains" },
+  { label: "Scanner", icon: "📷", path: "/garden/scanner" },
+  { label: "Dispensaries", icon: "📍", path: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
+  { label: "Grow Coach", icon: "🧠", path: "/garden/grow-coach" },
+  { label: "History", icon: "📜", path: "/garden/history" },
+  { label: "Favorites", icon: "⭐", path: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🌐", path: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", path: "/garden/settings" },
 ];
 
 export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="relative min-h-screen flex flex-col items-center text-white">
-      <div
-        className="absolute inset-0 -z-10 bg-cover bg-center"
-        style={{ backgroundImage: "url('/garden-bg.jpg')" }}
-      />
+    <main className="relative min-h-screen bg-black text-white overflow-hidden">
 
-      {/* HERO */}
-      <div className="mt-10 flex flex-col items-center">
-        <img
-          src="/brand/core/hero.png"
-          alt="StrainSpotter"
-          className="w-32 h-32 object-contain"
-        />
-        <h1 className="mt-4 text-5xl font-extrabold tracking-tight">
+      {/* BACKGROUND ONLY */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/garden-hero.png')" }}
+      />
+      <div className="absolute inset-0 bg-black/70" />
+
+      {/* CONTENT */}
+      <div className="relative z-10 flex flex-col items-center">
+
+        {/* SMALL HERO MARK */}
+        <div className="mt-10 mb-4 h-20 w-20 rounded-full bg-black/60 flex items-center justify-center">
+          <span className="text-3xl">🌿</span>
+        </div>
+
+        {/* TITLE */}
+        <h1 className="text-5xl font-extrabold tracking-wide mb-16">
           StrainSpotter
         </h1>
-        <p className="mt-2 text-white/70">
-          Your personal cannabis ecosystem
-        </p>
-      </div>
 
-      {/* ICON GRID */}
-      <div className="mt-16 grid grid-cols-3 gap-x-16 gap-y-12">
-        {ICONS.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => router.push(item.route)}
-            className="w-28 h-28 rounded-3xl bg-white/15 backdrop-blur-xl border border-white/30 flex flex-col items-center justify-center hover:bg-white/25 transition"
-          >
-            <div className="text-4xl">{item.icon}</div>
-            <div className="mt-2 text-sm font-semibold">{item.label}</div>
-          </button>
-        ))}
+        {/* ICON GRID */}
+        <section className="grid grid-cols-3 gap-x-24 gap-y-16 pb-24">
+          {ROUTES.map(({ label, icon, path }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => router.push(path)}
+              className="
+                flex flex-col items-center justify-center
+                w-32 h-32
+                rounded-3xl
+                bg-white/20
+                backdrop-blur-xl
+                border border-white/30
+                shadow-xl
+                hover:bg-white/30
+                transition
+              "
+            >
+              <span className="text-4xl mb-2">{icon}</span>
+              <span className="text-sm font-semibold tracking-wide text-white/90">
+                {label}
+              </span>
+            </button>
+          ))}
+        </section>
+
       </div>
     </main>
   );
