@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import GardenIcon from "./_components/GardenIcon";
 
 const ROUTES = {
   strains: { path: "/strains", label: "Strains", icon: "🌿" },
@@ -32,36 +33,24 @@ export default function GardenPage() {
         <img
           src="/hero.png"
           alt="StrainSpotter"
-          className="w-20 h-20 object-contain"
+          className="w-24 h-24 object-contain"
           draggable={false}
         />
       </div>
 
-      <h1 className="mt-2 mb-10 text-center text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">
+      <h1 className="mt-2 mb-8 text-center text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="grid grid-cols-3 gap-x-14 gap-y-12 place-items-center">
+      <div className="mt-10 grid grid-cols-3 gap-x-16 gap-y-14 place-items-center">
         {Object.entries(ROUTES).map(([key, route]) => (
-          <button
+          <GardenIcon
             key={key}
+            label={route.label}
+            icon={route.icon}
             onClick={() => router.push(route.path)}
-            className="
-              w-28 h-28
-              rounded-[28px]
-              bg-white/70
-              backdrop-blur-md
-              shadow-xl shadow-black/30
-              flex flex-col items-center justify-center
-              transition-all duration-200
-              hover:scale-105 hover:bg-white/80
-              active:scale-95
-            "
-          >
-            <span className="text-3xl mb-2">{route.icon}</span>
-            <span className="text-sm font-semibold text-black">{route.label}</span>
-          </button>
+          />
         ))}
       </div>
 
