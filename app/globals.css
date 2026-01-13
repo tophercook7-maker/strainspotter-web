@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 html, body {
+  background-color: #000 !important;
+  color: #fff;
   height: 100%;
-}
-
-body {
+  width: 100%;
   margin: 0;
 }
