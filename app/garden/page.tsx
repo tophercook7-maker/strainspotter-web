@@ -38,12 +38,12 @@ export default function GardenPage() {
       </div>
 
       {/* TITLE */}
-      <h1 className="text-6xl font-semibold tracking-tight mb-16 text-center text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.65)]">
+      <h1 className="mt-4 mb-8 text-4xl font-semibold text-white text-center tracking-tight">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="grid grid-cols-3 gap-x-24 gap-y-20 place-items-center pb-24">
+      <div className="grid grid-cols-3 gap-x-16 gap-y-14 justify-items-center">
         {[
           ["Strains", "🌿", ROUTES.strains],
           ["Scanner", "📸", ROUTES.scanner],
@@ -59,7 +59,17 @@ export default function GardenPage() {
             key={label}
             type="button"
             onClick={() => router.push(route as string)}
-            className="flex flex-col items-center select-none"
+            className="
+              w-28 h-28
+              rounded-2xl
+              bg-white/70
+              backdrop-blur-md
+              shadow-xl
+              flex flex-col items-center justify-center
+              text-sm font-medium text-black
+              hover:scale-105
+              transition-transform
+            "
           >
             {/* iPad-style icon tile */}
             <div
@@ -71,13 +81,12 @@ export default function GardenPage() {
                 ring-1 ring-white/40
                 shadow-[0_18px_40px_rgba(0,0,0,0.35)]
                 flex items-center justify-center
-                text-4xl
                 transition-transform duration-200
                 hover:scale-105
                 active:scale-95
               "
             >
-              {icon}
+              <span className="mb-2 w-8 h-8">{icon}</span>
             </div>
 
             {/* label */}
