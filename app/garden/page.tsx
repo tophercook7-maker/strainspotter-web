@@ -2,22 +2,35 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import GardenIcon from "./_components/GardenIcon";
 
-type Btn = { label: string; icon: string; onClick: () => void };
+type Btn = { label: string; icon: string; route: keyof typeof ROUTES };
+
+const ROUTES = {
+  strains: "/garden/strains",
+  scanner: "/garden/scanner",
+  dispensaries: "/garden/dispensaries",
+  seedVendors: "/garden/seed-vendors",
+  growCoach: "/garden/grow-coach",
+  history: "/garden/history",
+  favorites: "/garden/favorites",
+  ecosystem: "/garden/ecosystem",
+  settings: "/garden/settings",
+};
 
 export default function GardenPage() {
   const router = useRouter();
 
   const BUTTONS: Btn[] = [
-    { label: "Strain Browser", icon: "🍃", onClick: () => router.push("/garden/strains") },
-    { label: "Scanner", icon: "📷", onClick: () => router.push("/garden/scanner") },
-    { label: "Dispensaries", icon: "📍", onClick: () => router.push("/garden/dispensaries") },
-    { label: "Seed Vendors", icon: "🌱", onClick: () => router.push("/garden/seed-vendors") },
-    { label: "Grow Coach", icon: "🪴", onClick: () => router.push("/garden/grow-coach") },
-    { label: "History", icon: "📜", onClick: () => router.push("/garden/history") },
-    { label: "Favorites", icon: "⭐", onClick: () => router.push("/garden/favorites") },
-    { label: "Ecosystem", icon: "🌍", onClick: () => router.push("/garden/ecosystem") },
-    { label: "Settings", icon: "⚙️", onClick: () => router.push("/garden/settings") },
+    { label: "Strain Browser", icon: "🍃", route: "strains" },
+    { label: "Scanner", icon: "📷", route: "scanner" },
+    { label: "Dispensaries", icon: "📍", route: "dispensaries" },
+    { label: "Seed Vendors", icon: "🌱", route: "seedVendors" },
+    { label: "Grow Coach", icon: "🪴", route: "growCoach" },
+    { label: "History", icon: "📜", route: "history" },
+    { label: "Favorites", icon: "⭐", route: "favorites" },
+    { label: "Ecosystem", icon: "🌍", route: "ecosystem" },
+    { label: "Settings", icon: "⚙️", route: "settings" },
   ];
 
   return (
@@ -55,58 +68,24 @@ export default function GardenPage() {
           </p>
         </div>
 
-        {/* ICON GRID START */}
         <div
           className="
-    relative
-    mt-24
+    mt-16
     grid
     grid-cols-3
-    gap-x-28
-    gap-y-24
-    px-24
-    w-full
-    max-w-none
+    gap-14
     place-items-center
   "
         >
-          {[
-            { label: "Strain Browser", icon: "🌿", path: "/garden/strains" },
-            { label: "Scanner", icon: "📷", path: "/garden/scanner" },
-            { label: "Dispensaries", icon: "📍", path: "/garden/dispensaries" },
-            { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
-            { label: "Grow Coach", icon: "🪴", path: "/garden/grow-coach" },
-            { label: "History", icon: "📜", path: "/garden/history" },
-            { label: "Favorites", icon: "⭐", path: "/garden/favorites" },
-            { label: "Ecosystem", icon: "🌎", path: "/garden/ecosystem" },
-            { label: "Settings", icon: "⚙️", path: "/garden/settings" },
-          ].map((item) => (
-            <button
+          {BUTTONS.map((item) => (
+            <GardenIcon
               key={item.label}
-              type="button"
-              onClick={() => router.push(item.path)}
-              className="
-        flex flex-col items-center justify-center
-        w-36 h-36
-        rounded-[36px]
-        bg-white/20
-        backdrop-blur-2xl
-        border border-white/30
-        shadow-2xl
-        text-white
-        hover:bg-white/35
-        hover:scale-105
-        transition-all duration-200
-      "
-            >
-              <span className="text-6xl mb-3">{item.icon}</span>
-              <span className="text-base font-semibold tracking-wide text-white/90">
-                {item.label}
-              </span>
-            </button>
+              label={item.label}
+              icon={item.icon}
+              onClick={() => router.push(ROUTES[item.route])}
+            />
           ))}
         </div>
-        {/* ICON GRID END */}
       </div>
     </main>
   );
