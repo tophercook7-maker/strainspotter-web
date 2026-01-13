@@ -2,17 +2,17 @@
 
 import { useRouter } from "next/navigation";
 
-const APPS = [
-  { label: "Strains", icon: "🌿", route: "/strains" },
-  { label: "Scanner", icon: "📷", route: "/scanner" },
-  { label: "Dispensaries", icon: "📍", route: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", route: "/seed-vendors" },
-  { label: "Grow Coach", icon: "🧠", route: "/grow-coach" },
-  { label: "History", icon: "🕘", route: "/history" },
-  { label: "Favorites", icon: "⭐", route: "/favorites" },
-  { label: "Ecosystem", icon: "🌐", route: "/ecosystem" },
-  { label: "Settings", icon: "⚙️", route: "/settings" },
-];
+const ROUTES = {
+  strains: "/strains",
+  scanner: "/scanner",
+  dispensaries: "/garden/dispensaries",
+  seedVendors: "/seed-vendors",
+  growCoach: "/grow-coach",
+  history: "/history",
+  favorites: "/favorites",
+  ecosystem: "/ecosystem",
+  settings: "/settings",
+} as const;
 
 export default function GardenPage() {
   const router = useRouter();
@@ -32,33 +32,44 @@ export default function GardenPage() {
         <img
           src="/hero.png"
           alt="StrainSpotter"
-          className="w-14 h-14 object-contain"
+          className="w-16 h-16 object-contain"
           draggable={false}
         />
       </div>
 
       {/* TITLE */}
-      <h1 className="text-5xl font-semibold tracking-tight mb-16 text-center text-white drop-shadow-sm">
+      <h1 className="text-6xl font-semibold tracking-tight mb-16 text-center text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.65)]">
         StrainSpotter
       </h1>
 
       {/* APP GRID — IPAD STYLE */}
-      <div className="grid grid-cols-3 gap-x-28 gap-y-24 place-items-center">
-        {APPS.map(app => (
+      <div className="grid grid-cols-3 gap-x-24 gap-y-20 place-items-center pb-24">
+        {[
+          ["Strains", "🌿", ROUTES.strains],
+          ["Scanner", "📸", ROUTES.scanner],
+          ["Dispensaries", "📍", ROUTES.dispensaries],
+          ["Seed Vendors", "🌱", ROUTES.seedVendors],
+          ["Grow Coach", "🧑‍🌾", ROUTES.growCoach],
+          ["History", "🕘", ROUTES.history],
+          ["Favorites", "⭐", ROUTES.favorites],
+          ["Ecosystem", "🌐", ROUTES.ecosystem],
+          ["Settings", "⚙️", ROUTES.settings],
+        ].map(([label, icon, route]) => (
           <button
-            key={app.label}
-            onClick={() => router.push(app.route)}
+            key={label}
             type="button"
+            onClick={() => router.push(route as string)}
             className="flex flex-col items-center select-none"
           >
+            {/* iPad-style icon tile */}
             <div
               className="
-                w-28 h-28
-                rounded-[28px]
-                bg-white/85
+                w-24 h-24
+                rounded-[26px]
+                bg-white/80
                 backdrop-blur-md
                 ring-1 ring-white/40
-                shadow-[0_16px_36px_rgba(0,0,0,0.35)]
+                shadow-[0_18px_40px_rgba(0,0,0,0.35)]
                 flex items-center justify-center
                 text-4xl
                 transition-transform duration-200
@@ -66,11 +77,12 @@ export default function GardenPage() {
                 active:scale-95
               "
             >
-              {app.icon}
+              {icon}
             </div>
 
-            <span className="mt-4 text-sm font-medium text-white drop-shadow">
-              {app.label}
+            {/* label */}
+            <span className="mt-3 text-sm font-medium text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.70)]">
+              {label}
             </span>
           </button>
         ))}
