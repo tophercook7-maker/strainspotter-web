@@ -18,33 +18,40 @@ export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center">
-      
-      {/* HERO */}
-      <div className="mt-10 mb-4">
-        <div className="w-20 h-20 rounded-full border border-green-400 flex items-center justify-center text-green-400 text-4xl">
+    <main
+      className="min-h-screen flex flex-col items-center text-white"
+      style={{
+        backgroundImage: "url(/garden-bg.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* HERO ICON — CLEAN, NO BACKGROUND */}
+      <div className="mt-12 mb-6">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl">
           🌿
         </div>
       </div>
 
       {/* TITLE */}
-      <h1 className="text-5xl font-extrabold tracking-tight mb-14">
+      <h1 className="text-5xl font-extrabold tracking-tight mb-16 drop-shadow">
         StrainSpotter
       </h1>
 
-      {/* APP GRID */}
-      <div className="grid grid-cols-3 gap-x-20 gap-y-16">
+      {/* APP GRID — IPAD STYLE */}
+      <div className="grid grid-cols-3 gap-x-24 gap-y-20">
         {APPS.map(app => (
           <button
             key={app.label}
             onClick={() => router.push(app.route)}
-            className="flex flex-col items-center focus:outline-none group"
             type="button"
+            className="flex flex-col items-center focus:outline-none"
           >
-            <div className="w-24 h-24 rounded-2xl bg-white/10 backdrop-blur-md shadow-lg flex items-center justify-center text-4xl group-hover:scale-105 transition">
+            <div className="w-28 h-28 rounded-3xl bg-white/80 backdrop-blur shadow-xl flex items-center justify-center text-4xl hover:scale-105 transition">
               {app.icon}
             </div>
-            <span className="mt-3 text-sm text-white/80">
+            <span className="mt-4 text-sm text-white drop-shadow">
               {app.label}
             </span>
           </button>
