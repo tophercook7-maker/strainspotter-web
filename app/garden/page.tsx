@@ -20,8 +20,8 @@ export default function GardenPage() {
   return (
     <main className="min-h-screen w-full bg-black text-white overflow-y-auto">
       
-      {/* HEADER BLOCK — FIXED HEIGHT */}
-      <div className="w-full flex flex-col items-center pt-10 pb-8">
+      {/* HERO / TITLE — FIXED, SMALL */}
+      <header className="w-full flex flex-col items-center pt-10 pb-10">
         <img
           src="/brand/core/hero.png"
           alt="StrainSpotter"
@@ -35,11 +35,20 @@ export default function GardenPage() {
         <p className="mt-2 text-white/60 text-center max-w-xl">
           Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
         </p>
-      </div>
+      </header>
 
-      {/* ICON GRID — NORMAL FLOW, NO FLEX CENTERING */}
-      <div className="w-full px-20">
-        <div className="grid grid-cols-3 gap-x-24 gap-y-20 justify-items-center">
+      {/* ICON GRID — NORMAL FLOW, NEVER FLOATS */}
+      <section className="w-full flex justify-center">
+        <div
+          className="
+            grid
+            grid-cols-3
+            gap-x-24
+            gap-y-20
+            justify-items-center
+            pb-24
+          "
+        >
           {ICONS.map((item) => (
             <button
               key={item.label}
@@ -63,9 +72,8 @@ export default function GardenPage() {
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="h-24" />
     </main>
   );
 }
