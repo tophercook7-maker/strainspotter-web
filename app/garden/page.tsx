@@ -1,18 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 const ICONS = [
-  { label: "Strains", icon: "🌿", route: "/garden/strains" },
-  { label: "Scanner", icon: "📸", route: "/garden/scanner" },
-  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
-  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "History", icon: "🗂", route: "/garden/history" },
-  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🧬", route: "/garden/ecosystem" },
-  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
+  { label: "Strains", icon: "🌿", route: "/garden/strains", x: "20%", y: "35%" },
+  { label: "Scanner", icon: "📷", route: "/garden/scanner", x: "45%", y: "35%" },
+  { label: "Dispensaries", icon: "📍", route: "/garden/dispensaries", x: "70%", y: "35%" },
+
+  { label: "Seed Vendors", icon: "🌰", route: "/garden/seed-vendors", x: "20%", y: "55%" },
+  { label: "Grow Coach", icon: "🌱", route: "/garden/grow-coach", x: "45%", y: "55%" },
+  { label: "History", icon: "📜", route: "/garden/history", x: "70%", y: "55%" },
+
+  { label: "Favorites", icon: "⭐", route: "/garden/favorites", x: "32%", y: "75%" },
+  { label: "Ecosystem", icon: "🌍", route: "/garden/ecosystem", x: "57%", y: "75%" },
 ];
 
 export default function GardenPage() {
@@ -22,64 +22,58 @@ export default function GardenPage() {
     <main className="relative min-h-screen w-full overflow-hidden text-white">
       
       {/* BACKGROUND */}
-      <Image
+      <img
         src="/garden-bg.jpg"
         alt="Garden background"
-        fill
-        priority
-        className="object-cover"
+        className="absolute inset-0 w-full h-full object-cover"
       />
-      <div className="absolute inset-0 bg-black/50" />
 
-      {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center pt-24 pb-20">
-        
-        {/* HERO */}
-        <div className="mb-14 flex flex-col items-center">
-          <Image
-            src="/brand/hero.png"
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 bg-black/30" />
+
+      {/* HERO */}
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 text-center z-10">
+        <div className="w-32 h-32 mx-auto rounded-full bg-black/80 flex items-center justify-center shadow-2xl">
+          <img
+            src="/brand/core/hero.png"
             alt="Hero"
-            width={140}
-            height={140}
-            className="rounded-full mb-4"
+            className="w-24 h-24 object-contain"
           />
-          <h1 className="text-4xl font-extrabold tracking-wide">
-            The Garden
-          </h1>
         </div>
-
-        {/* ICON GRID — IPAD STYLE */}
-        <div className="
-          grid
-          grid-cols-3
-          gap-x-24
-          gap-y-20
-        ">
-          {ICONS.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => router.push(item.route)}
-              className="
-                flex flex-col items-center justify-center
-                w-36 h-36
-                rounded-3xl
-                bg-white/20
-                backdrop-blur-xl
-                border border-white/30
-                shadow-2xl
-                hover:bg-white/30
-                transition
-                focus:outline-none
-              "
-            >
-              <div className="text-5xl mb-3">{item.icon}</div>
-              <div className="text-base font-semibold tracking-wide">
-                {item.label}
-              </div>
-            </button>
-          ))}
-        </div>
+        <h1 className="mt-6 text-5xl font-extrabold tracking-tight">
+          The Garden
+        </h1>
+        <p className="mt-2 text-white/80 max-w-xl mx-auto">
+          Your personal cannabis ecosystem — calm, grounded, and built on supported truth.
+        </p>
       </div>
+
+      {/* ICONS */}
+      {ICONS.map((item) => (
+        <button
+          key={item.label}
+          onClick={() => router.push(item.route)}
+          className="
+            absolute
+            flex flex-col items-center justify-center
+            w-32 h-32
+            rounded-3xl
+            bg-white/20
+            backdrop-blur-xl
+            border border-white/30
+            shadow-2xl
+            hover:bg-white/30
+            transition
+            z-10
+          "
+          style={{ left: item.x, top: item.y, transform: "translate(-50%, -50%)" }}
+        >
+          <span className="text-5xl mb-2">{item.icon}</span>
+          <span className="text-sm font-semibold tracking-wide">
+            {item.label}
+          </span>
+        </button>
+      ))}
     </main>
   );
 }
