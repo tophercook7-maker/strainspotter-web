@@ -7,7 +7,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-black text-white">
+      <body className="bg-black text-white min-h-screen w-screen overflow-hidden">
         {children}
       </body>
     </html>

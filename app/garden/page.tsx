@@ -24,31 +24,23 @@ export default function GardenPage() {
     <main className="min-h-screen bg-black text-white flex flex-col items-center">
 
       {/* HERO */}
-      <div className="mt-8 mb-4">
+      <div className="mt-10 mb-6">
         <Image
           src="/hero.png"
           alt="StrainSpotter"
-          width={80}
-          height={80}
+          width={72}
+          height={72}
           priority
         />
       </div>
 
       {/* TITLE */}
-      <h1 className="text-5xl font-extrabold tracking-tight mb-16">
+      <h1 className="text-6xl font-extrabold tracking-tight mb-20">
         StrainSpotter
       </h1>
 
-      {/* ICON GRID — IPAD STYLE */}
-      <div
-        className="
-          grid
-          grid-cols-3
-          gap-x-32
-          gap-y-24
-          place-items-center
-        "
-      >
+      {/* ICON GRID */}
+      <div className="grid grid-cols-3 gap-x-40 gap-y-28">
         {ICONS.map(({ label, icon, route }) => (
           <button
             key={label}
@@ -56,22 +48,17 @@ export default function GardenPage() {
             className="
               w-36 h-36
               rounded-[32px]
-              bg-white/15
+              bg-white/20
               backdrop-blur-xl
               border border-white/30
               shadow-2xl
-              flex flex-col
-              items-center
-              justify-center
-              hover:bg-white/25
+              flex flex-col items-center justify-center
+              hover:bg-white/30
               transition
-              cursor-pointer
             "
           >
             <div className="text-5xl mb-3">{icon}</div>
-            <div className="text-base font-semibold tracking-wide text-white/90">
-              {label}
-            </div>
+            <div className="text-base font-semibold">{label}</div>
           </button>
         ))}
       </div>
