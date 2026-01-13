@@ -28,6 +28,10 @@ export default function GardenPage() {
         backgroundRepeat: "no-repeat",
       }}
     >
+      <div className="fixed top-0 left-0 z-[9999] bg-red-600 text-white px-2 py-1">
+        GARDEN PAGE ACTIVE
+      </div>
+
       {/* HERO ICON */}
       <div className="mt-8 mb-3 flex justify-center">
         <img
@@ -44,14 +48,20 @@ export default function GardenPage() {
 
       {/* APP GRID — IPAD STYLE */}
       <div className="mt-10 grid grid-cols-3 gap-x-16 gap-y-14 place-items-center">
-        {Object.entries(ROUTES).map(([key, route]) => (
-          <GardenIcon
-            key={key}
-            label={route.label}
-            icon={route.icon}
-            onClick={() => router.push(route.path)}
-          />
-        ))}
+        {Object.entries(ROUTES).map(([key, route]) =>
+          key === "strains" ? (
+            <button key={key} className="w-40 h-40 bg-red-500">
+              TEST ICON
+            </button>
+          ) : (
+            <GardenIcon
+              key={key}
+              label={route.label}
+              icon={route.icon}
+              onClick={() => router.push(route.path)}
+            />
+          )
+        )}
       </div>
 
     </main>
