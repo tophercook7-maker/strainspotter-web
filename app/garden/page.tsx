@@ -9,7 +9,7 @@ const ICONS = [
   { label: "Dispensaries", icon: "📍", route: "/garden/dispensaries" },
 
   { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
+  { label: "Grow Coach", icon: "🧑‍🌾", route: "/garden/grow-coach" },
   { label: "History", icon: "🕘", route: "/garden/history" },
 
   { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
