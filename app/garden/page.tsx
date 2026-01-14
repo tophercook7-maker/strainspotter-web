@@ -4,14 +4,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const ROUTES = [
-  { label: "Strains", icon: "🌿", path: "/garden/strains" },
-  { label: "Scanner", icon: "📷", path: "/garden/scanner" },
+  { label: "Strains", icon: "🌱", path: "/garden/strains" },
+  { label: "Scanner", icon: "📸", path: "/garden/scanner" },
   { label: "Dispensaries", icon: "🏪", path: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
+  { label: "Seed Vendors", icon: "🌰", path: "/garden/seed-vendors" },
   { label: "Grow Coach", icon: "🧠", path: "/garden/grow-coach" },
-  { label: "History", icon: "📜", path: "/garden/history" },
+  { label: "History", icon: "🕒", path: "/garden/history" },
   { label: "Favorites", icon: "⭐", path: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🧬", path: "/garden/ecosystem" },
+  { label: "Ecosystem", icon: "🧩", path: "/garden/ecosystem" },
   { label: "Settings", icon: "⚙️", path: "/garden/settings" },
 ];
 
@@ -19,72 +19,58 @@ export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden">
+    <main className="relative min-h-screen w-full text-white overflow-hidden">
       {/* BACKGROUND */}
       <Image
-        src="/background.jpg"
-        alt="Background"
+        src="/garden-bg.jpg"
+        alt="Garden background"
         fill
         priority
         className="object-cover"
       />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center">
-
+      <div className="relative z-10 flex flex-col items-center pt-10 pb-16">
         {/* HERO */}
-        <div className="mb-6">
-          <Image
-            src="/hero.png"
-            alt="StrainSpotter"
-            width={110}
-            height={110}
-            draggable={false}
-            className="object-contain"
-          />
-        </div>
+        <img
+          src="/hero.png"
+          alt="StrainSpotter"
+          className="w-14 h-14 object-contain mb-3"
+          draggable={false}
+        />
 
         {/* TITLE */}
-        <h1
-          className="
-            mb-16
-            text-5xl
-            font-extrabold
-            tracking-tight
-            text-green-400
-            select-none
-          "
-        >
-          StrainSpotter
+        <h1 className="text-4xl font-extrabold tracking-wide text-green-400 mb-12">
+          STRAINSPOTTER
         </h1>
 
-        {/* GRID */}
-        <div className="grid grid-cols-3 gap-x-24 gap-y-20">
+        {/* ICON GRID */}
+        <div className="grid grid-cols-3 gap-x-16 gap-y-14">
           {ROUTES.map((item) => (
             <button
               key={item.label}
+              type="button"
               onClick={() => router.push(item.path)}
               className="
-                h-36 w-36
-                rounded-[28px]
-                bg-white/90
-                backdrop-blur-xl
-                shadow-[0_20px_45px_rgba(0,0,0,0.35)]
                 flex flex-col items-center justify-center
-                transition-all
-                hover:scale-105 hover:shadow-[0_26px_60px_rgba(0,0,0,0.45)]
+                w-36 h-36
+                rounded-[28px]
+                bg-white/20
+                backdrop-blur-xl
+                border border-white/30
+                shadow-[0_20px_40px_rgba(0,0,0,0.35)]
+                hover:bg-white/30
+                transition
                 active:scale-95
-                focus:outline-none
               "
             >
-              <span className="text-4xl leading-none">{item.icon}</span>
-              <span className="mt-4 text-sm font-semibold text-black text-center">
+              <div className="text-5xl mb-3">{item.icon}</div>
+              <div className="text-sm font-semibold tracking-wide text-white/90">
                 {item.label}
-              </span>
+              </div>
             </button>
           ))}
         </div>
-
       </div>
     </main>
   );
