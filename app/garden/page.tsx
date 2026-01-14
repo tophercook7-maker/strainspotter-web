@@ -35,6 +35,98 @@ export default function GardenPage() {
           {ROUTES.map((item) => (
             <button
               key={item.label}
+              type="button"
+              onClick={() => router.push(item.route)}
+              className="flex flex-col items-center text-white/80 hover:text-white transition"
+            >
+              <span className="text-2xl">{item.icon}</span>
+              <span className="text-[10px] mt-1">{item.label}</span>
+            </button>
+          ))}
+        </aside>
+
+        {/* MAIN */}
+        <section className="flex-1 flex flex-col items-center pt-12 px-8">
+          <img
+            src="/hero.png"
+            alt="StrainSpotter"
+            className="w-14 h-14 object-contain"
+            draggable={false}
+          />
+
+          <h1 className="mt-4 mb-12 text-4xl font-extrabold tracking-wide text-green-400">
+            StrainSpotter
+          </h1>
+
+          <div className="w-full">
+            <div className="mx-auto grid max-w-7xl grid-cols-2 gap-14 sm:grid-cols-3 md:grid-cols-4 place-items-center">
+              {ROUTES.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => router.push(item.route)}
+                  className="
+                    flex flex-col items-center justify-center
+                    w-40 h-40
+                    rounded-[2.2rem]
+                    bg-white/25
+                    backdrop-blur-2xl
+                    border border-white/30
+                    shadow-[0_25px_50px_rgba(0,0,0,0.45)]
+                    hover:bg-white/35
+                    transition
+                  "
+                >
+                  <span className="text-6xl mb-4">{item.icon}</span>
+                  <span className="text-base font-semibold tracking-wide text-white">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+"use client";
+
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+const ROUTES = [
+  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
+  { label: "Strains", icon: "🌿", route: "/garden/strains" },
+  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
+  { label: "Audit", icon: "🧪", route: "/garden/audit" },
+];
+
+export default function GardenPage() {
+  const router = useRouter();
+
+  return (
+    <main className="relative min-h-screen w-full text-white overflow-hidden">
+      <Image
+        src="/garden-bg.jpg"
+        alt="Garden Background"
+        fill
+        priority
+        className="object-cover"
+      />
+
+      <div className="relative z-10 flex min-h-screen">
+        {/* SIDEBAR */}
+        <aside className="hidden md:flex w-24 flex-col items-center py-10 gap-8 bg-black/30 backdrop-blur-xl border-r border-white/10">
+          <img
+            src="/hero.png"
+            alt="StrainSpotter"
+            className="w-10 h-10 object-contain"
+            draggable={false}
+          />
+          {ROUTES.map((item) => (
+            <button
+              key={item.label}
               onClick={() => router.push(item.route)}
               className="flex flex-col items-center text-white/80 hover:text-white transition"
             >
