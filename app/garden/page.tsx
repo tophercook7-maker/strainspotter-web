@@ -45,30 +45,40 @@ export default function GardenPage() {
         </div>
 
         {/* TITLE */}
-        <h1 className="mb-14 text-5xl font-extrabold tracking-tight text-green-400">
+        <h1
+          className="
+            mb-16
+            text-5xl
+            font-extrabold
+            tracking-tight
+            text-green-400
+            select-none
+          "
+        >
           StrainSpotter
         </h1>
 
         {/* GRID */}
-        <div className="grid grid-cols-3 gap-x-20 gap-y-16">
+        <div className="grid grid-cols-3 gap-x-24 gap-y-20">
           {ROUTES.map((item) => (
             <button
               key={item.label}
               onClick={() => router.push(item.path)}
               className="
-                h-32 w-32
-                rounded-[2.25rem]
-                bg-white/85
+                h-36 w-36
+                rounded-[28px]
+                bg-white/90
                 backdrop-blur-xl
-                shadow-[0_18px_40px_rgba(0,0,0,0.35)]
+                shadow-[0_20px_45px_rgba(0,0,0,0.35)]
                 flex flex-col items-center justify-center
-                transition-transform
-                hover:scale-105
+                transition-all
+                hover:scale-105 hover:shadow-[0_26px_60px_rgba(0,0,0,0.45)]
                 active:scale-95
+                focus:outline-none
               "
             >
-              <span className="text-4xl">{item.icon}</span>
-              <span className="mt-3 text-sm font-semibold text-black text-center">
+              <span className="text-4xl leading-none">{item.icon}</span>
+              <span className="mt-4 text-sm font-semibold text-black text-center">
                 {item.label}
               </span>
             </button>
