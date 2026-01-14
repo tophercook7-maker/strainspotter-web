@@ -1,76 +1,68 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const ROUTES = [
-  { label: "Dispensaries", icon: "🏪", path: "/garden/dispensaries" },
-  { label: "Strains", icon: "🌿", path: "/garden/strains" },
-  { label: "Grow Coach", icon: "🧠", path: "/garden/grow-coach" },
-  { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
-  { label: "Scanner", icon: "📷", path: "/garden/scanner" },
-  { label: "History", icon: "🗂️", path: "/garden/history" },
-  { label: "Favorites", icon: "⭐", path: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🧩", path: "/garden/ecosystem" },
-  { label: "Settings", icon: "⚙️", path: "/garden/settings" },
+  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
+  { label: "Strains", icon: "🌿", route: "/garden/strains" },
+  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
+  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
+  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
+  { label: "History", icon: "📜", route: "/garden/history" },
+  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🕸️", route: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
 ];
 
 export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="relative min-h-screen w-full text-white">
-      {/* BACKGROUND IMAGE (DO NOT TOUCH) */}
-      <Image
-        src="/garden-bg.jpg"
-        alt="Garden Background"
-        fill
-        priority
-        className="object-cover"
-      />
-
-      {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center pt-10 pb-24">
+    <main className="min-h-screen w-full text-white">
+      {/* BACKGROUND (leave as-is if already working elsewhere) */}
+      <div className="relative z-10 flex flex-col items-center pt-10">
         {/* HERO */}
         <Image
           src="/hero.png"
           alt="StrainSpotter"
-          width={64}
-          height={64}
-          draggable={false}
+          width={56}
+          height={56}
+          priority
         />
 
         {/* TITLE */}
-        <h1 className="mt-3 text-4xl font-extrabold text-green-400 tracking-wide">
+        <h1 className="mt-4 text-4xl font-extrabold tracking-wide text-green-400">
           StrainSpotter
         </h1>
+      </div>
 
-        {/* ICON GRID */}
-        <div className="mt-14 grid grid-cols-3 gap-x-20 gap-y-16">
-          {ROUTES.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => router.push(item.path)}
-              className="
-                flex flex-col items-center justify-center
-                w-36 h-36
-                rounded-[28px]
-                bg-white/20
-                backdrop-blur-xl
-                border border-white/30
-                shadow-2xl
-                hover:bg-white/30
-                transition
-              "
-            >
-              <span className="text-5xl mb-3">{item.icon}</span>
-              <span className="text-sm font-semibold tracking-wide">
-                {item.label}
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* ICON GRID */}
+      <div className="mt-12 grid grid-cols-3 gap-16 place-items-center px-8">
+        {ROUTES.map((item) => (
+          <button
+            key={item.route}
+            type="button"
+            onClick={() => router.push(item.route)}
+            className="
+              w-36 h-36
+              rounded-[28px]
+              bg-white/20
+              backdrop-blur-xl
+              border border-white/30
+              shadow-2xl
+              flex flex-col items-center justify-center
+              text-white
+              hover:bg-white/30
+              transition
+            "
+          >
+            <div className="text-5xl mb-2">{item.icon}</div>
+            <div className="text-sm font-semibold tracking-wide">
+              {item.label}
+            </div>
+          </button>
+        ))}
       </div>
     </main>
   );
