@@ -1,5 +1,82 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+
+const ROUTES = [
+  { label: "Dispensaries", icon: "🏪", path: "/garden/dispensaries" },
+  { label: "Strains", icon: "🌿", path: "/garden/strains" },
+  { label: "Grow Coach", icon: "🧠", path: "/garden/grow-coach" },
+  { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
+  { label: "Scanner", icon: "📷", path: "/garden/scanner" },
+  { label: "History", icon: "🗂️", path: "/garden/history" },
+  { label: "Favorites", icon: "⭐", path: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🧩", path: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", path: "/garden/settings" },
+];
+
+export default function GardenPage() {
+  const router = useRouter();
+
+  return (
+    <main className="relative min-h-screen w-full text-white">
+      {/* BACKGROUND IMAGE (DO NOT TOUCH) */}
+      <Image
+        src="/garden-bg.jpg"
+        alt="Garden Background"
+        fill
+        priority
+        className="object-cover"
+      />
+
+      {/* CONTENT */}
+      <div className="relative z-10 flex flex-col items-center pt-10 pb-24">
+        {/* HERO */}
+        <Image
+          src="/hero.png"
+          alt="StrainSpotter"
+          width={64}
+          height={64}
+          draggable={false}
+        />
+
+        {/* TITLE */}
+        <h1 className="mt-3 text-4xl font-extrabold text-green-400 tracking-wide">
+          StrainSpotter
+        </h1>
+
+        {/* ICON GRID */}
+        <div className="mt-14 grid grid-cols-3 gap-x-20 gap-y-16">
+          {ROUTES.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => router.push(item.path)}
+              className="
+                flex flex-col items-center justify-center
+                w-36 h-36
+                rounded-[28px]
+                bg-white/20
+                backdrop-blur-xl
+                border border-white/30
+                shadow-2xl
+                hover:bg-white/30
+                transition
+              "
+            >
+              <span className="text-5xl mb-3">{item.icon}</span>
+              <span className="text-sm font-semibold tracking-wide">
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+"use client";
+
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
