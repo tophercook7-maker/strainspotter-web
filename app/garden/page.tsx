@@ -4,6 +4,79 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const ROUTES = [
+  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
+  { label: "Strains", icon: "🧬", route: "/garden/strains" },
+  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
+  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
+  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
+  { label: "History", icon: "🕓", route: "/garden/history" },
+  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🕸️", route: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
+];
+
+export default function GardenPage() {
+  const router = useRouter();
+
+  return (
+    <main className="relative min-h-screen w-full text-white overflow-hidden">
+      <Image
+        src="/garden-bg.jpg"
+        alt="Garden Background"
+        fill
+        priority
+        className="object-cover"
+      />
+
+      <div className="relative z-10 flex flex-col items-center pt-10">
+        <img
+          src="/hero.png"
+          alt="StrainSpotter"
+          className="w-14 h-14 object-contain"
+          draggable={false}
+        />
+
+        <h1 className="mt-4 mb-14 text-4xl font-extrabold tracking-wide text-green-400">
+          StrainSpotter
+        </h1>
+
+        <div className="w-full px-10">
+          <div className="mx-auto grid max-w-6xl grid-cols-3 gap-x-24 gap-y-24 md:grid-cols-4">
+            {ROUTES.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => router.push(item.route)}
+                className="
+                  flex flex-col items-center justify-center
+                  w-40 h-40
+                  rounded-[2.25rem]
+                  bg-white/20
+                  backdrop-blur-2xl
+                  border border-white/30
+                  shadow-[0_24px_48px_rgba(0,0,0,0.35)]
+                  hover:bg-white/30
+                  transition
+                "
+              >
+                <span className="text-5xl mb-3">{item.icon}</span>
+                <span className="text-sm font-semibold tracking-wide text-white/90">
+                  {item.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+"use client";
+
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+const ROUTES = [
   { label: "Dispensaries", icon: "🌿", route: "/garden/dispensaries" },
   { label: "Strains", icon: "🧬", route: "/garden/strains" },
   { label: "Scanner", icon: "📷", route: "/garden/scanner" },
