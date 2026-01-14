@@ -7,85 +7,72 @@ const ROUTES = [
   { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
   { label: "Strains", icon: "🌿", route: "/garden/strains" },
   { label: "Scanner", icon: "📷", route: "/garden/scanner" },
-  { label: "Audit", icon: "🧪", route: "/garden/audit" },
+  { label: "Grow Coach", icon: "🌱", route: "/garden/grow-coach" },
+  { label: "Seed Vendors", icon: "🌰", route: "/garden/seed-vendors" },
+  { label: "History", icon: "🕘", route: "/garden/history" },
+  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🧬", route: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
 ];
 
 export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="relative min-h-screen w-full text-white overflow-hidden">
-      <Image
-        src="/garden-bg.jpg"
-        alt="Garden Background"
-        fill
-        priority
-        className="object-cover"
-      />
-
-      <div className="relative z-10 flex min-h-screen">
-        {/* SIDEBAR */}
-        <aside className="hidden md:flex w-24 flex-col items-center py-10 gap-8 bg-black/30 backdrop-blur-xl border-r border-white/10">
-          <img
+    <main
+      className="min-h-screen w-full text-white"
+      style={{
+        backgroundImage: "url(/garden-bg.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="flex flex-col items-center pt-10">
+        {/* HERO */}
+        <div className="mb-3">
+          <Image
             src="/hero.png"
             alt="StrainSpotter"
-            className="w-10 h-10 object-contain"
+            width={56}
+            height={56}
+            priority
             draggable={false}
           />
+        </div>
+
+        {/* TITLE */}
+        <h1 className="text-4xl font-extrabold tracking-wide text-green-400 mb-12">
+          StrainSpotter
+        </h1>
+
+        {/* ICON GRID */}
+        <div className="grid grid-cols-3 gap-x-20 gap-y-16">
           {ROUTES.map((item) => (
             <button
               key={item.label}
               type="button"
               onClick={() => router.push(item.route)}
-              className="flex flex-col items-center text-white/80 hover:text-white transition"
+              className="
+                w-36 h-36
+                rounded-[28px]
+                bg-white/20
+                backdrop-blur-xl
+                border border-white/30
+                shadow-[0_18px_40px_rgba(0,0,0,0.45)]
+                flex flex-col items-center justify-center
+                text-white
+                hover:bg-white/30
+                active:scale-95
+                transition
+              "
             >
-              <span className="text-2xl">{item.icon}</span>
-              <span className="text-[10px] mt-1">{item.label}</span>
+              <div className="text-5xl mb-2">{item.icon}</div>
+              <div className="text-base font-semibold tracking-wide">
+                {item.label}
+              </div>
             </button>
           ))}
-        </aside>
-
-        {/* MAIN */}
-        <section className="flex-1 flex flex-col items-center pt-12 px-8">
-          <img
-            src="/hero.png"
-            alt="StrainSpotter"
-            className="w-14 h-14 object-contain"
-            draggable={false}
-          />
-
-          <h1 className="mt-4 mb-12 text-4xl font-extrabold tracking-wide text-green-400">
-            StrainSpotter
-          </h1>
-
-          <div className="w-full">
-            <div className="mx-auto grid max-w-7xl grid-cols-2 gap-14 sm:grid-cols-3 md:grid-cols-4 place-items-center">
-              {ROUTES.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => router.push(item.route)}
-                  className="
-                    flex flex-col items-center justify-center
-                    w-40 h-40
-                    rounded-[2.2rem]
-                    bg-white/25
-                    backdrop-blur-2xl
-                    border border-white/30
-                    shadow-[0_25px_50px_rgba(0,0,0,0.45)]
-                    hover:bg-white/35
-                    transition
-                  "
-                >
-                  <span className="text-6xl mb-4">{item.icon}</span>
-                  <span className="text-base font-semibold tracking-wide text-white">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
     </main>
   );
