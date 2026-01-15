@@ -14,18 +14,9 @@ export default function GardenIcon({
   return (
     <button
       onClick={onClick}
-      className="
-        w-[112px] h-[112px]
-        rounded-[28px]
-        bg-white/95
-        shadow-[0_10px_24px_rgba(0,0,0,0.28)]
-        flex flex-col items-center justify-center
-        gap-2
-        transition-transform
-        active:scale-[0.96]
-      "
+      className="h-28 w-28 rounded-3xl bg-white/90 shadow-xl backdrop-blur-sm flex flex-col items-center justify-center"
     >
-      <span className="text-4xl leading-none">{icon}</span>
+      <span className="text-3xl mb-2">{icon}</span>
       <span className="text-[13px] font-medium text-black text-center leading-tight">
         {label}
       </span>
