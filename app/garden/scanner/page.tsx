@@ -4,21 +4,22 @@ import { canUseFeature } from "@/lib/monetization/guard";
 
 export default function Page() {
   const handleScan = () => {
-    const userId = "TEMP_USER_ID"; // replace later with real auth
-
-    const gate = canUseFeature(userId, "scan");
-
-    if (!gate.allowed) {
-      alert(gate.reason);
+    if (!canUseFeature("scanner")) {
+      alert("Scanner not available on your plan.");
       return;
     }
 
-    // existing scan logic continues below
+    alert("Scan started");
   };
 
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center">
-      <h1 className="text-2xl opacity-70">Coming soon</h1>
+    <main className="min-h-screen flex items-center justify-center">
+      <button
+        onClick={handleScan}
+        className="px-6 py-3 rounded-xl bg-green-600 text-white"
+      >
+        Start Scan
+      </button>
     </main>
   );
 }
