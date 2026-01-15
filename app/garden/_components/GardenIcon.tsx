@@ -1,26 +1,32 @@
 "use client";
 
-interface Props {
+interface GardenIconProps {
   icon: string;
   label: string;
   onClick: () => void;
 }
 
-export default function GardenIcon({ icon, label, onClick }: Props) {
+export default function GardenIcon({
+  icon,
+  label,
+  onClick,
+}: GardenIconProps) {
   return (
     <button
       onClick={onClick}
       className="
-        w-28 h-28
-        rounded-3xl
-        bg-white/90
-        shadow-[0_8px_20px_rgba(0,0,0,0.25)]
+        w-[112px] h-[112px]
+        rounded-[28px]
+        bg-white/95
+        shadow-[0_10px_24px_rgba(0,0,0,0.28)]
         flex flex-col items-center justify-center
-        transition-transform active:scale-95
+        gap-2
+        transition-transform
+        active:scale-[0.96]
       "
     >
-      <span className="text-3xl mb-2">{icon}</span>
-      <span className="text-sm font-medium text-black text-center leading-tight">
+      <span className="text-4xl leading-none">{icon}</span>
+      <span className="text-[13px] font-medium text-black text-center leading-tight">
         {label}
       </span>
     </button>
