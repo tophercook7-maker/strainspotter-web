@@ -28,7 +28,17 @@ export default function GardenPage() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* TITLE ONLY — NO HERO */}
+      {/* HERO */}
+      <div className="mt-12 mb-6 flex justify-center">
+        <img
+          src="/hero.png"
+          alt="StrainSpotter Leaf"
+          className="h-24 w-auto object-contain select-none pointer-events-none"
+          draggable={false}
+        />
+      </div>
+
+      {/* TITLE */}
       <h1 className="mt-16 mb-12 text-4xl font-extrabold tracking-tight text-green-400">
         StrainSpotter
       </h1>
