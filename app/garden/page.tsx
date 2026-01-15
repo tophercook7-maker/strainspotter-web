@@ -31,28 +31,30 @@ export default function GardenPage() {
       />
 
       {/* HERO */}
-      <div className="pt-10 flex flex-col items-center">
+      <div className="flex justify-center pt-10 pb-4">
         <img
           src="/hero.png"
           alt="StrainSpotter"
-          className="w-14 h-14 object-contain"
+          className="w-20 h-20 object-contain"
           draggable={false}
         />
-        <h1 className="mt-3 text-4xl font-bold tracking-wide text-green-400">
-          StrainSpotter
-        </h1>
       </div>
+      <h1 className="text-4xl font-semibold tracking-tight text-green-400 text-center mb-10">
+        StrainSpotter
+      </h1>
 
       {/* ICON GRID */}
-      <div className="mt-16 grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
-        {ROUTES.map((r) => (
-          <GardenIcon
-            key={r.label}
-            icon={r.icon}
-            label={r.label}
-            onClick={() => router.push(r.route)}
-          />
-        ))}
+      <div className="w-full flex justify-center">
+        <div className="grid grid-cols-3 gap-x-14 gap-y-12">
+          {ROUTES.map((r) => (
+            <GardenIcon
+              key={r.label}
+              icon={r.icon}
+              label={r.label}
+              onClick={() => router.push(r.route)}
+            />
+          ))}
+        </div>
       </div>
     </main>
   );

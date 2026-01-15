@@ -16,13 +16,14 @@ export default function GardenIcon({
       type="button"
       onClick={onClick}
       className="
-        w-32 h-32
-        rounded-[30px]
-        bg-white/70
-        backdrop-blur-xl
-        shadow-[0_20px_40px_rgba(0,0,0,0.35)]
+        w-28 h-28
+        rounded-[28px]
+        bg-white/80
+        backdrop-blur-md
+        shadow-[0_12px_30px_rgba(0,0,0,0.25)]
         flex flex-col items-center justify-center
-        transition-all duration-200 ease-out
+        text-gray-800
+        transition-transform
         hover:scale-105
         active:scale-95
       "
