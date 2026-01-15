@@ -1,39 +1,45 @@
-export type Plan = "free" | "pro" | "grower";
+export type Tier = "APP" | "MEMBER" | "PRO";
 
-export const PLANS: Record<
-  Plan,
-  {
-    label: string;
-    monthly: number;
-    features: string[];
-  }
-> = {
-  free: {
-    label: "Free",
-    monthly: 0,
-    features: [
-      "Basic strain browsing",
-      "Limited dispensary lookup",
-      "Basic scan results",
-    ],
+export const TIERS = {
+  APP: {
+    name: "App Purchase",
+    includes: {
+      scanner: true,
+      doctor: false,
+      analytics: false,
+    },
+    monthlyLimits: {
+      idScans: 25,
+      doctorScans: 0,
+    },
+    allowTopUps: true,
   },
-  pro: {
-    label: "Pro",
-    monthly: 9,
-    features: [
-      "Unlimited scans",
-      "Advanced strain insights",
-      "Save favorites",
-      "History tracking",
-    ],
+
+  MEMBER: {
+    name: "Garden Membership",
+    includes: {
+      scanner: true,
+      doctor: true,
+      analytics: false,
+    },
+    monthlyLimits: {
+      idScans: 250,
+      doctorScans: 50,
+    },
+    allowTopUps: true,
   },
-  grower: {
-    label: "Grower",
-    monthly: 29,
-    features: [
-      "Grow coach access",
-      "Environmental diagnostics",
-      "Yield optimization insights",
-    ],
+
+  PRO: {
+    name: "Pro / Business",
+    includes: {
+      scanner: true,
+      doctor: true,
+      analytics: true,
+    },
+    monthlyLimits: {
+      idScans: Infinity,
+      doctorScans: Infinity,
+    },
+    allowTopUps: false,
   },
-};
+} as const;

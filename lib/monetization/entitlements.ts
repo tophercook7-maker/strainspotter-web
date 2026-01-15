@@ -1,25 +1,14 @@
-import type { Plan } from "./tiers";
+import type { Tier } from "./tiers";
 
 export type Entitlement =
-  | "scan_basic"
-  | "scan_advanced"
-  | "save_favorites"
-  | "grow_coach"
-  | "dispensary_filters";
+  | "scanner"
+  | "doctor"
+  | "analytics";
 
-export const PLAN_ENTITLEMENTS: Record<Plan, Entitlement[]> = {
-  free: ["scan_basic"],
-  pro: [
-    "scan_basic",
-    "scan_advanced",
-    "save_favorites",
-    "dispensary_filters",
-  ],
-  grower: [
-    "scan_basic",
-    "scan_advanced",
-    "save_favorites",
-    "dispensary_filters",
-    "grow_coach",
-  ],
+export const TIER_ENTITLEMENTS: Record<Tier, Entitlement[]> = {
+  APP: ["scanner"],
+  MEMBER: ["scanner", "doctor"],
+  PRO: ["scanner", "doctor", "analytics"],
 };
+
+export const PLAN_ENTITLEMENTS = TIER_ENTITLEMENTS;
