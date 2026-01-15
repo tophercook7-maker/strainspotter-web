@@ -1,35 +1,29 @@
 "use client";
 
-export default function GardenIcon({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: string;
+type Props = {
   label: string;
+  icon: string;
   onClick: () => void;
-}) {
+};
+
+export default function GardenIcon({ label, icon, onClick }: Props) {
   return (
     <button
       onClick={onClick}
       className="
-        w-36 h-36
-        rounded-[32px]
-        bg-white/25
-        backdrop-blur-xl
-        border border-white/30
-        shadow-[0_20px_40px_rgba(0,0,0,0.35)]
-        flex flex-col items-center justify-center
+        h-28 w-28
+        rounded-[28px]
+        bg-white/90
         text-black
+        flex flex-col items-center justify-center
+        shadow-xl
+        backdrop-blur-md
         transition
-        hover:bg-white/35
         active:scale-95
       "
     >
-      <div className="text-5xl mb-3">{icon}</div>
-      <div className="text-sm font-semibold tracking-wide text-black/80">
-        {label}
-      </div>
+      <span className="text-2xl mb-1">{icon}</span>
+      <span className="text-sm font-medium">{label}</span>
     </button>
   );
 }
