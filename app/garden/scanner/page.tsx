@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { canUseFeature } from "@/lib/monetization/guard";
 
 export default function Page() {
@@ -13,13 +14,34 @@ export default function Page() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <button
-        onClick={handleScan}
-        className="px-6 py-3 rounded-xl bg-green-600 text-white"
-      >
-        Start Scan
-      </button>
+    <main className="relative min-h-screen w-full text-white overflow-hidden">
+      {/* BACKGROUND */}
+      <Image
+        src="/garden-bg.jpg"
+        alt="Garden background"
+        fill
+        priority
+        className="object-cover -z-10"
+      />
+
+      <div className="min-h-screen flex items-center justify-center">
+        <button
+          onClick={handleScan}
+          className="
+            w-48 h-48
+            rounded-3xl
+            bg-white/25
+            backdrop-blur-xl
+            shadow-2xl
+            border border-white/30
+            text-xl font-semibold
+            hover:bg-white/35
+            transition
+          "
+        >
+          Start Scan
+        </button>
+      </div>
     </main>
   );
 }
