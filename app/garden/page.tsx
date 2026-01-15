@@ -23,7 +23,7 @@ export default function GardenPage() {
     <main
       className="min-h-screen w-full text-white"
       style={{
-        backgroundImage: "url('/garden-bg.jpg')",
+        backgroundImage: "url('/background.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
