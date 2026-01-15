@@ -20,41 +20,40 @@ export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="relative min-h-screen w-full text-white overflow-hidden">
-      {/* BACKGROUND */}
-      <Image
-        src="/garden-bg.jpg"
-        alt="Garden background"
-        fill
-        priority
-        className="object-cover -z-10"
-      />
-
+    <main
+      className="min-h-screen w-full text-white flex flex-col items-center"
+      style={{
+        backgroundImage: "url(/garden-bg.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       {/* HERO */}
-      <div className="flex justify-center pt-10 pb-4">
-        <img
-          src="/hero.png"
+      <div className="mt-10 mb-4 flex flex-col items-center">
+        <Image
+          src="/hero-leaf.png"
           alt="StrainSpotter"
-          className="w-20 h-20 object-contain"
+          width={140}
+          height={140}
+          priority
           draggable={false}
         />
+        <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-green-400">
+          StrainSpotter
+        </h1>
       </div>
-      <h1 className="text-4xl font-semibold tracking-tight text-green-400 text-center mb-10">
-        StrainSpotter
-      </h1>
 
       {/* ICON GRID */}
-      <div className="w-full flex justify-center">
-        <div className="grid grid-cols-3 gap-x-14 gap-y-12">
-          {ROUTES.map((r) => (
-            <GardenIcon
-              key={r.label}
-              icon={r.icon}
-              label={r.label}
-              onClick={() => router.push(r.route)}
-            />
-          ))}
-        </div>
+      <div className="mt-10 grid grid-cols-3 gap-x-12 gap-y-10">
+        {ROUTES.map((r) => (
+          <GardenIcon
+            key={r.label}
+            label={r.label}
+            icon={r.icon}
+            onClick={() => router.push(r.route)}
+          />
+        ))}
       </div>
     </main>
   );
