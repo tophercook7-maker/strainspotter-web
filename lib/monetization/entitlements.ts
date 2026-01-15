@@ -1,39 +1,54 @@
-import { TIERS, type Tier } from "./tiers";
+import { TierKey } from "./tiers";
+import { FeatureKey } from "./features";
 
-export type Entitlement =
-  | "scanner"
-  | "doctor"
-  | "analytics";
+export const ENTITLEMENTS: Record<
+  TierKey,
+  {
+    features: FeatureKey[];
+    limits?: {
+      scans?: number;
+      doctorScans?: number;
+    };
+  }
+> = {
+  app: {
+    features: ["scanner"],
+    limits: {
+      scans: 0,
+    },
+  },
 
-export const TIER_ENTITLEMENTS: Record<Tier, Entitlement[]> = {
-  APP: ["scanner"],
-  MEMBER: ["scanner", "doctor"],
-  PRO: ["scanner", "doctor", "analytics"],
+  member: {
+    features: [
+      "scanner",
+      "strain_browser",
+      "dispensary_finder",
+      "grow_coach",
+      "history",
+      "favorites",
+      "ecosystem",
+    ],
+    limits: {
+      scans: 250,
+      doctorScans: 50,
+    },
+  },
+
+  pro: {
+    features: [
+      "scanner",
+      "strain_browser",
+      "dispensary_finder",
+      "grow_coach",
+      "history",
+      "favorites",
+      "ecosystem",
+      "analytics",
+      "lab_data",
+    ],
+    limits: {
+      scans: 1000,
+      doctorScans: 250,
+    },
+  },
 };
-
-export const PLAN_ENTITLEMENTS = TIER_ENTITLEMENTS;
-
-export type GuardEntitlements = {
-  scan: boolean;
-  doctor_scan: boolean;
-  analytics: boolean;
-  business_tools: boolean;
-  scans: number;
-  doctorScans: number;
-};
-
-export function getEntitlements(tier: string) {
-  if (tier === "free") {
-    return { scans: 1, doctorScans: 0 };
-  }
-
-  if (tier === "member") {
-    return { scans: 250, doctorScans: 50 };
-  }
-
-  if (tier === "pro") {
-    return { scans: Infinity, doctorScans: Infinity };
-  }
-
-  return { scans: 0, doctorScans: 0 };
-}

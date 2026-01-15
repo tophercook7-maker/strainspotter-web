@@ -1,19 +1,11 @@
-import { getTier } from "./tiers";
-import { getEntitlements } from "./entitlements";
-import { getUsage } from "./usage";
+import { ENTITLEMENTS } from "./entitlements";
+import { TierKey } from "./tiers";
+import { FeatureKey } from "./features";
 
-export function canUseScanner(userId: string) {
-  const tier = getTier(userId);
-  const entitlements = getEntitlements(tier);
-  const usage = getUsage(userId);
-
-  return usage.scansUsed < entitlements.scans;
+export function hasFeature(tier: TierKey, feature: FeatureKey) {
+  return ENTITLEMENTS[tier].features.includes(feature);
 }
 
-export function canUseDoctor(userId: string) {
-  const tier = getTier(userId);
-  const entitlements = getEntitlements(tier);
-  const usage = getUsage(userId);
-
-  return usage.doctorScansUsed < entitlements.doctorScans;
+export function getLimits(tier: TierKey) {
+  return ENTITLEMENTS[tier].limits ?? {};
 }
