@@ -40,7 +40,16 @@ export default function GardenPage() {
         </h1>
 
         {/* ICON GRID */}
-        <div className="grid grid-cols-3 gap-x-16 gap-y-16">
+        <div
+          className="
+            mt-14
+            grid
+            grid-cols-3
+            gap-x-20
+            gap-y-16
+            place-items-center
+          "
+        >
           {Object.entries(FEATURE_MAP).map(([key, feature]) => {
             const allowed = canAccess(key as any, userTier);
 
@@ -51,22 +60,23 @@ export default function GardenPage() {
                 disabled={!allowed}
                 className={`
                   flex flex-col items-center justify-center
-                  w-40 h-40
-                  rounded-3xl
-                  backdrop-blur-xl
-                  border border-white/30
-                  shadow-xl
-                  transition
+                  w-44 h-44
+                  rounded-[32px]
+                  bg-white/25
+                  backdrop-blur-2xl
+                  border border-white/40
+                  shadow-[0_20px_50px_rgba(0,0,0,0.35)]
+                  transition-all duration-200
                   ${
                     allowed
-                      ? "bg-white/20 hover:bg-white/30 cursor-pointer"
+                      ? "hover:bg-white/35 hover:scale-[1.03] cursor-pointer"
                       : "bg-white/10 opacity-50 cursor-not-allowed"
                   }
                 `}
                 type="button"
               >
-                <div className="text-5xl mb-3">{feature.icon}</div>
-                <div className="text-base font-semibold tracking-wide text-white">
+                <div className="text-6xl mb-4">{feature.icon}</div>
+                <div className="text-lg font-semibold tracking-wide text-white">
                   {feature.label}
                 </div>
               </button>
