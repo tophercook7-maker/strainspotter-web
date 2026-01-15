@@ -2,21 +2,12 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
-const ROUTES = [
-  { label: "Strains", icon: "🌿", route: "/garden/strains" },
-  { label: "Scanner", icon: "📸", route: "/garden/scanner" },
-  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "Grow Coach", icon: "🧑‍🌾", route: "/garden/grow-coach" },
-  { label: "History", icon: "🕘", route: "/garden/history" },
-  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🧬", route: "/garden/ecosystem" },
-  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
-];
+import { FEATURE_MAP } from "@/lib/monetization/featureMap";
+import { canAccess, UserTier } from "@/lib/monetization/guard";
 
 export default function GardenPage() {
   const router = useRouter();
+  const userTier: UserTier = "app"; // TEMP — will be dynamic later
 
   return (
     <main className="relative min-h-screen w-full text-white overflow-hidden">
@@ -50,30 +41,37 @@ export default function GardenPage() {
 
         {/* ICON GRID */}
         <div className="grid grid-cols-3 gap-x-16 gap-y-16">
-          {ROUTES.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => router.push(item.route)}
-              className="
-                w-32 h-32
-                rounded-[28px]
-                flex flex-col items-center justify-center
-                bg-white/20
-                backdrop-blur-xl
-                border border-white/30
-                shadow-[0_20px_40px_rgba(0,0,0,0.35)]
-                hover:bg-white/30
-                transition
-                cursor-pointer
-              "
-            >
-              <div className="text-4xl mb-2">{item.icon}</div>
-              <div className="text-sm font-semibold tracking-wide text-white/90">
-                {item.label}
-              </div>
-            </button>
-          ))}
+          {Object.entries(FEATURE_MAP).map(([key, feature]) => {
+            const allowed = canAccess(key as any, userTier);
+
+            return (
+              <button
+                key={key}
+                onClick={() => allowed && router.push(feature.route)}
+                disabled={!allowed}
+                className={`
+                  flex flex-col items-center justify-center
+                  w-40 h-40
+                  rounded-3xl
+                  backdrop-blur-xl
+                  border border-white/30
+                  shadow-xl
+                  transition
+                  ${
+                    allowed
+                      ? "bg-white/20 hover:bg-white/30 cursor-pointer"
+                      : "bg-white/10 opacity-50 cursor-not-allowed"
+                  }
+                `}
+                type="button"
+              >
+                <div className="text-5xl mb-3">{feature.icon}</div>
+                <div className="text-base font-semibold tracking-wide text-white">
+                  {feature.label}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </main>

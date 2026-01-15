@@ -1,11 +1,13 @@
-import { ENTITLEMENTS } from "./entitlements";
-import { TierKey } from "./tiers";
-import { FeatureKey } from "./features";
+import { FeatureKey, FEATURE_MAP } from "./featureMap";
 
-export function hasFeature(tier: TierKey, feature: FeatureKey) {
-  return ENTITLEMENTS[tier].features.includes(feature);
-}
+export type UserTier = "app" | "member" | "pro";
 
-export function getLimits(tier: TierKey) {
-  return ENTITLEMENTS[tier].limits ?? {};
+export function canAccess(feature: FeatureKey, tier: UserTier) {
+  const required = FEATURE_MAP[feature].tier;
+
+  if (required === "app") return true;
+  if (required === "member") return tier === "member" || tier === "pro";
+  if (required === "pro") return tier === "pro";
+
+  return false;
 }
