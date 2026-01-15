@@ -43,3 +43,7 @@ export const TIERS = {
     allowTopUps: false,
   },
 } as const;
+
+export function getTier(userId: string) {
+  return "free";
+}

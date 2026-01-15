@@ -16,3 +16,10 @@ export function canUseDoctorScan(tier: Tier, usage: Usage) {
 export function canTopUp(tier: Tier) {
   return TIERS[tier].allowTopUps;
 }
+
+export function getUsage(userId: string) {
+  return {
+    scansUsed: 0,
+    doctorScansUsed: 0,
+  };
+}
