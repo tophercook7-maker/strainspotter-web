@@ -1,25 +1,23 @@
-import { TIERS, type Tier } from "./tiers";
-
 export type Usage = {
-  idScansUsed: number;
+  scansUsed: number;
   doctorScansUsed: number;
 };
 
-export function canUseIdScan(tier: Tier, usage: Usage) {
-  return usage.idScansUsed < TIERS[tier].monthlyLimits.idScans;
-}
-
-export function canUseDoctorScan(tier: Tier, usage: Usage) {
-  return usage.doctorScansUsed < TIERS[tier].monthlyLimits.doctorScans;
-}
-
-export function canTopUp(tier: Tier) {
-  return TIERS[tier].allowTopUps;
-}
-
-export function getUsage(userId: string) {
+export function getUsage(userId: string): Usage {
   return {
     scansUsed: 0,
     doctorScansUsed: 0,
+  };
+}
+
+export function incrementUsage(
+  usage: Usage,
+  type: "scan" | "doctor",
+  amount = 1
+): Usage {
+  return {
+    scansUsed: usage.scansUsed + (type === "scan" ? amount : 0),
+    doctorScansUsed:
+      usage.doctorScansUsed + (type === "doctor" ? amount : 0),
   };
 }

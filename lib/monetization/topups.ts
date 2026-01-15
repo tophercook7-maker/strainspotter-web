@@ -1,21 +1,12 @@
-export type TopUpType = "ID_SCAN" | "DOCTOR_SCAN";
+export type TopUp = {
+  id: string;
+  scans: number;
+  doctorScans: number;
+  price: number;
+};
 
-export const TOP_UPS = {
-  APP: {
-    ID_SCAN: [
-      { amount: 25, priceHint: 4.99 },
-      { amount: 50, priceHint: 7.99 },
-    ],
-  },
-
-  MEMBER: {
-    ID_SCAN: [
-      { amount: 50, priceHint: 3.99 },
-      { amount: 100, priceHint: 6.99 },
-    ],
-    DOCTOR_SCAN: [
-      { amount: 10, priceHint: 3.99 },
-      { amount: 20, priceHint: 4.99 },
-    ],
-  },
-} as const;
+export const TOP_UPS: TopUp[] = [
+  { id: "scan_25", scans: 25, doctorScans: 0, price: 4.99 },
+  { id: "scan_50", scans: 50, doctorScans: 0, price: 7.99 },
+  { id: "doctor_10", scans: 0, doctorScans: 10, price: 6.99 },
+];
