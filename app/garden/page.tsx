@@ -2,64 +2,54 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import GardenShell from "./_components/GardenShell";
 import GardenIcon from "./_components/GardenIcon";
 
 const ROUTES = [
-  { label: "Dispensaries", icon: "🏪", path: "/garden/dispensaries" },
-  { label: "Strains", icon: "🌿", path: "/garden/strains" },
-  { label: "Scanner", icon: "📷", path: "/garden/scanner" },
-  { label: "Grow Coach", icon: "🧠", path: "/garden/grow-coach" },
-  { label: "History", icon: "📜", path: "/garden/history" },
-  { label: "Seed Vendors", icon: "🌱", path: "/garden/seed-vendors" },
-  { label: "Favorites", icon: "⭐️", path: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🧬", path: "/garden/ecosystem" },
-  { label: "Settings", icon: "⚙️", path: "/garden/settings" },
+  { label: "Strains", icon: "🌿", route: "/garden/strains" },
+  { label: "Scanner", icon: "📸", route: "/garden/scanner" },
+  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
+  { label: "Grow Coach", icon: "🧑‍🌾", route: "/garden/grow-coach" },
+  { label: "History", icon: "📜", route: "/garden/history" },
+  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🧬", route: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
 ];
 
 export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main
-      className="min-h-screen w-full text-white"
-      style={{
-        backgroundImage: "url('/strainspotter-bg.jpeg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
-      <div className="min-h-screen w-full flex flex-col items-center justify-center px-6 py-10">
-        {/* HERO (unchanged visual intent: image only) */}
-        <div className="mb-5 flex justify-center">
-          <Image
-            src="/hero.png"
-            alt="StrainSpotter"
-            width={88}
-            height={88}
-            priority
-            draggable={false}
-            className="h-[88px] w-[88px] object-contain"
-          />
-        </div>
-
-        {/* TITLE */}
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-green-400 drop-shadow-[0_3px_18px_rgba(0,0,0,0.55)]">
-          StrainSpotter
-        </h1>
-
-        {/* GRID (iPad spacing) */}
-        <div className="mt-10 grid grid-cols-3 gap-x-16 gap-y-14 md:gap-x-20 md:gap-y-16">
-          {ROUTES.map((r) => (
-            <GardenIcon
-              key={r.path}
-              label={r.label}
-              icon={r.icon}
-              onClick={() => router.push(r.path)}
-            />
-          ))}
-        </div>
+    <GardenShell>
+      {/* HERO */}
+      <div className="mt-10 mb-2 flex justify-center">
+        <Image
+          src="/hero.png"
+          alt="StrainSpotter"
+          width={56}
+          height={56}
+          priority
+          draggable={false}
+        />
       </div>
-    </main>
+
+      {/* TITLE */}
+      <h1 className="text-4xl font-extrabold tracking-wide text-green-400 mb-10">
+        StrainSpotter
+      </h1>
+
+      {/* ICON GRID */}
+      <div className="grid grid-cols-3 gap-x-24 gap-y-20 pb-20">
+        {ROUTES.map((item) => (
+          <GardenIcon
+            key={item.route}
+            icon={item.icon}
+            label={item.label}
+            onClick={() => router.push(item.route)}
+          />
+        ))}
+      </div>
+    </GardenShell>
   );
 }
