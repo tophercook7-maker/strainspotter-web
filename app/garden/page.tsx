@@ -30,21 +30,20 @@ export default function GardenPage() {
       }}
     >
       {/* HERO */}
-      <div className="pt-10 pb-6 flex flex-col items-center">
-        <Image
-          src="/hero-leaf.png"
+      <div className="flex flex-col items-center mt-16 mb-10">
+        <img
+          src="/hero.png"
           alt="StrainSpotter"
-          width={120}
-          height={120}
-          priority
+          className="w-32 h-32 object-contain"
+          draggable={false}
         />
-        <h1 className="mt-4 text-4xl font-extrabold text-green-400">
+        <h1 className="mt-6 text-4xl font-extrabold text-green-400 tracking-tight">
           StrainSpotter
         </h1>
       </div>
 
       {/* IPAD GRID */}
-      <div className="mt-10 grid grid-cols-3 gap-x-14 gap-y-12">
+      <div className="mt-14 grid grid-cols-3 gap-x-20 gap-y-16">
         {ROUTES.map((item) => (
           <GardenIcon
             key={item.label}
