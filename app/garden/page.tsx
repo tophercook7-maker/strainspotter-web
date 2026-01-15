@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 const ROUTES = [
   { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
   { label: "Strains", icon: "🌿", route: "/garden/strains" },
-  { label: "Scanner", icon: "📸", route: "/garden/scanner" },
-  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
+  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
   { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "History", icon: "🕓", route: "/garden/history" },
+  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
+  { label: "History", icon: "🕘", route: "/garden/history" },
   { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
   { label: "Ecosystem", icon: "🧩", route: "/garden/ecosystem" },
   { label: "Settings", icon: "⚙️", route: "/garden/settings" },
@@ -30,45 +30,53 @@ export default function GardenPage() {
       />
 
       {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center px-6 pb-24">
+      <div className="relative z-10 flex flex-col items-center pt-10">
         {/* HERO */}
-        <div className="mt-10 mb-3 flex justify-center">
-          <img
+        <div className="mb-4">
+          <Image
             src="/hero.png"
             alt="StrainSpotter"
-            className="w-14 h-14 object-contain"
+            width={64}
+            height={64}
+            className="object-contain"
             draggable={false}
           />
         </div>
 
         {/* TITLE */}
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-green-400 mb-14">
+        <h1 className="text-4xl font-extrabold tracking-wide text-green-400 mb-10">
           StrainSpotter
         </h1>
 
         {/* ICON GRID */}
-        <div className="grid grid-cols-3 md:grid-cols-4 gap-x-14 gap-y-16 place-items-center">
+        <div
+          className="grid grid-cols-3 place-items-center"
+          style={{
+            columnGap: "4.5rem",
+            rowGap: "4.5rem",
+          }}
+        >
           {ROUTES.map((item) => (
             <button
               key={item.label}
               type="button"
               onClick={() => router.push(item.route)}
               className="
-                w-32 h-32
-                rounded-[28px]
                 flex flex-col items-center justify-center
+                w-36 h-36
+                rounded-[32px]
                 bg-white/20
-                backdrop-blur-2xl
+                backdrop-blur-xl
+                shadow-2xl
                 border border-white/30
-                shadow-[0_20px_40px_rgba(0,0,0,0.35)]
+                text-white
                 hover:bg-white/30
-                hover:scale-[1.03]
-                transition-all duration-200
-                active:scale-[0.97]
+                active:scale-95
+                transition
               "
             >
-              <div className="text-4xl mb-3">{item.icon}</div>
-              <div className="text-sm font-semibold tracking-wide text-white/90">
+              <div className="text-5xl mb-2">{item.icon}</div>
+              <div className="text-sm font-semibold tracking-wide">
                 {item.label}
               </div>
             </button>
