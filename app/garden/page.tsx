@@ -23,24 +23,22 @@ export default function GardenPage() {
   return (
     <GardenShell>
       {/* HERO */}
-      <div className="mt-10 mb-2 flex justify-center">
-        <Image
+      <div className="mt-10 mb-4 flex justify-center">
+        <img
           src="/hero.png"
           alt="StrainSpotter"
-          width={56}
-          height={56}
-          priority
+          className="w-20 h-20 object-contain"
           draggable={false}
         />
       </div>
 
       {/* TITLE */}
-      <h1 className="text-4xl font-extrabold tracking-wide text-green-400 mb-10">
+      <h1 className="text-5xl font-extrabold tracking-tight text-green-400 mb-16">
         StrainSpotter
       </h1>
 
       {/* ICON GRID */}
-      <div className="grid grid-cols-3 gap-x-24 gap-y-20 pb-20">
+      <div className="grid grid-cols-3 gap-x-28 gap-y-24 pb-24">
         {ROUTES.map((item) => (
           <GardenIcon
             key={item.route}
