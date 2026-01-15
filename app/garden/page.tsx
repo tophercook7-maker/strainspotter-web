@@ -33,8 +33,8 @@ export default function GardenPage() {
         <Image
           src="/hero.png"
           alt="StrainSpotter"
-          width={96}
-          height={96}
+          width={120}
+          height={120}
           priority
           draggable={false}
         />
