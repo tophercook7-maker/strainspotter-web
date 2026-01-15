@@ -4,14 +4,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const ROUTES = [
-  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
-  { label: "Strains", icon: "🌿", route: "/garden/strains" },
   { label: "Scanner", icon: "📷", route: "/garden/scanner" },
-  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
-  { label: "History", icon: "🕘", route: "/garden/history" },
+  { label: "Strains", icon: "🧬", route: "/garden/strains" },
+  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
   { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🧩", route: "/garden/ecosystem" },
+  { label: "History", icon: "🕘", route: "/garden/history" },
+  { label: "Grow Coach", icon: "🧑‍🌾", route: "/garden/grow-coach" },
+  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
+  { label: "Ecosystem", icon: "🌍", route: "/garden/ecosystem" },
   { label: "Settings", icon: "⚙️", route: "/garden/settings" },
 ];
 
@@ -19,69 +19,99 @@ export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main className="relative min-h-screen w-full text-white overflow-hidden">
+    <main className="relative min-h-screen bg-black text-white overflow-hidden">
       {/* BACKGROUND */}
-      <Image
-        src="/garden-bg.jpg"
-        alt="Garden background"
-        fill
-        priority
-        className="object-cover"
-      />
+      <div className="absolute inset-0">
+        <Image
+          src="/garden-bg.png"
+          alt="Garden background"
+          fill
+          priority
+          className="object-cover opacity-60"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/80" />
+        <div className="absolute inset-0 [background:radial-gradient(70%_60%_at_50%_20%,rgba(255,255,255,0.10),transparent_60%)]" />
+      </div>
 
       {/* CONTENT */}
-      <div className="relative z-10 flex flex-col items-center pt-10">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 sm:px-8 pb-16 pt-10 sm:pt-14">
         {/* HERO */}
-        <div className="mb-4">
-          <Image
-            src="/hero.png"
-            alt="StrainSpotter"
-            width={64}
-            height={64}
-            className="object-contain"
-            draggable={false}
-          />
+        <div className="flex flex-col items-center text-center mb-10 sm:mb-12">
+          <div className="relative w-[160px] h-[160px] sm:w-[190px] sm:h-[190px] rounded-3xl overflow-hidden ring-1 ring-white/15 shadow-[0_20px_80px_rgba(0,0,0,0.60)]">
+            <Image
+              src="/hero.png"
+              alt="StrainSpotter Hero"
+              fill
+              priority
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/0 to-black/25" />
+          </div>
+
+          <h1 className="mt-6 text-4xl sm:text-5xl font-extrabold tracking-tight">
+            The Garden
+          </h1>
+          <p className="mt-2 text-base sm:text-lg text-white/75 max-w-2xl">
+            Your personal cannabis ecosystem — scans, history, favorites, and tools in one place.
+          </p>
         </div>
 
-        {/* TITLE */}
-        <h1 className="text-4xl font-extrabold tracking-wide text-green-400 mb-10">
-          StrainSpotter
-        </h1>
-
-        {/* ICON GRID */}
-        <div
-          className="grid grid-cols-3 place-items-center"
-          style={{
-            columnGap: "4.5rem",
-            rowGap: "4.5rem",
-          }}
-        >
+        {/* GRID */}
+        <section className="grid grid-cols-2 sm:grid-cols-3 gap-5 sm:gap-6">
           {ROUTES.map((item) => (
             <button
-              key={item.label}
-              type="button"
+              key={item.route}
               onClick={() => router.push(item.route)}
               className="
-                flex flex-col items-center justify-center
-                w-36 h-36
-                rounded-[32px]
-                bg-white/20
+                group relative w-full
+                rounded-[28px]
+                px-5 sm:px-6
+                py-8 sm:py-10
+                text-left
+                ring-1 ring-white/14
+                bg-white/6
+                shadow-[0_18px_55px_rgba(0,0,0,0.55)]
                 backdrop-blur-xl
-                shadow-2xl
-                border border-white/30
-                text-white
-                hover:bg-white/30
-                active:scale-95
                 transition
+                hover:bg-white/10 hover:ring-white/22
+                active:scale-[0.99]
               "
             >
-              <div className="text-5xl mb-2">{item.icon}</div>
-              <div className="text-sm font-semibold tracking-wide">
-                {item.label}
+              {/* subtle gloss */}
+              <div className="pointer-events-none absolute inset-0 rounded-[28px] opacity-0 transition group-hover:opacity-100 [background:radial-gradient(120%_80%_at_30%_20%,rgba(255,255,255,0.16),transparent_55%)]" />
+
+              {/* icon + label */}
+              <div className="flex items-center gap-4">
+                <div
+                  className="
+                    flex items-center justify-center
+                    w-16 h-16 sm:w-[86px] sm:h-[86px]
+                    rounded-2xl
+                    bg-black/25
+                    ring-1 ring-white/12
+                    shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]
+                  "
+                >
+                  <span className="text-4xl sm:text-5xl leading-none">
+                    {item.icon}
+                  </span>
+                </div>
+
+                <div className="min-w-0">
+                  <div className="text-lg sm:text-2xl font-bold tracking-tight truncate">
+                    {item.label}
+                  </div>
+                  <div className="mt-1 text-sm sm:text-base text-white/60">
+                    Open
+                  </div>
+                </div>
               </div>
+
+              {/* bottom fade for depth */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 rounded-b-[28px] bg-gradient-to-t from-black/25 to-transparent" />
             </button>
           ))}
-        </div>
+        </section>
       </div>
     </main>
   );
