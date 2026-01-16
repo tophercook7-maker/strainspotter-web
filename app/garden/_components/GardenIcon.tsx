@@ -1,34 +1,38 @@
 "use client";
 
-type Props = {
-  icon: string;
-  label: string;
-  onClick: () => void;
-};
+import { useRouter } from "next/navigation";
 
-export default function GardenIcon({ icon, label, onClick }: Props) {
+interface GardenIconProps {
+  label: string;
+  icon: string;
+  route: string;
+}
+
+export default function GardenIcon({ label, icon, route }: GardenIconProps) {
+  const router = useRouter();
+
   return (
     <button
-      type="button"
-      onClick={onClick}
+      onClick={() => router.push(route)}
       className="
+        group
         flex flex-col items-center justify-center
-        w-28 h-28
-        rounded-3xl
+        h-28 w-28
+        rounded-2xl
         bg-white/20
         backdrop-blur-xl
         border border-white/30
-        shadow-[0_20px_40px_rgba(0,0,0,0.35)]
+        shadow-[0_8px_30px_rgba(0,0,0,0.25)]
+        transition-all duration-200 ease-out
         hover:bg-white/30
-        active:scale-95
-        transition
-        text-white
+        hover:scale-[1.05]
+        active:scale-[0.97]
       "
     >
-      <div className="text-4xl mb-2">{icon}</div>
-      <div className="text-sm font-semibold tracking-wide text-white/90">
+      <span className="text-2xl mb-1">{icon}</span>
+      <span className="text-xs font-medium text-white/90 tracking-wide">
         {label}
-      </div>
+      </span>
     </button>
   );
 }
