@@ -3,69 +3,68 @@
 import { useState } from "react";
 
 export default function ScannerPage() {
-  const [image, setImage] = useState<string | null>(null);
-  const [result, setResult] = useState<any | null>(null);
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImage(reader.result as string);
-      // simulated scan result
-      setResult({
-        type: "Indica-leaning",
-        confidence: "81%",
-        aroma: "Earthy + sweet",
-        effect: "Relaxing body feel",
-        recommendation: "Best for evening",
-      });
-    };
-    reader.readAsDataURL(file);
-  };
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center px-4 py-10">
-      {/* HEADER */}
-      <h1 className="text-4xl font-extrabold mb-2">Scanner</h1>
-      <p className="text-white/60 mb-8 text-center max-w-md">
-        Upload a photo to simulate a strain identification scan.
-      </p>
+    <main className="min-h-screen bg-black text-white flex justify-center px-4 py-12">
+      {/* SPINE */}
+      <div className="w-full max-w-3xl flex flex-col items-center gap-10">
 
-      {/* UPLOAD */}
-      <label className="mb-8 inline-flex cursor-pointer rounded-xl bg-white/10 px-6 py-3 backdrop-blur-md border border-white/20 hover:bg-white/20 transition">
-        <span className="text-sm font-medium">Choose Photo</span>
-        <input type="file" accept="image/*" onChange={handleFile} hidden />
-      </label>
+        {/* HEADER */}
+        <header className="text-center space-y-2">
+          <h1 className="text-4xl font-extrabold tracking-tight">Scanner</h1>
+          <p className="text-white/70">
+            Upload a photo to simulate a strain identification scan.
+          </p>
+        </header>
 
-      {/* PREVIEW */}
-      {image && (
-        <div className="w-full max-w-md mb-10 rounded-2xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg">
-          <img
-            src={image}
-            alt="Preview"
-            className="w-full h-auto object-contain"
+        {/* UPLOAD */}
+        <label className="cursor-pointer inline-flex items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20 px-6 py-3 hover:bg-white/20 transition">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setImageSrc(URL.createObjectURL(file));
+              }
+            }}
           />
-        </div>
-      )}
+          Choose Photo
+        </label>
 
-      {/* RESULT */}
-      {result && (
-        <div className="w-full max-w-md rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-xl space-y-3">
-          <h2 className="text-xl font-bold mb-2">Scan Result</h2>
-          <p><strong>Type:</strong> {result.type}</p>
-          <p><strong>Confidence:</strong> {result.confidence}</p>
-          <p><strong>Aroma:</strong> {result.aroma}</p>
-          <p><strong>Effect:</strong> {result.effect}</p>
-          <p><strong>Recommendation:</strong> {result.recommendation}</p>
-        </div>
-      )}
+        {/* PREVIEW */}
+        {imageSrc && (
+          <div className="w-full flex justify-center">
+            <img
+              src={imageSrc}
+              alt="Scan preview"
+              className="max-h-[420px] w-auto rounded-2xl object-contain shadow-2xl border border-white/10"
+            />
+          </div>
+        )}
 
-      {/* FOOTER NOTE */}
-      <p className="text-xs text-white/40 mt-10 text-center max-w-md">
-        Usage resets monthly (no rollovers). Auth + Supabase wiring comes later.
-      </p>
+        {/* RESULTS */}
+        {imageSrc && (
+          <section className="w-full rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 space-y-3">
+            <h2 className="text-xl font-semibold">Scan Result</h2>
+
+            <ul className="text-white/80 space-y-1">
+              <li><strong>Type:</strong> Indica-leaning</li>
+              <li><strong>Confidence:</strong> 81%</li>
+              <li><strong>Aroma:</strong> Earthy + sweet</li>
+              <li><strong>Effect:</strong> Relaxing body feel</li>
+              <li><strong>Recommendation:</strong> Best for evening</li>
+            </ul>
+          </section>
+        )}
+
+        {/* FOOTER */}
+        <footer className="text-xs text-white/40 text-center pt-6">
+          Usage resets monthly (no rollovers). Auth + Supabase wiring comes later.
+        </footer>
+      </div>
     </main>
   );
 }
