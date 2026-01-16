@@ -15,7 +15,7 @@ export default function GardenIcon({ label, icon, route }: Props) {
       className={[
         // HARD-LOCK iPad tile size (prevents "pill bar" stretching)
         "group relative grid place-items-center",
-        "h-28 w-28 md:h-32 md:w-32",
+        "h-32 w-32 md:h-32 md:w-32",
         "rounded-[28px]",
 
         // Apple-ish glass

@@ -34,18 +34,18 @@ export default function GardenPage() {
             <Image
               src="/hero.png"
               alt="StrainSpotter hero"
-              width={140}
-              height={140}
+              width={190}
+              height={190}
               priority
               className="select-none"
             />
-            <h1 className="mt-4 text-5xl font-extrabold tracking-tight text-green-400 drop-shadow">
-              StrainSpotter
+            <h1 className="mt-8 text-7xl md:text-8xl font-extrabold tracking-tight text-green-400 drop-shadow-xl">
+              StrainSpotter AI
             </h1>
           </div>
 
           {/* GRID */}
-          <div className="mt-14 grid grid-cols-3 gap-x-14 gap-y-12">
+          <div className="mt-20 grid grid-cols-3 gap-x-28 gap-y-24">
             {ROUTES.map((r) => (
               <GardenIcon key={r.route} label={r.label} icon={r.icon} route={r.route} />
             ))}
