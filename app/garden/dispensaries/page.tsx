@@ -1,14 +1,5 @@
-"use client";
+import ComingSoon from "../_components/ComingSoon";
 
-export default function DispensaryFinderPage() {
-  return (
-    <main className="min-h-screen bg-black text-green-400 flex items-center justify-center px-6">
-      <div className="text-center max-w-md">
-        <h1 className="text-3xl font-bold mb-4">Dispensary Finder</h1>
-        <p className="opacity-70">
-          Dispensary listings will appear here.
-        </p>
-      </div>
-    </main>
-  );
+export default function Page() {
+  return <ComingSoon title="Dispensaries" />;
 }
