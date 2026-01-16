@@ -4,16 +4,16 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import GardenIcon from "./_components/GardenIcon";
 
-const ROUTES = [
-  { label: "Strains", icon: "🌿", route: "/garden/strains" },
-  { label: "Scanner", icon: "📸", route: "/garden/scanner" },
-  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
-  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "Grow Coach", icon: "🧑‍🌾", route: "/garden/grow-coach" },
-  { label: "History", icon: "🕓", route: "/garden/history" },
-  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🧬", route: "/garden/ecosystem" },
-  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
+const ICONS = [
+  { label: "Strains", route: "/garden/strains", icon: "🌿" },
+  { label: "Scanner", route: "/garden/scanner", icon: "📷" },
+  { label: "Dispensaries", route: "/garden/dispensaries", icon: "🏪" },
+  { label: "Seed Vendors", route: "/garden/seed-vendors", icon: "🌱" },
+  { label: "Grow Coach", route: "/garden/grow-coach", icon: "🧑‍🌾" },
+  { label: "History", route: "/garden/history", icon: "📜" },
+  { label: "Favorites", route: "/garden/favorites", icon: "⭐" },
+  { label: "Ecosystem", route: "/garden/ecosystem", icon: "🧬" },
+  { label: "Settings", route: "/garden/settings", icon: "⚙️" },
 ];
 
 export default function GardenPage() {
@@ -21,43 +21,39 @@ export default function GardenPage() {
 
   return (
     <main
-      className="min-h-screen w-full text-white"
-      style={{
-        backgroundImage: "url(/strainspotter-bg.jpeg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
+      className="min-h-screen w-full bg-cover bg-center flex items-center justify-center"
+      style={{ backgroundImage: "url('/strainspotter-bg.jpeg')" }}
     >
-      {/* HERO + TITLE */}
-      <div className="flex flex-col items-center pt-10">
-        <Image
-          src="/hero.png"
-          alt="StrainSpotter"
-          width={110}
-          height={110}
-          priority
-          draggable={false}
-        />
+      {/* CENTERED APPLE-STYLE SPINE */}
+      <section className="flex flex-col items-center w-full max-w-3xl px-6">
+        {/* HERO */}
+        <div className="mb-6">
+          <Image
+            src="/hero.png"
+            alt="StrainSpotter Leaf"
+            width={140}
+            height={140}
+            priority
+          />
+        </div>
 
-        <h1 className="mt-4 text-4xl md:text-5xl font-extrabold tracking-wide text-green-400">
+        {/* TITLE */}
+        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-12">
           StrainSpotter AI
         </h1>
-      </div>
 
-      {/* ICON GRID */}
-      <div className="mt-16 flex justify-center">
-        <div className="grid grid-cols-3 gap-x-24 gap-y-20">
-          {ROUTES.map((item) => (
+        {/* ICON GRID */}
+        <div className="grid grid-cols-3 gap-x-14 gap-y-14">
+          {ICONS.map((item) => (
             <GardenIcon
               key={item.label}
-              icon={item.icon}
               label={item.label}
+              icon={item.icon}
               onClick={() => router.push(item.route)}
             />
           ))}
         </div>
-      </div>
+      </section>
     </main>
   );
 }
