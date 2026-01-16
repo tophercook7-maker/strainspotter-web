@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import GardenIcon from "./_components/GardenIcon";
 
@@ -21,29 +20,44 @@ export default function GardenPage() {
 
   return (
     <main
-      className="min-h-screen w-full bg-cover bg-center flex items-center justify-center"
-      style={{ backgroundImage: "url('/strainspotter-bg.jpeg')" }}
+      className="
+        min-h-screen w-full
+        flex items-center justify-center
+        bg-cover bg-center
+      "
+      style={{ backgroundImage: "url(/strainspotter-bg.jpeg)" }}
     >
-      {/* CENTERED APPLE-STYLE SPINE */}
-      <section className="flex flex-col items-center w-full max-w-3xl px-6">
+      <section
+        className="
+          flex flex-col items-center
+          justify-center
+          gap-10
+          w-full
+          max-w-5xl
+          px-6
+          text-center
+        "
+      >
         {/* HERO */}
-        <div className="mb-6">
-          <Image
-            src="/hero.png"
-            alt="StrainSpotter Leaf"
-            width={140}
-            height={140}
-            priority
-          />
-        </div>
+        <img
+          src="/hero.png"
+          alt="StrainSpotter leaf"
+          className="w-32 h-32 md:w-40 md:h-40 drop-shadow-xl"
+        />
 
         {/* TITLE */}
-        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-12">
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-wide text-white">
           StrainSpotter AI
         </h1>
 
-        {/* ICON GRID */}
-        <div className="grid grid-cols-3 gap-x-14 gap-y-14">
+        {/* GRID */}
+        <div
+          className="
+            grid grid-cols-3
+            gap-x-16 gap-y-14
+            mt-6
+          "
+        >
           {ICONS.map((item) => (
             <GardenIcon
               key={item.label}
