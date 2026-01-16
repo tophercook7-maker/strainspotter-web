@@ -1,36 +1,34 @@
 "use client";
 
-import Link from "next/link";
-
 type Props = {
-  label: string;
   icon: string;
-  route: string;
+  label: string;
+  onClick: () => void;
 };
 
-export default function GardenIcon({ label, icon, route }: Props) {
+export default function GardenIcon({ icon, label, onClick }: Props) {
   return (
-    <Link
-      href={route}
+    <button
+      type="button"
+      onClick={onClick}
       className="
-        h-32 w-32
+        flex flex-col items-center justify-center
+        w-28 h-28
         rounded-3xl
-        backdrop-blur-xl
         bg-white/20
+        backdrop-blur-xl
         border border-white/30
         shadow-[0_20px_40px_rgba(0,0,0,0.35)]
-        flex flex-col items-center justify-center
-        text-black
-        transition-all duration-300
-        hover:scale-[1.08]
         hover:bg-white/30
-        active:scale-[0.98]
+        active:scale-95
+        transition
+        text-white
       "
     >
-      <div className="text-2xl md:text-3xl leading-none drop-shadow-sm">{icon}</div>
-      <div className="text-[11px] md:text-[12px] font-semibold text-white/95 tracking-tight text-center leading-tight">
+      <div className="text-4xl mb-2">{icon}</div>
+      <div className="text-sm font-semibold tracking-wide text-white/90">
         {label}
       </div>
-    </Link>
+    </button>
   );
 }
