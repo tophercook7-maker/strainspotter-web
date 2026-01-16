@@ -9,22 +9,25 @@ type GardenIconProps = {
 export default function GardenIcon({ label, icon, onClick }: GardenIconProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className="
-        w-28 h-28 md:w-32 md:h-32
-        rounded-[28px]
-        bg-white/14
-        border border-white/22
-        shadow-[0_14px_40px_rgba(0,0,0,0.40)]
-        backdrop-blur-xl
         flex flex-col items-center justify-center
-        active:scale-[0.98]
-        hover:bg-white/18
+        w-32 h-32
+        rounded-[28px]
+        bg-white/20
+        backdrop-blur-xl
+        border border-white/30
+        shadow-[0_18px_40px_rgba(0,0,0,0.35)]
+        text-white
         transition
+        hover:bg-white/30
+        active:scale-95
+        focus:outline-none
       "
     >
-      <div className="text-2xl md:text-3xl leading-none">{icon}</div>
-      <div className="mt-2 text-[12px] md:text-[13px] font-semibold text-white/95 tracking-tight">
+      <div className="text-5xl mb-3 select-none">{icon}</div>
+      <div className="text-sm font-semibold tracking-wide text-white/90">
         {label}
       </div>
     </button>
