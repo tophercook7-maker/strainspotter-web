@@ -3,7 +3,7 @@
 type GardenIconProps = {
   label: string;
   icon: string;
-  onClick?: () => void;
+  onClick: () => void;
 };
 
 export default function GardenIcon({ label, icon, onClick }: GardenIconProps) {
@@ -13,23 +13,20 @@ export default function GardenIcon({ label, icon, onClick }: GardenIconProps) {
       onClick={onClick}
       className="
         flex flex-col items-center justify-center
-        w-36 h-36
-        rounded-[28px]
-        bg-white/25
+        w-28 h-28
+        rounded-3xl
+        bg-white/20
         backdrop-blur-xl
-        shadow-[0_20px_40px_rgba(0,0,0,0.35)]
+        shadow-2xl
         border border-white/30
-        transition-transform transition-shadow
-        hover:scale-[1.06]
-        hover:shadow-[0_28px_55px_rgba(0,0,0,0.45)]
-        active:scale-[0.98]
-        focus:outline-none
+        text-white
+        hover:bg-white/30
+        active:scale-95
+        transition
       "
     >
-      <div className="text-5xl mb-3">{icon}</div>
-      <div className="text-sm font-semibold tracking-wide text-white">
-        {label}
-      </div>
+      <div className="text-4xl mb-2">{icon}</div>
+      <div className="text-sm font-medium tracking-wide">{label}</div>
     </button>
   );
 }

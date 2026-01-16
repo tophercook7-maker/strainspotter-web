@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import GardenIcon from "./_components/GardenIcon";
 
 const ROUTES = [
-  { label: "Strains", icon: "🌿", route: "/garden/strains" },
   { label: "Scanner", icon: "📷", route: "/garden/scanner" },
   { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
+  { label: "Strains", icon: "🌿", route: "/garden/strains" },
   { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
   { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
-  { label: "History", icon: "🕘", route: "/garden/history" },
+  { label: "History", icon: "🕒", route: "/garden/history" },
   { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🧬", route: "/garden/ecosystem" },
+  { label: "Ecosystem", icon: "🌍", route: "/garden/ecosystem" },
   { label: "Settings", icon: "⚙️", route: "/garden/settings" },
 ];
 
@@ -21,41 +21,41 @@ export default function GardenPage() {
 
   return (
     <main
-      className="min-h-screen w-full text-white flex flex-col items-center"
+      className="min-h-screen w-full text-white"
       style={{
-        backgroundImage: "url('/strainspotter-bg.jpeg')",
+        backgroundImage: "url(/strainspotter-bg.jpeg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* HERO */}
-      <div className="pt-12 pb-2 flex flex-col items-center">
+      <div className="flex flex-col items-center pt-10">
+        {/* HERO */}
         <Image
           src="/hero.png"
           alt="StrainSpotter"
-          width={120}
-          height={120}
+          width={96}
+          height={96}
           priority
           draggable={false}
         />
-        <h1 className="mt-4 text-4xl font-bold tracking-wide text-green-400">
-          StrainSpotter
+
+        {/* TITLE */}
+        <h1 className="mt-4 text-4xl font-semibold tracking-wide text-green-400">
+          StrainSpotter AI
         </h1>
       </div>
 
       {/* ICON GRID */}
-      <div className="mt-20 w-full flex justify-center">
-        <div className="grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
-          {ROUTES.map((item) => (
-            <GardenIcon
-              key={item.label}
-              label={item.label}
-              icon={item.icon}
-              onClick={() => router.push(item.route)}
-            />
-          ))}
-        </div>
+      <div className="mt-16 grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
+        {ROUTES.map((item) => (
+          <GardenIcon
+            key={item.label}
+            label={item.label}
+            icon={item.icon}
+            onClick={() => router.push(item.route)}
+          />
+        ))}
       </div>
     </main>
   );
