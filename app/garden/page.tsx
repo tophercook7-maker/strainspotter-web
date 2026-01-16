@@ -1,18 +1,19 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import GardenIcon from "./_components/GardenIcon";
 
-const ICONS = [
-  { label: "Strains", route: "/garden/strains", icon: "🌿" },
-  { label: "Scanner", route: "/garden/scanner", icon: "📷" },
-  { label: "Dispensaries", route: "/garden/dispensaries", icon: "🏪" },
-  { label: "Seed Vendors", route: "/garden/seed-vendors", icon: "🌱" },
-  { label: "Grow Coach", route: "/garden/grow-coach", icon: "🧑‍🌾" },
-  { label: "History", route: "/garden/history", icon: "📜" },
-  { label: "Favorites", route: "/garden/favorites", icon: "⭐" },
-  { label: "Ecosystem", route: "/garden/ecosystem", icon: "🧬" },
-  { label: "Settings", route: "/garden/settings", icon: "⚙️" },
+const ROUTES = [
+  { label: "Strains", icon: "🌿", route: "/garden/strains" },
+  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
+  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
+  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
+  { label: "Grow Coach", icon: "🍄", route: "/garden/grow-coach" },
+  { label: "History", icon: "📜", route: "/garden/history" },
+  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
+  { label: "Ecosystem", icon: "🧬", route: "/garden/ecosystem" },
+  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
 ];
 
 export default function GardenPage() {
@@ -20,54 +21,54 @@ export default function GardenPage() {
 
   return (
     <main
-      className="
-        min-h-screen w-full
-        flex items-center justify-center
-        bg-cover bg-center
-      "
-      style={{ backgroundImage: "url(/strainspotter-bg.jpeg)" }}
+      className="min-h-screen w-full text-white overflow-hidden"
+      style={{
+        backgroundImage: "url('/strainspotter-bg.jpeg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
     >
-      <section
-        className="
-          flex flex-col items-center
-          justify-center
-          gap-10
-          w-full
-          max-w-5xl
-          px-6
-          text-center
-        "
-      >
-        {/* HERO */}
-        <img
-          src="/hero.png"
-          alt="StrainSpotter leaf"
-          className="w-32 h-32 md:w-40 md:h-40 drop-shadow-xl"
-        />
+      {/* soft vignette to make text/icons readable */}
+      <div className="min-h-screen w-full bg-black/25">
+        {/* SPINE: single authoritative container */}
+        <div className="mx-auto w-full max-w-[980px] px-6 sm:px-10">
+          <div className="min-h-screen flex flex-col items-center justify-center">
+            {/* HERO */}
+            <div className="flex flex-col items-center">
+              <Image
+                src="/hero.png"
+                alt="StrainSpotter Hero"
+                width={150}
+                height={150}
+                priority
+                className="select-none drop-shadow-[0_18px_40px_rgba(0,0,0,0.55)]"
+              />
 
-        {/* TITLE */}
-        <h1 className="text-3xl md:text-4xl font-semibold tracking-wide text-white">
-          StrainSpotter AI
-        </h1>
+              <h1 className="mt-6 text-center font-extrabold tracking-tight text-3xl sm:text-4xl md:text-5xl text-white drop-shadow-[0_10px_22px_rgba(0,0,0,0.6)]">
+                StrainSpotter AI
+              </h1>
+            </div>
 
-        {/* GRID */}
-        <div
-          className="
-            grid grid-cols-3
-            gap-x-16 gap-y-14
-            mt-6
-          "
-        >
-          {ICONS.map((item) => (
-            <GardenIcon
-              key={item.label}
-              label={item.label}
-              icon={item.icon}
-              onClick={() => router.push(item.route)}
-            />
-          ))}
+            {/* GRID */}
+            <div className="mt-10 sm:mt-12 md:mt-14 w-full flex justify-center">
+              <div className="grid grid-cols-3 gap-x-10 gap-y-10 sm:gap-x-14 sm:gap-y-12 md:gap-x-16 md:gap-y-14">
+                {ROUTES.map((item) => (
+                  <GardenIcon
+                    key={item.label}
+                    label={item.label}
+                    icon={item.icon}
+                    onClick={() => router.push(item.route)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* optional breathing room on very short viewports */}
+            <div className="h-10" />
+          </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
