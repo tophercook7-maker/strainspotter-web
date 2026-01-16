@@ -128,7 +128,7 @@ export default function ScannerPage() {
           </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-3">
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-2">
               <div className="text-xs uppercase tracking-wider text-white/60">
                 Preview
               </div>
@@ -138,7 +138,7 @@ export default function ScannerPage() {
                   <img
                     src={previewUrl}
                     alt="Preview"
-                    className="h-64 w-full object-cover"
+                    className="h-40 w-full object-contain bg-black/60"
                     draggable={false}
                   />
                 ) : (
