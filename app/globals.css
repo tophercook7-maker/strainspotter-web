@@ -2,10 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
-  background-color: #000 !important;
-  color: #fff;
-  height: 100%;
-  width: 100%;
+html,
+body {
   margin: 0;
+  padding: 0;
+  background: #000;
+  color: white;
+  min-height: 100%;
+}
+
+* {
+  box-sizing: border-box;
 }
