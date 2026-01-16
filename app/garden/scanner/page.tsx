@@ -132,13 +132,13 @@ export default function ScannerPage() {
               <div className="text-xs uppercase tracking-wider text-white/60">
                 Preview
               </div>
-              <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-black/40">
+              <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2">
                 {previewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={previewUrl}
                     alt="Preview"
-                    className="h-40 w-full object-contain bg-black/60"
+                    className="w-full max-h-44 object-contain rounded-xl bg-black/50"
                     draggable={false}
                   />
                 ) : (
