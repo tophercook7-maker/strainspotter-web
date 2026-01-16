@@ -18,38 +18,34 @@ const ROUTES = [
 export default function GardenPage() {
   return (
     <main
-      className="min-h-screen w-full text-white"
-      style={{
-        backgroundImage: "url(/strainspotter-bg.jpeg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
+      className="min-h-screen bg-cover bg-center flex flex-col items-center justify-between py-16"
+      style={{ backgroundImage: "url('/strainspotter-bg.jpeg')" }}
     >
-      {/* optional: light readability veil (keeps background visible) */}
-      <div className="min-h-screen w-full bg-black/10">
-        <div className="w-full min-h-screen flex flex-col items-center justify-start px-6 py-10">
-          {/* HERO */}
-          <div className="flex flex-col items-center">
-            <Image
-              src="/hero.png"
-              alt="StrainSpotter hero"
-              width={190}
-              height={190}
-              priority
-              className="select-none"
-            />
-            <h1 className="mt-8 text-7xl md:text-8xl font-extrabold tracking-tight text-green-400 drop-shadow-xl">
-              StrainSpotter AI
-            </h1>
-          </div>
+      {/* HERO */}
+      <div className="flex justify-center">
+        <Image
+          src="/hero.png"
+          alt="StrainSpotter hero"
+          width={190}
+          height={190}
+          priority
+          className="select-none"
+        />
+      </div>
 
-          {/* GRID */}
-          <div className="mt-20 grid grid-cols-3 gap-x-28 gap-y-24">
-            {ROUTES.map((r) => (
-              <GardenIcon key={r.route} label={r.label} icon={r.icon} route={r.route} />
-            ))}
-          </div>
+      {/* TITLE */}
+      <div className="flex flex-col items-center mt-6">
+        <h1 className="text-7xl md:text-8xl font-extrabold tracking-tight text-green-400 drop-shadow-xl">
+          StrainSpotter AI
+        </h1>
+      </div>
+
+      {/* GRID */}
+      <div className="w-full max-w-5xl flex justify-center">
+        <div className="grid grid-cols-3 gap-x-28 gap-y-24">
+          {ROUTES.map((r) => (
+            <GardenIcon key={r.route} label={r.label} icon={r.icon} route={r.route} />
+          ))}
         </div>
       </div>
     </main>
