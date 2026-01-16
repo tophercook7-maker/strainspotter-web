@@ -45,15 +45,17 @@ export default function GardenPage() {
       </div>
 
       {/* ICON GRID */}
-      <div className="mt-14 grid grid-cols-3 gap-x-24 gap-y-20 pb-20">
-        {ROUTES.map((item) => (
-          <GardenIcon
-            key={item.label}
-            label={item.label}
-            icon={item.icon}
-            onClick={() => router.push(item.route)}
-          />
-        ))}
+      <div className="mt-20 w-full flex justify-center">
+        <div className="grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
+          {ROUTES.map((item) => (
+            <GardenIcon
+              key={item.label}
+              label={item.label}
+              icon={item.icon}
+              onClick={() => router.push(item.route)}
+            />
+          ))}
+        </div>
       </div>
     </main>
   );
