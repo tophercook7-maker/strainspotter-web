@@ -93,7 +93,7 @@ export default function ScannerPage() {
   }
 
   return (
-    <main className="min-h-screen w-full bg-black text-white px-6 py-10">
+    <main className="w-full bg-black text-white px-6 py-10">
       <div className="mx-auto w-full max-w-3xl">
         <h1 className="text-3xl font-extrabold tracking-tight">Scanner</h1>
         <p className="mt-2 text-white/70">
@@ -101,7 +101,7 @@ export default function ScannerPage() {
         </p>
 
         <div className="mt-6 rounded-3xl border border-white/15 bg-white/5 p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="text-sm text-white/70">
               <div>
                 Tier: <span className="text-white">{access.tier}</span>
@@ -154,21 +154,34 @@ export default function ScannerPage() {
                 Result
               </div>
 
-              <div className="mt-3 min-h-[16rem] rounded-xl border border-white/10 bg-black/40 p-4">
+              <div
+                className="
+                  mt-6
+                  w-full
+                  max-w-xl
+                  mx-auto
+                  rounded-2xl
+                  bg-white/10
+                  backdrop-blur-xl
+                  border border-white/20
+                  p-6
+                  text-white
+                "
+              >
                 {error ? (
                   <div className="text-sm text-red-300">{error}</div>
                 ) : result ? (
                   <div>
-                    <div className="text-xl font-extrabold">
+                    <div className="text-lg font-semibold text-green-300 mb-2">
                       {result.title}
                     </div>
-                    <div className="mt-1 text-sm text-white/70">
+                    <div className="text-sm text-white/70 mb-4">
                       Confidence:{" "}
                       <span className="text-white">
                         {Math.round(result.confidence * 100)}%
                       </span>
                     </div>
-                    <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-white/80">
+                    <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-white/80">
                       {result.notes.map((n) => (
                         <li key={n}>{n}</li>
                       ))}
