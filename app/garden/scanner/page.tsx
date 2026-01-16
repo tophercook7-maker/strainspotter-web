@@ -128,21 +128,18 @@ export default function ScannerPage() {
           </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-2">
-              <div className="text-xs uppercase tracking-wider text-white/60">
-                Preview
-              </div>
-              <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2">
+            {/* PREVIEW */}
+            <div className="mt-6 w-full max-w-3xl mx-auto">
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-xl">
                 {previewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={previewUrl}
-                    alt="Preview"
-                    className="w-full max-h-44 object-contain rounded-xl bg-black/50"
-                    draggable={false}
+                    alt="Scan preview"
+                    className="w-full max-h-[420px] object-contain mx-auto"
                   />
                 ) : (
-                  <div className="flex h-64 items-center justify-center text-white/40">
+                  <div className="flex items-center justify-center h-[280px] text-white/40">
                     No image selected
                   </div>
                 )}
@@ -171,21 +168,38 @@ export default function ScannerPage() {
                 {error ? (
                   <div className="text-sm text-red-300">{error}</div>
                 ) : result ? (
-                  <div>
-                    <div className="text-lg font-semibold text-green-300 mb-2">
-                      {result.title}
+                  <div className="mt-10 w-full max-w-2xl mx-auto">
+                    <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl p-6 text-white">
+                      <h3 className="text-lg font-semibold mb-3 tracking-wide">
+                        Scan Result
+                      </h3>
+
+                      <div className="space-y-2 text-sm text-white/80">
+                        <p>
+                          <span className="font-medium text-white">Type:</span>{" "}
+                          {result.title}
+                        </p>
+                        <p>
+                          <span className="font-medium text-white">
+                            Confidence:
+                          </span>{" "}
+                          {Math.round(result.confidence * 100)}%
+                        </p>
+                        <p>
+                          <span className="font-medium text-white">Aroma:</span>{" "}
+                          {result.notes[0] ?? "—"}
+                        </p>
+                        <p>
+                          <span className="font-medium text-white">
+                            Effect:
+                          </span>{" "}
+                          {result.notes[1] ?? "—"}
+                        </p>
+                        <p className="text-white/60 text-xs pt-2">
+                          Recommendation: {result.notes[2] ?? "—"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-sm text-white/70 mb-4">
-                      Confidence:{" "}
-                      <span className="text-white">
-                        {Math.round(result.confidence * 100)}%
-                      </span>
-                    </div>
-                    <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-white/80">
-                      {result.notes.map((n) => (
-                        <li key={n}>{n}</li>
-                      ))}
-                    </ul>
                   </div>
                 ) : (
                   <div className="text-sm text-white/50">
@@ -194,14 +208,14 @@ export default function ScannerPage() {
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={runScan}
-                disabled={busy}
-                className="mt-4 w-full rounded-2xl bg-green-500/90 px-4 py-3 text-sm font-extrabold text-black hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {busy ? "Scanning…" : "Run Scan"}
-              </button>
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={runScan}
+                  className="px-8 py-3 rounded-full bg-white/90 text-black font-medium shadow-lg hover:bg-white transition"
+                >
+                  {busy ? "Scanning…" : "Run Scan"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
