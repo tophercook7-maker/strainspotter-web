@@ -1,4 +1,4 @@
-import GardenIcon from "./_components/GardenIcon";
+import { GardenIcon } from "./_components/GardenIcon";
 
 const gardenItems = [
   { title: "Scanner", href: "/garden/scanner", icon: "scanner" },
@@ -44,10 +44,9 @@ export default function GardenPage() {
           {gardenItems.map((item) => (
             <GardenIcon
               key={item.title}
-              title={item.title}
+              label={item.title}
               href={item.href}
               icon={item.icon}
-              size="lg"
             />
           ))}
         </div>
