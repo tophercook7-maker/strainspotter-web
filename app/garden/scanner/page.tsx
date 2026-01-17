@@ -29,7 +29,7 @@ export default function ScannerPage() {
   };
 
   return (
-    <main className="w-full min-h-screen bg-black text-white flex justify-center">
+    <div className="w-full flex flex-col items-center">
       <div className="w-full max-w-xl px-4 pt-10 space-y-6">
         {/* IMAGE PREVIEW — CLAMPED */}
         <div className="h-64 w-full rounded-xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
@@ -86,6 +86,6 @@ export default function ScannerPage() {
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

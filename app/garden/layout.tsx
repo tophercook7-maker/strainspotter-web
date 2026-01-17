@@ -1,11 +1,15 @@
-import type { ReactNode } from "react";
+import React from "react";
 
-export default function GardenLayout({ children }: { children: ReactNode }) {
+export default function GardenLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <main
-      className="min-h-screen w-full text-white"
+      className="min-h-screen w-full text-white overflow-x-hidden"
       style={{
-        backgroundImage: "url('/strainspotter-bg.jpeg')",
+        backgroundImage: "url(/strainspotter-bg.jpeg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
