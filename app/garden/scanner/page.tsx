@@ -1,73 +1,87 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 export default function ScannerPage() {
-  const [result, setResult] = useState<null | {
-    type: string;
-    confidence: number;
-    notes: string[];
-  }>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [result, setResult] = useState<boolean>(false);
 
   return (
-    <main className="min-h-screen w-full flex flex-col items-center justify-start px-4 pt-10 text-white">
+    <main className="min-h-screen w-full bg-black text-white flex flex-col items-center px-6 py-16">
       
-      {/* TITLE */}
-      <h1 className="text-3xl font-semibold mb-6 text-green-400">
-        Scanner
-      </h1>
-
-      {/* SCANNER IMAGE */}
-      <div className="w-full max-w-sm flex justify-center mb-8">
-        <Image
-          src="/images/mock_scanner.png"
-          alt="Scanner preview"
-          width={320}
-          height={320}
-          className="rounded-xl object-contain"
-          priority
-        />
+      {/* HEADER */}
+      <div className="flex flex-col items-center mb-12">
+        <h1 className="text-4xl font-semibold mb-2">Scanner</h1>
+        <p className="text-white/60 text-sm">
+          Upload a photo to simulate a strain identification scan
+        </p>
       </div>
 
-      {/* ACTION */}
-      <button
-        onClick={() =>
-          setResult({
-            type: "Indica-leaning",
-            confidence: 81,
-            notes: [
-              "Earthy + sweet aroma",
-              "Relaxing body feel",
-              "Best for evening",
-            ],
-          })
-        }
-        className="mb-10 px-6 py-3 rounded-xl bg-green-500/80 hover:bg-green-500 transition text-black font-semibold"
-      >
-        Simulate Scan
-      </button>
+      {/* SCANNER CARD */}
+      <div className="w-full max-w-md rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl p-6 flex flex-col items-center gap-6">
+        
+        {/* IMAGE PREVIEW */}
+        <div className="w-full aspect-square rounded-2xl bg-black/40 flex items-center justify-center overflow-hidden">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt="Scan preview"
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <span className="text-white/40 text-sm">No image selected</span>
+          )}
+        </div>
 
-      {/* RESULT */}
+        {/* CONTROLS */}
+        <div className="flex flex-col gap-3 w-full">
+          <label className="w-full">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setImageUrl(URL.createObjectURL(file));
+                  setResult(false);
+                }
+              }}
+            />
+            <div className="w-full cursor-pointer text-center rounded-xl bg-white/15 hover:bg-white/25 transition px-4 py-3 text-sm">
+              Choose Photo
+            </div>
+          </label>
+
+          <button
+            onClick={() => setResult(true)}
+            className="w-full rounded-xl bg-green-500/90 hover:bg-green-500 transition text-black font-medium py-3"
+          >
+            Run Scan
+          </button>
+        </div>
+      </div>
+
+      {/* RESULT CARD */}
       {result && (
-        <div className="w-full max-w-md rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 space-y-3">
-          <h2 className="text-xl font-semibold text-green-300">
-            Result
-          </h2>
+        <div className="mt-10 w-full max-w-md rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl p-6">
+          <h2 className="text-xl font-semibold mb-4">Scan Result</h2>
 
-          <p className="text-lg">{result.type}</p>
-
-          <p className="text-sm opacity-80">
-            Confidence: {result.confidence}%
-          </p>
-
-          <ul className="list-disc list-inside text-sm opacity-90">
-            {result.notes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
+          <ul className="space-y-2 text-white/80 text-sm">
+            <li><strong>Type:</strong> Indica-leaning</li>
+            <li><strong>Confidence:</strong> 81%</li>
+            <li><strong>Aroma:</strong> Earthy + sweet</li>
+            <li><strong>Effect:</strong> Relaxing body feel</li>
+            <li><strong>Best for:</strong> Evening</li>
           </ul>
         </div>
       )}
+
+      {/* FOOTNOTE */}
+      <p className="mt-12 text-xs text-white/40 text-center max-w-md">
+        Usage resets monthly (no rollovers). Authentication and subscription
+        enforcement will be added later.
+      </p>
     </main>
   );
 }
