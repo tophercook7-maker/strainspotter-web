@@ -1,18 +1,22 @@
-import { GardenIcon } from "./_components/GardenIcon";
+"use client";
+
+import { useRouter } from "next/navigation";
+import GardenIcon from "./_components/GardenIcon";
 
 const gardenItems = [
-  { title: "Scanner", href: "/garden/scanner", icon: "scanner" },
-  { title: "Dispensaries", href: "/garden/dispensaries", icon: "dispensaries" },
-  { title: "Strains", href: "/garden/strains", icon: "strains" },
-  { title: "Seed Vendors", href: "/garden/seed-vendors", icon: "seed-vendors" },
-  { title: "Grow Coach", href: "/garden/grow-coach", icon: "grow-coach" },
-  { title: "History", href: "/garden/history", icon: "history" },
-  { title: "Favorites", href: "/garden/favorites", icon: "favorites" },
-  { title: "Ecosystem", href: "/garden/ecosystem", icon: "ecosystem" },
-  { title: "Settings", href: "/garden/settings", icon: "settings" },
+  { title: "Scanner", href: "/garden/scanner", icon: "📷" },
+  { title: "Dispensaries", href: "/garden/dispensaries", icon: "🏪" },
+  { title: "Strains", href: "/garden/strains", icon: "🌿" },
+  { title: "Seed Vendors", href: "/garden/seed-vendors", icon: "🌱" },
+  { title: "Grow Coach", href: "/garden/grow-coach", icon: "🧠" },
+  { title: "History", href: "/garden/history", icon: "🕒" },
+  { title: "Favorites", href: "/garden/favorites", icon: "⭐" },
+  { title: "Ecosystem", href: "/garden/ecosystem", icon: "🌍" },
+  { title: "Settings", href: "/garden/settings", icon: "⚙️" },
 ];
 
 export default function GardenPage() {
+  const router = useRouter();
   return (
     <section className="relative w-full flex items-center justify-center text-white">
       
@@ -45,8 +49,8 @@ export default function GardenPage() {
             <GardenIcon
               key={item.title}
               label={item.title}
-              href={item.href}
               icon={item.icon}
+              onClick={() => router.push(item.href)}
             />
           ))}
         </div>

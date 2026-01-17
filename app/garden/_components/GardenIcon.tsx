@@ -1,39 +1,39 @@
 "use client";
 
-export function GardenIcon({
-  icon,
-  label,
-  href,
-}: {
-  icon: React.ReactNode;
+type GardenIconProps = {
   label: string;
-  href: string;
-}) {
+  icon: string;
+  onClick?: () => void;
+};
+
+export default function GardenIcon({
+  label,
+  icon,
+  onClick,
+}: GardenIconProps) {
   return (
-    <a
-      href={href}
+    <button
+      type="button"
+      onClick={onClick}
       className="
-        group
-        flex
-        flex-col
-        items-center
-        justify-center
-        w-24
-        h-24
-        rounded-2xl
-        bg-white/20
-        backdrop-blur-md
-        shadow-lg
-        transition
-        hover:scale-105
-        hover:bg-white/30
+        flex flex-col items-center justify-center
+        w-32 h-32
+        rounded-[28px]
+        bg-white/18
+        backdrop-blur-xl
+        border border-white/25
+        shadow-[0_10px_30px_rgba(0,0,0,0.35)]
+        hover:bg-white/25
+        hover:shadow-[0_14px_40px_rgba(0,0,0,0.45)]
         active:scale-95
+        transition-all duration-200 ease-out
+        text-white
       "
     >
-      <div className="text-2xl mb-1">{icon}</div>
-      <span className="text-xs text-white/90 text-center">
+      <div className="text-4xl mb-3 select-none">{icon}</div>
+      <div className="text-sm font-semibold tracking-wide opacity-90">
         {label}
-      </span>
-    </a>
+      </div>
+    </button>
   );
 }
