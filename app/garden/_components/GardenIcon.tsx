@@ -1,19 +1,17 @@
 "use client";
 
+import Link from "next/link";
+
 type GardenIconProps = {
   label: string;
   icon: string;
-  onClick: () => void;
+  href: string;
 };
 
-export default function GardenIcon({
-  label,
-  icon,
-  onClick,
-}: GardenIconProps) {
+export default function GardenIcon({ label, icon, href }: GardenIconProps) {
   return (
-    <button
-      onClick={onClick}
+    <Link
+      href={href}
       className="
         flex flex-col items-center justify-center
         w-36 h-36
@@ -34,6 +32,6 @@ export default function GardenIcon({
       <div className="text-sm font-semibold tracking-wide text-white">
         {label}
       </div>
-    </button>
+    </Link>
   );
 }

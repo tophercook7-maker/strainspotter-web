@@ -1,23 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import GardenIcon from "./_components/GardenIcon";
 
-const ROUTES = [
-  { label: "Scanner", icon: "📷", route: "/garden/scanner" },
-  { label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
-  { label: "Strains", icon: "🌿", route: "/garden/strains" },
-  { label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
-  { label: "History", icon: "🕒", route: "/garden/history" },
-  { label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { label: "Ecosystem", icon: "🌍", route: "/garden/ecosystem" },
-  { label: "Settings", icon: "⚙️", route: "/garden/settings" },
+const gardenItems = [
+  { key: "scanner", label: "Scanner", icon: "📷", route: "/garden/scanner" },
+  { key: "dispensaries", label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
+  { key: "strains", label: "Strains", icon: "🌿", route: "/garden/strains" },
+  { key: "seed-vendors", label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
+  { key: "grow-coach", label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
+  { key: "history", label: "History", icon: "🕒", route: "/garden/history" },
+  { key: "favorites", label: "Favorites", icon: "⭐", route: "/garden/favorites" },
+  { key: "ecosystem", label: "Ecosystem", icon: "🌍", route: "/garden/ecosystem" },
+  { key: "settings", label: "Settings", icon: "⚙️", route: "/garden/settings" },
 ];
 
 export default function GardenPage() {
-  const router = useRouter();
-
   return (
     <div className="flex flex-col items-center">
       {/* HERO */}
@@ -35,14 +32,29 @@ export default function GardenPage() {
         StrainSpotter AI
       </h1>
 
-      {/* ICON GRID */}
-      <div className="mt-20 grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
-        {ROUTES.map((item) => (
+      {/* GARDEN ICON FIELD */}
+      <div
+        className="
+          mt-10
+          w-full
+          max-w-6xl
+          mx-auto
+          grid
+          grid-cols-2
+          sm:grid-cols-3
+          md:grid-cols-4
+          lg:grid-cols-5
+          gap-x-10
+          gap-y-10
+          place-items-center
+        "
+      >
+        {gardenItems.map((item) => (
           <GardenIcon
-            key={item.label}
+            key={item.key}
             label={item.label}
             icon={item.icon}
-            onClick={() => router.push(item.route)}
+            href={item.route}
           />
         ))}
       </div>
