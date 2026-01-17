@@ -1,6 +1,6 @@
 "use client";
 
-import GardenIcon from "./_components/GardenIcon";
+import { GardenIcon } from "./_components/GardenIcon";
 
 const gardenItems = [
   { key: "scanner", label: "Scanner", icon: "📷", route: "/garden/scanner" },
