@@ -18,7 +18,7 @@ const gardenItems = [
 export default function GardenPage() {
   const router = useRouter();
   return (
-    <section className="relative w-full flex items-center justify-center text-white">
+    <div className="relative min-h-screen w-full overflow-hidden">
       
       {/* ATMOSPHERIC BACKGROUND IS HANDLED BY garden/layout.tsx */}
 
@@ -39,18 +39,20 @@ export default function GardenPage() {
         </div>
 
         {/* ICON GRID — APPLE STYLE */}
-        <div className="mt-16 grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
-          {gardenItems.map((item) => (
-            <GardenIcon
-              key={item.title}
-              label={item.title}
-              icon={item.icon}
-              onClick={() => router.push(item.href)}
-            />
-          ))}
+        <div className="absolute top-[45%] left-1/2 -translate-x-1/2 w-full max-w-6xl">
+          <div className="grid grid-cols-5 gap-x-24 gap-y-16 place-items-center">
+            {gardenItems.map((item) => (
+              <GardenIcon
+                key={item.title}
+                label={item.title}
+                icon={item.icon}
+                onClick={() => router.push(item.href)}
+              />
+            ))}
+          </div>
         </div>
 
       </div>
-    </section>
+    </div>
   );
 }

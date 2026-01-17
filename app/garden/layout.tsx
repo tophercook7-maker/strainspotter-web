@@ -12,11 +12,10 @@ export default function GardenLayout({ children }: { children: ReactNode }) {
       }}
     >
       {/* subtle dark wash for legibility */}
-      <div className="min-h-screen w-full bg-black/35">
-        {/* content frame */}
-        <div className="mx-auto w-full max-w-6xl px-6 py-10">
-          {children}
-        </div>
+      <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+      {/* content frame */}
+      <div className="mx-auto w-full max-w-6xl px-6 py-10">
+        {children}
       </div>
     </div>
   );
