@@ -20,15 +20,7 @@ export default function GardenPage() {
   const router = useRouter();
 
   return (
-    <main
-      className="min-h-screen w-full text-white"
-      style={{
-        backgroundImage: "url(/strainspotter-bg.jpeg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
+    <div className="flex flex-col items-center">
       <div className="flex flex-col items-center pt-10">
         {/* HERO */}
         <Image
@@ -57,6 +49,6 @@ export default function GardenPage() {
           />
         ))}
       </div>
-    </main>
+    </div>
   );
 }
