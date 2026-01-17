@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import GardenIcon from "./_components/GardenIcon";
 
@@ -21,22 +20,20 @@ export default function GardenPage() {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="flex flex-col items-center pt-10">
-        {/* HERO */}
-        <Image
+      {/* HERO */}
+      <div className="mt-10 mb-6 flex justify-center">
+        <img
           src="/hero.png"
           alt="StrainSpotter"
-          width={96}
-          height={96}
-          priority
+          className="w-[88px] h-[88px] object-contain select-none"
           draggable={false}
         />
-
-        {/* TITLE */}
-        <h1 className="mt-4 text-4xl font-semibold tracking-wide text-green-400">
-          StrainSpotter AI
-        </h1>
       </div>
+
+      {/* TITLE */}
+      <h1 className="text-4xl font-semibold tracking-wide text-green-400">
+        StrainSpotter AI
+      </h1>
 
       {/* ICON GRID */}
       <div className="mt-16 grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
