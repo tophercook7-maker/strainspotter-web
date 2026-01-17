@@ -26,25 +26,20 @@ export default function GardenPage() {
       <div className="relative z-10 w-full max-w-5xl px-8 py-16">
         
         {/* TITLE */}
-        <div className="flex flex-col items-center mb-16">
-          <div className="mb-4 text-4xl">🍃</div>
-          <h1 className="text-5xl font-semibold tracking-tight">
-            StrainSpotter AI
+        <div className="pt-12 pb-6 flex flex-col items-center">
+          <img
+            src="/hero.png"
+            alt="StrainSpotter"
+            className="w-20 h-20 object-contain mb-4"
+            draggable={false}
+          />
+          <h1 className="text-4xl font-bold tracking-wide text-green-400">
+            StrainSpotter
           </h1>
         </div>
 
         {/* ICON GRID — APPLE STYLE */}
-        <div
-          className="
-            grid
-            grid-cols-2
-            sm:grid-cols-3
-            md:grid-cols-4
-            gap-x-12
-            gap-y-16
-            place-items-center
-          "
-        >
+        <div className="mt-16 grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
           {gardenItems.map((item) => (
             <GardenIcon
               key={item.title}
