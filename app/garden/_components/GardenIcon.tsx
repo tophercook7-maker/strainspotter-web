@@ -13,28 +13,25 @@ export default function GardenIcon({
 }: GardenIconProps) {
   return (
     <button
-      type="button"
       onClick={onClick}
       className="
         flex flex-col items-center justify-center
-        w-32 h-32
-        rounded-[28px]
-        bg-white/25
-        backdrop-blur-2xl
+        w-36 h-36
+        rounded-[32px]
+        bg-white/20
+        backdrop-blur-xl
+        border border-white/30
         shadow-[0_20px_40px_rgba(0,0,0,0.35)]
-        border border-white/40
-        text-white
-        hover:bg-white/35
-        hover:shadow-[0_30px_60px_rgba(0,0,0,0.45)]
-        active:scale-[0.97]
-        transition-all duration-200 ease-out
-        focus:outline-none
+        hover:bg-white/30
+        transition-all duration-200
+        active:scale-95
+        cursor-pointer
       "
     >
-      <div className="text-5xl mb-3 leading-none select-none">
+      <div className="text-5xl mb-3">
         {icon}
       </div>
-      <div className="text-sm font-semibold tracking-wide text-white/95">
+      <div className="text-sm font-semibold tracking-wide text-white">
         {label}
       </div>
     </button>

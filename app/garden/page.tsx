@@ -36,7 +36,7 @@ export default function GardenPage() {
       </h1>
 
       {/* ICON GRID */}
-      <div className="mt-16 grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
+      <div className="mt-20 grid grid-cols-3 gap-x-24 gap-y-20 place-items-center">
         {ROUTES.map((item) => (
           <GardenIcon
             key={item.label}
