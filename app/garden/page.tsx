@@ -1,63 +1,58 @@
-"use client";
-
-import { GardenIcon } from "./_components/GardenIcon";
+import GardenIcon from "./_components/GardenIcon";
 
 const gardenItems = [
-  { key: "scanner", label: "Scanner", icon: "📷", route: "/garden/scanner" },
-  { key: "dispensaries", label: "Dispensaries", icon: "🏪", route: "/garden/dispensaries" },
-  { key: "strains", label: "Strains", icon: "🌿", route: "/garden/strains" },
-  { key: "seed-vendors", label: "Seed Vendors", icon: "🌱", route: "/garden/seed-vendors" },
-  { key: "grow-coach", label: "Grow Coach", icon: "🧠", route: "/garden/grow-coach" },
-  { key: "history", label: "History", icon: "🕒", route: "/garden/history" },
-  { key: "favorites", label: "Favorites", icon: "⭐", route: "/garden/favorites" },
-  { key: "ecosystem", label: "Ecosystem", icon: "🌍", route: "/garden/ecosystem" },
-  { key: "settings", label: "Settings", icon: "⚙️", route: "/garden/settings" },
+  { title: "Scanner", href: "/garden/scanner", icon: "scanner" },
+  { title: "Dispensaries", href: "/garden/dispensaries", icon: "dispensaries" },
+  { title: "Strains", href: "/garden/strains", icon: "strains" },
+  { title: "Seed Vendors", href: "/garden/seed-vendors", icon: "seed-vendors" },
+  { title: "Grow Coach", href: "/garden/grow-coach", icon: "grow-coach" },
+  { title: "History", href: "/garden/history", icon: "history" },
+  { title: "Favorites", href: "/garden/favorites", icon: "favorites" },
+  { title: "Ecosystem", href: "/garden/ecosystem", icon: "ecosystem" },
+  { title: "Settings", href: "/garden/settings", icon: "settings" },
 ];
 
 export default function GardenPage() {
   return (
-    <div className="flex flex-col items-center">
-      {/* HERO */}
-      <div className="mt-10 mb-6 flex justify-center">
-        <img
-          src="/hero.png"
-          alt="StrainSpotter"
-          className="w-[88px] h-[88px] object-contain select-none"
-          draggable={false}
-        />
-      </div>
+    <section className="relative w-full flex items-center justify-center text-white">
+      
+      {/* ATMOSPHERIC BACKGROUND IS HANDLED BY garden/layout.tsx */}
 
-      {/* TITLE */}
-      <h1 className="text-4xl font-semibold tracking-wide text-green-400">
-        StrainSpotter AI
-      </h1>
+      {/* GARDEN SURFACE */}
+      <div className="relative z-10 w-full max-w-5xl px-8 py-16">
+        
+        {/* TITLE */}
+        <div className="flex flex-col items-center mb-16">
+          <div className="mb-4 text-4xl">🍃</div>
+          <h1 className="text-5xl font-semibold tracking-tight">
+            StrainSpotter AI
+          </h1>
+        </div>
 
-      {/* GARDEN ICON FIELD */}
-      <div
-        className="
-          mt-10
-          w-full
-          max-w-6xl
-          mx-auto
-          grid
-          grid-cols-2
-          sm:grid-cols-3
-          md:grid-cols-4
-          lg:grid-cols-5
-          gap-x-10
-          gap-y-10
-          place-items-center
-        "
-      >
-        {gardenItems.map((item) => (
-          <GardenIcon
-            key={item.key}
-            label={item.label}
-            icon={item.icon}
-            href={item.route}
-          />
-        ))}
+        {/* ICON GRID — APPLE STYLE */}
+        <div
+          className="
+            grid
+            grid-cols-2
+            sm:grid-cols-3
+            md:grid-cols-4
+            gap-x-12
+            gap-y-16
+            place-items-center
+          "
+        >
+          {gardenItems.map((item) => (
+            <GardenIcon
+              key={item.title}
+              title={item.title}
+              href={item.href}
+              icon={item.icon}
+              size="lg"
+            />
+          ))}
+        </div>
+
       </div>
-    </div>
+    </section>
   );
 }
