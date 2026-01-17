@@ -1,21 +1,22 @@
-import React from "react";
+import type { ReactNode } from "react";
 
-export default function GardenLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function GardenLayout({ children }: { children: ReactNode }) {
   return (
-    <main
-      className="min-h-screen w-full text-white overflow-x-hidden"
+    <div
+      className="min-h-screen w-full text-white"
       style={{
         backgroundImage: "url(/strainspotter-bg.jpeg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
       }}
     >
-      {children}
-    </main>
+      {/* subtle dark wash for legibility */}
+      <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+      {/* content frame */}
+      <div className="mx-auto w-full max-w-6xl px-6 py-10">
+        {children}
+      </div>
+    </div>
   );
 }

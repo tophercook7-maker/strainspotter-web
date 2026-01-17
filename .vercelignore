@@ -16,3 +16,4 @@ __quarantine__/
 .env*
 .vscode/
 logs/
+archive/
