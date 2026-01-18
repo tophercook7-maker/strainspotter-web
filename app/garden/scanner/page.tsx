@@ -1,107 +1,108 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { MOCK_SCANNER_RESULT } from "@/lib/scanner/mockResult";
+import type { ScannerResult } from "@/lib/scanner/types";
 
+/**
+ * IMPORTANT:
+ * This page must ONLY consume ScannerResult from lib/scanner/types.ts
+ * Do not add fields here unless the contract is updated first.
+ */
 export default function ScannerPage() {
-  const [preview, setPreview] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
-  const [hasResult, setHasResult] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [result, setResult] = useState<ScannerResult | null>(null);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUrl(URL.createObjectURL(file));
+    setResult(null);
+  }
 
   function runScan() {
-    if (!preview) return;
-
-    setResult({
-      strainName: "Northern Lights",
-      confidence: 0.81,
-      closestCultivarMatch: {
-        name: "Northern Lights",
-        confidence: 0.81,
-      },
-      inferredGenetics: {
-        dominance: "Indica",
-        parents: ["Afghani", "Thai"],
-      },
-      userFacingHighlights: {
-        aromaProfile: ["Earthy", "Sweet"],
-        effects: ["Relaxing", "Body-heavy"],
-        bestFor: ["Evening use", "Stress relief"],
-      },
-    });
-    setHasResult(true);
+    // TEMP: mock pipeline
+    setResult(MOCK_SCANNER_RESULT);
   }
 
   return (
-    <section className="w-full min-h-screen flex flex-col items-center gap-6 px-6 py-10 text-white">
-      <h1 className="text-3xl font-bold">Scanner</h1>
+    <section className="w-full max-w-5xl mx-auto px-4 py-8 text-white">
+      <h1 className="text-3xl font-bold mb-4">Scanner</h1>
 
-      {/* Controls */}
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-
-          const url = URL.createObjectURL(file);
-          setPreview(url);
-          setResult(null);
-          setHasResult(false);
-        }}
-        className="block w-full text-sm text-white
-          file:mr-4 file:rounded-full
-          file:border-0
-          file:bg-green-600/20
-          file:px-4 file:py-2
-          file:text-white
-          hover:file:bg-green-600/30"
-      />
-
-      {preview && (
-        <div className="mt-6 w-full max-w-xl mx-auto rounded-2xl overflow-hidden border border-white/20 bg-black/30">
-          <img
-            src={preview}
+      {/* Image Preview */}
+      {imageUrl && (
+        <div className="relative w-full max-h-[35vh] overflow-hidden rounded-xl border border-white/20 mb-4">
+          <Image
+            src={imageUrl}
             alt="Scan preview"
-            className="w-full h-[320px] object-cover"
+            fill
+            className="object-contain"
+            priority
           />
         </div>
       )}
 
-      <button
-        onClick={runScan}
-        disabled={!preview}
-        className="mt-6 w-full max-w-xl mx-auto rounded-full
-          bg-green-600/30 hover:bg-green-600/40
-          disabled:opacity-40 disabled:cursor-not-allowed
-          px-6 py-3 text-white font-semibold"
-      >
-        Run Scan
-      </button>
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="block w-full text-sm"
+        />
 
-      {/* Result */}
-      {result && hasResult && (
-        <div className="w-full max-w-md mt-6 rounded-xl bg-white/10 border border-white/20 p-4">
-          <h2 className="text-xl font-semibold">{result.strainName}</h2>
-          <p className="text-sm text-white/70">
-            Confidence: {Math.round(result.confidence * 100)}%
+        <button
+          onClick={runScan}
+          disabled={!imageUrl}
+          className="rounded-xl bg-green-600 px-6 py-2 font-semibold disabled:opacity-40"
+        >
+          Run Scan
+        </button>
+      </div>
+
+      {/* Results */}
+      {result && (
+        <div className="rounded-2xl bg-black/60 backdrop-blur border border-white/20 p-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold">{result.strainName}</h2>
+            <p className="text-white/70">
+              Confidence: {result.confidence}%
+            </p>
+          </div>
+
+          <div>
+            <strong>Genetics:</strong> {result.genetics.dominance}
+          </div>
+
+          {result.highlights.aroma && (
+            <div>
+              <strong>Aroma:</strong> {result.highlights.aroma.join(", ")}
+            </div>
+          )}
+
+          {result.highlights.effects && (
+            <div>
+              <strong>Effects:</strong> {result.highlights.effects.join(", ")}
+            </div>
+          )}
+
+          {result.highlights.bestFor && (
+            <div>
+              <strong>Best for:</strong>{" "}
+              {result.highlights.bestFor.join(", ")}
+            </div>
+          )}
+
+          {result.highlights.bestTime && (
+            <div>
+              <strong>Best time:</strong> {result.highlights.bestTime}
+            </div>
+          )}
+
+          <p className="text-xs text-white/50 mt-4">
+            {result.disclaimer}
           </p>
-          <ul className="mt-3 text-sm space-y-1">
-            <li>Dominance: {result.inferredGenetics?.dominance}</li>
-            {result.userFacingHighlights?.aromaProfile && (
-              <li>
-                Aroma: {result.userFacingHighlights.aromaProfile.join(", ")}
-              </li>
-            )}
-            {result.userFacingHighlights?.effects && (
-              <li>
-                Effects: {result.userFacingHighlights.effects.join(", ")}
-              </li>
-            )}
-            {result.userFacingHighlights?.bestFor && (
-              <li>
-                Best for: {result.userFacingHighlights.bestFor.join(", ")}
-              </li>
-            )}
-          </ul>
         </div>
       )}
     </section>
