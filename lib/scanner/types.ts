@@ -23,6 +23,12 @@ export type ScannerResult = {
     source?: string;
   } | null;
 
+  inferredGenetics?: {
+    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
+    parents?: string[];
+    confidence?: number;
+  } | null;
+
   // Reserved for future premium layers
   genetics?: {
     thc?: number;
