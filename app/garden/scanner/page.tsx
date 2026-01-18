@@ -1,121 +1,109 @@
-// app/garden/scanner/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import type { ScannerResult } from "@/lib/scanner/types";
-import { buildScannerInsights } from "@/lib/scanner/insights";
+import { useState } from "react";
 
 export default function ScannerPage() {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [result, setResult] = useState<ScannerResult | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
+  const [hasResult, setHasResult] = useState(false);
 
-  // Cleanup object URL on unmount or previewUrl change
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
+  function runScan() {
+    if (!preview) return;
 
-  // MOCK — replace later with real scan pipeline
-  const mockResult: ScannerResult = {
-    strainName: "Northern Lights",
-    confidence: 81,
-    closestCultivarMatch: {
-      name: "Northern Lights",
-      similarity: 81,
-    },
-    inferredGenetics: {
-      dominance: "Indica",
-    },
-    userFacingHighlights: {
-      aromaProfile: ["Earthy", "Sweet"],
-      effects: ["Relaxing", "Body-heavy"],
-      bestFor: ["Evening use", "Stress relief"],
-    },
-  };
-
-  const insights = result ? buildScannerInsights(result) : [];
-
-  const runScan = () => {
-    setResult(mockResult);
-  };
+    setResult({
+      strainName: "Northern Lights",
+      confidence: 0.81,
+      closestCultivarMatch: {
+        name: "Northern Lights",
+        confidence: 0.81,
+      },
+      inferredGenetics: {
+        dominance: "Indica",
+        parents: ["Afghani", "Thai"],
+      },
+      userFacingHighlights: {
+        aromaProfile: ["Earthy", "Sweet"],
+        effects: ["Relaxing", "Body-heavy"],
+        bestFor: ["Evening use", "Stress relief"],
+      },
+    });
+    setHasResult(true);
+  }
 
   return (
-    <div className="relative mx-auto mt-20 max-w-4xl rounded-3xl bg-black/70 backdrop-blur-xl border border-white/20 p-8 text-white">
-        <h1 className="text-3xl font-bold mb-6">Scanner</h1>
+    <section className="w-full min-h-screen flex flex-col items-center gap-6 px-6 py-10 text-white">
+      <h1 className="text-3xl font-bold">Scanner</h1>
 
-        <label className="cursor-pointer rounded-xl bg-white/10 border border-white/20 px-6 py-3 font-semibold backdrop-blur-lg hover:bg-white/15 transition text-center block mb-8">
-          Choose Photo
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const selectedFile = e.target.files?.[0] ?? null;
-              if (selectedFile) {
-                const url = URL.createObjectURL(selectedFile);
-                setPreviewUrl(url);
-              } else {
-                if (previewUrl) {
-                  URL.revokeObjectURL(previewUrl);
-                }
-                setPreviewUrl(null);
-              }
-              setResult(null);
-            }}
+      {/* Controls */}
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+
+          const url = URL.createObjectURL(file);
+          setPreview(url);
+          setResult(null);
+          setHasResult(false);
+        }}
+        className="block w-full text-sm text-white
+          file:mr-4 file:rounded-full
+          file:border-0
+          file:bg-green-600/20
+          file:px-4 file:py-2
+          file:text-white
+          hover:file:bg-green-600/30"
+      />
+
+      {preview && (
+        <div className="mt-6 w-full max-w-xl mx-auto rounded-2xl overflow-hidden border border-white/20 bg-black/30">
+          <img
+            src={preview}
+            alt="Scan preview"
+            className="w-full h-[320px] object-cover"
           />
-        </label>
-
-        <div className="w-full h-56 rounded-xl overflow-hidden bg-black/40 flex items-center justify-center mb-6">
-          {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt="Scan preview"
-              className="max-h-full max-w-full object-contain"
-            />
-          ) : (
-            <span className="text-white/60 text-sm">No image selected</span>
-          )}
         </div>
+      )}
 
-        <button
-          onClick={runScan}
-          className="w-full rounded-xl bg-green-600 hover:bg-green-500 active:scale-[0.98] transition-all py-3 text-lg font-semibold text-black mb-6"
-        >
-          Run Scan
-        </button>
+      <button
+        onClick={runScan}
+        disabled={!preview}
+        className="mt-6 w-full max-w-xl mx-auto rounded-full
+          bg-green-600/30 hover:bg-green-600/40
+          disabled:opacity-40 disabled:cursor-not-allowed
+          px-6 py-3 text-white font-semibold"
+      >
+        Run Scan
+      </button>
 
-        {result && (
-          <div className="mt-6 rounded-xl bg-white/10 p-4">
-            <h2 className="text-xl font-bold">{result.strainName}</h2>
-            <p className="text-white/80">Confidence: {result.confidence}%</p>
-          </div>
-        )}
-
-        {insights.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {insights.map((insight, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 text-white shadow-lg"
-              >
-                <h3 className="text-lg font-semibold mb-2 text-green-300">
-                  {insight.title}
-                </h3>
-                <p className="text-sm text-white/90 leading-relaxed">
-                  {insight.description}
-                </p>
-                {typeof insight.confidence === "number" && (
-                  <p className="mt-3 text-xs text-white/60">
-                    Confidence: {insight.confidence}%
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-  </div>
-);
+      {/* Result */}
+      {result && hasResult && (
+        <div className="w-full max-w-md mt-6 rounded-xl bg-white/10 border border-white/20 p-4">
+          <h2 className="text-xl font-semibold">{result.strainName}</h2>
+          <p className="text-sm text-white/70">
+            Confidence: {Math.round(result.confidence * 100)}%
+          </p>
+          <ul className="mt-3 text-sm space-y-1">
+            <li>Dominance: {result.inferredGenetics?.dominance}</li>
+            {result.userFacingHighlights?.aromaProfile && (
+              <li>
+                Aroma: {result.userFacingHighlights.aromaProfile.join(", ")}
+              </li>
+            )}
+            {result.userFacingHighlights?.effects && (
+              <li>
+                Effects: {result.userFacingHighlights.effects.join(", ")}
+              </li>
+            )}
+            {result.userFacingHighlights?.bestFor && (
+              <li>
+                Best for: {result.userFacingHighlights.bestFor.join(", ")}
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
 }
