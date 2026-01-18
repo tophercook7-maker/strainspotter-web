@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { buildInsights } from "@/lib/scanner/insightEngine";
-import { runWikiEngine } from "@/lib/scanner/wikiEngine";
+import { buildWikiResult } from "@/lib/scanner/wikiEngine";
+import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 
 /**
@@ -31,21 +31,19 @@ export default function ScannerPage() {
   }
 
   async function runScan() {
-    if (!imageFile) return;
+    const file = imageFile;
+    if (!file) return;
 
     setLoading(true);
 
     try {
-      const wikiResult = await runWikiEngine(imageFile);
-      const confidence = wikiResult.identity.confidence;
-      const insights = buildInsights(wikiResult, confidence);
-      
-      const viewModel: ScannerViewModel = {
-        title: wikiResult.identity.strainName ?? "Unknown",
-        confidence,
-        insights,
-        wiki: wikiResult,
-      };
+      const seed = file.name + file.size + file.lastModified;
+
+      const wiki = buildWikiResult({
+        imageSeed: seed,
+      });
+
+      const viewModel = wikiToViewModel(wiki);
       
       setResult(viewModel);
     } catch (e) {
@@ -62,20 +60,12 @@ export default function ScannerPage() {
         <h1 className="text-3xl font-bold mb-4">Scanner</h1>
 
       {/* Image Preview */}
-      {/* LAYER 1 — IMAGE INGEST (LOCKED) */}
       {imageUrl && (
-        <div className="flex justify-center my-4">
+        <div className="w-full flex justify-center py-4">
           <img
             src={imageUrl}
             alt="Scan preview"
-            className="
-              max-h-32 max-w-32
-              md:max-h-40 md:max-w-40
-              object-cover
-              rounded-xl
-              border border-white/20
-              shadow-lg
-            "
+            className="max-h-56 w-auto object-contain rounded-xl border border-white/20"
           />
         </div>
       )}
@@ -100,16 +90,21 @@ export default function ScannerPage() {
       {result && (
         <div className="mt-6 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 text-white space-y-4">
           <h2 className="text-2xl font-bold">{result.title}</h2>
-          <p className="text-white/70">{result.insights.summary}</p>
+          <p className="text-white/70">{result.disclaimer}</p>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><strong>Dominance:</strong> {result.wiki.genetics.dominance}</div>
+            <div><strong>Dominance:</strong> {result.genetics.dominance}</div>
             <div><strong>Confidence:</strong> {result.confidence}%</div>
-            <div><strong>Effects:</strong> {result.wiki.experience.effects.join(", ")}</div>
-            <div><strong>Best For:</strong> {result.wiki.experience.bestUse.join(", ")}</div>
-            {result.wiki.genetics.lineage.length > 0 && (
+            <div><strong>Effects:</strong> {result.experience.effects.join(", ")}</div>
+            <div><strong>Best For:</strong> {result.experience.bestFor.join(", ")}</div>
+            {result.genetics.lineage && (
               <div className="col-span-2">
-                <strong>Genetics:</strong> {result.wiki.genetics.lineage.join(" × ")}
+                <strong>Genetics:</strong> {result.genetics.lineage}
+              </div>
+            )}
+            {result.experience.bestTime && (
+              <div className="col-span-2">
+                <strong>Best Time:</strong> {result.experience.bestTime}
               </div>
             )}
           </div>

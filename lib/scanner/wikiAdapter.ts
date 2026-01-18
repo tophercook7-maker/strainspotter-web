@@ -1,25 +1,23 @@
 // lib/scanner/wikiAdapter.ts
-// 🔒 A.2 — Wiki → ViewModel adapter (NORMALIZATION HAPPENS HERE)
+// 🔒 A.7 — Wiki → ViewModel adapter (LOCK VARIATION)
 
 import type { WikiResult } from "./types";
 import type { ScannerViewModel } from "./viewModel";
 
-export function wikiToScannerViewModel(wiki: WikiResult): ScannerViewModel {
-  const rawConfidence = wiki.identity?.confidence ?? 0;
-
+export function wikiToViewModel(wiki: WikiResult): ScannerViewModel {
   return {
-    strainName: wiki.identity?.strainName ?? "Unknown",
-    confidencePct:
-      rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence),
-
-    dominance: wiki.genetics?.dominance ?? "Unknown",
-    genetics: wiki.genetics?.lineage ?? [], // Using 'lineage' from current WikiResult
-
-    aromas: [], // Not in current WikiResult structure - will be populated when added
-    effects: wiki.experience?.effects ?? [],
-    bestFor: wiki.experience?.bestUse ?? [], // Using 'bestUse' from current WikiResult
-
-    summary:
-      "This cultivar shows characteristics consistent with its genetic lineage.",
+    title: wiki.identity.strainName,
+    confidence: Math.min(95, wiki.identity.confidence),
+    genetics: {
+      dominance: wiki.genetics.dominance,
+      lineage: wiki.genetics.lineage.join(" × "),
+    },
+    experience: {
+      effects: wiki.experience.effects.slice(0, 3),
+      bestFor: wiki.experience.bestUse.slice(0, 2),
+      bestTime: wiki.experience.duration,
+    },
+    disclaimer:
+      "Results are AI-assisted estimates and not definitive identification.",
   };
 }

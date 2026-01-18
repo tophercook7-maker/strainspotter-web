@@ -17,18 +17,21 @@ export default function ResultPanel({ result }: ResultPanelProps) {
 
       <section>
         <h3>Genetics</h3>
-        <p>{result.wiki.genetics.dominance}</p>
-        <p>{result.wiki.genetics.lineage.join(" × ")}</p>
+        <p>{result.genetics.dominance}</p>
+        <p>{result.genetics.lineage}</p>
       </section>
 
       <section>
         <h3>Experience</h3>
-        <p>Effects: {result.wiki.experience.effects.join(", ")}</p>
-        <p>Best for: {result.wiki.experience.bestUse.join(", ")}</p>
+        <p>Effects: {result.experience.effects.join(", ")}</p>
+        <p>Best for: {result.experience.bestFor.join(", ")}</p>
+        {result.experience.bestTime && (
+          <p>Best time: {result.experience.bestTime}</p>
+        )}
       </section>
 
       <p className="text-xs opacity-60 mt-4">
-        Results are AI-assisted estimates and not definitive identification.
+        {result.disclaimer}
       </p>
     </>
   );
