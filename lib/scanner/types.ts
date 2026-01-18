@@ -5,17 +5,18 @@
  */
 
 export type ScannerResult = {
-  strainName: string;
   confidence: number;
 
-  lineage: {
-    parents: string[];
-    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
-  };
+  closestCultivarMatch?: {
+    name: string;
+    confidence?: number;
+  } | null;
 
-  aromas: string[];
-  effects: string[];
-  bestTime: string;
+  inferredGenetics?: {
+    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
+    parents?: string[];
+    lineageFamilies?: string[];
+  } | null;
 
   userFacingHighlights?: {
     aromaProfile?: string[];
@@ -24,30 +25,17 @@ export type ScannerResult = {
     bestUseTime?: string;
   } | null;
 
-  closestCultivarMatch?: {
-    name: string;
-    confidence: number;
-    source?: string;
+  terpeneProfile?: {
+    primary: string[];
+    secondary?: string[];
+    notes?: string;
   } | null;
 
-  inferredGenetics?: {
-    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
-    parents?: string[];
-    lineageFamilies?: string[];
-    confidence?: number;
+  cannabinoidProfile?: {
+    thc?: number;   // percentage
+    cbd?: number;   // percentage
+    cbg?: number;
+    cbn?: number;
+    notes?: string;
   } | null;
-
-  // Reserved for future premium layers
-  genetics?: {
-    thc?: number;
-    cbd?: number;
-    terpenes?: string[];
-  } | null;
-
-  labData?: {
-    labName?: string;
-    testedAt?: string;
-  } | null;
-
-  notes?: string;
 };
