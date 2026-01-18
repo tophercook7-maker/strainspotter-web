@@ -7,7 +7,7 @@ import { buildScannerInsights } from "@/lib/scanner/insights";
 
 export default function ScannerPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ScannerResult | null>(null);
 
   // Cleanup object URL on unmount or previewUrl change
   useEffect(() => {
@@ -43,8 +43,7 @@ export default function ScannerPage() {
       <div className="fixed top-4 left-4 z-[9999] bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold">
         SCANNER DEBUG — BUILD CHECK
       </div>
-      <div className="min-h-screen w-full px-6 py-10 text-white">
-      <div className="max-w-3xl mx-auto">
+      <div className="relative mx-auto mt-16 max-w-4xl rounded-3xl bg-black/70 backdrop-blur-xl border border-white/20 p-6 text-white">
         <h1 className="text-3xl font-bold mb-6">Scanner</h1>
 
         <label className="cursor-pointer rounded-xl bg-white/10 border border-white/20 px-6 py-3 font-semibold backdrop-blur-lg hover:bg-white/15 transition text-center block mb-8">
@@ -70,59 +69,26 @@ export default function ScannerPage() {
         </label>
 
         {previewUrl && (
-          <div className="w-full flex justify-center mt-6">
-            <div className="w-40 h-40 rounded-xl overflow-hidden border border-white/20 bg-black/40">
-              <img
-                src={previewUrl}
-                alt="Scan preview"
-                className="w-full h-full object-contain"
-              />
-            </div>
+          <div className="mt-4 w-full h-64 rounded-xl overflow-hidden bg-black/40 flex items-center justify-center">
+            <img
+              src={previewUrl}
+              alt="Scan preview"
+              className="max-h-full max-w-full object-contain"
+            />
           </div>
         )}
 
         <button
-          type="button"
-          onClick={() => {
-            setResult({
-              strainName: "Unknown Cultivar",
-              confidence: 81,
-              inferredGenetics: {
-                dominance: "Indica",
-                parents: ["Unknown", "Unknown"],
-              },
-              closestCultivarMatch: {
-                name: "Analysis Unavailable",
-                similarity: 0,
-              },
-              userFacingHighlights: {
-                aromaProfile: ["Earthy", "Sweet"],
-                effects: ["Relaxing", "Calming"],
-                bestFor: ["Evening"],
-              },
-            });
-          }}
-          className="mt-6 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 transition text-white font-semibold"
+          onClick={() => setResult(mockResult)}
+          className="mt-4 w-full rounded-xl bg-green-600 hover:bg-green-500 transition px-6 py-3 font-bold text-black"
         >
-          Scan
+          Run Scan
         </button>
 
         {result && (
-          <div className="mt-8 max-w-md mx-auto rounded-2xl bg-black/60 backdrop-blur-xl border border-white/20 p-6 text-white">
-            <h2 className="text-xl font-bold mb-2">{result.strainName}</h2>
-            <p className="text-sm opacity-80 mb-4">
-              Confidence: {result.confidence}%
-            </p>
-
-            {result.userFacingHighlights?.aromaProfile && (
-              <p><strong>Aroma:</strong> {result.userFacingHighlights.aromaProfile.join(", ")}</p>
-            )}
-            {result.userFacingHighlights?.effects && (
-              <p><strong>Effects:</strong> {result.userFacingHighlights.effects.join(", ")}</p>
-            )}
-            {result.userFacingHighlights?.bestFor && (
-              <p><strong>Best for:</strong> {result.userFacingHighlights.bestFor.join(", ")}</p>
-            )}
+          <div className="mt-6 rounded-xl bg-white/10 p-4">
+            <h2 className="text-xl font-bold">{result.strainName}</h2>
+            <p className="text-white/80">Confidence: {result.confidence}%</p>
           </div>
         )}
 
@@ -149,7 +115,6 @@ export default function ScannerPage() {
           </div>
         )}
       </div>
-    </div>
     </>
   );
 }
