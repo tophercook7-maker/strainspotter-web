@@ -3,6 +3,12 @@
 
 import type { WikiResult } from "./types";
 
+export async function runWikiEngine(imageFile: File): Promise<WikiResult> {
+  // Generate deterministic hash from file metadata
+  const imageHash = `${imageFile.name}-${imageFile.size}-${imageFile.lastModified}`;
+  return buildWikiResult({ imageHash });
+}
+
 export async function analyzeWithWiki(input: {
   image: File | null;
 }): Promise<WikiResult> {

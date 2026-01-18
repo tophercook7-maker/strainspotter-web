@@ -1,58 +1,20 @@
 import type { WikiResult } from "./types";
-
-export type ScannerViewModel = {
-  title: string;
-  confidence: number;
-  summary: string;
-
-  highlights: {
-    dominance: string;
-    aromas: string[];
-    effects: string[];
-    bestFor: string[];
-  };
-
-  genetics: {
-    parents?: string[];
-    family?: string;
-  };
-
-  chemistry?: {
-    terpenes?: string[];
-    cannabinoids?: string[];
-  };
-};
+import type { ScannerViewModel } from "./viewModel";
 
 export function adaptWikiToScannerView(
   wiki: WikiResult
 ): ScannerViewModel {
+  // Normalize confidence: WikiResult has 0-100, ensure it's in that range
+  const confidence = Math.max(0, Math.min(100, wiki.identity.confidence ?? 75));
+
   return {
-    title: wiki.identity.strainName,
-    confidence: wiki.identity.confidence ?? 0.75,
-
-    summary:
-      "This cultivar shows characteristics consistent with its genetic lineage.",
-
-    highlights: {
-      dominance: wiki.genetics?.dominance ?? "Unknown",
-      aromas: [], // Not in current WikiResult structure
-      effects: wiki.experience?.effects ?? [],
-      bestFor: wiki.experience?.bestUse ?? [],
-    },
-
-    genetics: {
-      parents: wiki.genetics?.lineage,
-      family: undefined, // Not in current WikiResult structure
-    },
-
-    chemistry: {
-      terpenes: wiki.chemistry?.terpenes.map((t) => t.name),
-      cannabinoids: wiki.chemistry
-        ? [
-            `THC: ${wiki.chemistry.cannabinoids.THC}`,
-            `CBD: ${wiki.chemistry.cannabinoids.CBD}`,
-          ]
-        : undefined,
-    },
+    strainName: wiki.identity.strainName,
+    confidencePct: confidence, // 0-100, normalized ONCE
+    dominance: wiki.genetics?.dominance ?? "Unknown",
+    genetics: wiki.genetics?.lineage ?? [],
+    aromas: [], // Not in current WikiResult structure - placeholder
+    effects: wiki.experience?.effects ?? [],
+    bestFor: wiki.experience?.bestUse ?? [],
+    summary: "This cultivar shows characteristics consistent with its genetic lineage.",
   };
 }

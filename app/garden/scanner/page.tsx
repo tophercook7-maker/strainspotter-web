@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { analyzeWithWiki } from "@/lib/scanner/wikiEngine";
-import { adaptWikiToScannerView } from "@/lib/scanner/adapter";
-import type { ScannerViewModel } from "@/lib/scanner/adapter";
+import { wikiToScannerViewModel } from "@/lib/scanner/wikiAdapter";
+import { runWikiEngine } from "@/lib/scanner/wikiEngine";
+import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 
 /**
- * IMPORTANT:
- * This page must ONLY consume ScannerResult from lib/scanner/types.ts
- * Do not add fields here unless the contract is updated first.
+ * 🔒 A.2 — runScan uses ViewModel ONLY (UI NEVER TOUCHES WIKI DIRECTLY)
  */
 
 const revealBase =
@@ -20,7 +18,7 @@ const revealOut =
 
 export default function ScannerPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -28,20 +26,19 @@ export default function ScannerPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setImageUrl(URL.createObjectURL(file));
-    setSelectedFile(file);
+    setImageFile(file);
     setResult(null);
   }
 
-  async function runScan(file?: File) {
+  async function runScan() {
+    if (!imageFile) return;
+
     setLoading(true);
 
     try {
-      const wikiResult = await analyzeWithWiki({
-        image: file ?? selectedFile ?? null,
-      });
-
-      const adapted = adaptWikiToScannerView(wikiResult);
-      setResult(adapted);
+      const wikiResult = await runWikiEngine(imageFile);
+      const viewModel = wikiToScannerViewModel(wikiResult);
+      setResult(viewModel);
     } catch (e) {
       console.error("Scan failed", e);
     } finally {
@@ -83,8 +80,8 @@ export default function ScannerPage() {
       />
 
       <button
-        onClick={() => runScan()}
-        disabled={!selectedFile || loading}
+        onClick={runScan}
+        disabled={!imageFile || loading}
         className="w-full mt-4 py-3 rounded-full bg-white text-black font-medium tracking-wide hover:bg-white/90 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {loading ? "Scanning..." : "Run Scan"}
@@ -93,17 +90,22 @@ export default function ScannerPage() {
       {/* LAYER 3 — WIKI UI */}
       {result && (
         <div className="mt-6 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 text-white space-y-4">
-          <h2 className="text-2xl font-bold">{result.title}</h2>
+          <h2 className="text-2xl font-bold">{result.strainName}</h2>
           <p className="text-white/70">{result.summary}</p>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><strong>Dominance:</strong> {result.highlights.dominance}</div>
-            <div><strong>Confidence:</strong> {Math.round(result.confidence * 100)}%</div>
-            <div><strong>Aromas:</strong> {result.highlights.aromas.join(", ") || "—"}</div>
-            <div><strong>Effects:</strong> {result.highlights.effects.join(", ")}</div>
+            <div><strong>Dominance:</strong> {result.dominance}</div>
+            <div><strong>Confidence:</strong> {result.confidencePct}%</div>
+            <div><strong>Aromas:</strong> {result.aromas.join(", ") || "—"}</div>
+            <div><strong>Effects:</strong> {result.effects.join(", ")}</div>
             <div className="col-span-2">
-              <strong>Best For:</strong> {result.highlights.bestFor.join(", ")}
+              <strong>Best For:</strong> {result.bestFor.join(", ")}
             </div>
+            {result.genetics.length > 0 && (
+              <div className="col-span-2">
+                <strong>Genetics:</strong> {result.genetics.join(" × ")}
+              </div>
+            )}
           </div>
         </div>
       )}
