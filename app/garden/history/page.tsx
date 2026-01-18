@@ -1,4 +1,4 @@
-import TopNav from "@/components/TopNav";
+import TopNav from "../_components/TopNav";
 import ComingSoon from "../_components/ComingSoon";
 
 export default function Page() {

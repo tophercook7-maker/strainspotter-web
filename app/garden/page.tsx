@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import TopNav from "@/components/TopNav";
+import TopNav from "./_components/TopNav";
 import GardenIcon from './_components/GardenIcon'
 
 const gardenItems = [

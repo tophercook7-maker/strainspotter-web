@@ -4,7 +4,7 @@ import { useState } from "react";
 import { buildWikiResult } from "@/lib/scanner/wikiEngine";
 import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
-import TopNav from "@/components/TopNav";
+import TopNav from "../_components/TopNav";
 
 /**
  * 🔒 A.2 — runScan uses ViewModel ONLY (UI NEVER TOUCHES WIKI DIRECTLY)
