@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { MOCK_SCANNER_RESULT } from "@/lib/scanner/mockResult";
 import type { ScannerResult } from "@/lib/scanner/types";
 
@@ -42,14 +41,18 @@ export default function ScannerPage() {
 
       {/* Image Preview */}
       {imageUrl && (
-        <div className="relative mb-4 h-[280px] w-full overflow-hidden rounded-2xl border border-white/30 bg-black">
-          <Image
+        <div className="w-full flex justify-center my-4">
+          <img
             src={imageUrl}
-            alt="Uploaded cannabis sample"
-            fill
-            className="object-contain"
-            sizes="(max-width: 768px) 100vw, 800px"
-            priority
+            alt="Scan preview"
+            className="
+              max-h-64
+              max-w-full
+              object-contain
+              rounded-xl
+              border
+              border-white/20
+            "
           />
         </div>
       )}
@@ -81,47 +84,41 @@ export default function ScannerPage() {
           >
 
             {/* PRIMARY ANCHOR */}
-            <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6">
-              <h2 className="text-3xl font-semibold tracking-tight leading-tight">
-                <span className="bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                  {result.strainName}
-                </span>
-              </h2>
-              <p className="mt-1 text-white/70">
-                Confidence: <span className="font-medium text-white">{result.confidence}%</span>
+            <div className="mt-6">
+              <h1 className="text-3xl font-bold tracking-tight">
+                {result.strainName}
+              </h1>
+              <p className="text-sm text-white/70 mt-1">
+                Confidence: {result.confidence}%
               </p>
             </div>
 
             {/* CORE INSIGHTS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-6 grid gap-4">
 
-              {/* Genetics */}
-              <div className="rounded-xl bg-white/5 border border-white/15 p-5 transition-all duration-500 delay-75 ease-out">
-                <h3 className="text-sm uppercase tracking-wide text-white/60 mb-2">
+              <div className="rounded-xl bg-white/10 p-4">
+                <h3 className="text-xs uppercase tracking-wide text-white/60">
                   Genetics
                 </h3>
-                <p className="text-lg">
+                <p className="mt-1">
                   {result.genetics.dominance}
                 </p>
                 {result.genetics.parents && (
-                  <p className="mt-1 text-white/60 text-sm">
+                  <p className="text-sm text-white/70">
                     {result.genetics.parents.join(" × ")}
                   </p>
                 )}
               </div>
 
-              {/* Experience */}
-              <div className="rounded-xl bg-white/5 border border-white/15 p-5 transition-all duration-500 delay-150 ease-out">
-                <h3 className="text-sm uppercase tracking-wide text-white/60 mb-2">
+              <div className="rounded-xl bg-white/10 p-4">
+                <h3 className="text-xs uppercase tracking-wide text-white/60">
                   Experience
                 </h3>
                 {result.highlights.effects && (
-                  <p className="text-sm leading-relaxed text-white/80">
-                    {result.highlights.effects.join(", ")}
-                  </p>
+                  <p>{result.highlights.effects.join(", ")}</p>
                 )}
                 {result.highlights.bestFor && (
-                  <p className="mt-2 text-white/60 text-sm">
+                  <p className="text-sm text-white/70">
                     Best for: {result.highlights.bestFor.join(", ")}
                   </p>
                 )}
@@ -130,9 +127,9 @@ export default function ScannerPage() {
             </div>
 
             {/* DEPTH / DISCLAIMER */}
-            <div className="border-t border-white/15 pt-3 text-xs text-white/60">
-              Results are AI-assisted estimates. Not a substitute for lab testing.
-            </div>
+            <p className="mt-6 text-xs text-white/50">
+              Results are AI-assisted estimates and not a substitute for lab testing.
+            </p>
 
           </div>
         </section>
