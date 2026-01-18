@@ -61,49 +61,58 @@ export default function ScannerPage() {
         Run Scan
       </button>
 
-      {/* Results */}
+      {/* SCAN RESULT */}
       {result && (
-        <div className="rounded-2xl bg-black/60 backdrop-blur border border-white/20 p-6 space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold">{result.strainName}</h2>
-            <p className="text-white/70">
-              Confidence: {result.confidence}%
+        <section className="mt-6 max-w-2xl mx-auto rounded-3xl bg-black/70 backdrop-blur-xl border border-white/20 p-6 text-white shadow-2xl">
+          {/* content injected below */}
+          {/* IDENTITY */}
+          <div className="mb-4">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+              {result.strainName}
+            </h1>
+            <p className="text-white/70 mt-1">
+              Confidence: <span className="font-semibold text-white">{result.confidence}%</span>
             </p>
           </div>
 
-          <div>
-            <strong>Genetics:</strong> {result.genetics.dominance}
+          {/* CORE MEANING */}
+          <div className="grid grid-cols-2 gap-4 text-sm md:text-base mb-4">
+            <div>
+              <p className="font-semibold">Dominance</p>
+              <p className="text-white/80">{result.genetics.dominance}</p>
+            </div>
+            {result.highlights.bestTime && (
+              <div>
+                <p className="font-semibold">Best Time</p>
+                <p className="text-white/80">{result.highlights.bestTime}</p>
+              </div>
+            )}
+            {result.highlights.effects && (
+              <div>
+                <p className="font-semibold">Effects</p>
+                <p className="text-white/80">
+                  {result.highlights.effects.join(", ")}
+                </p>
+              </div>
+            )}
+            {result.highlights.aroma && (
+              <div>
+                <p className="font-semibold">Aroma</p>
+                <p className="text-white/80">
+                  {result.highlights.aroma.join(", ")}
+                </p>
+              </div>
+            )}
           </div>
 
-          {result.highlights.aroma && (
-            <div>
-              <strong>Aroma:</strong> {result.highlights.aroma.join(", ")}
-            </div>
-          )}
-
-          {result.highlights.effects && (
-            <div>
-              <strong>Effects:</strong> {result.highlights.effects.join(", ")}
-            </div>
-          )}
-
-          {result.highlights.bestFor && (
-            <div>
-              <strong>Best for:</strong>{" "}
-              {result.highlights.bestFor.join(", ")}
-            </div>
-          )}
-
-          {result.highlights.bestTime && (
-            <div>
-              <strong>Best time:</strong> {result.highlights.bestTime}
-            </div>
-          )}
-
-          <p className="text-xs text-white/50 mt-4">
-            {result.disclaimer}
-          </p>
-        </div>
+          {/* DEPTH */}
+          <div className="text-xs text-white/60 border-t border-white/20 pt-3">
+            <p>
+              Results are AI-assisted estimates based on visual analysis and known cultivar data.
+              Not a definitive identification.
+            </p>
+          </div>
+        </section>
       )}
       </div>
     </section>
