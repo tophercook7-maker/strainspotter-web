@@ -4,10 +4,8 @@ import ComingSoon from "../_components/ComingSoon";
 export default function Page() {
   return (
     <>
-      <TopNav showBack showHome />
-      <div className="pt-16">
-        <ComingSoon title="History" />
-      </div>
+      <TopNav title="History" showBack />
+      <ComingSoon title="History" />
     </>
   );
 }

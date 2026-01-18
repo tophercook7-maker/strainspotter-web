@@ -56,9 +56,8 @@ export default function ScannerPage() {
 
   return (
     <>
-      <TopNav showBack showHome />
-      <div className="pt-16">
-        <section className="relative z-20 mx-auto w-full max-w-5xl px-4 py-8">
+      <TopNav title="Scanner" showBack />
+      <section className="relative z-20 mx-auto w-full max-w-5xl px-4 py-8">
         <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
           {/* SCANNER CONTENT GOES BELOW */}
           <h1 className="text-3xl font-bold mb-4">Scanner</h1>
@@ -116,7 +115,6 @@ export default function ScannerPage() {
       )}
         </div>
       </section>
-      </div>
     </>
   );
 }
