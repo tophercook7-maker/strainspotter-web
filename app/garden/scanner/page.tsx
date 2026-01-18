@@ -12,7 +12,7 @@ export default function ScannerPage() {
   const handleMockScan = () => {
     setResult({
       strainName: "Northern Lights",
-      confidence: 0.81,
+      confidence: 81,
       closestCultivarMatch: {
         name: "Northern Lights",
         similarity: 81,
@@ -50,12 +50,12 @@ export default function ScannerPage() {
                 className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6"
               >
                 <h2 className="text-xl font-bold mb-2">
-                  {insight.headline}
+                  {insight.title}
                 </h2>
-                <p className="text-white/80">{insight.explanation}</p>
-                {insight.confidenceNote && (
+                <p className="text-white/80">{insight.description}</p>
+                {insight.confidence !== undefined && (
                   <p className="mt-2 text-sm text-white/60">
-                    {insight.confidenceNote}
+                    Confidence: {insight.confidence}%
                   </p>
                 )}
               </div>
