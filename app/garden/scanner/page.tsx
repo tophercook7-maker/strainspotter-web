@@ -10,6 +10,14 @@ import type { ScannerResult } from "@/lib/scanner/types";
  * This page must ONLY consume ScannerResult from lib/scanner/types.ts
  * Do not add fields here unless the contract is updated first.
  */
+
+const revealBase =
+  "transition-all duration-500 ease-out";
+const revealIn =
+  "opacity-100 translate-y-0";
+const revealOut =
+  "opacity-0 translate-y-3";
+
 export default function ScannerPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [result, setResult] = useState<ScannerResult | null>(null);
@@ -65,52 +73,67 @@ export default function ScannerPage() {
       {result && (
         <section className="mt-6 max-w-2xl mx-auto rounded-3xl bg-black/70 backdrop-blur-xl border border-white/20 p-6 text-white shadow-2xl">
           {/* content injected below */}
-          {/* IDENTITY */}
-          <div className="mb-4">
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-              {result.strainName}
-            </h1>
-            <p className="text-white/70 mt-1">
-              Confidence: <span className="font-semibold text-white">{result.confidence}%</span>
-            </p>
-          </div>
+          {/* RESULT SURFACE */}
+          <div
+            className={`mt-6 space-y-6 ${revealBase} ${
+              result ? revealIn : revealOut
+            }`}
+          >
 
-          {/* CORE MEANING */}
-          <div className="grid grid-cols-2 gap-4 text-sm md:text-base mb-4">
-            <div>
-              <p className="font-semibold">Dominance</p>
-              <p className="text-white/80">{result.genetics.dominance}</p>
+            {/* PRIMARY ANCHOR */}
+            <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6">
+              <h2 className="text-3xl font-semibold tracking-tight leading-tight">
+                <span className="bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                  {result.strainName}
+                </span>
+              </h2>
+              <p className="mt-1 text-white/70">
+                Confidence: <span className="font-medium text-white">{result.confidence}%</span>
+              </p>
             </div>
-            {result.highlights.bestTime && (
-              <div>
-                <p className="font-semibold">Best Time</p>
-                <p className="text-white/80">{result.highlights.bestTime}</p>
-              </div>
-            )}
-            {result.highlights.effects && (
-              <div>
-                <p className="font-semibold">Effects</p>
-                <p className="text-white/80">
-                  {result.highlights.effects.join(", ")}
-                </p>
-              </div>
-            )}
-            {result.highlights.aroma && (
-              <div>
-                <p className="font-semibold">Aroma</p>
-                <p className="text-white/80">
-                  {result.highlights.aroma.join(", ")}
-                </p>
-              </div>
-            )}
-          </div>
 
-          {/* DEPTH */}
-          <div className="text-xs text-white/60 border-t border-white/20 pt-3">
-            <p>
-              Results are AI-assisted estimates based on visual analysis and known cultivar data.
-              Not a definitive identification.
-            </p>
+            {/* CORE INSIGHTS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Genetics */}
+              <div className="rounded-xl bg-white/5 border border-white/15 p-5 transition-all duration-500 delay-75 ease-out">
+                <h3 className="text-sm uppercase tracking-wide text-white/60 mb-2">
+                  Genetics
+                </h3>
+                <p className="text-lg">
+                  {result.genetics.dominance}
+                </p>
+                {result.genetics.parents && (
+                  <p className="mt-1 text-white/60 text-sm">
+                    {result.genetics.parents.join(" × ")}
+                  </p>
+                )}
+              </div>
+
+              {/* Experience */}
+              <div className="rounded-xl bg-white/5 border border-white/15 p-5 transition-all duration-500 delay-150 ease-out">
+                <h3 className="text-sm uppercase tracking-wide text-white/60 mb-2">
+                  Experience
+                </h3>
+                {result.highlights.effects && (
+                  <p className="text-sm leading-relaxed text-white/80">
+                    {result.highlights.effects.join(", ")}
+                  </p>
+                )}
+                {result.highlights.bestFor && (
+                  <p className="mt-2 text-white/60 text-sm">
+                    Best for: {result.highlights.bestFor.join(", ")}
+                  </p>
+                )}
+              </div>
+
+            </div>
+
+            {/* DEPTH / DISCLAIMER */}
+            <div className="border-t border-white/15 pt-3 text-xs text-white/60">
+              Results are AI-assisted estimates. Not a substitute for lab testing.
+            </div>
+
           </div>
         </section>
       )}
