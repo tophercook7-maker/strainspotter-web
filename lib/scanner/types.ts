@@ -17,6 +17,12 @@ export type ScannerResult = {
   effects: string[];
   bestTime: string;
 
+  closestCultivarMatch?: {
+    name: string;
+    confidence: number;
+    source?: string;
+  } | null;
+
   // Reserved for future premium layers
   genetics?: {
     thc?: number;
