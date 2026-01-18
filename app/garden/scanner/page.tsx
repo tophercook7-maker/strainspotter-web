@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { buildWikiResult } from "@/lib/scanner/wikiEngine";
-import type { WikiResult } from "@/lib/scanner/types";
+import { analyzeWithWiki } from "@/lib/scanner/wikiEngine";
+import { adaptWikiToScannerView } from "@/lib/scanner/adapter";
+import type { ScannerViewModel } from "@/lib/scanner/adapter";
 
 /**
  * IMPORTANT:
@@ -20,7 +21,8 @@ const revealOut =
 export default function ScannerPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [result, setResult] = useState<WikiResult | null>(null);
+  const [result, setResult] = useState<ScannerViewModel | null>(null);
+  const [loading, setLoading] = useState(false);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -30,13 +32,21 @@ export default function ScannerPage() {
     setResult(null);
   }
 
-  function runScan() {
-    if (!selectedFile) return;
+  async function runScan(file?: File) {
+    setLoading(true);
 
-    // Generate deterministic hash from file for wiki engine
-    const imageHash = `${selectedFile.name}-${selectedFile.size}-${selectedFile.lastModified}`;
-    const wikiResult = buildWikiResult({ imageHash });
-    setResult(wikiResult);
+    try {
+      const wikiResult = await analyzeWithWiki({
+        image: file ?? selectedFile ?? null,
+      });
+
+      const adapted = adaptWikiToScannerView(wikiResult);
+      setResult(adapted);
+    } catch (e) {
+      console.error("Scan failed", e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -73,56 +83,29 @@ export default function ScannerPage() {
       />
 
       <button
-        onClick={runScan}
-        className="w-full mt-4 py-3 rounded-full bg-white text-black font-medium tracking-wide hover:bg-white/90 active:scale-[0.98] transition"
+        onClick={() => runScan()}
+        disabled={!selectedFile || loading}
+        className="w-full mt-4 py-3 rounded-full bg-white text-black font-medium tracking-wide hover:bg-white/90 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        Run Scan
+        {loading ? "Scanning..." : "Run Scan"}
       </button>
 
       {/* LAYER 3 — WIKI UI */}
       {result && (
-        <section className="space-y-8 mt-6 max-w-2xl mx-auto">
+        <div className="mt-6 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 text-white space-y-4">
+          <h2 className="text-2xl font-bold">{result.title}</h2>
+          <p className="text-white/70">{result.summary}</p>
 
-          <header>
-            <h2 className="text-4xl font-semibold">{result.identity.strainName}</h2>
-            <p className="text-white/60 text-sm">
-              Confidence · {result.identity.confidence}%
-            </p>
-          </header>
-
-          <div>
-            <h3 className="text-xs uppercase tracking-widest text-white/50">Genetics</h3>
-            <p>{result.genetics.dominance}</p>
-            <p className="text-white/60">{result.genetics.lineage.join(" × ")}</p>
-            <p className="text-sm mt-2">{result.genetics.breederNotes}</p>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div><strong>Dominance:</strong> {result.highlights.dominance}</div>
+            <div><strong>Confidence:</strong> {Math.round(result.confidence * 100)}%</div>
+            <div><strong>Aromas:</strong> {result.highlights.aromas.join(", ") || "—"}</div>
+            <div><strong>Effects:</strong> {result.highlights.effects.join(", ")}</div>
+            <div className="col-span-2">
+              <strong>Best For:</strong> {result.highlights.bestFor.join(", ")}
+            </div>
           </div>
-
-          <div>
-            <h3 className="text-xs uppercase tracking-widest text-white/50">Morphology</h3>
-            <p>{result.morphology.budStructure}</p>
-            <p className="text-white/60">{result.morphology.trichomes}</p>
-          </div>
-
-          <div>
-            <h3 className="text-xs uppercase tracking-widest text-white/50">Chemistry</h3>
-            <ul className="text-sm space-y-1">
-              {result.chemistry.terpenes.map((t) => (
-                <li key={t.name}>
-                  {t.name} · {(t.confidence * 100).toFixed(0)}%
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs uppercase tracking-widest text-white/50">Experience</h3>
-            <p>{result.experience.effects.join(", ")}</p>
-            <p className="text-white/60">
-              Best use · {result.experience.bestUse.join(", ")}
-            </p>
-          </div>
-
-        </section>
+        </div>
       )}
       </div>
     </section>

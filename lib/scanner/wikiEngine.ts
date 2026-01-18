@@ -3,6 +3,17 @@
 
 import type { WikiResult } from "./types";
 
+export async function analyzeWithWiki(input: {
+  image: File | null;
+}): Promise<WikiResult> {
+  // Generate deterministic hash from file metadata
+  const imageHash = input.image
+    ? `${input.image.name}-${input.image.size}-${input.image.lastModified}`
+    : `default-${Date.now()}`;
+
+  return buildWikiResult({ imageHash });
+}
+
 export function buildWikiResult(input: {
   imageHash: string
 }): WikiResult {
