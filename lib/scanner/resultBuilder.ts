@@ -9,19 +9,22 @@ export function buildScannerResult(raw: any): ScannerResult {
     strainName: raw?.strainName ?? "Unknown Strain",
     confidence: typeof raw?.confidence === "number" ? raw.confidence : 0,
 
+    closestCultivarMatch: {
+      name: raw?.strainName ?? "Unknown Strain",
+      confidence: typeof raw?.confidence === "number" ? raw.confidence : 0,
+    },
+
     inferredGenetics: {
       dominance: raw?.lineage?.dominance ?? "Unknown",
       parents: raw?.lineage?.parents ?? ["Unknown", "Unknown"],
       lineageFamilies: raw?.lineage?.families ?? [],
     },
 
-    aromas: Array.isArray(raw?.aromas) ? raw.aromas : [],
-    effects: Array.isArray(raw?.effects) ? raw.effects : [],
-    bestTime: raw?.bestTime ?? "Unknown",
-
-    // Reserved for future expansion
-    genetics: raw?.genetics ?? null,
-    labData: raw?.labData ?? null,
-    notes: raw?.notes ?? "",
+    userFacingHighlights: {
+      aromaProfile: Array.isArray(raw?.aromas) ? raw.aromas : [],
+      effects: Array.isArray(raw?.effects) ? raw.effects : [],
+      bestFor: Array.isArray(raw?.bestFor) ? raw.bestFor : [],
+      bestUseTime: raw?.bestTime ?? "Unknown",
+    },
   };
 }

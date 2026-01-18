@@ -4,40 +4,37 @@
  * Expand only by adding OPTIONAL fields.
  */
 
-export type ScannerResult = {
-  strainName?: string;
-
+export interface ScannerResult {
+  strainName: string;
   confidence: number;
 
-  closestCultivarMatch?: {
+  closestCultivarMatch: {
     name: string;
-    confidence?: number;
-  } | null;
+    confidence: number;
+  };
 
-  inferredGenetics?: {
+  inferredGenetics: {
     dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
     parents?: string[];
     lineageFamilies?: string[];
-  } | null;
+  };
 
-  userFacingHighlights?: {
+  userFacingHighlights: {
     aromaProfile?: string[];
     effects?: string[];
     bestFor?: string[];
     bestUseTime?: string;
-  } | null;
+  };
 
   terpeneProfile?: {
-    primary: string[];
-    secondary?: string[];
-    notes?: string;
-  } | null;
+    name: string;
+    intensity: number;
+    description?: string;
+  }[];
 
   cannabinoidProfile?: {
-    thc?: number;   // percentage
-    cbd?: number;   // percentage
-    cbg?: number;
-    cbn?: number;
-    notes?: string;
-  } | null;
-};
+    name: string;
+    percentage?: number;
+    effect?: string;
+  }[];
+}
