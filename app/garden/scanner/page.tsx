@@ -39,7 +39,11 @@ export default function ScannerPage() {
   const insights = result ? buildScannerInsights(result) : [];
 
   return (
-    <div className="min-h-screen w-full px-6 py-10 text-white">
+    <>
+      <div className="fixed top-4 left-4 z-[9999] bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold">
+        SCANNER DEBUG — BUILD CHECK
+      </div>
+      <div className="min-h-screen w-full px-6 py-10 text-white">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Scanner</h1>
 
@@ -146,5 +150,6 @@ export default function ScannerPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
