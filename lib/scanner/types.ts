@@ -26,6 +26,7 @@ export type ScannerResult = {
   inferredGenetics?: {
     dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
     parents?: string[];
+    lineageFamilies?: string[];
     confidence?: number;
   } | null;
 
