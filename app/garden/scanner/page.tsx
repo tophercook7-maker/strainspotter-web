@@ -27,39 +27,39 @@ export default function ScannerPage() {
   }
 
   return (
-    <section className="w-full max-w-5xl mx-auto px-4 py-8 text-white">
-      <h1 className="text-3xl font-bold mb-4">Scanner</h1>
+    <section className="relative z-20 mx-auto w-full max-w-5xl px-4 py-8">
+      <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
+        {/* SCANNER CONTENT GOES BELOW */}
+        <h1 className="text-3xl font-bold mb-4">Scanner</h1>
 
       {/* Image Preview */}
       {imageUrl && (
-        <div className="relative w-full max-h-[35vh] overflow-hidden rounded-xl border border-white/20 mb-4">
+        <div className="relative mb-4 h-[280px] w-full overflow-hidden rounded-2xl border border-white/30 bg-black">
           <Image
             src={imageUrl}
-            alt="Scan preview"
+            alt="Uploaded cannabis sample"
             fill
             className="object-contain"
+            sizes="(max-width: 768px) 100vw, 800px"
             priority
           />
         </div>
       )}
 
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="block w-full text-sm"
-        />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="block w-full text-sm mb-4"
+      />
 
-        <button
-          onClick={runScan}
-          disabled={!imageUrl}
-          className="rounded-xl bg-green-600 px-6 py-2 font-semibold disabled:opacity-40"
-        >
-          Run Scan
-        </button>
-      </div>
+      <button
+        onClick={runScan}
+        className="mb-4 w-full rounded-xl bg-white px-4 py-2 font-semibold text-black transition hover:bg-white/90"
+      >
+        Run Scan
+      </button>
 
       {/* Results */}
       {result && (
@@ -105,6 +105,7 @@ export default function ScannerPage() {
           </p>
         </div>
       )}
+      </div>
     </section>
   );
 }
