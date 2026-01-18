@@ -7,7 +7,7 @@ import { buildScannerInsights } from "@/lib/scanner/insights";
 
 export default function ScannerPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [result, setResult] = useState<ScannerResult | null>(null);
+  const [result, setResult] = useState<any>(null);
 
   // Cleanup object URL on unmount or previewUrl change
   useEffect(() => {
@@ -65,25 +65,60 @@ export default function ScannerPage() {
           />
         </label>
 
-        <button
-          type="button"
-          onClick={() => {
-            setResult(mockResult);
-          }}
-          className="mt-6 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 transition text-white font-semibold"
-        >
-          Scan
-        </button>
-
         {previewUrl && (
           <div className="w-full flex justify-center mt-6">
-            <div className="w-44 h-44 rounded-xl overflow-hidden border border-white/20 bg-white/5">
+            <div className="w-40 h-40 rounded-xl overflow-hidden border border-white/20 bg-black/40">
               <img
                 src={previewUrl}
                 alt="Scan preview"
                 className="w-full h-full object-contain"
               />
             </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => {
+            setResult({
+              strainName: "Unknown Cultivar",
+              confidence: 81,
+              inferredGenetics: {
+                dominance: "Indica",
+                parents: ["Unknown", "Unknown"],
+              },
+              closestCultivarMatch: {
+                name: "Analysis Unavailable",
+                similarity: 0,
+              },
+              userFacingHighlights: {
+                aromaProfile: ["Earthy", "Sweet"],
+                effects: ["Relaxing", "Calming"],
+                bestFor: ["Evening"],
+              },
+            });
+          }}
+          className="mt-6 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 transition text-white font-semibold"
+        >
+          Scan
+        </button>
+
+        {result && (
+          <div className="mt-8 max-w-md mx-auto rounded-2xl bg-black/60 backdrop-blur-xl border border-white/20 p-6 text-white">
+            <h2 className="text-xl font-bold mb-2">{result.strainName}</h2>
+            <p className="text-sm opacity-80 mb-4">
+              Confidence: {result.confidence}%
+            </p>
+
+            {result.userFacingHighlights?.aromaProfile && (
+              <p><strong>Aroma:</strong> {result.userFacingHighlights.aromaProfile.join(", ")}</p>
+            )}
+            {result.userFacingHighlights?.effects && (
+              <p><strong>Effects:</strong> {result.userFacingHighlights.effects.join(", ")}</p>
+            )}
+            {result.userFacingHighlights?.bestFor && (
+              <p><strong>Best for:</strong> {result.userFacingHighlights.bestFor.join(", ")}</p>
+            )}
           </div>
         )}
 
