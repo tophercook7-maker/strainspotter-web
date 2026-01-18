@@ -38,12 +38,12 @@ export default function ScannerPage() {
 
   const insights = result ? buildScannerInsights(result) : [];
 
+  const runScan = () => {
+    setResult(mockResult);
+  };
+
   return (
-    <>
-      <div className="fixed top-4 left-4 z-[9999] bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold">
-        SCANNER DEBUG — BUILD CHECK
-      </div>
-      <div className="relative mx-auto mt-16 max-w-4xl rounded-3xl bg-black/70 backdrop-blur-xl border border-white/20 p-6 text-white">
+    <div className="relative mx-auto mt-20 max-w-4xl rounded-3xl bg-black/70 backdrop-blur-xl border border-white/20 p-8 text-white">
         <h1 className="text-3xl font-bold mb-6">Scanner</h1>
 
         <label className="cursor-pointer rounded-xl bg-white/10 border border-white/20 px-6 py-3 font-semibold backdrop-blur-lg hover:bg-white/15 transition text-center block mb-8">
@@ -68,19 +68,21 @@ export default function ScannerPage() {
           />
         </label>
 
-        {previewUrl && (
-          <div className="mt-4 w-full h-64 rounded-xl overflow-hidden bg-black/40 flex items-center justify-center">
+        <div className="w-full h-56 rounded-xl overflow-hidden bg-black/40 flex items-center justify-center mb-6">
+          {previewUrl ? (
             <img
               src={previewUrl}
               alt="Scan preview"
               className="max-h-full max-w-full object-contain"
             />
-          </div>
-        )}
+          ) : (
+            <span className="text-white/60 text-sm">No image selected</span>
+          )}
+        </div>
 
         <button
-          onClick={() => setResult(mockResult)}
-          className="mt-4 w-full rounded-xl bg-green-600 hover:bg-green-500 transition px-6 py-3 font-bold text-black"
+          onClick={runScan}
+          className="w-full rounded-xl bg-green-600 hover:bg-green-500 active:scale-[0.98] transition-all py-3 text-lg font-semibold text-black mb-6"
         >
           Run Scan
         </button>
@@ -114,7 +116,6 @@ export default function ScannerPage() {
             ))}
           </div>
         )}
-      </div>
-    </>
-  );
+  </div>
+);
 }
