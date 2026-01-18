@@ -1,30 +1,33 @@
-import type { ScannerResult } from "./types";
+// lib/scanner/resultBuilder.ts
+import { ScannerResult } from "./types";
 
-/**
- * Normalizes raw scanner inference into a stable result shape.
- * This is intentionally conservative and future-proof.
- */
 export function buildScannerResult(raw: any): ScannerResult {
   return {
     strainName: raw?.strainName ?? "Unknown Strain",
     confidence: typeof raw?.confidence === "number" ? raw.confidence : 0,
 
-    closestCultivarMatch: {
-      name: raw?.strainName ?? "Unknown Strain",
-      confidence: typeof raw?.confidence === "number" ? raw.confidence : 0,
-    },
+    closestCultivarMatch: raw?.closestCultivarMatch
+      ? {
+          name: raw.closestCultivarMatch.name,
+          similarity: raw.closestCultivarMatch.similarity ?? 0,
+        }
+      : undefined,
 
     inferredGenetics: {
-      dominance: raw?.lineage?.dominance ?? "Unknown",
-      parents: raw?.lineage?.parents ?? ["Unknown", "Unknown"],
-      lineageFamilies: raw?.lineage?.families ?? [],
+      dominance: raw?.inferredGenetics?.dominance ?? "Unknown",
+      parents: raw?.inferredGenetics?.parents,
+      confidence: raw?.inferredGenetics?.confidence,
     },
 
-    userFacingHighlights: {
-      aromaProfile: Array.isArray(raw?.aromas) ? raw.aromas : [],
-      effects: Array.isArray(raw?.effects) ? raw.effects : [],
-      bestFor: Array.isArray(raw?.bestFor) ? raw.bestFor : [],
-      bestUseTime: raw?.bestTime ?? "Unknown",
-    },
+    userFacingHighlights: raw?.userFacingHighlights
+      ? {
+          aromaProfile: raw.userFacingHighlights.aromaProfile,
+          effects: raw.userFacingHighlights.effects,
+          bestFor: raw.userFacingHighlights.bestFor,
+          bestTime: raw.userFacingHighlights.bestTime,
+        }
+      : undefined,
+
+    scienceLayer: raw?.scienceLayer,
   };
 }

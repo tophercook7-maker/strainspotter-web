@@ -1,40 +1,49 @@
-/**
- * Canonical Scanner Result type.
- * This is the single source of truth for scanner outputs.
- * Expand only by adding OPTIONAL fields.
- */
+// lib/scanner/types.ts
+
+export type Dominance =
+  | "Indica"
+  | "Sativa"
+  | "Hybrid"
+  | "Unknown";
+
+export interface ClosestCultivarMatch {
+  name: string;
+  similarity: number; // 0–100
+}
+
+export interface InferredGenetics {
+  dominance: Dominance;
+  parents?: string[];
+  confidence?: number; // 0–100
+}
+
+export interface UserFacingHighlights {
+  aromaProfile?: string[];
+  effects?: string[];
+  bestFor?: string[];
+  bestTime?: string;
+}
+
+export interface ScienceLayer {
+  terpenes?: {
+    name: string;
+    percentage?: number;
+  }[];
+  cannabinoids?: {
+    name: string;
+    percentage?: number;
+  }[];
+}
 
 export interface ScannerResult {
   strainName: string;
-  confidence: number;
+  confidence: number; // overall confidence 0–100
 
-  closestCultivarMatch: {
-    name: string;
-    confidence: number;
-  };
+  closestCultivarMatch?: ClosestCultivarMatch;
 
-  inferredGenetics: {
-    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
-    parents?: string[];
-    lineageFamilies?: string[];
-  };
+  inferredGenetics: InferredGenetics;
 
-  userFacingHighlights: {
-    aromaProfile?: string[];
-    effects?: string[];
-    bestFor?: string[];
-    bestUseTime?: string;
-  };
+  userFacingHighlights?: UserFacingHighlights;
 
-  terpeneProfile?: {
-    name: string;
-    intensity: number;
-    description?: string;
-  }[];
-
-  cannabinoidProfile?: {
-    name: string;
-    percentage?: number;
-    effect?: string;
-  }[];
+  scienceLayer?: ScienceLayer;
 }
