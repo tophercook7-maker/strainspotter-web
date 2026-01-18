@@ -18,3 +18,47 @@ export interface ScannerResult {
 
   disclaimer: string
 }
+
+// WIKI RESULT CONTRACT (Layer 2+)
+export interface WikiResult {
+  identity: {
+    strainName: string
+    confidence: number
+  }
+
+  genetics: {
+    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown"
+    lineage: string[]
+    breederNotes: string
+  }
+
+  morphology: {
+    budStructure: string
+    coloration: string
+    trichomes: string
+  }
+
+  chemistry: {
+    terpenes: Array<{ name: string; confidence: number }>
+    cannabinoids: {
+      THC: string
+      CBD: string
+    }
+  }
+
+  experience: {
+    effects: string[]
+    onset: string
+    duration: string
+    bestUse: string[]
+  }
+
+  cultivation: {
+    difficulty: string
+    floweringTime: string
+    yield: string
+    notes: string
+  }
+
+  disclaimer: string
+}
