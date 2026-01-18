@@ -17,6 +17,12 @@ export type ScannerResult = {
   effects: string[];
   bestTime: string;
 
+  userFacingHighlights?: {
+    aromaProfile?: string[];
+    effects?: string[];
+    bestFor?: string[];
+  } | null;
+
   closestCultivarMatch?: {
     name: string;
     confidence: number;
