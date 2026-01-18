@@ -5,6 +5,8 @@
  */
 
 export type ScannerResult = {
+  strainName?: string;
+
   confidence: number;
 
   closestCultivarMatch?: {
