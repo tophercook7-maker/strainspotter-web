@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { buildWikiResult } from "@/lib/scanner/wikiEngine";
 import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
+import { synthesizeWikiInsights } from "@/lib/scanner/wikiSynthesis";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
+import type { WikiSynthesis } from "@/lib/scanner/types";
+import WikiPanel from "./WikiPanel";
 import TopNav from "../_components/TopNav";
 
 /**
@@ -21,6 +24,8 @@ export default function ScannerPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
+  const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
+  const [imageSeed, setImageSeed] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -29,6 +34,8 @@ export default function ScannerPage() {
     setImageUrl(URL.createObjectURL(file));
     setImageFile(file);
     setResult(null);
+    setSynthesis(null);
+    setImageSeed(null);
   }
 
   async function runScan() {
@@ -39,14 +46,21 @@ export default function ScannerPage() {
 
     try {
       const seed = file.name + file.size + file.lastModified;
+      setImageSeed(seed);
 
+      // 🔒 B.2.4 — Call wiki engine, adapter, then synthesis
       const wiki = buildWikiResult({
         imageSeed: seed,
       });
 
       const viewModel = wikiToViewModel(wiki);
+      const wikiSynthesis = synthesizeWikiInsights(wiki);
       
       setResult(viewModel);
+      setSynthesis(wikiSynthesis);
+      
+      // B.2.5 — Log synthesis for verification (no UI consumption yet)
+      console.log("Wiki Synthesis:", wikiSynthesis);
     } catch (e) {
       console.error("Scan failed", e);
     } finally {
@@ -68,7 +82,7 @@ export default function ScannerPage() {
           <img
             src={imageUrl}
             alt="Scan preview"
-            className="max-h-56 w-auto object-contain rounded-xl border border-white/20"
+            className="max-h-48 w-auto object-contain rounded-xl border border-white/20"
           />
         </div>
       )}
@@ -111,6 +125,25 @@ export default function ScannerPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* 🔒 C.1 — WikiPanel (read-only, collapsible) */}
+      {synthesis && <WikiPanel synthesis={synthesis} />}
+
+      {/* Variance note */}
+      {result && (
+        <p className="mt-4 text-xs text-white/40 text-center italic">
+          Results may differ with lighting, angle, and maturity.
+        </p>
+      )}
+
+      {/* Debug: Image seed/hash (subtle) */}
+      {imageSeed && (
+        <div className="mt-2 text-right">
+          <code className="text-xs text-white/20 font-mono">
+            {imageSeed.slice(0, 20)}...
+          </code>
         </div>
       )}
         </div>
