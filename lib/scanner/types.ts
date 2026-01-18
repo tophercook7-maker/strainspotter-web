@@ -21,6 +21,7 @@ export type ScannerResult = {
     aromaProfile?: string[];
     effects?: string[];
     bestFor?: string[];
+    bestUseTime?: string;
   } | null;
 
   closestCultivarMatch?: {
