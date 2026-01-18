@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import TopNav from "@/components/TopNav";
 import GardenIcon from './_components/GardenIcon'
 
 const gardenItems = [
@@ -19,7 +20,10 @@ export default function GardenPage() {
   const router = useRouter()
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-start pt-24 text-white">
+    <>
+      <TopNav showBack={false} showHome={false} />
+      <div className="pt-16">
+        <section className="relative min-h-screen flex flex-col items-center justify-start pt-24 text-white">
 
       {/* Brand */}
       <div className="flex flex-col items-center mb-14">
@@ -53,5 +57,7 @@ export default function GardenPage() {
       </div>
 
     </section>
+      </div>
+    </>
   )
 }

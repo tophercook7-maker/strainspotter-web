@@ -4,6 +4,7 @@ import { useState } from "react";
 import { buildWikiResult } from "@/lib/scanner/wikiEngine";
 import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
+import TopNav from "@/components/TopNav";
 
 /**
  * 🔒 A.2 — runScan uses ViewModel ONLY (UI NEVER TOUCHES WIKI DIRECTLY)
@@ -54,10 +55,13 @@ export default function ScannerPage() {
   }
 
   return (
-    <section className="relative z-20 mx-auto w-full max-w-5xl px-4 py-8">
-      <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
-        {/* SCANNER CONTENT GOES BELOW */}
-        <h1 className="text-3xl font-bold mb-4">Scanner</h1>
+    <>
+      <TopNav showBack showHome />
+      <div className="pt-16">
+        <section className="relative z-20 mx-auto w-full max-w-5xl px-4 py-8">
+        <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
+          {/* SCANNER CONTENT GOES BELOW */}
+          <h1 className="text-3xl font-bold mb-4">Scanner</h1>
 
       {/* Image Preview */}
       {imageUrl && (
@@ -110,7 +114,9 @@ export default function ScannerPage() {
           </div>
         </div>
       )}
+        </div>
+      </section>
       </div>
-    </section>
+    </>
   );
 }

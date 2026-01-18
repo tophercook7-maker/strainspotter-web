@@ -1,5 +1,13 @@
+import TopNav from "@/components/TopNav";
 import ComingSoon from "../_components/ComingSoon";
 
 export default function Page() {
-  return <ComingSoon title="History" />;
+  return (
+    <>
+      <TopNav showBack showHome />
+      <div className="pt-16">
+        <ComingSoon title="History" />
+      </div>
+    </>
+  );
 }
