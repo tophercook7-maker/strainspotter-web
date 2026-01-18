@@ -45,14 +45,7 @@ export default function ScannerPage() {
           <img
             src={imageUrl}
             alt="Scan preview"
-            className="
-              max-h-64
-              max-w-full
-              object-contain
-              rounded-xl
-              border
-              border-white/20
-            "
+            className="max-h-[220px] max-w-[220px] rounded-xl object-contain border border-white/20"
           />
         </div>
       )}
@@ -74,65 +67,51 @@ export default function ScannerPage() {
 
       {/* SCAN RESULT */}
       {result && (
-        <section className="mt-6 max-w-2xl mx-auto rounded-3xl bg-black/70 backdrop-blur-xl border border-white/20 p-6 text-white shadow-2xl">
-          {/* content injected below */}
-          {/* RESULT SURFACE */}
-          <div
-            className={`mt-6 space-y-6 ${revealBase} ${
-              result ? revealIn : revealOut
-            }`}
-          >
+        <div className="mt-6 space-y-4 text-white">
 
-            {/* PRIMARY ANCHOR */}
-            <div className="mt-6">
-              <h1 className="text-3xl font-bold tracking-tight">
-                {result.strainName}
-              </h1>
-              <p className="text-sm text-white/70 mt-1">
-                Confidence: {result.confidence}%
-              </p>
-            </div>
-
-            {/* CORE INSIGHTS */}
-            <div className="mt-6 grid gap-4">
-
-              <div className="rounded-xl bg-white/10 p-4">
-                <h3 className="text-xs uppercase tracking-wide text-white/60">
-                  Genetics
-                </h3>
-                <p className="mt-1">
-                  {result.genetics.dominance}
-                </p>
-                {result.genetics.parents && (
-                  <p className="text-sm text-white/70">
-                    {result.genetics.parents.join(" × ")}
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-xl bg-white/10 p-4">
-                <h3 className="text-xs uppercase tracking-wide text-white/60">
-                  Experience
-                </h3>
-                {result.highlights.effects && (
-                  <p>{result.highlights.effects.join(", ")}</p>
-                )}
-                {result.highlights.bestFor && (
-                  <p className="text-sm text-white/70">
-                    Best for: {result.highlights.bestFor.join(", ")}
-                  </p>
-                )}
-              </div>
-
-            </div>
-
-            {/* DEPTH / DISCLAIMER */}
-            <p className="mt-6 text-xs text-white/50">
-              Results are AI-assisted estimates and not a substitute for lab testing.
+          <div className="border-b border-white/20 pb-2">
+            <h2 className="text-2xl font-bold">{result.strainName}</h2>
+            <p className="text-sm text-white/70">
+              Confidence: {result.confidence}%
             </p>
-
           </div>
-        </section>
+
+          <div>
+            <h3 className="text-sm font-semibold tracking-wide text-white/80">
+              GENETICS
+            </h3>
+            <p className="text-sm">
+              {result.genetics.dominance}
+            </p>
+            <p className="text-sm text-white/70">
+              {result.genetics.lineage.join(" × ")}
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold tracking-wide text-white/80">
+              EXPERIENCE
+            </h3>
+            <p className="text-sm">
+              Effects: {result.experience.effects.join(", ")}
+            </p>
+            <p className="text-sm text-white/70">
+              Best for: {result.experience.bestFor.join(", ")}
+            </p>
+            {result.experience.bestTime && (
+              <p className="text-sm text-white/70">
+                Best time: {result.experience.bestTime}
+              </p>
+            )}
+          </div>
+
+          <div className="pt-3 border-t border-white/20">
+            <p className="text-xs text-white/50">
+              {result.disclaimer}
+            </p>
+          </div>
+
+        </div>
       )}
       </div>
     </section>

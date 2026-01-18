@@ -1,22 +1,20 @@
+// FINAL S1 SCANNER RESULT CONTRACT (LOCKED)
 // lib/scanner/types.ts
 
-export type GeneticDominance = "Indica" | "Sativa" | "Hybrid" | "Unknown";
-
 export interface ScannerResult {
-  strainName: string;
-  confidence: number; // 0–100
+  strainName: string
+  confidence: number
 
   genetics: {
-    dominance: GeneticDominance;
-    parents?: string[];
-  };
+    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown"
+    lineage: string[]
+  }
 
-  highlights: {
-    aroma?: string[];
-    effects?: string[];
-    bestFor?: string[];
-    bestTime?: string;
-  };
+  experience: {
+    effects: string[]
+    bestFor: string[]
+    bestTime?: string
+  }
 
-  disclaimer: string;
+  disclaimer: string
 }

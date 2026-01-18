@@ -7,11 +7,10 @@ export const MOCK_SCANNER_RESULT: ScannerResult = {
 
   genetics: {
     dominance: "Indica",
-    parents: ["Afghani", "Thai"],
+    lineage: ["Afghani", "Thai"],
   },
 
-  highlights: {
-    aroma: ["Earthy", "Sweet"],
+  experience: {
     effects: ["Relaxing", "Body-heavy"],
     bestFor: ["Stress relief", "Evening use"],
     bestTime: "Night",
