@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { wikiToScannerViewModel } from "@/lib/scanner/wikiAdapter";
+import { buildInsights } from "@/lib/scanner/insightEngine";
 import { runWikiEngine } from "@/lib/scanner/wikiEngine";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 
@@ -37,7 +37,16 @@ export default function ScannerPage() {
 
     try {
       const wikiResult = await runWikiEngine(imageFile);
-      const viewModel = wikiToScannerViewModel(wikiResult);
+      const confidence = wikiResult.identity.confidence;
+      const insights = buildInsights(wikiResult, confidence);
+      
+      const viewModel: ScannerViewModel = {
+        title: wikiResult.identity.strainName ?? "Unknown",
+        confidence,
+        insights,
+        wiki: wikiResult,
+      };
+      
       setResult(viewModel);
     } catch (e) {
       console.error("Scan failed", e);
@@ -90,20 +99,17 @@ export default function ScannerPage() {
       {/* LAYER 3 — WIKI UI */}
       {result && (
         <div className="mt-6 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 text-white space-y-4">
-          <h2 className="text-2xl font-bold">{result.strainName}</h2>
-          <p className="text-white/70">{result.summary}</p>
+          <h2 className="text-2xl font-bold">{result.title}</h2>
+          <p className="text-white/70">{result.insights.summary}</p>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><strong>Dominance:</strong> {result.dominance}</div>
-            <div><strong>Confidence:</strong> {result.confidencePct}%</div>
-            <div><strong>Aromas:</strong> {result.aromas.join(", ") || "—"}</div>
-            <div><strong>Effects:</strong> {result.effects.join(", ")}</div>
-            <div className="col-span-2">
-              <strong>Best For:</strong> {result.bestFor.join(", ")}
-            </div>
-            {result.genetics.length > 0 && (
+            <div><strong>Dominance:</strong> {result.wiki.genetics.dominance}</div>
+            <div><strong>Confidence:</strong> {result.confidence}%</div>
+            <div><strong>Effects:</strong> {result.wiki.experience.effects.join(", ")}</div>
+            <div><strong>Best For:</strong> {result.wiki.experience.bestUse.join(", ")}</div>
+            {result.wiki.genetics.lineage.length > 0 && (
               <div className="col-span-2">
-                <strong>Genetics:</strong> {result.genetics.join(" × ")}
+                <strong>Genetics:</strong> {result.wiki.genetics.lineage.join(" × ")}
               </div>
             )}
           </div>

@@ -10,21 +10,21 @@ interface ResultPanelProps {
 export default function ResultPanel({ result }: ResultPanelProps) {
   return (
     <>
-      <h2 className="text-xl font-semibold">{result.strainName}</h2>
+      <h2 className="text-xl font-semibold">{result.title}</h2>
       <p className="text-sm opacity-80">
-        Confidence: {result.confidencePct}%
+        Confidence: {result.confidence}%
       </p>
 
       <section>
         <h3>Genetics</h3>
-        <p>{result.dominance}</p>
-        <p>{result.genetics.join(" × ")}</p>
+        <p>{result.wiki.genetics.dominance}</p>
+        <p>{result.wiki.genetics.lineage.join(" × ")}</p>
       </section>
 
       <section>
         <h3>Experience</h3>
-        <p>Effects: {result.effects.join(", ")}</p>
-        <p>Best for: {result.bestFor.join(", ")}</p>
+        <p>Effects: {result.wiki.experience.effects.join(", ")}</p>
+        <p>Best for: {result.wiki.experience.bestUse.join(", ")}</p>
       </section>
 
       <p className="text-xs opacity-60 mt-4">

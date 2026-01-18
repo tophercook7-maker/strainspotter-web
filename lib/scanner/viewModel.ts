@@ -2,13 +2,12 @@
 // 🔒 A.2 — LOCK ScannerViewModel
 // Single source of truth for UI-facing scan data
 
+import type { WikiResult } from "./types";
+import type { InsightResult } from "./insightEngine";
+
 export interface ScannerViewModel {
-  strainName: string;
-  confidencePct: number; // 0–100, normalized ONCE
-  dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
-  genetics: string[];
-  aromas: string[];
-  effects: string[];
-  bestFor: string[];
-  summary: string;
+  title: string;
+  confidence: number; // 0–100
+  insights: InsightResult;
+  wiki: WikiResult;
 }
