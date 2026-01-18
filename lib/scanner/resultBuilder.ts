@@ -9,9 +9,10 @@ export function buildScannerResult(raw: any): ScannerResult {
     strainName: raw?.strainName ?? "Unknown Strain",
     confidence: typeof raw?.confidence === "number" ? raw.confidence : 0,
 
-    lineage: {
-      parents: raw?.lineage?.parents ?? ["Unknown", "Unknown"],
+    inferredGenetics: {
       dominance: raw?.lineage?.dominance ?? "Unknown",
+      parents: raw?.lineage?.parents ?? ["Unknown", "Unknown"],
+      lineageFamilies: raw?.lineage?.families ?? [],
     },
 
     aromas: Array.isArray(raw?.aromas) ? raw.aromas : [],
