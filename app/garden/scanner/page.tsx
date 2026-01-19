@@ -4,8 +4,9 @@ import { useState } from "react";
 import { runWikiEngine } from "@/lib/scanner/wikiEngine";
 import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
 import { synthesizeWikiInsights } from "@/lib/scanner/wikiSynthesis";
+import { generateIdentificationReport } from "@/lib/scanner/identificationReport";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
-import type { WikiSynthesis } from "@/lib/scanner/types";
+import type { WikiSynthesis, IdentificationReport, ScanContext } from "@/lib/scanner/types";
 
 type ScanTier = "basic" | "pro" | "expert";
 import WikiPanel from "./WikiPanel";
@@ -21,6 +22,7 @@ export default function ScannerPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
+  const [identificationReport, setIdentificationReport] = useState<IdentificationReport | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanTier] = useState<ScanTier>("basic");
 
@@ -46,6 +48,7 @@ export default function ScannerPage() {
     // Clear previous results when starting new scan
     setResult(null);
     setSynthesis(null);
+    setIdentificationReport(null);
 
     try {
       console.log("RUN SCAN CLICKED", file.name);
@@ -54,7 +57,26 @@ export default function ScannerPage() {
       const viewModel = wikiToViewModel(wiki);
       setResult(viewModel);
 
-      const wikiSynthesis = synthesizeWikiInsights(wiki);
+      // Generate context for identification report
+      const context: ScanContext = {
+        imageQuality: {
+          focus: "moderate",
+          noise: "moderate",
+          lighting: "good",
+        },
+        detectedFeatures: {},
+        uncertaintySignals: wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0
+          ? { conflictingTraits: wiki.reasoning.conflictingSignals }
+          : undefined,
+      };
+
+      // Generate strict IdentificationReport (primary output)
+      const report = generateIdentificationReport(wiki, context);
+      setIdentificationReport(report);
+      console.log("Identification Report:", report);
+
+      // Keep WikiSynthesis for backward compatibility
+      const wikiSynthesis = synthesizeWikiInsights(wiki, context);
       setSynthesis(wikiSynthesis);
     } finally {
       setIsScanning(false);

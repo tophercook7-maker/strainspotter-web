@@ -94,7 +94,54 @@ export interface WikiResult {
   disclaimer: string
 }
 
-// 🔒 B.2.2 — WikiSynthesis (AI synthesis layer - derived insights)
+// 🔒 Phase 2.1 RESET — IdentificationReport (strict structured identification)
+export interface IdentificationReport {
+  // PRIMARY OUTPUT: The cultivar name
+  primaryCultivar: {
+    name: string;
+    matchStrength: "Very Strong" | "Strong" | "Moderate";
+    confidenceRationale: string[]; // Why this name was chosen
+  };
+  
+  // Ranked alternates (from cultivarMatcher)
+  rankedAlternates: Array<{
+    name: string;
+    score: number; // Internal only, 0-70
+    reasons: string[];
+  }>;
+  
+  // Visual evidence supporting the identification
+  visualEvidence: {
+    budStructure: string;
+    trichomeDensity: string;
+    pistilColor: string;
+    coloration: string;
+    matchingTraits: string[]; // Which traits matched the primary cultivar
+  };
+  
+  // Clear limitations
+  limitations: {
+    uncertaintyFactors: string[];
+    whyExactIDIsHard: string;
+    disclaimer: string;
+  };
+  
+  // Additional structured data (optional, for future use)
+  genetics?: {
+    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
+    lineage: string[];
+  };
+  effects?: {
+    primary: string[];
+    secondary: string[];
+  };
+  terpenes?: {
+    likely: string[];
+    inferred: string[];
+  };
+}
+
+// 🔒 B.2.2 — WikiSynthesis (kept for backward compatibility, deprecated)
 export interface WikiSynthesis {
   summary: string[] // 2-3 paragraphs
   whyThisMatters: string[] // 2-3 paragraphs
