@@ -104,7 +104,7 @@ export interface WikiSynthesis {
   notablePatterns: string[] // Existing patterns (kept for backward compat)
   bestMatch: {
     name: string
-    confidenceLabel: "High" | "Moderate" | "Low"
-    explanation: string
+    matchStrength: "Very Strong" | "Strong" | "Moderate"
+    whyThisMatch: string[] // 3-5 bullets explaining why
   }
 }

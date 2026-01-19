@@ -25,19 +25,27 @@ export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-black/80 backdrop-blur-md rounded-2xl p-6 md:p-8 mt-6 mb-12">
+    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6">
       {/* BEST MATCH NAME - AT TOP */}
       {synthesis?.bestMatch && (
-        <div className="mb-8 pb-8">
-          <h1 className="text-3xl font-extrabold tracking-tight mb-1">
-            {synthesis.bestMatch.name}
-          </h1>
+        <div className="mb-6">
+          <p className="text-white/60 text-sm mb-2">
+            Closest Known Cultivar (reference): <span className="font-semibold text-white/80">{synthesis.bestMatch.name}</span>
+          </p>
           <p className="text-white/60 text-sm mb-4">
-            Closest known cultivar match
+            Match strength: <span className="font-semibold text-white/80">{synthesis.bestMatch.matchStrength}</span>
           </p>
-          <p className="text-base md:text-lg text-white/80">
-            {synthesis.bestMatch.explanation}
-          </p>
+          <div className="space-y-2">
+            <p className="text-white/70 text-sm font-medium mb-2">Why this match:</p>
+            <ul className="space-y-1.5">
+              {synthesis.bestMatch.whyThisMatch.map((reason, index) => (
+                <li key={index} className="text-sm text-white/80 flex items-start">
+                  <span className="text-white/50 mr-2">•</span>
+                  <span>{reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
@@ -52,22 +60,26 @@ export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
         {result.experience.summary}
       </p>
 
-      {/* 4. EFFECTS LIST */}
+      {/* 4. EFFECTS LIST - SHORTER (2-3 bullets max) */}
       {safeEffects.length > 0 && (
-        <div className="mb-6">
-          <ul className="space-y-2 text-base md:text-lg leading-relaxed text-white/90">
-            {safeEffects.slice(0, 5).map((effect, index) => (
-              <li key={index}>• {effect}</li>
+        <div className="mb-4">
+          <ul className="space-y-1.5">
+            {safeEffects.slice(0, 3).map((effect, index) => (
+              <li key={index} className="text-sm text-white/80">• {effect}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* 5. BEST USE */}
+      {/* 5. BEST USE - SHORTER (1-2 bullets) */}
       {safeBestFor.length > 0 && (
-        <p className="text-base md:text-lg leading-relaxed text-white/80 mb-6">
-          Best for: {safeBestFor[0]}
-        </p>
+        <div className="mb-4">
+          <ul className="space-y-1.5">
+            {safeBestFor.slice(0, 2).map((use, index) => (
+              <li key={index} className="text-sm text-white/80">• {use}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* TECHNICAL DETAILS - COLLAPSED */}

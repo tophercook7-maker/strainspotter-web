@@ -28,7 +28,7 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
   }, []);
 
   return (
-    <div className="w-full bg-black/50 backdrop-blur rounded-2xl p-6 shadow-xl overflow-hidden">
+    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 overflow-hidden">
       {/* Header - clickable to toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}

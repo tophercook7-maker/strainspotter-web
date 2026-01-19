@@ -196,33 +196,59 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
 
   // Generate bestMatch (name matching layer)
   const contradictionCount = safeConflictingSignals.length;
-  const hasLowConfidence = confidence < 65;
-  const hasManyContradictions = contradictionCount >= 2;
+  const confidenceDecimal = confidence / 100;
   
-  // Determine confidence label (NOT percentage)
-  let confidenceLabel: "High" | "Moderate" | "Low";
-  if (hasLowConfidence || hasManyContradictions) {
-    confidenceLabel = "Low";
-  } else if (confidence >= 80 && contradictionCount === 0) {
-    confidenceLabel = "High";
+  // Determine match strength (NOT percentage)
+  let matchStrength: "Very Strong" | "Strong" | "Moderate";
+  if (confidenceDecimal >= 0.88 && contradictionCount === 0) {
+    matchStrength = "Very Strong";
+  } else if (confidenceDecimal >= 0.78 && contradictionCount <= 1) {
+    matchStrength = "Strong";
   } else {
-    confidenceLabel = "Moderate";
+    matchStrength = "Moderate";
   }
 
   // Select best match name (lowest contradiction count approach)
-  // Use existing strainName from wiki, but apply fallback for Low confidence
-  let bestMatchName: string;
-  if (confidenceLabel === "Low") {
-    bestMatchName = "General Hybrid Profile";
-  } else {
-    // Use the primary strain name from wiki (already selected based on visual similarity)
-    bestMatchName = strainName;
-  }
+  // Use existing strainName from wiki (already selected based on visual similarity)
+  const bestMatchName = strainName;
 
-  // Generate explanation (one sentence max)
-  const explanation = confidenceLabel === "Low"
-    ? "Visual characteristics suggest a general hybrid profile rather than a specific cultivar match."
-    : `This plant most closely resembles known examples of ${bestMatchName} based on bud structure, leaf form, and observed effect patterns.`;
+  // Generate "why this match" bullets (3-5 bullets)
+  const whyThisMatch: string[] = [];
+  
+  // Bud structure match
+  if (wiki.morphology.budStructure) {
+    whyThisMatch.push(`Bud structure (${wiki.morphology.budStructure.toLowerCase()}) aligns with documented ${strainName} characteristics`);
+  }
+  
+  // Visual traits match
+  if (safeVisualTraits.length > 0) {
+    whyThisMatch.push(`Visual traits (${safeVisualTraits.slice(0, 2).join(", ")}) match typical ${strainName} morphology`);
+  }
+  
+  // Effects alignment
+  if (safePrimaryEffects.length > 0) {
+    whyThisMatch.push(`Expected effects (${safePrimaryEffects.slice(0, 2).join(", ")}) align with ${strainName} profile`);
+  }
+  
+  // Terpene profile
+  if (topThreeTerpenes.length > 0) {
+    whyThisMatch.push(`Terpene profile suggests ${topTerpene} dominance, consistent with ${strainName}`);
+  }
+  
+  // Genetic dominance
+  if (dominance !== "Unknown") {
+    whyThisMatch.push(`${dominance} dominance matches ${strainName} genetic profile`);
+  }
+  
+  // Ensure we have 3-5 bullets
+  const finalWhyThisMatch = whyThisMatch.slice(0, 5);
+  if (finalWhyThisMatch.length < 3) {
+    // Fallback bullets if we don't have enough
+    finalWhyThisMatch.push(`Coloration patterns align with ${strainName} characteristics`);
+    if (finalWhyThisMatch.length < 3) {
+      finalWhyThisMatch.push(`Growth indicators suggest ${strainName} phenotype`);
+    }
+  }
 
   return {
     summary,
@@ -233,8 +259,8 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
     notablePatterns,
     bestMatch: {
       name: bestMatchName,
-      confidenceLabel,
-      explanation,
+      matchStrength,
+      whyThisMatch: finalWhyThisMatch,
     },
   };
 }

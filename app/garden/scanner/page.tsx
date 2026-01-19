@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { runWikiEngine } from "@/lib/scanner/wikiEngine";
 import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
 import { synthesizeWikiInsights } from "@/lib/scanner/wikiSynthesis";
@@ -15,13 +15,6 @@ import TopNav from "../_components/TopNav";
 /**
  * 🔒 A.2 — runScan uses ViewModel ONLY (UI NEVER TOUCHES WIKI DIRECTLY)
  */
-
-const revealBase =
-  "transition-all duration-500 ease-out";
-const revealIn =
-  "opacity-100 translate-y-0";
-const revealOut =
-  "opacity-0 translate-y-3";
 
 export default function ScannerPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -50,69 +43,74 @@ export default function ScannerPage() {
     }
 
     setIsScanning(true);
+    // Clear previous results when starting new scan
+    setResult(null);
+    setSynthesis(null);
 
-    console.log("RUN SCAN CLICKED", file.name);
+    try {
+      console.log("RUN SCAN CLICKED", file.name);
 
-    const wiki = await runWikiEngine(file);
-    const viewModel = wikiToViewModel(wiki);
-    setResult(viewModel);
+      const wiki = await runWikiEngine(file);
+      const viewModel = wikiToViewModel(wiki);
+      setResult(viewModel);
 
-    const wikiSynthesis = synthesizeWikiInsights(wiki);
-    setSynthesis(wikiSynthesis);
-
-    setIsScanning(false);
+      const wikiSynthesis = synthesizeWikiInsights(wiki);
+      setSynthesis(wikiSynthesis);
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   return (
     <>
       <TopNav title="Scanner" showBack />
       
-      <main className="min-h-screen bg-black text-white flex justify-center px-4 py-10">
-        {/* background image stays behind everything */}
-        <div className="fixed inset-0 -z-10">
-          <div className="absolute inset-0 bg-black/60" />
-        </div>
-
-        {/* CONTENT */}
-        <div className="w-full max-w-3xl space-y-8">
-        {/* uploader + preview card */}
-        <div className="w-full max-w-md mx-auto bg-black/40 backdrop-blur rounded-xl p-4 space-y-4">
-          {/* FILE PICKER */}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-white/70"
-          />
-
-          {/* IMAGE PREVIEW */}
-          {previewUrl && (
-            <div className="flex justify-center">
-              <img
-                src={previewUrl}
-                alt="Scan preview"
-                className="max-h-72 w-auto rounded-xl border border-white/20 shadow-lg"
+      <main className="min-h-screen bg-black text-white">
+        <div className="mx-auto w-full max-w-3xl px-4 py-6 md:py-10">
+          <div className="space-y-4 md:space-y-6">
+            {/* A) Upload + Preview Card */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-4">
+              {/* FILE PICKER */}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-white/70"
               />
+
+              {/* IMAGE PREVIEW */}
+              {previewUrl && (
+                <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <img
+                    src={previewUrl}
+                    alt="Scan preview"
+                    className="w-full h-auto max-h-[420px] object-contain mx-auto"
+                  />
+                </div>
+              )}
             </div>
-          )}
 
-          {/* RUN SCAN BUTTON */}
-          <button
-            onClick={runScan}
-            disabled={isScanning}
-            className="w-full py-4 text-lg font-semibold rounded-xl
-                       bg-green-600 hover:bg-green-500 active:scale-[0.98]
-                       transition-all shadow-lg"
-          >
-            {isScanning ? "Scanning…" : "Run Scan"}
-          </button>
-        </div>
+            {/* B) Big Scan Button Card */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6">
+              <button
+                onClick={runScan}
+                disabled={isScanning}
+                className="w-full rounded-xl px-5 py-4 md:py-4 font-semibold bg-white text-black hover:bg-white/90 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ minHeight: '48px' }}
+              >
+                {isScanning ? "Scanning…" : "Run Scan"}
+              </button>
+              <p className="text-xs text-white/50 mt-3 text-center">
+                Tip: Use a close, well-lit photo of the bud or top cola.
+              </p>
+            </div>
 
-        {/* ResultPanel */}
-        {result && <ResultPanel result={result} synthesis={synthesis} />}
-
-        {/* WikiPanel */}
-        {synthesis && <WikiPanel synthesis={synthesis} />}
+            {/* C) Results Card(s) */}
+            <section className="space-y-4">
+              {result && <ResultPanel result={result} synthesis={synthesis} />}
+              {synthesis && <WikiPanel synthesis={synthesis} />}
+            </section>
+          </div>
         </div>
       </main>
     </>
