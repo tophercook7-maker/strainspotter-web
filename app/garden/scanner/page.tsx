@@ -93,6 +93,19 @@ export default function ScannerPage() {
 
             {/* C) Results Card(s) */}
             <section className="space-y-4">
+              {synthesis?.identity?.closestCultivarName && (
+                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6">
+                  <h1 className="text-3xl font-bold mb-2">
+                    Closest Known Cultivar
+                  </h1>
+                  <p className="text-xl text-green-400 font-semibold">
+                    {synthesis.identity.closestCultivarName}
+                  </p>
+                  <p className="text-sm text-white/60">
+                    Visual alignment based on {images.length} image{images.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+              )}
               {result && <ResultPanel result={result} />}
             </section>
           </div>
