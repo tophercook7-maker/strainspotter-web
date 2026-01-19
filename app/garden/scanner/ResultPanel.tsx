@@ -41,7 +41,7 @@ export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
         </div>
       )}
 
-      <hr />
+      <div className="h-6" />
 
       {/* 1. HEADLINE */}
       <h2 className="text-xl md:text-2xl font-semibold mb-4">What This Plant Is Likely To Feel Like</h2>
