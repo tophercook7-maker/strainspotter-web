@@ -18,10 +18,20 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
     <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-6 max-h-[80vh] overflow-y-auto">
       {/* Phase 2.3 Part H — Output Structure (Final Order) */}
       
+      {/* Phase 3.5 Part C — Strain Name & Match Type Display */}
       {/* 1. STRAIN NAME (LARGE) */}
-      <h1 className="text-4xl font-bold text-white">
-        {result.name || result.title}
-      </h1>
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold text-white">
+          {result.name || result.title}
+        </h1>
+        
+        {/* Phase 3.5 Part C — Display "Closest known match" label */}
+        {result.namingInfo && (
+          <p className="text-lg text-white/80 font-medium">
+            {result.namingInfo.displayLabel}
+          </p>
+        )}
+      </div>
       
       {/* Phase 3.4 Part C — Multi-Image Confidence Display */}
       {result.multiImageInfo && (
@@ -44,6 +54,13 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
             {result.confidenceRange ? `${result.confidenceRange.min}–${result.confidenceRange.max}%` : `${result.confidence}%`}
           </p>
         </>
+      )}
+      
+      {/* Phase 3.5 Part C — One-sentence rationale */}
+      {result.namingInfo?.rationale && (
+        <p className="text-base text-white/90 leading-relaxed">
+          {result.namingInfo.rationale}
+        </p>
       )}
 
       {/* Phase 2.8 Part O — Trust Layer (Always Visible) */}

@@ -30,9 +30,13 @@ export function wikiToViewModel(
   const safeAlternateMatches = Array.isArray(wiki.identity.alternateMatches) ? wiki.identity.alternateMatches : [];
   
   // Phase 2.5 Part L Step 1 — Hard Require: Strain Name
-  const primaryName = nameFirstResult?.primaryMatch.name || wiki.identity.strainName;
-  if (!primaryName || primaryName === "Unknown") {
-    throw new Error("Primary match name is required");
+  // Phase 3.5 Part A — Never "Unknown", always have a name
+  let primaryName = nameFirstResult?.primaryMatch.name || wiki.identity.strainName;
+  if (!primaryName || primaryName === "Unknown" || primaryName === "Unidentified") {
+    // Phase 3.5 Part A — Fallback: Use strain family name instead of throwing
+    console.warn("Phase 3.5 Part A — Primary name was invalid, using fallback");
+    // Use a default fallback name - this should rarely happen as naming hierarchy ensures a name
+    primaryName = "Hybrid Cultivar";
   }
 
   // Phase 2.5 Part L Step 2 — Confidence as Range

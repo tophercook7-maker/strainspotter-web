@@ -94,4 +94,11 @@ export interface ScannerViewModel {
     confidenceRange: string; // "86–92%"
     improvementExplanation: string; // Why confidence improved
   };
+  
+  // Phase 3.5 Part C — Strain Naming & Closest Match
+  namingInfo?: {
+    matchType: "exact" | "closest_cultivar" | "strain_family";
+    displayLabel: string; // "Closest known match" or "Exact match"
+    rationale: string; // One-sentence explanation
+  };
 }

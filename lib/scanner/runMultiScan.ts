@@ -13,6 +13,8 @@ import { generateExtendedProfile } from "./extendedProfile";
 import { checkConsistency } from "./freeTierDepth";
 import { generateConfidenceExplanation } from "./confidenceExplanation";
 import { assignImageLabels } from "./imageIntakeLabels";
+import { determineStrainName } from "./namingHierarchy";
+import { generateNamingDisplay } from "./namingDisplay";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -101,34 +103,69 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Legacy compatibility
     imageResults = imageResultsV3.map(r => ({
       imageIndex: r.imageIndex,
-      strainCandidate: r.candidateStrains[0]?.name || "Unknown",
+      // Phase 3.5 Part A — Never "Unknown", use fallback
+      strainCandidate: r.candidateStrains[0]?.name || (fusedFeatures.leafShape === "broad" ? "Indica-dominant Hybrid" : "Sativa-dominant Hybrid"),
       confidenceScore: r.candidateStrains[0]?.confidence || 60,
       keyTraits: r.candidateStrains[0]?.traitsMatched || [],
       wikiResult: r.wikiResult,
     }));
   }
 
+  // Phase 3.5 Part A — Naming Hierarchy: Determine strain name using hierarchy
+  // Always return a name (exact → closest cultivar → strain family)
+  const existingCandidates = imageResultsV3.length > 0
+    ? imageResultsV3.flatMap(r => r.candidateStrains.map(c => ({ name: c.name, confidence: c.confidence })))
+    : undefined;
+  
+  const namingResult = determineStrainName(fusedFeatures, input.imageCount, existingCandidates);
+  console.log("NAMING RESULT:", namingResult);
+  
   // Phase 3.0 Part E — Name First Output
-  // Use consensus result if available (always use for 1-3 images)
+  // Use consensus result if available, but ensure name comes from naming hierarchy
   const nameFirstResult = consensusResult 
     ? {
         primaryMatch: {
-          name: consensusResult.primaryMatch.name, // Phase 3.0 Part E — Name first
-          score: 0,
+          // Phase 3.5 Part A — Use naming hierarchy result, but prefer consensus name if it matches
+          name: consensusResult.primaryMatch.name === namingResult.name 
+            ? consensusResult.primaryMatch.name 
+            : namingResult.name, // Fallback to naming hierarchy if consensus name doesn't match
+          score: namingResult.similarityScore,
           confidence: consensusResult.primaryMatch.confidence, // Phase 3.0 Part D — Calibrated confidence (80-99%)
-          whyThisMatch: consensusResult.primaryMatch.reason,
+          whyThisMatch: namingResult.rationale || consensusResult.primaryMatch.reason,
           matchedTraits: [],
         },
-        alsoSimilar: consensusResult.alternates.map(a => ({
-          name: a.name,
-          whyNotPrimary: `Confidence: ${a.confidence}% (lower than primary match)`,
-        })),
+        alsoSimilar: [
+          ...consensusResult.alternates.slice(0, 2).map(a => ({
+            name: a.name,
+            whyNotPrimary: `Confidence: ${a.confidence}% (lower than primary match)`,
+          })),
+          ...namingResult.alternateMatches.slice(0, 1).map(a => ({
+            name: a.name,
+            whyNotPrimary: a.whyNotPrimary,
+          })),
+        ].slice(0, 3), // Max 3 alternates
         confidence: consensusResult.primaryMatch.confidence, // Phase 3.0 Part D — Never 100%
-        confidenceRange: consensusResult.confidenceRange, // Legacy range format
+        confidenceRange: namingResult.confidenceRange || consensusResult.confidenceRange, // Use naming hierarchy range
         imageCountBonus: input.imageCount * 3,
         variancePenalty: 0,
       }
-    : matchStrainNameFirst(fusedFeatures, input.imageCount);
+    : {
+        primaryMatch: {
+          name: namingResult.name, // Phase 3.5 Part A — Always a valid name
+          score: namingResult.similarityScore,
+          confidence: Math.round((namingResult.confidenceRange.min + namingResult.confidenceRange.max) / 2),
+          whyThisMatch: namingResult.rationale,
+          matchedTraits: [],
+        },
+        alsoSimilar: namingResult.alternateMatches.map(a => ({
+          name: a.name,
+          whyNotPrimary: a.whyNotPrimary,
+        })),
+        confidence: Math.round((namingResult.confidenceRange.min + namingResult.confidenceRange.max) / 2),
+        confidenceRange: namingResult.confidenceRange,
+        imageCountBonus: input.imageCount * 3,
+        variancePenalty: 0,
+      };
   console.log("NAME-FIRST RESULT:", nameFirstResult);
   console.log("CONSENSUS AGREEMENT SCORE:", consensusResult?.agreementScore || "N/A");
 
@@ -233,11 +270,18 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     imageResultsV3
   );
   console.log("MULTI-IMAGE INFO:", multiImageInfo);
+  
+  // Phase 3.5 Part C — Generate naming display info (namingResult already defined above)
+  const namingDisplay = generateNamingDisplay(namingResult, input.imageCount);
+  console.log("NAMING DISPLAY:", namingDisplay);
 
   const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
   
   // Phase 3.4 Part C — Add multi-image info to view model
   viewModel.multiImageInfo = multiImageInfo;
+  
+  // Phase 3.5 Part C — Add naming info to view model
+  viewModel.namingInfo = namingDisplay;
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

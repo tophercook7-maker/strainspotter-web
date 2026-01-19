@@ -4,6 +4,7 @@
 
 import type { FusedFeatures } from "./multiImageFusion";
 import { CULTIVAR_LIBRARY, type CultivarReference } from "./cultivarLibrary";
+import { determineStrainName, type NamingResult } from "./namingHierarchy";
 
 export type StrainMatch = {
   name: string;
@@ -225,23 +226,25 @@ export function matchStrainNameFirst(
   // Sort by score DESC
   scored.sort((a, b) => b.score - a.score);
 
+  // Phase 3.5 Part A — Naming Hierarchy: Always return a name (never "Unknown")
   if (scored.length === 0) {
-    // Fallback
+    // Use naming hierarchy to determine fallback name
+    const namingResult = determineStrainName(fused, imageCount);
+    
     return {
       primaryMatch: {
-        name: "Phenotype-Closest Hybrid",
-        score: 0,
-        confidence: 60,
-        whyThisMatch: "No strong cultivar match found",
+        name: namingResult.name, // Phase 3.5 Part A — Never "Unknown"
+        score: namingResult.similarityScore,
+        confidence: Math.round((namingResult.confidenceRange.min + namingResult.confidenceRange.max) / 2),
+        whyThisMatch: namingResult.rationale,
         matchedTraits: [],
       },
-      alsoSimilar: [],
-      confidence: 60, // Legacy
-      confidenceRange: {
-        min: 55,
-        max: 65,
-        explanation: "Confidence range accounts for limited visual match data and natural variation in visual characteristics.",
-      },
+      alsoSimilar: namingResult.alternateMatches.map(a => ({
+        name: a.name,
+        whyNotPrimary: a.whyNotPrimary,
+      })),
+      confidence: Math.round((namingResult.confidenceRange.min + namingResult.confidenceRange.max) / 2),
+      confidenceRange: namingResult.confidenceRange,
       imageCountBonus: imageCount * 3,
       variancePenalty: 0,
     };

@@ -5,6 +5,7 @@ import type { WikiResult } from "./types";
 import type { FusedFeatures } from "./multiImageFusion";
 import type { StrainMatch } from "./nameFirstMatcher";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
+import { determineStrainName } from "./namingHierarchy";
 
 export type ImageAngle = "top" | "side" | "macro";
 
@@ -244,35 +245,45 @@ export function buildConsensusResultV3(
     }
   });
 
-  // Phase 3.4 Part D — Failure Handling: Always return a result, never fail silently
-  // Never return "Unknown" unless truly impossible
+  // Phase 3.5 Part A — Naming Hierarchy: Always return a result, never fail silently
+  // Phase 3.5 Part A — Never return "Unknown" unless truly impossible
   if (!primaryMatch) {
     const topCandidate = imageResults[0]?.candidateStrains[0];
-    if (topCandidate) {
+    if (topCandidate && topCandidate.name && topCandidate.name !== "Unknown") {
       primaryMatch = {
         name: topCandidate.name,
         confidence: Math.min(92, topCandidate.confidence), // Phase 3.0 Part D — 1 image cap at 92%
         reason: "Best match based on visual analysis",
       };
     } else {
-      // Phase 3.4 Part D — Fallback: Use name-first matcher if no candidates
-      const fallbackResult = matchStrainNameFirst(fusedFeatures, imageCount);
+      // Phase 3.5 Part A — Use naming hierarchy for fallback (never "Unknown")
+      const namingResult = determineStrainName(
+        fusedFeatures,
+        imageCount,
+        imageResults.flatMap(r => r.candidateStrains.map(c => ({ name: c.name, confidence: c.confidence })))
+      );
+      
       primaryMatch = {
-        name: fallbackResult.primaryMatch.name,
-        confidence: Math.max(60, Math.min(85, fallbackResult.confidence)), // Cap at 85% for fallback
-        reason: "Closest known match based on visual characteristics. Images showed variation that made exact identification challenging.",
+        name: namingResult.name, // Phase 3.5 Part A — Always a valid name
+        confidence: Math.round((namingResult.confidenceRange.min + namingResult.confidenceRange.max) / 2),
+        reason: namingResult.rationale,
       };
-      console.warn("Phase 3.4 Part D — Fallback to name-first matcher due to no consensus candidates");
+      console.warn("Phase 3.5 Part A — Used naming hierarchy fallback due to no consensus candidates");
     }
   }
   
-  // Phase 3.4 Part D — Ensure name is never "Unknown"
-  if (primaryMatch.name === "Unknown" || !primaryMatch.name || primaryMatch.name.trim().length === 0) {
-    const fallbackResult = matchStrainNameFirst(fusedFeatures, imageCount);
-    primaryMatch.name = fallbackResult.primaryMatch.name;
-    primaryMatch.confidence = Math.max(60, Math.min(85, fallbackResult.confidence));
-    primaryMatch.reason = "Closest known match identified. Please provide additional images from different angles for higher confidence.";
-    console.warn("Phase 3.4 Part D — Prevented 'Unknown' result, using fallback match");
+  // Phase 3.5 Part A — Ensure name is never "Unknown", "Unidentified", or empty
+  if (
+    primaryMatch.name === "Unknown" || 
+    primaryMatch.name === "Unidentified" ||
+    !primaryMatch.name || 
+    primaryMatch.name.trim().length === 0
+  ) {
+    const namingResult = determineStrainName(fusedFeatures, imageCount);
+    primaryMatch.name = namingResult.name;
+    primaryMatch.confidence = Math.round((namingResult.confidenceRange.min + namingResult.confidenceRange.max) / 2);
+    primaryMatch.reason = namingResult.rationale;
+    console.warn("Phase 3.5 Part A — Prevented invalid name, using naming hierarchy");
   }
 
   // Phase 3.0 Part D — Confidence Calibration
