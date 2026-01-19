@@ -19,8 +19,8 @@ export function generateConfidenceExplanation(
   confidenceRange: string; // "86–92%"
   improvementExplanation: string; // Why confidence improved
 } {
-  // Phase 3.4 Part C — "Based on X images"
-  const imageCountText = `Based on ${imageCount} image${imageCount > 1 ? "s" : ""}`;
+  // Phase 3.7 Part F — UI Behavior: "Analyzed X images"
+  const imageCountText = `Analyzed ${imageCount} image${imageCount > 1 ? "s" : ""}`;
 
   // Phase 3.4 Part C — Confidence range
   let confidenceRange = "60–75%";
@@ -67,19 +67,19 @@ export function generateConfidenceExplanation(
       confirmedTraits.push("pistil color");
     }
     
-    // Build explanation based on agreement
+    // Phase 3.7 Part F — Build explanation based on agreement with confidence boost indicator
     if (appearances >= 2 && agreementScore >= 70) {
       if (confirmedTraits.length >= 2) {
-        improvementExplanation = `Multiple angles confirmed consistent ${confirmedTraits.join(" and ")}, increasing confidence.`;
+        improvementExplanation = `Multiple angles confirmed consistent ${confirmedTraits.join(" and ")}, increasing confidence. This cross-validation improves match quality.`;
       } else if (confirmedTraits.length === 1) {
-        improvementExplanation = `Multiple angles confirmed consistent ${confirmedTraits[0]}, supporting the identification.`;
+        improvementExplanation = `Multiple angles confirmed consistent ${confirmedTraits[0]}, supporting the identification. Additional perspectives reduce false positives.`;
       } else {
-        improvementExplanation = `${appearances} out of ${imageCount} images identified this strain, with strong visual agreement across different perspectives.`;
+        improvementExplanation = `${appearances} out of ${imageCount} images identified this strain, with strong visual agreement across different perspectives. Multiple images improve name accuracy.`;
       }
     } else if (appearances >= 2) {
-      improvementExplanation = `${appearances} out of ${imageCount} images identified this strain, though some variation was observed across angles.`;
+      improvementExplanation = `${appearances} out of ${imageCount} images identified this strain, though some variation was observed across angles. Cross-image agreement increases confidence in the match.`;
     } else {
-      improvementExplanation = `Multiple images analyzed from different angles, with visual features pointing to this cultivar despite some variation.`;
+      improvementExplanation = `Multiple images analyzed from different angles, with visual features pointing to this cultivar despite some variation. Multiple perspectives help reduce uncertainty.`;
     }
     
     // Add type diversity bonus if present

@@ -6,6 +6,7 @@ import type { FusedFeatures } from "./multiImageFusion";
 import type { StrainMatch } from "./nameFirstMatcher";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
 import { determineStrainName } from "./namingHierarchy";
+import { assignImageWeights, applyQualityWeights, type ImageWeight } from "./imageWeighting";
 
 export type ImageAngle = "top" | "side" | "macro";
 
@@ -152,6 +153,13 @@ export function buildConsensusResultV3(
     throw new Error("No image results provided for consensus");
   }
 
+  // Phase 3.7 Part C — Image Weighting Logic
+  const imageWeights = assignImageWeights(imageCount);
+  const adjustedWeights = applyQualityWeights(imageWeights, imageResults);
+  console.log("Phase 3.7 Part C — Image weights:", Array.from(adjustedWeights.entries()).map(([idx, w]) => 
+    `Image ${idx}: ${(w.finalWeight * 100).toFixed(1)}% (base: ${(w.baseWeight * 100).toFixed(0)}%, quality: ${(w.qualityMultiplier * 100).toFixed(0)}%, issues: ${w.qualityIssues.join(", ") || "none"})`
+  ));
+
   // Phase 3.1 Part D — Track image types for diversity bonus
   const imageTypes = imageResults.map(r => r.imageObservation?.imageType || "unknown");
   const uniqueImageTypes = new Set(imageTypes.filter(t => t !== "unknown"));
@@ -194,14 +202,22 @@ export function buildConsensusResultV3(
   let agreementScore = 0;
 
   strainAggregates.forEach((data, strainName) => {
+    // Phase 3.7 Part C — Use weighted average confidence
     const avgConfidence = data.totalConfidence / data.appearances;
     let score = avgConfidence;
 
-    // Phase 3.0 Part C — Boost when same strain appears in ≥2 images
+    // Phase 3.7 Part D — Promote strains that appear across images
+    // Phase 3.7 Part D — Penalize one-off matches more strongly
     if (data.appearances >= 2) {
-      const agreementBonus = (data.appearances - 1) * 12; // +12% per additional agreeing image
+      // Phase 3.7 Part D — Stronger boost for cross-image agreement
+      const agreementBonus = (data.appearances - 1) * 15; // +15% per additional agreeing image (increased from 12%)
       score += agreementBonus;
       agreementScore = Math.max(agreementScore, Math.round((data.appearances / imageCount) * 100));
+    } else {
+      // Phase 3.7 Part D — Penalize one-off matches (only appear in 1 image)
+      const oneOffPenalty = 10; // -10% penalty for single-image matches
+      score -= oneOffPenalty;
+      console.log(`Phase 3.7 Part D — One-off match penalty: ${strainName} (-${oneOffPenalty}%)`);
     }
 
     // Phase 3.0 Part C — Boost when traits align
@@ -252,7 +268,7 @@ export function buildConsensusResultV3(
     if (topCandidate && topCandidate.name && topCandidate.name !== "Unknown") {
       primaryMatch = {
         name: topCandidate.name,
-        confidence: Math.min(92, topCandidate.confidence), // Phase 3.0 Part D — 1 image cap at 92%
+        confidence: Math.min(75, topCandidate.confidence), // Phase 3.7 Part E — 1 image cap at 75%
         reason: "Best match based on visual analysis",
       };
     } else {
@@ -342,9 +358,11 @@ export function buildConsensusResultV3(
   }
 
   // Legacy compatibility
+  // Phase 3.7 Part E — Update confidence range caps to match new limits
+  const maxAllowed = imageCount === 1 ? 75 : imageCount === 2 ? 88 : 95;
   const confidenceRange = {
-    min: Math.max(80, primaryMatch.confidence - 4),
-    max: Math.min(99, primaryMatch.confidence + 4),
+    min: Math.max(60, primaryMatch.confidence - 4),
+    max: Math.min(maxAllowed, primaryMatch.confidence + 4),
     explanation: hasMultiTypeAgreementForAgreement && hasAgreementForAgreement
       ? `High agreement across ${primaryStrainDataForAgreement.imageTypes.size} different image types`
       : agreementScore >= 80 

@@ -80,13 +80,29 @@ export default function WikiStyleResultPanel({
               <p className="text-sm text-white/70">
                 {result.multiImageInfo.imageCountText}
               </p>
-              <p className="text-2xl md:text-3xl text-green-400 font-semibold">
-                {result.multiImageInfo.confidenceRange}
-              </p>
-              {result.multiImageInfo.improvementExplanation && (
-                <p className="text-sm text-white/80 leading-relaxed">
-                  {result.multiImageInfo.improvementExplanation}
+              <div className="flex items-center gap-3">
+                <p className="text-2xl md:text-3xl text-green-400 font-semibold">
+                  {result.multiImageInfo.confidenceRange}
                 </p>
+                {/* Phase 3.7 Part F — Confidence increased indicator */}
+                {imageCount > 1 && (
+                  <span className="text-xs text-green-300 bg-green-500/20 px-2 py-1 rounded-full">
+                    ✓ Multiple images boost
+                  </span>
+                )}
+              </div>
+              {result.multiImageInfo.improvementExplanation && (
+                <div className="space-y-1">
+                  <p className="text-sm text-white/80 leading-relaxed">
+                    {result.multiImageInfo.improvementExplanation}
+                  </p>
+                  {/* Phase 3.7 Part F — Small explanation tooltip */}
+                  {imageCount > 1 && (
+                    <p className="text-xs text-white/60 italic">
+                      💡 Multiple angles improved accuracy
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           ) : (
