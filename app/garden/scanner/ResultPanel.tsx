@@ -44,16 +44,12 @@ export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
       <div className="h-6" />
 
       {/* 1. HEADLINE */}
-      <h2 className="text-xl md:text-2xl font-semibold mb-4">What This Plant Is Likely To Feel Like</h2>
-      
-      {/* 2. CONFIDENCE SENTENCE */}
-      <p className="text-base md:text-lg leading-relaxed text-white/80 mb-6">
-        {getConfidenceLanguage(result.confidence)}. This assessment prioritizes visual consistency rather than strain naming.
-      </p>
+      <h2 className="text-xl font-semibold mb-2">
+        What This Plant Is Likely To Feel Like
+      </h2>
 
-      {/* 3. EXPERIENCE PARAGRAPH */}
-      <p className="text-base md:text-lg leading-relaxed text-white/90 mb-6">
-        Based on observed visual characteristics and growth patterns, this plant shows traits commonly associated with {safeEffects.length > 0 ? safeEffects[0].toLowerCase() : "calming"} effects. The morphology suggests a profile that may provide {safeEffects.length > 1 ? safeEffects.slice(0, 2).join(" and ").toLowerCase() : safeEffects[0]?.toLowerCase() || "balanced"} experiences.
+      <p className="text-white/80 leading-relaxed">
+        {result.experience.summary}
       </p>
 
       {/* 4. EFFECTS LIST */}

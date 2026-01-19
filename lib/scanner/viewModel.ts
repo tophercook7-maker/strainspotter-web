@@ -13,6 +13,7 @@ export interface ScannerViewModel {
     effects: string[];
     bestFor: string[];
     bestTime?: string;
+    summary?: string;
   };
   disclaimer: string;
 }
