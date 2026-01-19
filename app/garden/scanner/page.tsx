@@ -41,17 +41,23 @@ export default function ScannerPage() {
     setImageSeed(null);
   }
 
-  function runScan() {
-    console.log("A: runScan clicked")
-    console.log("B: imageSeed", imageSeed)
+  async function runScan() {
+    console.log("RUN SCAN CLICKED");
 
-    const file = imageFile;
-    if (!file) return;
+    if (!imageSeed) {
+      console.warn("No image seed");
+      return;
+    }
 
     setIsScanning(true);
-    setLoading(true);
 
     try {
+      const file = imageFile;
+      if (!file) {
+        console.warn("No image file");
+        return;
+      }
+
       const seed = file.name + file.size + file.lastModified;
       setImageSeed(seed);
 
@@ -67,7 +73,6 @@ export default function ScannerPage() {
       
       setResult(viewModel);
       setSynthesis(wikiSynthesis);
-      setIsScanning(false);
       
       // B.2.5 — Log synthesis for verification (no UI consumption yet)
       console.log("Wiki Synthesis:", wikiSynthesis);
@@ -78,9 +83,7 @@ export default function ScannerPage() {
       }, 100);
     } catch (err) {
       console.error("Scan failed", err);
-      setIsScanning(false);
     } finally {
-      setLoading(false);
       setIsScanning(false);
     }
   }
@@ -88,9 +91,9 @@ export default function ScannerPage() {
   console.log("RENDER CHECK:", { result, synthesis })
 
   return (
-    <main className="min-h-screen bg-black text-white flex justify-center">
-      <TopNav title="Scanner" showBack />
+    <main className="py-6">
       <div className="mx-auto w-full max-w-3xl px-4">
+        <TopNav title="Scanner" showBack />
         <div className="py-4 md:py-6 space-y-4 md:space-y-6">
           <div className="rounded-3xl bg-black/70 backdrop-blur-xl p-4 md:p-6 text-white">
             {/* SCANNER CONTENT GOES BELOW */}
@@ -98,11 +101,13 @@ export default function ScannerPage() {
 
             {/* Image Preview */}
             {previewUrl && (
-              <img
-                src={previewUrl}
-                alt="Scan preview"
-                className="mx-auto max-h-64 w-auto rounded-xl object-contain"
-              />
+              <div className="mx-auto mt-4 flex justify-center">
+                <img
+                  src={previewUrl}
+                  alt="Scan preview"
+                  className="max-h-60 w-auto rounded-xl object-contain"
+                />
+              </div>
             )}
 
             {/* Controls */}
@@ -117,8 +122,8 @@ export default function ScannerPage() {
 
             <button
               onClick={runScan}
-              disabled={isScanning}
-              className="mx-auto mt-4 w-fit px-8 py-3 rounded-full bg-white text-black font-semibold hover:bg-white/90"
+              disabled={!imageSeed || isScanning}
+              className="mx-auto mt-4 flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-black disabled:opacity-50"
             >
               {isScanning ? "Scanning…" : "Run Scan"}
             </button>
