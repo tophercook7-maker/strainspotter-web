@@ -226,6 +226,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     },
   };
 
+  // Phase 3.4 Part C — Generate multi-image confidence explanation
+  const multiImageInfo = generateConfidenceExplanation(
+    input.imageCount,
+    consensusResult,
+    imageResultsV3
+  );
+  console.log("MULTI-IMAGE INFO:", multiImageInfo);
+
   const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
   
   // Phase 3.4 Part C — Add multi-image info to view model
