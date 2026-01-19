@@ -6,6 +6,8 @@ import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
 import { synthesizeWikiInsights } from "@/lib/scanner/wikiSynthesis";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis } from "@/lib/scanner/types";
+
+type ScanTier = "basic" | "pro" | "expert";
 import WikiPanel from "./WikiPanel";
 import ResultPanel from "./ResultPanel";
 import TopNav from "../_components/TopNav";
@@ -27,6 +29,7 @@ export default function ScannerPage() {
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanTier] = useState<ScanTier>("basic");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -36,8 +39,12 @@ export default function ScannerPage() {
     setPreviewUrl(URL.createObjectURL(selected));
   };
 
+  // TIER 1 (FREE / NORMAL):
+  // - General identification
+  // - Core effects, aroma, genetics
+  // - Educational summary only
   const runScan = async () => {
-    console.log("RUN SCAN FIRED", file);
+    console.log("RUN SCAN FIRED", { file, scanTier });
     if (!file) return;
 
     setIsScanning(true);
@@ -57,19 +64,8 @@ export default function ScannerPage() {
 
       <div className="mx-auto max-w-xl px-4 py-6 space-y-6">
 
-        {/* IMAGE PREVIEW */}
-        {previewUrl && (
-          <div className="rounded-xl overflow-hidden border border-white/10 bg-black">
-            <img
-              src={previewUrl}
-              alt="Selected"
-              className="w-full max-h-[320px] object-contain"
-            />
-          </div>
-        )}
-
-        {/* CONTROLS */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex w-full flex-col items-center px-4">
+          {/* CONTROLS */}
           <input
             type="file"
             accept="image/*"
@@ -77,11 +73,36 @@ export default function ScannerPage() {
             className="block w-full text-sm text-white/70"
           />
 
+          {/* IMAGE PREVIEW */}
+          {previewUrl && (
+            <div className="rounded-xl overflow-hidden border border-white/10 bg-black">
+              <img
+                src={previewUrl}
+                alt="Selected"
+                className="w-full max-h-[320px] object-contain"
+              />
+            </div>
+          )}
+
+          {/* SCAN BUTTON */}
           <button
             onClick={runScan}
-            className="w-full rounded-lg bg-green-600 py-3 font-semibold text-black"
+            className="
+              mx-auto
+              mt-6
+              w-full
+              max-w-md
+              rounded-2xl
+              bg-green-500
+              py-5
+              text-xl
+              font-bold
+              text-black
+              shadow-lg
+              active:scale-[0.98]
+            "
           >
-            Run Scan
+            🌿 Run Scan
           </button>
         </div>
 
