@@ -44,19 +44,13 @@ export default function ScannerPage() {
   async function runScan() {
     console.log("RUN SCAN CLICKED");
 
-    if (!imageSeed) {
-      console.warn("No image seed");
-      return;
-    }
+    if (!imageSeed) return;
 
     setIsScanning(true);
 
     try {
       const file = imageFile;
-      if (!file) {
-        console.warn("No image file");
-        return;
-      }
+      if (!file) return;
 
       const seed = file.name + file.size + file.lastModified;
       setImageSeed(seed);
@@ -105,10 +99,18 @@ export default function ScannerPage() {
                 <img
                   src={previewUrl}
                   alt="Scan preview"
-                  className="max-h-60 w-auto rounded-xl object-contain"
+                  className="max-h-56 w-auto rounded-xl object-contain shadow-lg"
                 />
               </div>
             )}
+
+            <button
+              onClick={runScan}
+              disabled={!imageSeed || isScanning}
+              className="mx-auto mt-4 flex items-center justify-center rounded-full bg-white px-10 py-3 text-sm font-semibold text-black shadow-md disabled:opacity-40"
+            >
+              {isScanning ? "Scanning…" : "Run Scan"}
+            </button>
 
             {/* Controls */}
             <div className="w-full max-w-sm mx-auto">
@@ -119,14 +121,6 @@ export default function ScannerPage() {
                 className="w-full text-sm text-white"
               />
             </div>
-
-            <button
-              onClick={runScan}
-              disabled={!imageSeed || isScanning}
-              className="mx-auto mt-4 flex items-center justify-center rounded-full bg-white px-8 py-3 text-sm font-semibold text-black disabled:opacity-50"
-            >
-              {isScanning ? "Scanning…" : "Run Scan"}
-            </button>
 
             {/* LAYER 3 — WIKI UI */}
             <div ref={resultRef} className="flex-1 overflow-y-auto space-y-4 pb-6">
