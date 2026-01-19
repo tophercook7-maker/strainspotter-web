@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { scanImages } from "@/lib/scanner/runMultiScan";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis } from "@/lib/scanner/types";
@@ -20,6 +20,12 @@ export default function ScannerPage() {
   const [isScanning, setIsScanning] = useState(false);
   const MAX_IMAGES = 3;
 
+  // NEVER clear result on re-render
+  // Only clear when user selects NEW images
+  useEffect(() => {
+    setResult(null);
+    setSynthesis(null);
+  }, [images]);
 
   async function runScan() {
     if (images.length === 0) return;
