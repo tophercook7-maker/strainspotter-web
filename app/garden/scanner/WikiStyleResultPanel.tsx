@@ -79,9 +79,11 @@ export default function WikiStyleResultPanel({
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                  result.confidenceTier.tier === "high"
+                  result.confidenceTier.tier === "very_high"
+                    ? "bg-green-500/30 text-green-200"
+                    : result.confidenceTier.tier === "high"
                     ? "bg-green-500/20 text-green-300"
-                    : result.confidenceTier.tier === "moderate"
+                    : result.confidenceTier.tier === "medium"
                     ? "bg-yellow-500/20 text-yellow-300"
                     : "bg-orange-500/20 text-orange-300"
                 }`}
@@ -856,9 +858,9 @@ export default function WikiStyleResultPanel({
                     className={`text-xs font-semibold px-3 py-1 rounded-full ${
                       result.confidenceTier.tier === "high"
                         ? "bg-green-500/20 text-green-300"
-                        : result.confidenceTier.tier === "moderate"
-                        ? "bg-yellow-500/20 text-yellow-300"
-                        : "bg-orange-500/20 text-orange-300"
+                    : result.confidenceTier.tier === "medium"
+                    ? "bg-yellow-500/20 text-yellow-300"
+                    : "bg-orange-500/20 text-orange-300"
                     }`}
                   >
                     {result.confidenceTier.label}

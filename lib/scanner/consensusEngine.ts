@@ -268,7 +268,7 @@ export function buildConsensusResultV3(
     if (topCandidate && topCandidate.name && topCandidate.name !== "Unknown") {
       primaryMatch = {
         name: topCandidate.name,
-        confidence: Math.min(75, topCandidate.confidence), // Phase 3.7 Part E — 1 image cap at 75%
+        confidence: Math.min(82, topCandidate.confidence), // Phase 4.0 Part D — 1 image cap at 82%
         reason: "Best match based on visual analysis",
       };
     } else {
@@ -358,8 +358,8 @@ export function buildConsensusResultV3(
   }
 
   // Legacy compatibility
-  // Phase 3.7 Part E — Update confidence range caps to match new limits
-  const maxAllowed = imageCount === 1 ? 75 : imageCount === 2 ? 88 : 95;
+  // Phase 4.0 Part D — Update confidence range caps to match new limits
+  const maxAllowed = imageCount === 1 ? 82 : imageCount === 2 ? 90 : imageCount >= 3 ? 99 : 95;
   const confidenceRange = {
     min: Math.max(60, primaryMatch.confidence - 4),
     max: Math.min(maxAllowed, primaryMatch.confidence + 4),

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { scanImages } from "@/lib/scanner/runMultiScan";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis } from "@/lib/scanner/types";
+import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
 
 type ScanTier = "basic" | "pro" | "expert";
 import ResultPanel from "./ResultPanel";
@@ -19,7 +20,8 @@ export default function ScannerPage() {
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const MAX_IMAGES = 3; // Phase 3.4 Part A — Allow 1-3 images per scan
+  const [singleImageConfirmed, setSingleImageConfirmed] = useState(false); // Phase 4.0 Part A — Single-image confirmation
+  const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
 
   // NEVER clear result on re-render
   // Only clear when user selects NEW images
@@ -28,20 +30,50 @@ export default function ScannerPage() {
     setSynthesis(null);
   }, [images]);
 
-  // Phase 2.4 Part K — Multi-image validation
-  function validateImages(): { valid: boolean; warning?: string } {
+  // Phase 4.0 Part A — Multi-image validation
+  function validateImages(): { valid: boolean; warning?: string; requiresConfirmation?: boolean } {
     if (!images || images.length === 0) {
       return { valid: false, warning: "Please select at least 1 image to analyze." };
     }
-    if (images.length < 3) {
+    
+    // Phase 4.0 Part A — Rule: Scan runs only after 2 images OR user confirms single-image scan
+    if (images.length === 1 && !singleImageConfirmed) {
       return { 
-        valid: true, 
-        warning: `Using ${images.length} image${images.length > 1 ? "s" : ""}. For best accuracy, we recommend 3+ images from different angles.` 
+        valid: false, 
+        requiresConfirmation: true,
+        warning: "For best accuracy, we recommend 2+ images from different angles. Single-image scans have limited accuracy." 
       };
     }
+    
+    if (images.length === 1) {
+      return { 
+        valid: true, 
+        warning: "Single-image analysis. Accuracy is limited compared to multi-image scans." 
+      };
+    }
+    
+    if (images.length === 2) {
+      return { 
+        valid: true, 
+        warning: "Using 2 images. For best accuracy, we recommend 3–5 images from different angles." 
+      };
+    }
+    
+    if (images.length < 5) {
+      return { 
+        valid: true, 
+        warning: `Using ${images.length} images. Good coverage!` 
+      };
+    }
+    
     return { valid: true };
   }
 
+  // Phase 4.0 Part A — Handle single-image confirmation
+  function handleConfirmSingleImage() {
+    setSingleImageConfirmed(true);
+  }
+  
   // Phase 2.4 Part J Step 4 — Guaranteed event fire
   async function handleAnalyzePlant() {
     // Step 4.1 — Log immediately
@@ -50,8 +82,20 @@ export default function ScannerPage() {
     // Step 4.2 — Validate images
     const validation = validateImages();
     if (!validation.valid) {
-      alert(validation.warning);
-      return;
+      if (validation.requiresConfirmation) {
+        const confirmed = window.confirm(
+          `${validation.warning}\n\nWould you like to proceed with single-image analysis?`
+        );
+        if (confirmed) {
+          setSingleImageConfirmed(true);
+          // Continue to scan
+        } else {
+          return;
+        }
+      } else {
+        alert(validation.warning);
+        return;
+      }
     }
 
     // Step 4.3 — Warn if <3 images but proceed
@@ -129,42 +173,70 @@ export default function ScannerPage() {
                 Add 1-3 photos — different angles help accuracy
               </p>
 
-              {/* IMAGE PREVIEWS - Thumbnail Grid */}
-              {images.length > 0 && (
-                <div className="grid grid-cols-3 gap-3 mt-4">
-                  {images.map((img, idx) => (
-                    <div
-                      key={idx}
-                      className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group"
-                    >
-                      {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
-                      <img
-                        src={URL.createObjectURL(img)}
-                        alt={`scan-${idx + 1}`}
-                        className="w-full h-full object-contain max-h-64 rounded-xl"
-                      />
-                      <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
-                        {idx + 1}
-                      </div>
-                      <button
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        ×
-                      </button>
+              {/* Phase 4.0 Part A — IMAGE PREVIEWS with Labels */}
+              {images.length > 0 && (() => {
+                const imageLabels = assignUserImageLabels(images.length);
+                return (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+                      {images.map((img, idx) => {
+                        const url = URL.createObjectURL(img);
+                        const label = imageLabels.get(idx) || "Optional";
+                        return (
+                          <div
+                            key={idx}
+                            className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group"
+                          >
+                            {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
+                            <img
+                              src={url}
+                              alt={`scan-${idx + 1}`}
+                              className="w-full h-full object-contain max-h-64 rounded-xl"
+                            />
+                            {/* Phase 4.0 Part A — Image Label Overlay */}
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm rounded-b-xl px-2 py-1.5">
+                              <p className="text-xs text-white font-medium text-center">
+                                {label}
+                              </p>
+                            </div>
+                            <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
+                              {idx + 1}
+                            </div>
+                            <button
+                              onClick={() => removeImage(idx)}
+                              className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-              )}
+                    {/* Phase 4.0 Part A — Single Image Warning */}
+                    {images.length === 1 && !singleImageConfirmed && (
+                      <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+                        <p className="text-sm text-yellow-200 leading-relaxed">
+                          <strong>Recommendation:</strong> Add at least one more image from a different angle for better accuracy. Single-image scans have limited confidence.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
         </div>
 
         {/* B) Big Scan Button Card */}
         {/* Phase 2.4 Part J — Analyze Plant Button Fix */}
         <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 flex flex-col items-center">
-          {/* Phase 2.4 Part K — Multi-image validation warning */}
-          {images.length > 0 && images.length < 3 && (
+          {/* Phase 4.0 Part A — Multi-image validation warning */}
+          {images.length > 0 && images.length < 2 && !singleImageConfirmed && (
             <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md">
-              💡 For best accuracy, add {3 - images.length} more image{3 - images.length > 1 ? "s" : ""} from different angles
+              💡 For best accuracy, add at least one more image from a different angle
+            </div>
+          )}
+          {images.length === 2 && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-200 text-sm text-center max-w-md">
+              ✓ 2 images selected. For best accuracy, 3–5 images are recommended.
             </div>
           )}
           

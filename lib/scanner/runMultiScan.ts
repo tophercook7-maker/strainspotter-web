@@ -24,6 +24,8 @@ import {
   generateFamilyTree,
   generateEntourageExplanation,
 } from "./wikiExpansion";
+import { generatePerImageFindings, generateConsensusAlignment } from "./perImageFindings";
+import { assignUserImageLabels } from "./imageLabels";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -100,7 +102,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   let imageResultsV3: ImageResult[] = [];
   let imageResults: any[] = [];
   
-  if (imageFiles && imageFiles.length >= 1 && imageFiles.length <= 3) {
+  // Phase 4.0 Part B — Per-Image Analysis (supports 1-5 images)
+  if (imageFiles && imageFiles.length >= 1 && imageFiles.length <= 5) {
     // Phase 3.0 Part B — Use enhanced analysis for all images (1-3)
     imageResultsV3 = await analyzePerImageV3(imageFiles, input.imageCount);
     console.log("PER-IMAGE RESULTS V3:", imageResultsV3);
@@ -370,6 +373,24 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     extendedProfile?.cannabinoidProfile.thcRange
   );
   viewModel.entourageExplanation = entourageExplanationText;
+  
+  // Phase 4.0 Part E — Generate per-image findings
+  if (imageResultsV3.length > 0) {
+    const perImageFindings = generatePerImageFindings(
+      imageResultsV3,
+      nameFirstResult.primaryMatch.name
+    );
+    viewModel.perImageFindings = perImageFindings;
+    
+    const consensusAlignment = generateConsensusAlignment(
+      perImageFindings,
+      nameFirstResult.primaryMatch.name
+    );
+    viewModel.consensusAlignment = consensusAlignment;
+    
+    console.log("PER-IMAGE FINDINGS:", perImageFindings);
+    console.log("CONSENSUS ALIGNMENT:", consensusAlignment);
+  }
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

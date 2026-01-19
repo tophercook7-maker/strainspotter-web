@@ -102,11 +102,27 @@ export interface ScannerViewModel {
     rationale: string; // One-sentence explanation
   };
   
-  // Phase 3.8 Part C — Confidence Tier
+  // Phase 4.0 Part D — Confidence Tier (Enhanced)
   confidenceTier?: {
-    tier: "high" | "moderate" | "low";
+    tier: "very_high" | "high" | "medium" | "low";
     label: string;
     description: string;
+  };
+  
+  // Phase 4.0 Part E — Per-Image Findings
+  perImageFindings?: Array<{
+    imageIndex: number;
+    label: string; // "Top view", "Side view", etc.
+    strainName: string;
+    confidence: number;
+    keyTraits: string[];
+    differences?: string[];
+  }>;
+  
+  // Phase 4.0 Part E — Consensus Alignment
+  consensusAlignment?: {
+    whatAligned: string[];
+    whatDiffered: string[];
   };
   
   // Phase 3.8 Part D — Why This Name (Enhanced)

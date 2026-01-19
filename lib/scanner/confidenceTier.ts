@@ -2,9 +2,9 @@
 // Phase 3.8 Part C — Confidence Labeling Tiers
 
 /**
- * Phase 3.8 Part C — Confidence Tier
+ * Phase 4.0 Part D — Confidence Tier (Enhanced)
  */
-export type ConfidenceTier = "high" | "moderate" | "low";
+export type ConfidenceTier = "very_high" | "high" | "medium" | "low";
 
 /**
  * Phase 3.8 Part C — Confidence Tier Label
@@ -17,19 +17,27 @@ export type ConfidenceTierLabel = {
 };
 
 /**
- * Phase 3.8 Part C — Determine confidence tier from confidence value
+ * Phase 4.0 Part D — Determine confidence tier from confidence value
  * 
  * Rules:
- * - High Confidence: 85–95%
- * - Moderate Confidence: 70–84%
+ * - Very High Confidence: 93–99%
+ * - High Confidence: 85–92%
+ * - Medium Confidence: 70–84%
  * - Low Confidence: 55–69%
  * - Never display below 55%
  */
 export function getConfidenceTier(confidence: number): ConfidenceTierLabel {
-  // Phase 3.8 Part C — Ensure confidence is at least 55%
-  const clampedConfidence = Math.max(55, Math.min(95, confidence));
+  // Phase 4.0 Part D — Ensure confidence is at least 55%, cap at 99% (never 100%)
+  const clampedConfidence = Math.max(55, Math.min(99, confidence));
 
-  if (clampedConfidence >= 85) {
+  if (clampedConfidence >= 93) {
+    return {
+      tier: "very_high",
+      label: "Very High Confidence",
+      color: "green",
+      description: "Excellent visual match with strong multi-image agreement and trait consistency",
+    };
+  } else if (clampedConfidence >= 85) {
     return {
       tier: "high",
       label: "High Confidence",
@@ -38,8 +46,8 @@ export function getConfidenceTier(confidence: number): ConfidenceTierLabel {
     };
   } else if (clampedConfidence >= 70) {
     return {
-      tier: "moderate",
-      label: "Moderate Confidence",
+      tier: "medium",
+      label: "Medium Confidence",
       color: "yellow",
       description: "Good visual match with some variation or limited image perspectives",
     };
