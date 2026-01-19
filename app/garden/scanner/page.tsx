@@ -109,7 +109,7 @@ export default function ScannerPage() {
         </div>
 
         {/* ResultPanel */}
-        {result && <ResultPanel result={result} />}
+        {result && <ResultPanel result={result} synthesis={synthesis} />}
 
         {/* WikiPanel */}
         {synthesis && <WikiPanel synthesis={synthesis} />}

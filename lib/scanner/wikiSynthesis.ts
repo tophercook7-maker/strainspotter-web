@@ -194,6 +194,36 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   // Generate notablePatterns (keep for backward compat, but use patternsObserved if available)
   const notablePatterns = patternsObserved.length > 0 ? patternsObserved.slice(0, 4) : [];
 
+  // Generate bestMatch (name matching layer)
+  const contradictionCount = safeConflictingSignals.length;
+  const hasLowConfidence = confidence < 65;
+  const hasManyContradictions = contradictionCount >= 2;
+  
+  // Determine confidence label (NOT percentage)
+  let confidenceLabel: "High" | "Moderate" | "Low";
+  if (hasLowConfidence || hasManyContradictions) {
+    confidenceLabel = "Low";
+  } else if (confidence >= 80 && contradictionCount === 0) {
+    confidenceLabel = "High";
+  } else {
+    confidenceLabel = "Moderate";
+  }
+
+  // Select best match name (lowest contradiction count approach)
+  // Use existing strainName from wiki, but apply fallback for Low confidence
+  let bestMatchName: string;
+  if (confidenceLabel === "Low") {
+    bestMatchName = "General Hybrid Profile";
+  } else {
+    // Use the primary strain name from wiki (already selected based on visual similarity)
+    bestMatchName = strainName;
+  }
+
+  // Generate explanation (one sentence max)
+  const explanation = confidenceLabel === "Low"
+    ? "Visual characteristics suggest a general hybrid profile rather than a specific cultivar match."
+    : `This plant most closely resembles known examples of ${bestMatchName} based on bud structure, leaf form, and observed effect patterns.`;
+
   return {
     summary,
     whyThisMatters,
@@ -201,5 +231,10 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
     signalsConsidered: signalsConsidered.length > 0 ? signalsConsidered : undefined,
     patternsObserved: patternsObserved.length > 0 ? patternsObserved : undefined,
     notablePatterns,
+    bestMatch: {
+      name: bestMatchName,
+      confidenceLabel,
+      explanation,
+    },
   };
 }

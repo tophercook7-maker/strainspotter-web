@@ -102,4 +102,9 @@ export interface WikiSynthesis {
   signalsConsidered?: string[] // Bullet points of signals
   patternsObserved?: string[] // Bullet points of patterns
   notablePatterns: string[] // Existing patterns (kept for backward compat)
+  bestMatch: {
+    name: string
+    confidenceLabel: "High" | "Moderate" | "Low"
+    explanation: string
+  }
 }

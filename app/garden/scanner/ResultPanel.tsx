@@ -2,12 +2,14 @@
 // 🔒 A.2 — UI reads ONLY from ScannerViewModel (LOCKED)
 
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
+import type { WikiSynthesis } from "@/lib/scanner/types";
 
 interface ResultPanelProps {
   result: ScannerViewModel;
+  synthesis?: WikiSynthesis;
 }
 
-export default function ResultPanel({ result }: ResultPanelProps) {
+export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
   const safeEffects = Array.isArray(result.experience.effects) ? result.experience.effects : [];
   const safeBestFor = Array.isArray(result.experience.bestFor) ? result.experience.bestFor : [];
 
@@ -24,6 +26,20 @@ export default function ResultPanel({ result }: ResultPanelProps) {
 
   return (
     <div className="max-w-3xl mx-auto bg-black/80 backdrop-blur-md rounded-2xl p-6 md:p-8 mt-6 mb-12">
+      {/* BEST MATCH NAME - AT TOP */}
+      {synthesis?.bestMatch && (
+        <div className="mb-8 pb-8">
+          <h1 className="text-lg md:text-xl font-medium text-white/70 mb-3">Closest Visual Match</h1>
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">{synthesis.bestMatch.name}</h2>
+          <p className="text-sm md:text-base text-white/60 mb-4">
+            Based on visual and structural similarity — not genetic testing
+          </p>
+          <p className="text-base md:text-lg text-white/80">
+            {synthesis.bestMatch.explanation}
+          </p>
+        </div>
+      )}
+
       {/* 1. HEADLINE */}
       <h2 className="text-xl md:text-2xl font-semibold mb-4">What This Plant Is Likely To Feel Like</h2>
       
