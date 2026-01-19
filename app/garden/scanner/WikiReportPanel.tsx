@@ -1,0 +1,527 @@
+// app/garden/scanner/WikiReportPanel.tsx
+// Phase 4.2 — Extensive Wiki-Style Report (Depth Unlock)
+
+"use client";
+
+import type { ScannerViewModel } from "@/lib/scanner/viewModel";
+import CollapsibleSection from "./CollapsibleSection";
+
+interface WikiReportPanelProps {
+  result: ScannerViewModel;
+  imageCount: number;
+}
+
+/**
+ * Phase 4.2 Step 4.2.10 — Wiki Report Panel
+ * 
+ * UI PRESENTATION RULES:
+ * - Centered content column (max-width)
+ * - No full-width divider lines
+ * - Section headers large and readable
+ * - Paragraph text comfortable (not tiny)
+ * - Collapsible sections allowed, but OPEN by default for Free Tier
+ */
+export default function WikiReportPanel({
+  result,
+  imageCount,
+}: WikiReportPanelProps) {
+  const wikiReport = result.wikiReport;
+  
+  if (!wikiReport) {
+    // Fallback to legacy display if wikiReport not available
+    return null;
+  }
+  
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 md:p-8 space-y-8 max-h-[85vh] overflow-y-auto max-w-4xl mx-auto">
+      {/* Phase 4.2 Step 4.2.1 — REPORT SECTIONS (LOCKED ORDER) */}
+      
+      {/* 1. IDENTITY OVERVIEW (Phase 4.2 Step 4.2.2) */}
+      <CollapsibleSection
+        title="Identity Overview"
+        defaultExpanded={true}
+        icon="🏷️"
+      >
+        <div className="space-y-4">
+          {/* Primary Strain Name (H1) */}
+          <h1 className="text-4xl md:text-5xl font-bold text-white">
+            {wikiReport.identityOverview.primaryName}
+          </h1>
+          
+          {/* Confidence Tier Badge */}
+          <div className="flex items-center gap-3">
+            <span
+              className={`text-sm font-semibold px-4 py-2 rounded-full ${
+                wikiReport.identityOverview.confidenceTier === "very_high"
+                  ? "bg-green-500/30 text-green-200"
+                  : wikiReport.identityOverview.confidenceTier === "high"
+                  ? "bg-green-500/20 text-green-300"
+                  : wikiReport.identityOverview.confidenceTier === "medium"
+                  ? "bg-yellow-500/20 text-yellow-300"
+                  : "bg-orange-500/20 text-orange-300"
+              }`}
+            >
+              {wikiReport.identityOverview.confidenceTier.replace("_", " ")} Confidence ({wikiReport.identityOverview.confidencePercent}%)
+            </span>
+          </div>
+          
+          {/* Executive Summary (one-paragraph) */}
+          <p className="text-base md:text-lg text-white/90 leading-relaxed">
+            {wikiReport.identityOverview.executiveSummary}
+          </p>
+          
+          {/* Known Aliases */}
+          {wikiReport.identityOverview.aliases.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-white/70 mb-2">Also Known As:</h3>
+              <p className="text-sm text-white/80">
+                {wikiReport.identityOverview.aliases.join(", ")}
+              </p>
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
+      
+      {/* 2. VISUAL PHENOTYPE ANALYSIS (Phase 4.2 Step 4.2.3) */}
+      <CollapsibleSection
+        title="Visual Phenotype Analysis"
+        defaultExpanded={true}
+        icon="🔬"
+      >
+        <div className="space-y-4">
+          {/* Bud Structure Comparison */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Bud Structure
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.visualPhenotype.budStructureComparison}
+            </p>
+          </div>
+          
+          {/* Trichome Density Comparison */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Trichome Density
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.visualPhenotype.trichomeDensityComparison}
+            </p>
+          </div>
+          
+          {/* Color Spectrum Notes */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Color Spectrum
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.visualPhenotype.colorSpectrumNotes}
+            </p>
+          </div>
+          
+          {/* Calyx & Pistil Behavior */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Calyx & Pistil Behavior
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.visualPhenotype.calyxPistilBehavior}
+            </p>
+          </div>
+          
+          {/* Phenotype Range Fit */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Phenotype Range Fit
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.visualPhenotype.phenotypeRangeFit}
+            </p>
+          </div>
+        </div>
+      </CollapsibleSection>
+      
+      {/* 3. GENETICS & LINEAGE (Phase 4.2 Step 4.2.4) */}
+      <CollapsibleSection
+        title="Genetics & Lineage"
+        defaultExpanded={true}
+        icon="🧬"
+      >
+        <div className="space-y-4">
+          {/* Parent Strains */}
+          {wikiReport.geneticsLineage.parentStrains.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-white/90 mb-2">
+                Parent Strains
+              </h3>
+              <p className="text-white/80 leading-relaxed">
+                {wikiReport.geneticsLineage.parentStrains.join(" × ")}
+              </p>
+            </div>
+          )}
+          
+          {/* Breeder / Origin Notes */}
+          {wikiReport.geneticsLineage.breederOriginNotes.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-white/90 mb-2">
+                Breeder & Origin
+              </h3>
+              <div className="space-y-2">
+                {wikiReport.geneticsLineage.breederOriginNotes.map((note, idx) => (
+                  <p key={idx} className="text-white/80 leading-relaxed">
+                    {note}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Dominance Explanation */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Dominance Explanation
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.geneticsLineage.dominanceExplanation}
+            </p>
+          </div>
+          
+          {/* Phenotype Branches */}
+          {wikiReport.geneticsLineage.phenotypeBranches.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-white/90 mb-2">
+                Known Phenotype Branches
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                {wikiReport.geneticsLineage.phenotypeBranches.map((branch, idx) => (
+                  <li key={idx}>{branch}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
+      
+      {/* 4. CHEMISTRY (TERPENES & CANNABINOIDS) (Phase 4.2 Step 4.2.5) */}
+      <CollapsibleSection
+        title="Chemistry (Terpenes & Cannabinoids)"
+        defaultExpanded={true}
+        icon="🌿"
+      >
+        <div className="space-y-4">
+          {/* Terpene Stack (5-8 ranked) */}
+          {wikiReport.chemistry.terpeneStack.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-white/90 mb-2">
+                Likely Terpene Stack
+              </h3>
+              <ol className="list-decimal list-inside space-y-2 text-white/80 ml-2">
+                {wikiReport.chemistry.terpeneStack.map((terpene, idx) => (
+                  <li key={idx} className="leading-relaxed">
+                    <strong className="text-white/90">{terpene.name}:</strong> {terpene.role}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          
+          {/* Cannabinoid Range */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Cannabinoid Range
+            </h3>
+            <div className="space-y-1 text-white/80">
+              <p><strong className="text-white/90">THC:</strong> {wikiReport.chemistry.cannabinoidRange.thc}</p>
+              <p><strong className="text-white/90">CBD:</strong> {wikiReport.chemistry.cannabinoidRange.cbd}</p>
+              {wikiReport.chemistry.cannabinoidRange.minors.length > 0 && (
+                <p><strong className="text-white/90">Minor Cannabinoids:</strong> {wikiReport.chemistry.cannabinoidRange.minors.join(", ")}</p>
+              )}
+            </div>
+          </div>
+          
+          {/* Visual Alignment */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Visual Alignment
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.chemistry.visualAlignment}
+            </p>
+          </div>
+          
+          {/* Variance Disclaimer */}
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+            <p className="text-sm text-yellow-200 leading-relaxed">
+              {wikiReport.chemistry.varianceDisclaimer}
+            </p>
+          </div>
+        </div>
+      </CollapsibleSection>
+      
+      {/* 5. EFFECTS & EXPERIENCE (Phase 4.2 Step 4.2.6) */}
+      <CollapsibleSection
+        title="Effects & Experience"
+        defaultExpanded={true}
+        icon="✨"
+      >
+        <div className="space-y-4">
+          {/* Primary Effects */}
+          {wikiReport.effectsExperience.primaryEffects.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-white/90 mb-2">
+                Primary Effects
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                {wikiReport.effectsExperience.primaryEffects.map((effect, idx) => (
+                  <li key={idx}>{effect}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Secondary Effects */}
+          {wikiReport.effectsExperience.secondaryEffects.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-white/90 mb-2">
+                Secondary Effects
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                {wikiReport.effectsExperience.secondaryEffects.map((effect, idx) => (
+                  <li key={idx}>{effect}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Onset Timing */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Onset Timing
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.effectsExperience.onsetTiming}
+            </p>
+          </div>
+          
+          {/* Typical Duration */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Typical Duration
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.effectsExperience.typicalDuration}
+            </p>
+          </div>
+          
+          {/* Mental vs Physical Balance */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Mental vs Physical Balance
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.effectsExperience.mentalVsPhysical}
+            </p>
+          </div>
+          
+          {/* Common Use Cases */}
+          {wikiReport.effectsExperience.commonUseCases.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-white/90 mb-2">
+                Common Use Cases
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                {wikiReport.effectsExperience.commonUseCases.map((useCase, idx) => (
+                  <li key={idx}>{useCase}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
+      
+      {/* 6. CULTIVATION CHARACTERISTICS (Phase 4.2 Step 4.2.7) */}
+      <CollapsibleSection
+        title="Cultivation Characteristics"
+        defaultExpanded={false}
+        icon="🌱"
+      >
+        <div className="space-y-4">
+          {/* Indoor/Outdoor */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Indoor vs Outdoor
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.cultivation.indoorOutdoor}
+            </p>
+          </div>
+          
+          {/* Flowering Time */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Flowering Time
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.cultivation.floweringTime}
+            </p>
+          </div>
+          
+          {/* Yield Expectation */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Yield Expectation
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.cultivation.yieldExpectation}
+            </p>
+          </div>
+          
+          {/* Growth Pattern */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Growth Pattern
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.cultivation.growthPattern}
+            </p>
+          </div>
+          
+          {/* Known Sensitivities */}
+          {wikiReport.cultivation.knownSensitivities.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-white/90 mb-2">
+                Known Sensitivities
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                {wikiReport.cultivation.knownSensitivities.map((sensitivity, idx) => (
+                  <li key={idx}>{sensitivity}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
+      
+      {/* 7. SIMILAR / OFTEN CONFUSED STRAINS (Phase 4.2 Step 4.2.7) */}
+      {wikiReport.similarStrains.length > 0 && (
+        <CollapsibleSection
+          title="Similar / Often Confused Strains"
+          defaultExpanded={false}
+          icon="🔍"
+        >
+          <div className="space-y-4">
+            {wikiReport.similarStrains.map((similar, idx) => (
+              <div key={idx} className="p-4 rounded-lg border border-white/10 bg-white/5">
+                <h3 className="text-base font-semibold text-white/90 mb-2">
+                  {similar.name}
+                </h3>
+                <p className="text-sm text-white/70 mb-2">
+                  <strong>Why Similar:</strong> {similar.similarityReason}
+                </p>
+                <p className="text-sm text-white/80 leading-relaxed">
+                  <strong>Distinction:</strong> {similar.distinction}
+                </p>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+      
+      {/* 8. CONFIDENCE & VARIANCE NOTES (Phase 4.2 Step 4.2.8) */}
+      <CollapsibleSection
+        title="Confidence & Variance Notes"
+        defaultExpanded={false}
+        icon="📊"
+      >
+        <div className="space-y-4">
+          {/* Why This Confidence */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Why This Confidence Level
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.confidenceVariance.whyThisConfidence}
+            </p>
+          </div>
+          
+          {/* What Increased Confidence */}
+          {wikiReport.confidenceVariance.whatIncreasedConfidence.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-green-300 mb-2">
+                ✓ What Increased Confidence
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                {wikiReport.confidenceVariance.whatIncreasedConfidence.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* What Limits Certainty */}
+          {wikiReport.confidenceVariance.whatLimitsCertainty.length > 0 && (
+            <div>
+              <h3 className="text-base font-semibold text-yellow-300 mb-2">
+                ⚠️ What Limits Certainty
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                {wikiReport.confidenceVariance.whatLimitsCertainty.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
+      
+      {/* 9. SOURCES & REASONING (Phase 4.2 Step 4.2.9) */}
+      <CollapsibleSection
+        title="Sources & Reasoning"
+        defaultExpanded={false}
+        icon="📚"
+      >
+        <div className="space-y-4">
+          {/* Database */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Internal Database
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.sourcesReasoning.database}
+            </p>
+          </div>
+          
+          {/* Visual Clustering */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Visual Trait Clustering
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.sourcesReasoning.visualClustering}
+            </p>
+          </div>
+          
+          {/* Consensus Logic */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              Cross-Image Consensus Logic
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.sourcesReasoning.consensusLogic}
+            </p>
+          </div>
+          
+          {/* AI Synthesis */}
+          <div>
+            <h3 className="text-base font-semibold text-white/90 mb-2">
+              AI Synthesis
+            </h3>
+            <p className="text-white/80 leading-relaxed">
+              {wikiReport.sourcesReasoning.aiSynthesis}
+            </p>
+          </div>
+        </div>
+      </CollapsibleSection>
+    </section>
+  );
+}

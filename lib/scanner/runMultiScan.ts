@@ -34,6 +34,8 @@ import {
 } from "./wikiExpansion";
 import { generatePerImageFindings, generateConsensusAlignment } from "./perImageFindings";
 import { assignUserImageLabels } from "./imageLabels";
+// Phase 4.2 — Extensive Wiki-Style Report
+import { generateWikiReport } from "./wikiReport";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -437,6 +439,27 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     console.log("PER-IMAGE FINDINGS:", perImageFindings);
     console.log("CONSENSUS ALIGNMENT:", consensusAlignment);
   }
+  
+  // Phase 4.2 Step 4.2.1 — Generate Extensive Wiki-Style Report (Locked Order)
+  const wikiReport = generateWikiReport(
+    nameFirstResult.primaryMatch.name,
+    nameFirstPipelineResult?.nameConfidencePercent || nameFirstResult.confidence || 75,
+    nameFirstPipelineResult?.nameConfidenceTier || confidenceTier.tier,
+    fusedFeatures,
+    dbEntry,
+    extendedProfile,
+    wikiData,
+    input.imageCount,
+    imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+    consensusResult,
+    viewModel.consensusAlignment,
+    viewModel.nameResolution,
+    viewModel.relatedStrains,
+    viewModel.originStory,
+    viewModel.familyTree
+  );
+  viewModel.wikiReport = wikiReport;
+  console.log("Phase 4.2 Step 4.2.1 — WIKI REPORT:", wikiReport);
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

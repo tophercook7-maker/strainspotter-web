@@ -160,6 +160,9 @@ export interface ScannerViewModel {
     reason: string;
   }>;
   
+  // Phase 4.2 — Extensive Wiki-Style Report
+  wikiReport?: import("./wikiReport").WikiReportSections;
+  
   // Phase 3.9 Part A — Origin Story
   originStory?: string;
   

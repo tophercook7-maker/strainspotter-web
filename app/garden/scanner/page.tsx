@@ -9,6 +9,7 @@ import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageL
 type ScanTier = "basic" | "pro" | "expert";
 import ResultPanel from "./ResultPanel";
 import WikiStyleResultPanel from "./WikiStyleResultPanel";
+import WikiReportPanel from "./WikiReportPanel"; // Phase 4.2 — Extensive Wiki-Style Report
 import TopNav from "../_components/TopNav";
 
 /**
@@ -294,9 +295,15 @@ export default function ScannerPage() {
         </div>
 
         {/* C) Results Card(s) */}
-        {/* Phase 3.6 — Wiki-Style Result Expansion */}
+        {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
+        {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
         <section className="space-y-6">
-          {result && <WikiStyleResultPanel result={result} imageCount={images.length} />}
+          {result && result.wikiReport && (
+            <WikiReportPanel result={result} imageCount={images.length} />
+          )}
+          {result && !result.wikiReport && (
+            <WikiStyleResultPanel result={result} imageCount={images.length} />
+          )}
         </section>
       </main>
     </>
