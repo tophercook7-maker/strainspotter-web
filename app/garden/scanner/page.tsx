@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { runWikiEngine } from "@/lib/scanner/wikiEngine";
-import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
-import { matchCultivars } from "@/lib/scanner/cultivarMatcher";
+import { scanImages } from "@/lib/scanner/scanImages";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
-import type { ScanContext } from "@/lib/scanner/types";
+import type { WikiSynthesis } from "@/lib/scanner/types";
 
 type ScanTier = "basic" | "pro" | "expert";
 import ResultPanel from "./ResultPanel";
@@ -18,66 +16,24 @@ import TopNav from "../_components/TopNav";
 export default function ScannerPage() {
   const [images, setImages] = useState<File[]>([]);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
-  const [identificationResult, setIdentificationResult] = useState<any>(null);
+  const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const MAX_IMAGES = 3;
 
 
-  // TIER 1 (FREE / NORMAL):
-  // - General identification
-  // - Core effects, aroma, genetics
-  // - Educational summary only
-  const runScan = async () => {
-    if (images.length === 0) {
-      alert("Please choose at least one image first.");
-      return;
-    }
+  async function runScan() {
+    if (images.length === 0) return;
 
     setIsScanning(true);
-    // Clear previous results when starting new scan
-    setResult(null);
-    setIdentificationResult(null);
 
     try {
-      console.log("RUN SCAN CLICKED", images.map(img => img.name).join(", "));
-
-      // Use first image for now (can be extended to process multiple)
-      const wiki = await runWikiEngine(images[0]);
-      const viewModel = wikiToViewModel(wiki);
-      setResult(viewModel);
-
-      // Generate context for cultivar matching
-      const context: ScanContext = {
-        imageQuality: {
-          focus: "moderate",
-          noise: "moderate",
-          lighting: "good",
-        },
-        detectedFeatures: {
-          leafShape: wiki.morphology.visualTraits?.find(t => {
-            const lower = t.toLowerCase();
-            return lower.includes("leaf") || lower.includes("broad") || lower.includes("narrow");
-          }) || undefined,
-          trichomeDensity: wiki.morphology.trichomes,
-          pistilColor: wiki.morphology.coloration.includes("pistil") 
-            ? wiki.morphology.coloration 
-            : undefined,
-        },
-        uncertaintySignals: wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0
-          ? { conflictingTraits: wiki.reasoning.conflictingSignals }
-          : undefined,
-      };
-
-      // REPLACE "Closest Known Cultivar" logic with matchCultivars()
-      const identificationReport = matchCultivars(wiki, context);
-      setIdentificationResult(identificationReport);
-      
-      // Log full result to console
-      console.log("IDENTIFICATION REPORT", identificationReport);
+      const scanResult = await scanImages(images);
+      setResult(scanResult.result);
+      setSynthesis(scanResult.synthesis);
     } finally {
       setIsScanning(false);
     }
-  };
+  }
 
   return (
     <>

@@ -2,7 +2,7 @@
 // 🔒 Phase 2.1 RESET — Strict IdentificationReport generator
 
 import type { WikiResult, ScanContext, IdentificationReport } from "./types";
-import { matchCultivars, type CultivarMatch } from "./cultivarMatcher";
+import { matchCultivars } from "./cultivarMatcher";
 
 /**
  * Generate strict IdentificationReport from WikiResult
@@ -13,64 +13,33 @@ export function generateIdentificationReport(
   context: ScanContext
 ): IdentificationReport {
   // Get ranked cultivar matches
-  const matches = matchCultivars(wiki, context);
-  console.log("Ranked cultivar matches:", matches);
+  const matchResult = matchCultivars(wiki, context);
+  console.log("Ranked cultivar matches:", matchResult);
 
-  // Select primary match (top match if score >= 30, otherwise fallback)
-  const topMatch = matches.length > 0 && matches[0].score >= 30 ? matches[0] : null;
-  
-  const primaryName = topMatch
-    ? topMatch.name
-    : "Phenotype-Closest Hybrid";
+  // Select primary match
+  const primary = matchResult.primary;
+  const primaryName = primary.name;
+  const primaryConfidenceRange = primary.confidenceRange;
+  const whyItWon = primary.reasons;
 
-  const primaryConfidenceRange = topMatch
-    ? topMatch.confidenceRange
-    : "30-45%";
-
-  const whyItWon = topMatch
-    ? topMatch.reasons
-    : [
-        "Visual characteristics suggest a hybrid phenotype",
-        "No single named cultivar showed dominant alignment",
-        "Multiple cultivars share similar morphological traits",
-      ];
-
-  // Ranked alternates (at least 2, exclude primary if it's in the list)
-  const alternateMatches = matches
-    .filter(m => m.name !== primaryName)
-    .slice(0, 4) // Top 4 alternates
-    .map(m => ({
-      name: m.name,
-      confidenceRange: m.confidenceRange,
-      reasons: m.reasons,
-    }));
-
-  // Ensure at least 2 alternates (if we have matches)
-  if (alternateMatches.length < 2 && matches.length >= 2) {
-    // Include the second match even if it's the primary (for fallback cases)
-    const secondMatch = matches[1];
-    if (secondMatch && !alternateMatches.some(a => a.name === secondMatch.name)) {
-      alternateMatches.push({
-        name: secondMatch.name,
-        confidenceRange: secondMatch.confidenceRange,
-        reasons: secondMatch.reasons,
-      });
-    }
-  }
+  // Ranked alternates (at least 2)
+  const alternateMatches = matchResult.alternates.slice(0, 4).map(m => ({
+    name: m.name,
+    confidenceRange: m.confidenceRange,
+    reasons: [m.reason],
+  }));
 
   // Visual evidence
   const matchingTraits: string[] = [];
-  if (topMatch) {
-    // Extract which traits matched from the reasons
-    if (topMatch.reasons.some(r => r.includes("Bud structure"))) {
-      matchingTraits.push("Bud structure");
-    }
-    if (topMatch.reasons.some(r => r.includes("Trichome"))) {
-      matchingTraits.push("Trichome density");
-    }
-    if (topMatch.reasons.some(r => r.includes("Effect profile"))) {
-      matchingTraits.push("Effect profile");
-    }
+  // Extract which traits matched from the reasons
+  if (primary.reasons.some(r => r.includes("Bud") || r.includes("bud"))) {
+    matchingTraits.push("Bud structure");
+  }
+  if (primary.reasons.some(r => r.includes("Trichome") || r.includes("trichome"))) {
+    matchingTraits.push("Trichome density");
+  }
+  if (primary.reasons.some(r => r.includes("Effect") || r.includes("effect"))) {
+    matchingTraits.push("Effect profile");
   }
 
   // Extract pistil color from coloration

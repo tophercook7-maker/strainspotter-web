@@ -2,7 +2,7 @@
 // 🔒 B.2 — AI SYNTHESIS LAYER (READ-ONLY, NO UI CHANGE)
 
 import type { WikiResult, WikiSynthesis, ScanContext } from "./types";
-import { matchCultivars, type CultivarMatch } from "./cultivarMatcher";
+import { matchCultivars } from "./cultivarMatcher";
 
 /**
  * 🔒 B.2.1 & B.2.3 — Synthesize insights from WikiResult
@@ -61,45 +61,32 @@ export function synthesizeWikiInsights(wiki: WikiResult, context?: ScanContext):
   };
 
   // Match cultivars and get ranked results
-  const cultivarMatches = matchCultivars(wiki, scanContext);
-  console.log("Ranked cultivar matches:", cultivarMatches);
+  const matchResult = matchCultivars(wiki, scanContext);
+  console.log("Ranked cultivar matches:", matchResult);
 
   // Select top match or fallback
-  const topMatch = cultivarMatches.length > 0 && cultivarMatches[0].score >= 30
-    ? cultivarMatches[0]
-    : null;
+  const primary = matchResult.primary;
+  const topMatch = primary.score >= 30 ? primary : null;
 
   // Phase 2.2: Determine closest cultivar name
-  const closestCultivarName = topMatch
-    ? topMatch.name
-    : "Phenotype-Closest Hybrid";
+  const closestCultivarName = primary.name;
 
   // Phase 2.2: Map score to match strength label
   let matchStrengthLabel: "Very Strong" | "Strong" | "Moderate";
-  if (topMatch) {
-    if (topMatch.score >= 70) {
-      matchStrengthLabel = "Very Strong";
-    } else if (topMatch.score >= 50) {
-      matchStrengthLabel = "Strong";
-    } else {
-      matchStrengthLabel = "Moderate";
-    }
+  if (primary.score >= 70) {
+    matchStrengthLabel = "Very Strong";
+  } else if (primary.score >= 50) {
+    matchStrengthLabel = "Strong";
   } else {
     matchStrengthLabel = "Moderate";
   }
 
-  // Phase 2.2: Use reasons from top match (rationale renamed to reasons)
-  const matchRationale = topMatch
-    ? topMatch.reasons
-    : [
-        "Visual characteristics suggest a hybrid phenotype",
-        "No single named cultivar showed dominant alignment",
-        "Multiple cultivars share similar morphological traits",
-      ];
+  // Phase 2.2: Use reasons from primary match
+  const matchRationale = primary.reasons;
 
   // Phase 2.2: Alternate matches (names only, no scores)
-  const alternateMatches = cultivarMatches
-    .slice(1, 4) // Top 3 alternates (skip the top match)
+  const alternateMatches = matchResult.alternates
+    .slice(0, 3) // Top 3 alternates
     .map((match) => match.name);
 
   // Phase 2.1: STRONG OPENING PARAGRAPH (3-4 sentences)
@@ -274,13 +261,11 @@ export function synthesizeWikiInsights(wiki: WikiResult, context?: ScanContext):
     matchStrength = "Moderate";
   }
 
-  // Phase 2.2: Use closestCultivarName from matcher (already computed above)
+  // Phase 2.2: Use closestCultivarName from matcher
   const bestMatchName = closestCultivarName;
 
-  // Phase 2.2: Use reasons from top match for "why this match"
-  const finalWhyThisMatch = topMatch
-    ? topMatch.reasons.slice(0, 5)
-    : matchRationale.slice(0, 5);
+  // Phase 2.2: Use reasons from primary match for "why this match"
+  const finalWhyThisMatch = primary.reasons.slice(0, 5);
 
   // Phase 2.1: Detailed morphology breakdown
   const budStructureDesc = wiki.morphology.budStructure || "Flower structure shows typical hybrid characteristics";
