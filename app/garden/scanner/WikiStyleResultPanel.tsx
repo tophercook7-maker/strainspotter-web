@@ -59,8 +59,8 @@ export default function WikiStyleResultPanel({
   const strainFamily = getStrainFamily();
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-6 max-h-[85vh] overflow-y-auto">
-      {/* Phase 3.6 Part B — STRAIN IDENTITY (ABOVE THE FOLD) */}
+    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-6 max-h-[85vh] overflow-y-auto max-w-4xl mx-auto">
+      {/* Phase 3.9 Part A — CORE IDENTITY (ABOVE THE FOLD) */}
       <div className="space-y-4 pb-4 border-b border-white/10">
         <div className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-bold text-white">
@@ -225,23 +225,25 @@ export default function WikiStyleResultPanel({
             </p>
           </div>
 
-          {/* Parent Strains */}
+          {/* Parent Strains & Family Tree */}
           {(extendedProfile?.genetics.lineage ||
-            result.genetics?.lineage) && (
+            result.genetics?.lineage ||
+            result.familyTree) && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
-                Parent Strains & Lineage
+                Parent Strains & Family Tree
               </h4>
-              <p className="text-white/80 leading-relaxed">
-                {extendedProfile?.genetics.lineage ||
+              <p className="text-white/80 leading-relaxed mb-2">
+                {result.familyTree ||
+                  extendedProfile?.genetics.lineage ||
                   result.genetics?.lineage ||
                   "Lineage information not available."}
-                {extendedProfile?.genetics.lineage
-                  ? " This genetic combination contributes to the distinctive traits observed in this cultivar."
-                  : result.genetics?.lineage
-                  ? " The parent strains influence the plant's morphology, effects, and cultivation characteristics."
-                  : ""}
               </p>
+              {(extendedProfile?.genetics.lineage || result.genetics?.lineage) && (
+                <p className="text-white/80 leading-relaxed text-sm">
+                  This genetic combination contributes to the distinctive traits observed in this cultivar. The parent strains influence the plant's morphology, effects, and cultivation characteristics.
+                </p>
+              )}
             </div>
           )}
 
@@ -500,6 +502,18 @@ export default function WikiStyleResultPanel({
               </p>
             </div>
           )}
+          
+          {/* Phase 3.9 Part D — Entourage Effect Explanation */}
+          {result.entourageExplanation && (
+            <div className="mt-4 p-3 rounded-lg border border-blue-500/30 bg-blue-500/10">
+              <h4 className="text-base font-semibold text-blue-200 mb-2">
+                The Entourage Effect
+              </h4>
+              <p className="text-sm text-blue-200/90 leading-relaxed">
+                {result.entourageExplanation}
+              </p>
+            </div>
+          )}
         </div>
       </CollapsibleSection>
 
@@ -580,6 +594,30 @@ export default function WikiStyleResultPanel({
             </div>
           )}
 
+          {/* Phase 3.9 Part E — Mental vs Body Balance */}
+          <div>
+            <h4 className="text-base font-semibold text-white/90 mb-2">
+              Mental vs Body Balance
+            </h4>
+            <p className="text-white/80 leading-relaxed">
+              {result.genetics?.dominance === "Indica"
+                ? "This cultivar tends to produce primarily body-focused effects with a strong physical relaxation component. While some mental effects may be present, the body sensations typically dominate the experience."
+                : result.genetics?.dominance === "Sativa"
+                ? "This cultivar typically produces cerebral, mental effects with energizing qualities. Physical effects are usually minimal, allowing for active engagement and creative thinking."
+                : "This hybrid cultivar offers a balanced combination of mental and body effects. The specific balance can vary between phenotypes, with some leaning more toward cerebral stimulation and others toward physical relaxation."}
+            </p>
+          </div>
+          
+          {/* Phase 3.9 Part E — Variability Notes */}
+          <div>
+            <h4 className="text-base font-semibold text-white/90 mb-2">
+              Why Effects Can Feel Different
+            </h4>
+            <p className="text-white/80 leading-relaxed">
+              Individual experiences with this cultivar can vary significantly due to several factors. Personal tolerance, metabolism, consumption method (smoking, vaping, edibles), dosage, and even time of day can influence how effects are perceived. Additionally, phenotype variations within the same genetic lineage may produce slightly different cannabinoid and terpene ratios, leading to nuanced differences in effects. Environmental factors during cultivation—such as nutrient schedules, light cycles, and harvest timing—also contribute to variation in the final product.
+            </p>
+          </div>
+          
           {/* Who It's Best For */}
           {result.experience?.bestFor &&
             result.experience.bestFor.length > 0 && (
@@ -597,6 +635,119 @@ export default function WikiStyleResultPanel({
             )}
         </div>
       </CollapsibleSection>
+      
+      {/* Phase 3.9 Part F — COMMON USE CASES (Detailed) */}
+      <CollapsibleSection
+        title="Common Use Cases"
+        defaultExpanded={false}
+        icon="📋"
+      >
+        <div className="space-y-4">
+          {/* Day vs Night Use */}
+          <div>
+            <h4 className="text-base font-semibold text-white/90 mb-2">
+              Day vs Night Use
+            </h4>
+            <p className="text-white/80 leading-relaxed">
+              {result.genetics?.dominance === "Indica"
+                ? "This cultivar is generally best suited for evening or nighttime use due to its relaxing and potentially sedative effects. It may interfere with daytime productivity or alertness."
+                : result.genetics?.dominance === "Sativa"
+                ? "This cultivar is well-suited for daytime use, as it typically provides energizing and uplifting effects without heavy sedation. It can enhance focus and creativity during active hours."
+                : "This hybrid cultivar can work for both day and night use depending on the specific phenotype and individual response. Some may find it suitable for afternoon or early evening, while others may prefer it for relaxed evening activities."}
+            </p>
+          </div>
+          
+          {/* Creativity / Focus / Relaxation */}
+          <div>
+            <h4 className="text-base font-semibold text-white/90 mb-2">
+              Activity Suitability
+            </h4>
+            <div className="space-y-2 text-white/80">
+              {result.genetics?.dominance === "Indica" ? (
+                <>
+                  <p><strong>Creativity:</strong> Lower stimulation may limit creative bursts; better for reflective, contemplative creative work.</p>
+                  <p><strong>Focus:</strong> Not ideal for tasks requiring sharp focus; better for relaxation and stress relief.</p>
+                  <p><strong>Relaxation:</strong> Excellent for unwinding, stress relief, and physical relaxation after activities.</p>
+                </>
+              ) : result.genetics?.dominance === "Sativa" ? (
+                <>
+                  <p><strong>Creativity:</strong> Excellent for stimulating creative thinking, brainstorming, and artistic activities.</p>
+                  <p><strong>Focus:</strong> Can enhance focus and productivity for engaging tasks, though effects vary by individual.</p>
+                  <p><strong>Relaxation:</strong> Mental relaxation possible, but physical relaxation is typically minimal.</p>
+                </>
+              ) : (
+                <>
+                  <p><strong>Creativity:</strong> Moderate creative enhancement depending on phenotype balance.</p>
+                  <p><strong>Focus:</strong> Can support focus for engaging tasks, with effects varying by individual and dosage.</p>
+                  <p><strong>Relaxation:</strong> Balanced relaxation—mental calm with moderate physical relaxation.</p>
+                </>
+              )}
+            </div>
+          </div>
+          
+          {/* Social vs Solo */}
+          <div>
+            <h4 className="text-base font-semibold text-white/90 mb-2">
+              Social vs Solo Contexts
+            </h4>
+            <p className="text-white/80 leading-relaxed">
+              {result.genetics?.dominance === "Indica"
+                ? "This cultivar is typically better suited for solo or small-group settings where relaxation and introspection are desired. Large social gatherings may feel overwhelming."
+                : result.genetics?.dominance === "Sativa"
+                ? "This cultivar can enhance social experiences by promoting conversation, energy, and engagement. It's well-suited for group activities and social gatherings."
+                : "This hybrid cultivar can work in both social and solo contexts, with effects varying based on the specific balance of indica and sativa traits. It offers flexibility for different social situations."}
+            </p>
+          </div>
+        </div>
+      </CollapsibleSection>
+      
+      {/* Phase 3.9 Part G — VARIANTS & CLOSE RELATIVES */}
+      {(result.relatedStrains && result.relatedStrains.length > 0) || 
+       (extendedProfile?.knownVariations && extendedProfile.knownVariations.length > 0) ? (
+        <CollapsibleSection
+          title="Variants & Close Relatives"
+          defaultExpanded={false}
+          icon="🌳"
+        >
+          <div className="space-y-4">
+            {/* Related Strains */}
+            {result.relatedStrains && result.relatedStrains.length > 0 && (
+              <div>
+                <h4 className="text-base font-semibold text-white/90 mb-2">
+                  Closely Related Strains
+                </h4>
+                <div className="space-y-3">
+                  {result.relatedStrains.map((related, idx) => (
+                    <div key={idx} className="p-3 rounded-lg border border-white/10 bg-white/5">
+                      <div className="flex items-start justify-between mb-1">
+                        <p className="font-semibold text-white">{related.name}</p>
+                        <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded">
+                          {related.relationship}
+                        </span>
+                      </div>
+                      <p className="text-sm text-white/70">{related.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Phenotype Variations */}
+            {extendedProfile?.knownVariations && extendedProfile.knownVariations.length > 0 && (
+              <div>
+                <h4 className="text-base font-semibold text-white/90 mb-2">
+                  Phenotype Variations
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                  {extendedProfile.knownVariations.map((variation, idx) => (
+                    <li key={idx}>{variation}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+      ) : null}
 
       {/* Phase 3.6 Part G — GROWTH & CULTIVATION NOTES */}
       <CollapsibleSection
@@ -686,21 +837,95 @@ export default function WikiStyleResultPanel({
         </div>
       </CollapsibleSection>
 
-      {/* Phase 3.6 Part H — CONFIDENCE & VARIATION */}
+      {/* Phase 3.9 Part H — CONFIDENCE & DISCLAIMERS */}
       <CollapsibleSection
-        title="Confidence, Variation & Disclaimers"
+        title="Confidence & Disclaimers"
         defaultExpanded={false}
         icon="ℹ️"
       >
         <div className="space-y-4">
-          {/* Why Confidence Isn't Absolute */}
+          {/* Confidence Tier */}
+          {result.confidenceTier && (
+            <div>
+              <h4 className="text-base font-semibold text-white/90 mb-2">
+                Confidence Assessment
+              </h4>
+              <div className="p-3 rounded-lg border border-white/10 bg-white/5 mb-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      result.confidenceTier.tier === "high"
+                        ? "bg-green-500/20 text-green-300"
+                        : result.confidenceTier.tier === "moderate"
+                        ? "bg-yellow-500/20 text-yellow-300"
+                        : "bg-orange-500/20 text-orange-300"
+                    }`}
+                  >
+                    {result.confidenceTier.label}
+                  </span>
+                  <span className="text-sm text-white/60">
+                    {result.confidenceRange
+                      ? `${result.confidenceRange.min}–${result.confidenceRange.max}%`
+                      : `${result.confidence}%`}
+                  </span>
+                </div>
+                <p className="text-sm text-white/70">
+                  {result.confidenceTier.description}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* What Increased Confidence */}
+          {imageCount > 1 && (
+            <div>
+              <h4 className="text-base font-semibold text-white/90 mb-2">
+                What Increased Confidence
+              </h4>
+              <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+                {imageCount >= 2 && (
+                  <li>Multiple images ({imageCount}) provided cross-validation</li>
+                )}
+                {result.multiImageInfo?.improvementExplanation && (
+                  <li>{result.multiImageInfo.improvementExplanation}</li>
+                )}
+                {result.nameResolution?.matchType === "clear_winner" && (
+                  <li>Strong consensus across all analyzed images</li>
+                )}
+                {result.confidenceTier?.tier === "high" && (
+                  <li>High visual trait alignment with known cultivar characteristics</li>
+                )}
+              </ul>
+            </div>
+          )}
+          
+          {/* What Reduced Certainty */}
           <div>
             <h4 className="text-base font-semibold text-white/90 mb-2">
-              Why Confidence Isn't Absolute
+              What Reduced Certainty
             </h4>
-            <p className="text-white/80 leading-relaxed">
-              {result.uncertaintyExplanation ||
-                `Visual identification has inherent limitations. The confidence range of ${result.confidenceRange?.min || result.confidence}–${result.confidenceRange?.max || result.confidence}% reflects these uncertainties: cannabis cultivars can exhibit significant phenotypic variation even within the same strain, and visual traits alone cannot definitively confirm genetic identity without laboratory testing.`}
+            <ul className="list-disc list-inside space-y-1 text-white/80 ml-2">
+              {imageCount === 1 && (
+                <li>Single image analysis limits perspective and cross-validation</li>
+              )}
+              {result.confidenceTier?.tier === "low" && (
+                <li>Visual traits showed significant variation or ambiguity</li>
+              )}
+              {result.nameResolution?.matchType === "family_level" && (
+                <li>Specific cultivar identification uncertain; family-level match provided</li>
+              )}
+              <li>Phenotype variation within strains can create visual ambiguity</li>
+              <li>Visual analysis cannot confirm genetic identity without laboratory testing</li>
+            </ul>
+          </div>
+          
+          {/* Non-Lab Disclaimer */}
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
+            <h4 className="text-base font-semibold text-yellow-200 mb-2">
+              Important: Visual Identification Only
+            </h4>
+            <p className="text-sm text-yellow-200/90 leading-relaxed">
+              This identification is based solely on visual analysis of morphological characteristics. While visual traits provide strong indicators, definitive cultivar identification requires genetic testing or documented breeding records. The confidence level reflects the strength of visual alignment, not absolute certainty. Cannabinoid and terpene profiles, effects, and cultivation characteristics are inferred from known strain data and may vary significantly between phenotypes and growing conditions.
             </p>
           </div>
 

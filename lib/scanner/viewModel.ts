@@ -124,4 +124,20 @@ export interface ScannerViewModel {
     };
     strainFamily?: string;
   };
+  
+  // Phase 3.9 Part G — Related Strains
+  relatedStrains?: Array<{
+    name: string;
+    relationship: string;
+    reason: string;
+  }>;
+  
+  // Phase 3.9 Part A — Origin Story
+  originStory?: string;
+  
+  // Phase 3.9 Part B — Family Tree
+  familyTree?: string;
+  
+  // Phase 3.9 Part D — Entourage Effect Explanation
+  entourageExplanation?: string;
 }

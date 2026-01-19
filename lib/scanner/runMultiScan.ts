@@ -18,6 +18,12 @@ import { generateNamingDisplay } from "./namingDisplay";
 import { buildStrainCandidatePool } from "./strainCandidatePool";
 import { resolveStrainName } from "./nameResolution";
 import { getConfidenceTierFromRange } from "./confidenceTier";
+import {
+  findRelatedStrains,
+  generateOriginStory,
+  generateFamilyTree,
+  generateEntourageExplanation,
+} from "./wikiExpansion";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -334,6 +340,36 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // Phase 3.8 Part B — Add name resolution
   viewModel.nameResolution = nameResolution;
+  
+  // Phase 3.9 Part G — Find related strains for wiki expansion
+  const relatedStrainsData = findRelatedStrains(
+    nameFirstResult.primaryMatch.name,
+    nameResolution.strainFamily,
+    dbEntry
+  );
+  viewModel.relatedStrains = relatedStrainsData;
+  
+  // Phase 3.9 Part A — Generate origin story
+  const originStoryText = generateOriginStory(
+    nameFirstResult.primaryMatch.name,
+    dbEntry,
+    wikiData
+  );
+  viewModel.originStory = originStoryText;
+  
+  // Phase 3.9 Part B — Generate family tree
+  const familyTreeText = generateFamilyTree(
+    extendedProfile?.genetics.lineage || viewModel.genetics?.lineage || "",
+    dbEntry
+  );
+  viewModel.familyTree = familyTreeText;
+  
+  // Phase 3.9 Part D — Generate entourage effect explanation
+  const entourageExplanationText = generateEntourageExplanation(
+    extendedProfile?.terpeneProfile.primary || [],
+    extendedProfile?.cannabinoidProfile.thcRange
+  );
+  viewModel.entourageExplanation = entourageExplanationText;
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {
