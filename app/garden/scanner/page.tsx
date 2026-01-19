@@ -44,17 +44,22 @@ export default function ScannerPage() {
   // - Core effects, aroma, genetics
   // - Educational summary only
   const runScan = async () => {
-    console.log("RUN SCAN FIRED", { file, scanTier });
-    if (!file) return;
+    if (!file) {
+      alert("Please choose an image first.");
+      return;
+    }
 
     setIsScanning(true);
 
+    console.log("RUN SCAN CLICKED", file.name);
+
     const wiki = await runWikiEngine(file);
     const viewModel = wikiToViewModel(wiki);
-    const synthesis = synthesizeWikiInsights(wiki);
-
     setResult(viewModel);
-    setSynthesis(synthesis);
+
+    const wikiSynthesis = synthesizeWikiInsights(wiki);
+    setSynthesis(wikiSynthesis);
+
     setIsScanning(false);
   };
 
