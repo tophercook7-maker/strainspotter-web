@@ -1,5 +1,4 @@
-// lib/scanner/scanImages.ts
-// Scan multiple images and return result + synthesis
+// lib/scanner/runMultiScan.ts
 
 import { runWikiEngine } from "./wikiEngine";
 import { wikiToViewModel } from "./wikiAdapter";
@@ -13,16 +12,37 @@ export type ScanResult = {
   synthesis: WikiSynthesis;
 };
 
+type ImageSeed = {
+  name: string;
+  size: number;
+};
+
+type ScanPipelineInput = {
+  imageSeeds: ImageSeed[];
+  imageCount: number;
+};
+
 /**
- * Scan images and return result + synthesis
+ * Run the scan pipeline with image seeds
  */
-export async function scanImages(images: File[]): Promise<ScanResult> {
-  if (images.length === 0) {
+async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
+  if (input.imageCount === 0) {
     throw new Error("No images provided");
   }
 
-  // Use first image for now (can be extended to process multiple)
-  const wiki = await runWikiEngine(images[0]);
+  // Use first image seed for now (can be extended to process multiple)
+  const firstSeed = input.imageSeeds[0];
+  // Create a minimal File object from seed data
+  const syntheticFile = new File([], firstSeed.name, {
+    lastModified: Date.now(),
+  });
+  Object.defineProperty(syntheticFile, 'size', { 
+    value: firstSeed.size,
+    writable: false,
+    configurable: false,
+  });
+
+  const wiki = await runWikiEngine(syntheticFile);
   const viewModel = wikiToViewModel(wiki);
 
   // Generate context for cultivar matching and synthesis
@@ -58,4 +78,19 @@ export async function scanImages(images: File[]): Promise<ScanResult> {
     result: viewModel,
     synthesis,
   };
+}
+
+/**
+ * Scan images and return result + synthesis
+ */
+export async function scanImages(images: File[]): Promise<ScanResult> {
+  const imageSeeds = images.map((img) => ({
+    name: img.name,
+    size: img.size,
+  }));
+
+  return runScanPipeline({
+    imageSeeds,
+    imageCount: images.length,
+  });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { scanImages } from "@/lib/scanner/scanImages";
+import { scanImages } from "@/lib/scanner/runMultiScan";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis } from "@/lib/scanner/types";
 
