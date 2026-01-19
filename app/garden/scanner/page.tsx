@@ -64,16 +64,17 @@ export default function ScannerPage() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <>
       <TopNav title="Scanner" showBack />
+      
+      <main className="min-h-screen bg-black text-white flex justify-center px-4 py-10">
+        {/* background image stays behind everything */}
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
 
-      {/* background image stays behind everything */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-black/60" />
-      </div>
-
-      {/* CONTENT */}
-      <div className="mx-auto w-full max-w-3xl px-4 py-8 space-y-6">
+        {/* CONTENT */}
+        <div className="w-full max-w-3xl space-y-8">
         {/* uploader + preview card */}
         <div className="w-full max-w-md mx-auto bg-black/40 backdrop-blur rounded-xl p-4 space-y-4">
           {/* FILE PICKER */}
@@ -113,7 +114,8 @@ export default function ScannerPage() {
 
         {/* WikiPanel */}
         {synthesis && <WikiPanel synthesis={synthesis} />}
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }
