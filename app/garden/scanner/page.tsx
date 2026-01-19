@@ -67,7 +67,7 @@ export default function ScannerPage() {
     <main className="min-h-screen bg-black text-white">
       <TopNav title="Scanner" showBack />
 
-      <div className="mx-auto max-w-xl px-4 py-6 space-y-6">
+      <div className="relative z-10 mx-auto max-w-xl px-4 py-6 space-y-6">
 
         <div className="flex flex-col items-center w-full px-4">
           {/* CONTROLS */}
