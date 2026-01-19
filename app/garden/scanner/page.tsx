@@ -90,66 +90,62 @@ export default function ScannerPage() {
   return (
     <main className="min-h-screen bg-black text-white flex justify-center">
       <TopNav title="Scanner" showBack />
-      <div className="w-full max-w-3xl px-4 py-6 space-y-6">
-        <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
+      <div className="mx-auto w-full max-w-3xl px-4">
+        <div className="py-4 md:py-6 space-y-4 md:space-y-6">
+          <div className="rounded-3xl bg-black/70 backdrop-blur-xl p-4 md:p-6 text-white">
             {/* SCANNER CONTENT GOES BELOW */}
-            <h1 className="text-3xl font-bold mb-4">Scanner</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-4">Scanner</h1>
 
-      {/* Image Preview */}
-      {previewUrl && (
-        <div className="flex justify-center">
-          <img
-            src={previewUrl}
-            alt="Scan preview"
-            className="max-h-64 rounded-xl border border-white/20 object-contain"
-          />
+            {/* Image Preview */}
+            {previewUrl && (
+              <img
+                src={previewUrl}
+                alt="Scan preview"
+                className="mx-auto max-h-64 w-auto rounded-xl object-contain"
+              />
+            )}
+
+            {/* Controls */}
+            <div className="w-full max-w-sm mx-auto">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full text-sm text-white"
+              />
+            </div>
+
+            <button
+              onClick={runScan}
+              disabled={isScanning}
+              className="mx-auto mt-4 w-fit px-8 py-3 rounded-full bg-white text-black font-semibold hover:bg-white/90"
+            >
+              {isScanning ? "Scanning…" : "Run Scan"}
+            </button>
+
+            {/* LAYER 3 — WIKI UI */}
+            <div ref={resultRef} className="flex-1 overflow-y-auto space-y-4 pb-6">
+              {result && <ResultPanel result={result} />}
+              {synthesis && <WikiPanel synthesis={synthesis} />}
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Controls */}
-      <div className="w-full max-w-sm mx-auto">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="w-full text-sm text-white"
-        />
-      </div>
-
-      <button
-        onClick={runScan}
-        disabled={isScanning}
-        className="w-full max-w-sm mx-auto block rounded-xl bg-white text-black py-3 font-semibold hover:bg-white/90 disabled:opacity-50"
-      >
-        {isScanning ? "Scanning…" : "Run Scan"}
-      </button>
-
-      {/* LAYER 3 — WIKI UI */}
-      <div ref={resultRef} className="flex-1 overflow-y-auto space-y-4 pb-6">
+        {/* Variance note */}
         {result && (
-          <div className="mt-6">
-            <ResultPanel result={result} />
+          <p className="mt-4 text-xs text-white/40 text-center italic">
+            Results may differ with lighting, angle, and maturity.
+          </p>
+        )}
+
+        {/* Debug: Image seed/hash (subtle) */}
+        {imageSeed && (
+          <div className="mt-2 text-right">
+            <code className="text-xs text-white/20 font-mono">
+              {imageSeed.slice(0, 20)}...
+            </code>
           </div>
         )}
-        {synthesis && <WikiPanel synthesis={synthesis} />}
-      </div>
-        </div>
-
-      {/* Variance note */}
-      {result && (
-        <p className="mt-4 text-xs text-white/40 text-center italic">
-          Results may differ with lighting, angle, and maturity.
-        </p>
-      )}
-
-      {/* Debug: Image seed/hash (subtle) */}
-      {imageSeed && (
-        <div className="mt-2 text-right">
-          <code className="text-xs text-white/20 font-mono">
-            {imageSeed.slice(0, 20)}...
-          </code>
-        </div>
-      )}
       </div>
     </main>
   );

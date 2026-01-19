@@ -12,28 +12,28 @@ export default function ResultPanel({ result }: ResultPanelProps) {
   const safeBestFor = Array.isArray(result.experience.bestFor) ? result.experience.bestFor : [];
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4">
-      <h2 className="text-xl font-semibold">{result.title}</h2>
-      <p className="text-sm opacity-80">
+    <div className="mx-auto mt-6 w-full max-w-3xl rounded-2xl bg-black/60 p-6 backdrop-blur">
+      <h2 className="text-lg md:text-xl font-semibold mb-2">{result.title}</h2>
+      <p className="text-base md:text-lg leading-relaxed text-white/90">
         Confidence: {result.confidence}%
       </p>
 
       <section>
-        <h3>Genetics</h3>
-        <p>{result.genetics.dominance}</p>
-        <p>{result.genetics.lineage}</p>
+        <h3 className="text-lg md:text-xl font-semibold mb-2">Genetics</h3>
+        <p className="text-base md:text-lg leading-relaxed text-white/90">{result.genetics.dominance}</p>
+        <p className="text-base md:text-lg leading-relaxed text-white/90">{result.genetics.lineage}</p>
       </section>
 
       <section>
-        <h3>Experience</h3>
-        <p>Effects: {safeEffects.join(", ")}</p>
-        <p>Best for: {safeBestFor.join(", ")}</p>
+        <h3 className="text-lg md:text-xl font-semibold mb-2">Experience</h3>
+        <p className="text-base md:text-lg leading-relaxed text-white/90">Effects: {safeEffects.join(", ")}</p>
+        <p className="text-base md:text-lg leading-relaxed text-white/90">Best for: {safeBestFor.join(", ")}</p>
         {result.experience.bestTime && (
-          <p>Best time: {result.experience.bestTime}</p>
+          <p className="text-base md:text-lg leading-relaxed text-white/90">Best time: {result.experience.bestTime}</p>
         )}
       </section>
 
-      <p className="text-xs opacity-60 mt-4">
+      <p className="text-base md:text-lg leading-relaxed text-white/90 mt-4">
         {result.disclaimer}
       </p>
     </div>
