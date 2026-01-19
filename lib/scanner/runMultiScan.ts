@@ -6,8 +6,10 @@ import { matchCultivars } from "./cultivarMatcher";
 import { matchCultivarsWithVoting } from "./nameMatcher";
 import { fuseMultiImageFeatures } from "./multiImageFusion";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
+import { analyzePerImage, buildConsensusResult } from "./consensusEngine";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
+import { generateDeepAnalysis } from "./deepAnalysis";
 import { synthesizeWikiInsights } from "./wikiSynthesis";
 import { CULTIVAR_LIBRARY } from "./cultivarLibrary";
 import type { ScannerViewModel } from "./viewModel";
@@ -32,11 +34,16 @@ type ScanPipelineInput = {
  * Run the scan pipeline with image seeds
  * STEP 2.1.E — Process multiple images, average confidence, pick dominant candidate
  */
-async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
+async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): Promise<ScanResult> {
   console.log("runScanPipeline: starting with", input.imageCount, "images");
   
   if (input.imageCount === 0) {
     throw new Error("No images provided");
+  }
+
+  // Phase 2.7 Part N Step 1 — Require minimum 2 images (if multiple images provided)
+  if (input.imageCount > 1 && input.imageCount < 2) {
+    throw new Error("Multi-image scan requires at least 2 images");
   }
 
   console.log("runScanPipeline: processing wiki results");
@@ -63,8 +70,37 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
   const fusedFeatures = fuseMultiImageFeatures(wikiResults);
   console.log("FUSED FEATURES:", fusedFeatures);
 
-  // Phase 2.2 Part D — Name-First Matching
-  const nameFirstResult = matchStrainNameFirst(fusedFeatures, input.imageCount);
+  // Phase 2.7 Part N Step 2 — Per-Image Analysis (if image files provided)
+  let consensusResult = null;
+  if (imageFiles && imageFiles.length >= 2) {
+    const imageResults = await analyzePerImage(imageFiles, input.imageCount);
+    console.log("PER-IMAGE RESULTS:", imageResults);
+    
+    // Phase 2.7 Part N Step 3 — Consensus Engine
+    consensusResult = buildConsensusResult(imageResults, fusedFeatures, input.imageCount);
+    console.log("CONSENSUS RESULT:", consensusResult);
+  }
+
+  // Phase 2.2 Part D — Name-First Matching (use consensus if available, otherwise fallback)
+  const nameFirstResult = consensusResult 
+    ? {
+        primaryMatch: {
+          name: consensusResult.strainName,
+          score: 0,
+          confidence: Math.round((consensusResult.confidenceRange.min + consensusResult.confidenceRange.max) / 2),
+          whyThisMatch: consensusResult.whyThisMatch,
+          matchedTraits: [],
+        },
+        alsoSimilar: consensusResult.alternateMatches.map(a => ({
+          name: a.name,
+          whyNotPrimary: a.whyNotPrimary,
+        })),
+        confidence: Math.round((consensusResult.confidenceRange.min + consensusResult.confidenceRange.max) / 2),
+        confidenceRange: consensusResult.confidenceRange,
+        imageCountBonus: input.imageCount * 3,
+        variancePenalty: 0,
+      }
+    : matchStrainNameFirst(fusedFeatures, input.imageCount);
   console.log("NAME-FIRST RESULT:", nameFirstResult);
 
   // Phase 2.3 Part G Step 3 — Wiki Lookup (Name Locked)
@@ -85,6 +121,18 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
   );
   console.log("AI REASONING:", aiReasoning);
 
+  // Phase 2.5 Part L Step 3 — Deep Analysis Sections
+  const deepAnalysis = generateDeepAnalysis(
+    nameFirstResult.primaryMatch.name,
+    fusedFeatures,
+    nameFirstResult.primaryMatch,
+    wikiData,
+    dbEntry,
+    input.imageCount,
+    fusedFeatures.variance
+  );
+  console.log("DEEP ANALYSIS:", deepAnalysis);
+
   // Use the primary match name to find corresponding wiki result
   const primaryWiki = wikiResults.find(w => 
     w.identity.strainName === nameFirstResult.primaryMatch.name
@@ -104,7 +152,7 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
     },
   };
 
-  const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning);
+  const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis);
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {
@@ -139,6 +187,12 @@ export async function scanImages(images: File[]): Promise<ScanResult> {
     throw new Error("No images provided to scanImages");
   }
 
+  // Phase 2.7 Part N Step 1 — Require minimum 2 images for multi-image scan
+  // (But allow single image as fallback)
+  if (images.length > 1 && images.length < 2) {
+    throw new Error("Multi-image scan requires at least 2 images (max 3)");
+  }
+
   const imageSeeds = images.map((img) => ({
     name: img.name,
     size: img.size,
@@ -150,7 +204,7 @@ export async function scanImages(images: File[]): Promise<ScanResult> {
     const result = await runScanPipeline({
       imageSeeds,
       imageCount: images.length,
-    });
+    }, images); // Pass image files for consensus engine
     console.log("scanImages: pipeline completed", result);
     return result;
   } catch (error) {

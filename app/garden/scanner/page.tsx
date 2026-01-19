@@ -103,7 +103,8 @@ export default function ScannerPage() {
     <>
       <TopNav title="Scanner" showBack />
       
-      <main className="max-w-3xl mx-auto px-4 space-y-6">
+      {/* Phase 2.6 Part M Step 1 — Container Lock */}
+      <main className="max-w-xl md:max-w-2xl mx-auto px-4 space-y-6">
         {/* A) Upload + Preview Card */}
         <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-4">
               {/* FILE PICKER */}
@@ -135,10 +136,11 @@ export default function ScannerPage() {
                       key={idx}
                       className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group"
                     >
+                      {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
                       <img
                         src={URL.createObjectURL(img)}
                         alt={`scan-${idx + 1}`}
-                        className="w-full h-full object-cover max-h-[360px]"
+                        className="w-full h-full object-contain max-h-64 rounded-xl"
                       />
                       <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
                         {idx + 1}
@@ -165,7 +167,7 @@ export default function ScannerPage() {
             </div>
           )}
           
-          {/* Phase 2.4 Part J Step 1 — Real button element */}
+          {/* Phase 2.6 Part M Step 4 — Run Scan Button Fix */}
           <button
             type="button"
             disabled={images.length === 0 || isScanning}
@@ -173,15 +175,17 @@ export default function ScannerPage() {
             onKeyDown={handleKeyDown}
             className="relative z-50 
                        flex items-center justify-center gap-2
+                       w-full
                        px-6 py-4
-                       min-h-[56px] min-w-[200px]
-                       rounded-full
-                       bg-white text-black font-semibold text-lg
+                       min-h-[56px]
+                       rounded-xl
+                       bg-white text-black font-semibold text-base
                        pointer-events-auto
                        transition-all duration-200
-                       hover:bg-white/90 active:scale-95
+                       hover:bg-white/90 active:bg-white/80 active:scale-[0.98]
                        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100
-                       focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent"
+                       focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent
+                       cursor-pointer"
             aria-label={isScanning ? "Analyzing plant" : "Analyze plant"}
             aria-busy={isScanning}
           >

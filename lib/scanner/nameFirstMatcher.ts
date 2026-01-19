@@ -20,7 +20,8 @@ export type NameFirstResult = {
     name: string;
     whyNotPrimary: string;
   }>;
-  confidence: number;
+  confidence: number; // Legacy single value
+  confidenceRange: { min: number; max: number; explanation: string }; // Phase 2.5 Part L Step 2
   imageCountBonus: number;
   variancePenalty: number;
 };
@@ -88,13 +89,15 @@ function compareToStrain(fused: FusedFeatures, strain: CultivarReference): {
 /**
  * Calculate confidence with image count bonus and variance penalty
  * Phase 2.3 Part I — Confidence Governor
+ * Phase 2.5 Part L Step 2 — Confidence as Range
  */
 function calculateConfidence(
   topScore: number,
   imageCount: number,
   variance: number
 ): {
-  confidence: number;
+  confidence: number; // Legacy single value
+  confidenceRange: { min: number; max: number; explanation: string };
   imageCountBonus: number;
   variancePenalty: number;
 } {
@@ -121,11 +124,42 @@ function calculateConfidence(
     adjustedConfidence = Math.min(85, adjustedConfidence);
   }
 
-  // Clamp between 60 and 99
-  const confidence = Math.max(60, Math.min(99, Math.round(adjustedConfidence)));
+  // Phase 2.7 Part N Step 4 — Confidence Normalization: Cap max at 96%, NEVER show 100%
+  const confidence = Math.max(60, Math.min(96, Math.round(adjustedConfidence)));
+
+  // Phase 2.5 Part L Step 2 — Confidence as Range
+  // Phase 2.7 Part N Step 4 — Cap max at 96%, NEVER show 100%
+  const rangeWidth = Math.max(5, Math.min(15, Math.round(variance / 2) + (imageCount === 1 ? 10 : 0)));
+  const rangeMin = Math.max(60, Math.min(96, confidence - Math.floor(rangeWidth / 2)));
+  const rangeMax = Math.min(96, Math.max(60, confidence + Math.ceil(rangeWidth / 2)));
+
+  // Generate explanation for range
+  let rangeExplanation = "Confidence range accounts for ";
+  const factors: string[] = [];
+  if (imageCount === 1) {
+    factors.push("single image limitations");
+  }
+  if (variance > 20) {
+    factors.push("phenotype variation across images");
+  }
+  if (variance > 30) {
+    factors.push("lighting differences");
+  }
+  if (imageCount < 3) {
+    factors.push("limited viewing angles");
+  }
+  if (factors.length === 0) {
+    factors.push("natural variation in visual characteristics");
+  }
+  rangeExplanation += factors.join(", ") + ".";
 
   return {
-    confidence,
+    confidence, // Legacy
+    confidenceRange: {
+      min: rangeMin,
+      max: rangeMax,
+      explanation: rangeExplanation,
+    },
     imageCountBonus,
     variancePenalty: Math.round(variancePenalty),
   };
@@ -202,7 +236,12 @@ export function matchStrainNameFirst(
         matchedTraits: [],
       },
       alsoSimilar: [],
-      confidence: 60,
+      confidence: 60, // Legacy
+      confidenceRange: {
+        min: 55,
+        max: 65,
+        explanation: "Confidence range accounts for limited visual match data and natural variation in visual characteristics.",
+      },
       imageCountBonus: imageCount * 3,
       variancePenalty: 0,
     };
@@ -210,7 +249,7 @@ export function matchStrainNameFirst(
 
   // Calculate confidence for primary match
   const primary = scored[0];
-  const { confidence, imageCountBonus, variancePenalty } = calculateConfidence(
+  const { confidence, confidenceRange, imageCountBonus, variancePenalty } = calculateConfidence(
     primary.score,
     imageCount,
     fused.variance
@@ -249,7 +288,8 @@ export function matchStrainNameFirst(
       name: a.name,
       whyNotPrimary: a.whyNotPrimary || "Lower score",
     })),
-    confidence,
+    confidence, // Legacy
+    confidenceRange, // Phase 2.5 Part L Step 2
     imageCountBonus,
     variancePenalty,
   };

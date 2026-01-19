@@ -2,21 +2,58 @@
 // 🔒 A.2 — LOCK ScannerViewModel
 // Single source of truth for UI-facing scan data
 
+// Phase 2.5 Part L — Premium-Grade Result Structure
 export interface ScannerViewModel {
+  // STEP 1 — Hard Require: Strain Name
   name: string;
   title: string; // Keep for backward compat
-  confidence: number; // 0–100
-  whyThisMatch: string;
-  morphology: string;
-  trichomes: string;
-  pistils: string;
-  structure: string;
-  growthTraits: string[];
+  confidenceRange: {
+    min: number;
+    max: number;
+    explanation: string; // Why range exists (phenotype variation, lighting, growth stage)
+  };
+  matchBasis: string; // Basis for match (e.g., "visual morphology across 3 images")
+  
+  // STEP 3 — Deep Analysis Sections
+  visualMatchSummary: string;
+  flowerStructureAnalysis: string;
+  trichomeDensityMaturity: string;
+  leafShapeInternode: string;
+  colorPistilIndicators: string;
+  growthPatternClues: string;
+  
+  // STEP 4 — Multi-Cultivar Comparison
+  primaryMatch: {
+    name: string;
+    confidenceRange: { min: number; max: number };
+    whyThisMatch: string;
+  };
+  secondaryMatches: Array<{
+    name: string;
+    whyNotPrimary: string;
+  }>;
+  
+  // STEP 6 — AI + Wiki Blend
+  aiWikiBlend: string; // Explicit blend of AI inference + known cultivar references
+  
+  // STEP 8 — Why Not 100% Certain
+  uncertaintyExplanation: string;
+  
+  // STEP 9 — How To Improve Accuracy
+  accuracyTips: string[];
+  
+  // Legacy fields (keep for backward compat, but prioritize new structure)
+  confidence: number; // 0–100 (deprecated, use confidenceRange)
+  whyThisMatch: string; // (deprecated, use primaryMatch.whyThisMatch)
+  morphology: string; // (deprecated, use flowerStructureAnalysis)
+  trichomes: string; // (deprecated, use trichomeDensityMaturity)
+  pistils: string; // (deprecated, use colorPistilIndicators)
+  structure: string; // (deprecated, use flowerStructureAnalysis)
+  growthTraits: string[]; // (deprecated, use growthPatternClues)
   terpeneGuess: string[];
   effectsShort: string[];
-  effectsLong: string[];
+  effectsLong: string[]; // STEP 5 — Effects come AFTER structure
   comparisons?: string[];
-  uncertaintyExplanation: string;
   referenceStrains: string[];
   sources?: string[];
   genetics: {
