@@ -68,41 +68,54 @@ export default function ScannerPage() {
       <TopNav title="Scanner" showBack />
 
       <div className="relative z-10 flex flex-col items-center px-4">
-        {/* SCAN CARD */}
-        <div className="w-full max-w-md mx-auto bg-black/40 backdrop-blur rounded-xl p-4 space-y-4">
-          {/* FILE PICKER */}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-white/70"
-          />
+        <div className="w-full max-w-xl space-y-6">
+          {/* SCAN CARD */}
+          <div className="w-full max-w-md mx-auto bg-black/40 backdrop-blur rounded-xl p-4 space-y-4">
+            {/* FILE PICKER */}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-white/70"
+            />
 
-          {/* IMAGE PREVIEW */}
-          {previewUrl && (
-            <div className="rounded-xl overflow-hidden border border-white/10 bg-black">
-              <img
-                src={previewUrl}
-                alt="Selected"
-                className="w-full max-h-[320px] object-contain pointer-events-none"
-              />
-            </div>
-          )}
+            {/* IMAGE PREVIEW */}
+            {previewUrl && (
+              <div className="rounded-xl overflow-hidden border border-white/10 bg-black">
+                <img
+                  src={previewUrl}
+                  alt="Selected"
+                  className="w-full max-h-[320px] object-contain pointer-events-none"
+                />
+              </div>
+            )}
 
-          {/* RUN SCAN BUTTON */}
-          <button
-            onClick={runScan}
-            disabled={!file || isScanning}
-            className="w-full py-4 text-lg font-semibold rounded-xl bg-green-600 hover:bg-green-500 active:scale-[0.98] transition cursor-pointer"
-          >
-            Run Scan
-          </button>
+            {/* RUN SCAN BUTTON */}
+            <button
+              onClick={runScan}
+              disabled={!file || isScanning}
+              className="
+                w-full
+                py-5
+                text-lg
+                font-bold
+                rounded-2xl
+                bg-green-600
+                hover:bg-green-500
+                active:scale-95
+                transition
+                shadow-lg
+              "
+            >
+              Run Scan
+            </button>
+          </div>
+
+          {/* RESULTS */}
+          {result && <ResultPanel result={result} />}
+
+          {synthesis && <WikiPanel synthesis={synthesis} />}
         </div>
-
-        {/* RESULTS */}
-        {result && <ResultPanel result={result} />}
-
-        {synthesis && <WikiPanel synthesis={synthesis} />}
       </div>
     </main>
   );

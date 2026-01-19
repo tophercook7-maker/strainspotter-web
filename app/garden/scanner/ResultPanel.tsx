@@ -12,7 +12,7 @@ export default function ResultPanel({ result }: ResultPanelProps) {
   const safeBestFor = Array.isArray(result.experience.bestFor) ? result.experience.bestFor : [];
 
   return (
-    <div className="mx-auto mt-6 w-full max-w-3xl rounded-2xl bg-black/60 p-6 backdrop-blur">
+    <div className="w-full bg-black/50 backdrop-blur rounded-2xl p-6 shadow-xl">
       <h2 className="text-lg md:text-xl font-semibold mb-2">{result.title}</h2>
       <p className="text-base md:text-lg leading-relaxed text-white/90">
         Confidence: {result.confidence}%
