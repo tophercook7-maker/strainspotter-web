@@ -80,7 +80,7 @@ export default function ScannerPage() {
   console.log("RENDER CHECK:", { result, synthesis })
 
   return (
-    <>
+    <div className="min-h-screen max-h-screen overflow-hidden bg-black text-white flex flex-col">
       <TopNav title="Scanner" showBack />
       <section className="relative z-20 mx-auto w-full max-w-5xl px-4 py-8">
         <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
@@ -115,10 +115,10 @@ export default function ScannerPage() {
       </button>
 
       {/* LAYER 3 — WIKI UI */}
-      {result && <ResultPanel result={result} />}
-
-      {/* 🔒 C.1 — WikiPanel (read-only, collapsible) */}
-      {synthesis && <WikiPanel synthesis={synthesis} />}
+      <div className="flex-1 overflow-y-auto space-y-4 pb-6">
+        {result && <ResultPanel result={result} />}
+        {synthesis && <WikiPanel synthesis={synthesis} />}
+      </div>
 
       {/* Variance note */}
       {result && (
@@ -137,6 +137,6 @@ export default function ScannerPage() {
       )}
         </div>
       </section>
-    </>
+    </div>
   );
 }

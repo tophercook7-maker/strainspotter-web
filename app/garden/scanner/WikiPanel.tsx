@@ -32,7 +32,7 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
       {/* Header - clickable to toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between text-sm font-semibold text-white/80 hover:text-white transition"
+        className="w-full flex items-center justify-between py-2 text-xs font-medium text-white/70 hover:text-white transition"
         aria-expanded={isOpen}
       >
         <span>Analysis Insights</span>
@@ -43,14 +43,14 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
 
       {/* Content - collapsible */}
       {isOpen && (
-        <div className="mt-3 space-y-3 text-sm text-white/70 max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[40vh] overflow-y-auto pr-1">
           {/* Summary - h2 with muted lead, multiple paragraphs */}
           <section className="pb-5 border-b border-white/10">
             <div className="flex items-start gap-3">
               <span className="text-white/30 text-xs font-mono mt-1.5 leading-none">§</span>
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">Summary</h2>
-                <div className="space-y-3.5 text-sm leading-relaxed">
+                <div className="space-y-2.5 text-[13px] leading-relaxed">
                   {synthesis.summary.map((paragraph, index) => (
                     <p 
                       key={index} 
@@ -69,8 +69,8 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
             <div className="flex items-start gap-3">
               <span className="text-white/30 text-xs font-mono mt-1.5 leading-none">§</span>
               <div className="flex-1">
-                <h4 className="text-sm font-semibold text-white/85 mb-2.5 tracking-tight">Why This Matters</h4>
-                <div className="space-y-3.5 text-sm leading-relaxed text-white/70">
+                <h4 className="text-[13px] font-semibold text-white/85 mb-2.5 tracking-tight">Why This Matters</h4>
+                <div className="space-y-2.5 text-[13px] leading-relaxed text-white/70">
                   {synthesis.whyThisMatters.map((paragraph, index) => (
                     <p key={index} className="leading-relaxed">{paragraph}</p>
                   ))}
@@ -84,8 +84,8 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
             <div className="flex items-start gap-3">
               <span className="text-white/30 text-xs font-mono mt-1.5 leading-none">§</span>
               <div className="flex-1">
-                <h4 className="text-sm font-semibold text-white/85 mb-2.5 tracking-tight">Uncertainty & Confidence</h4>
-                <div className="space-y-3.5 text-sm leading-relaxed text-white/70">
+                <h4 className="text-[13px] font-semibold text-white/85 mb-2.5 tracking-tight">Uncertainty & Confidence</h4>
+                <div className="space-y-2.5 text-[13px] leading-relaxed text-white/70">
                   {synthesis.uncertaintyExplanation.map((paragraph, index) => (
                     <p key={index} className="leading-relaxed">{paragraph}</p>
                   ))}
@@ -100,8 +100,8 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
               <div className="flex items-start gap-3">
                 <span className="text-white/30 text-xs font-mono mt-1.5 leading-none">§</span>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-white/85 mb-2.5 tracking-tight">Signals Considered</h4>
-                  <ul className="space-y-2.5 text-sm leading-relaxed text-white/70">
+                  <h4 className="text-[13px] font-semibold text-white/85 mb-2.5 tracking-tight">Signals Considered</h4>
+                  <ul className="space-y-2.5 text-[13px] leading-relaxed text-white/70">
                     {synthesis.signalsConsidered.map((signal, index) => (
                       <li key={index} className="flex items-start leading-relaxed">
                         <span className="text-white/40 mr-2.5 mt-0.5 leading-none">•</span>
@@ -120,8 +120,8 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
               <div className="flex items-start gap-3">
                 <span className="text-white/30 text-xs font-mono mt-1.5 leading-none">§</span>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-white/85 mb-2.5 tracking-tight">Patterns Observed</h4>
-                  <ul className="space-y-2.5 text-sm leading-relaxed text-white/70">
+                  <h4 className="text-[13px] font-semibold text-white/85 mb-2.5 tracking-tight">Patterns Observed</h4>
+                  <ul className="space-y-2.5 text-[13px] leading-relaxed text-white/70">
                     {synthesis.patternsObserved.map((pattern, index) => (
                       <li key={index} className="flex items-start leading-relaxed">
                         <span className="text-white/40 mr-2.5 mt-0.5 leading-none">•</span>
@@ -140,8 +140,8 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
               <div className="flex items-start gap-3">
                 <span className="text-white/30 text-xs font-mono mt-1.5 leading-none">§</span>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-white/85 mb-2.5 tracking-tight">Notable Patterns</h4>
-                  <ul className="space-y-2.5 text-sm leading-relaxed text-white/70">
+                  <h4 className="text-[13px] font-semibold text-white/85 mb-2.5 tracking-tight">Notable Patterns</h4>
+                  <ul className="space-y-2.5 text-[13px] leading-relaxed text-white/70">
                     {synthesis.notablePatterns.map((pattern, index) => (
                       <li key={index} className="flex items-start leading-relaxed">
                         <span className="text-white/40 mr-2.5 mt-0.5 leading-none">•</span>
