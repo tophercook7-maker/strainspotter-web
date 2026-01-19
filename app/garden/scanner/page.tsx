@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { buildWikiResult } from "@/lib/scanner/wikiEngine";
 import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
 import { synthesizeWikiInsights } from "@/lib/scanner/wikiSynthesis";
@@ -29,6 +29,7 @@ export default function ScannerPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [imageSeed, setImageSeed] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const resultRef = useRef<HTMLDivElement | null>(null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -69,6 +70,11 @@ export default function ScannerPage() {
       
       // B.2.5 — Log synthesis for verification (no UI consumption yet)
       console.log("Wiki Synthesis:", wikiSynthesis);
+      
+      // Scroll to results after render
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (err) {
       console.error("Scan failed", err);
       setIsScanning(false);
@@ -80,20 +86,27 @@ export default function ScannerPage() {
   console.log("RENDER CHECK:", { result, synthesis })
 
   return (
-    <div className="min-h-screen max-h-screen overflow-hidden bg-black text-white flex flex-col">
+    <main className="min-h-screen bg-black text-white flex flex-col overflow-y-auto">
       <TopNav title="Scanner" showBack />
-      <section className="relative z-20 mx-auto w-full max-w-5xl px-4 py-8">
+      <div className="w-full max-w-2xl mx-auto px-4">
         <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
           {/* SCANNER CONTENT GOES BELOW */}
           <h1 className="text-3xl font-bold mb-4">Scanner</h1>
 
       {/* Image Preview */}
       {imageUrl && (
-        <div className="w-full flex justify-center py-4">
+        <div className="w-full flex justify-center my-3">
           <img
             src={imageUrl}
-            alt="Scan preview"
-            className="max-h-48 w-auto object-contain rounded-xl border border-white/20"
+            alt="Selected plant"
+            className="
+              max-h-[220px]
+              w-auto
+              rounded-md
+              border
+              border-white/20
+              object-contain
+            "
           />
         </div>
       )}
@@ -115,7 +128,7 @@ export default function ScannerPage() {
       </button>
 
       {/* LAYER 3 — WIKI UI */}
-      <div className="flex-1 overflow-y-auto space-y-4 pb-6">
+      <div ref={resultRef} className="flex-1 overflow-y-auto space-y-4 pb-6">
         {result && <ResultPanel result={result} />}
         {synthesis && <WikiPanel synthesis={synthesis} />}
       </div>
@@ -136,7 +149,7 @@ export default function ScannerPage() {
         </div>
       )}
         </div>
-      </section>
-    </div>
+      </div>
+    </main>
   );
 }
