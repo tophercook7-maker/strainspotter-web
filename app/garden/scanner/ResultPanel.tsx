@@ -70,27 +70,28 @@ export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
         </p>
       )}
 
-      {/* 6. GENETICS - COLLAPSED */}
-      <details className="mb-6">
-        <summary className="text-base md:text-lg font-medium text-white/80 cursor-pointer hover:text-white/90">
-          Genetics
+      {/* TECHNICAL DETAILS - COLLAPSED */}
+      <details className="mt-6">
+        <summary className="cursor-pointer text-white/70 hover:text-white">
+          View technical details
         </summary>
-        <div className="mt-3 space-y-2 text-base md:text-lg leading-relaxed text-white/80">
-          <p>{result.genetics.dominance}</p>
-          <p>{result.genetics.lineage}</p>
-        </div>
-      </details>
 
-      {/* 7. CLOSEST KNOWN CULTIVAR - COLLAPSED */}
-      <details>
-        <summary className="text-base md:text-lg font-medium text-white/80 cursor-pointer hover:text-white/90">
-          Closest Known Cultivar (Reference Only)
-        </summary>
-        <div className="mt-3 space-y-2">
-          <p className="text-base md:text-lg font-semibold text-white/90">{result.title}</p>
-          <p className="text-base md:text-lg leading-relaxed text-white/80 italic">
-            This identification is an estimate based on visual similarity, not genetic testing.
-          </p>
+        <div className="mt-4 space-y-4">
+          {/* Genetics */}
+          <div>
+            <h3 className="text-base font-medium text-white/90 mb-2">Genetics</h3>
+            <p className="text-sm text-white/80">{result.genetics.dominance}</p>
+            <p className="text-sm text-white/80">{result.genetics.lineage}</p>
+          </div>
+
+          {/* Closest Known Cultivar */}
+          <div>
+            <h3 className="text-base font-medium text-white/90 mb-2">Closest Known Cultivar</h3>
+            <p className="text-sm font-semibold text-white/90">{result.title}</p>
+            <p className="text-sm text-white/80 italic">
+              This identification is an estimate based on visual similarity, not genetic testing.
+            </p>
+          </div>
         </div>
       </details>
     </div>
