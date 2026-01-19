@@ -1,7 +1,8 @@
 // lib/scanner/wikiSynthesis.ts
 // 🔒 B.2 — AI SYNTHESIS LAYER (READ-ONLY, NO UI CHANGE)
 
-import type { WikiResult, WikiSynthesis } from "./types";
+import type { WikiResult, WikiSynthesis, ScanContext } from "./types";
+import { matchCultivars, type CultivarMatch } from "./cultivarMatcher";
 
 /**
  * 🔒 B.2.1 & B.2.3 — Synthesize insights from WikiResult
@@ -14,7 +15,7 @@ import type { WikiResult, WikiSynthesis } from "./types";
  * - Avoid absolutes
  * - Make content extensive: 2-3 paragraphs per section
  */
-export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
+export function synthesizeWikiInsights(wiki: WikiResult, context?: ScanContext): WikiSynthesis {
   const strainName = wiki.identity.strainName;
   const confidence = wiki.identity.confidence;
   const dominance = wiki.genetics.dominance;
@@ -45,12 +46,73 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   const safeGrowthIndicators = Array.isArray(growthIndicators) ? growthIndicators : [];
   const safeConflictingSignals = Array.isArray(wiki.reasoning?.conflictingSignals) ? wiki.reasoning.conflictingSignals : [];
 
+  // Phase 2.2: Cultivar matching engine (run early to get closestCultivarName)
+  // Build context from wiki if not provided
+  const scanContext: ScanContext = context || {
+    imageQuality: {
+      focus: "moderate",
+      noise: "moderate",
+      lighting: "good",
+    },
+    detectedFeatures: {},
+    uncertaintySignals: hasUncertainty ? {
+      conflictingTraits: safeConflictingSignals,
+    } : undefined,
+  };
+
+  // Match cultivars and get ranked results
+  const cultivarMatches = matchCultivars(wiki, scanContext);
+  console.log("Ranked cultivar matches:", cultivarMatches);
+
+  // Select top match or fallback
+  const topMatch = cultivarMatches.length > 0 && cultivarMatches[0].score >= 30
+    ? cultivarMatches[0]
+    : null;
+
+  // Phase 2.2: Determine closest cultivar name
+  const closestCultivarName = topMatch
+    ? topMatch.name
+    : "Phenotype-Closest Hybrid";
+
+  // Phase 2.2: Map score to match strength label
+  let matchStrengthLabel: "Very Strong" | "Strong" | "Moderate";
+  if (topMatch) {
+    if (topMatch.score >= 70) {
+      matchStrengthLabel = "Very Strong";
+    } else if (topMatch.score >= 50) {
+      matchStrengthLabel = "Strong";
+    } else {
+      matchStrengthLabel = "Moderate";
+    }
+  } else {
+    matchStrengthLabel = "Moderate";
+  }
+
+  // Phase 2.2: Use rationale from top match
+  const matchRationale = topMatch
+    ? topMatch.rationale
+    : [
+        "Visual characteristics suggest a hybrid phenotype",
+        "No single named cultivar showed dominant alignment",
+        "Multiple cultivars share similar morphological traits",
+      ];
+
+  // Phase 2.2: Alternate matches (names only, no scores)
+  const alternateMatches = cultivarMatches
+    .slice(1, 4) // Top 3 alternates (skip the top match)
+    .map((match) => match.name);
+
   // Phase 2.1: STRONG OPENING PARAGRAPH (3-4 sentences)
   // Names the closest cultivar immediately, explains WHY, mentions visible traits, sets expectations
-  const openingParagraph = `This plant most closely aligns with ${strainName}, a well-documented ${dominance.toLowerCase()}-leaning cultivar. ` +
-    `The identification is driven by observed flower structure, ${wiki.morphology.trichomes.toLowerCase()}, and leaf morphology consistent with known ${strainName} phenotypes. ` +
-    `Visual analysis reveals ${wiki.morphology.budStructure.toLowerCase()}, with ${wiki.morphology.coloration.toLowerCase()} that aligns with documented specimens of this cultivar. ` +
-    `This assessment is based on visual similarity to reference materials and should not be considered a genetic confirmation; laboratory testing provides definitive identification.`;
+  const openingParagraph = topMatch
+    ? `This plant most closely aligns with ${closestCultivarName}, a well-documented ${dominance.toLowerCase()}-leaning cultivar. ` +
+      `The identification is driven by observed flower structure, ${wiki.morphology.trichomes.toLowerCase()}, and leaf morphology consistent with known ${closestCultivarName} phenotypes. ` +
+      `Visual analysis reveals ${wiki.morphology.budStructure.toLowerCase()}, with ${wiki.morphology.coloration.toLowerCase()} that aligns with documented specimens of this cultivar. ` +
+      `This assessment is based on visual similarity to reference materials and should not be considered a genetic confirmation; laboratory testing provides definitive identification.`
+    : `This plant shows characteristics of a hybrid phenotype, with visual traits that align with multiple known cultivars. ` +
+      `No single named cultivar showed dominant alignment in the analysis, suggesting this may be a phenotype-closest hybrid or a cultivar not in the reference database. ` +
+      `Visual analysis reveals ${wiki.morphology.budStructure.toLowerCase()}, with ${wiki.morphology.coloration.toLowerCase()} that suggests ${dominance.toLowerCase()} influence. ` +
+      `This assessment is based on visual similarity to reference materials and should not be considered a genetic confirmation; laboratory testing provides definitive identification.`;
 
   // Generate summary (expanded with opening paragraph)
   const summary: string[] = [
@@ -212,86 +274,21 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
     matchStrength = "Moderate";
   }
 
-  // Select best match name (lowest contradiction count approach)
-  // Use existing strainName from wiki (already selected based on visual similarity)
-  const bestMatchName = strainName;
+  // Phase 2.2: Use closestCultivarName from matcher (already computed above)
+  const bestMatchName = closestCultivarName;
 
-  // Generate "why this match" bullets (3-5 bullets)
-  const whyThisMatch: string[] = [];
-  
-  // Bud structure match
-  if (wiki.morphology.budStructure) {
-    whyThisMatch.push(`Bud structure (${wiki.morphology.budStructure.toLowerCase()}) aligns with documented ${strainName} characteristics`);
-  }
-  
-  // Visual traits match
-  if (safeVisualTraits.length > 0) {
-    whyThisMatch.push(`Visual traits (${safeVisualTraits.slice(0, 2).join(", ")}) match typical ${strainName} morphology`);
-  }
-  
-  // Effects alignment
-  if (safePrimaryEffects.length > 0) {
-    whyThisMatch.push(`Expected effects (${safePrimaryEffects.slice(0, 2).join(", ")}) align with ${strainName} profile`);
-  }
-  
-  // Terpene profile
-  if (topThreeTerpenes.length > 0) {
-    whyThisMatch.push(`Terpene profile suggests ${topTerpene} dominance, consistent with ${strainName}`);
-  }
-  
-  // Genetic dominance
-  if (dominance !== "Unknown") {
-    whyThisMatch.push(`${dominance} dominance matches ${strainName} genetic profile`);
-  }
-  
-  // Ensure we have 3-5 bullets
-  const finalWhyThisMatch = whyThisMatch.slice(0, 5);
-  if (finalWhyThisMatch.length < 3) {
-    // Fallback bullets if we don't have enough
-    finalWhyThisMatch.push(`Coloration patterns align with ${strainName} characteristics`);
-    if (finalWhyThisMatch.length < 3) {
-      finalWhyThisMatch.push(`Growth indicators suggest ${strainName} phenotype`);
-    }
-  }
-
-  // Phase 2.1: Compute match strength label (trust-building)
-  const varianceSignals = safeConflictingSignals.length;
-  const supportingTraitsCount = safeVisualTraits.length + (wiki.morphology.budStructure ? 1 : 0) + (wiki.morphology.trichomes ? 1 : 0);
-  
-  let matchStrengthLabel: "Very Strong" | "Strong" | "Moderate";
-  if (confidenceDecimalForMatch >= 0.88 && varianceSignals === 0 && supportingTraitsCount >= 4) {
-    matchStrengthLabel = "Very Strong";
-  } else if (confidenceDecimalForMatch >= 0.78 && varianceSignals <= 1 && supportingTraitsCount >= 3) {
-    matchStrengthLabel = "Strong";
-  } else {
-    matchStrengthLabel = "Moderate";
-  }
-
-  // Phase 2.1: Match rationale (why this cultivar was chosen)
-  const matchRationale: string[] = [];
-  if (wiki.morphology.budStructure) {
-    matchRationale.push(`Flower structure (${wiki.morphology.budStructure.toLowerCase()}) matches documented ${strainName} morphology`);
-  }
-  if (safeVisualTraits.length > 0) {
-    matchRationale.push(`Observed visual traits (${safeVisualTraits.slice(0, 2).join(", ")}) align with ${strainName} characteristics`);
-  }
-  if (wiki.morphology.trichomes) {
-    matchRationale.push(`Trichome coverage and type (${wiki.morphology.trichomes.toLowerCase()}) consistent with ${strainName} profiles`);
-  }
-  if (dominance !== "Unknown") {
-    matchRationale.push(`${dominance} genetic dominance matches ${strainName} lineage`);
-  }
-  if (safePrimaryEffects.length > 0) {
-    matchRationale.push(`Expected effect profile aligns with ${strainName} user reports`);
-  }
+  // Phase 2.2: Use rationale from top match for "why this match"
+  const finalWhyThisMatch = topMatch
+    ? topMatch.rationale.slice(0, 5)
+    : matchRationale.slice(0, 5);
 
   // Phase 2.1: Detailed morphology breakdown
   const budStructureDesc = wiki.morphology.budStructure || "Flower structure shows typical hybrid characteristics";
   const trichomeDesc = wiki.morphology.trichomes || "Trichome coverage appears typical for mature flowers";
   const pistilDesc = wiki.morphology.coloration.includes("pistil") 
     ? wiki.morphology.coloration 
-    : `Pistil color and maturity appear consistent with ${strainName} characteristics`;
-  const colorNotes = wiki.morphology.coloration || `Coloration patterns align with ${strainName} visual profiles`;
+    : `Pistil color and maturity appear consistent with ${closestCultivarName} characteristics`;
+  const colorNotes = wiki.morphology.coloration || `Coloration patterns align with ${closestCultivarName} visual profiles`;
 
   // Phase 2.1: Terpene & aroma inference (clearly labeled)
   const likelyPrimary = topThreeTerpenes.slice(0, 2);
@@ -383,9 +380,10 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
     },
     // Phase 2.1: Extensive free-tier results
     identity: {
-      closestCultivarName: strainName,
+      closestCultivarName,
       matchStrengthLabel,
       matchRationale,
+      alternateMatches: alternateMatches.length > 0 ? alternateMatches : undefined,
     },
     morphologyAnalysis: {
       flowerStructure: budStructureDesc,

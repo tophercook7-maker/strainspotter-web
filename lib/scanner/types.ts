@@ -112,6 +112,7 @@ export interface WikiSynthesis {
     closestCultivarName: string
     matchStrengthLabel: "Very Strong" | "Strong" | "Moderate"
     matchRationale: string[]
+    alternateMatches?: string[] // Phase 2.2: Alternate cultivar names (no scores)
   }
   morphologyAnalysis: {
     flowerStructure: string
