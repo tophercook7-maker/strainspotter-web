@@ -4,18 +4,15 @@
 import type { WikiResult, ScanContext } from "./types";
 
 /**
- * 🔒 B.1.2 — Build ScanContext from imageSeed (foundation only, no real inference yet)
+ * 🔒 B.1.2 — Build ScanContext from parameters
  */
-function buildScanContext(imageSeed: string, imageCount: number = 1): ScanContext {
-  // Create deterministic seed from string
-  let seed = 0;
-  for (let i = 0; i < imageSeed.length; i++) {
-    seed += imageSeed.charCodeAt(i);
-  }
-
-  // Infer angles based on image count (multiple images suggest multiple angles)
-  const anglesInferred = imageCount > 1;
-
+function buildScanContext({
+  imageCount,
+  anglesInferred,
+}: {
+  imageCount: number;
+  anglesInferred: boolean;
+}): ScanContext {
   return {
     imageCount,
     anglesInferred,
@@ -27,7 +24,10 @@ export async function runWikiEngine(imageFile: File, imageCount: number = 1): Pr
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 10000);
   const imageSeed = `${imageFile.name}-${imageFile.size}-${imageFile.lastModified}-${timestamp}-${random}`;
-  const context = buildScanContext(imageSeed, imageCount);
+  const context = buildScanContext({
+    imageCount,
+    anglesInferred: imageCount >= 3,
+  });
   return buildWikiResult({ imageSeed, context });
 }
 
@@ -39,7 +39,11 @@ export async function analyzeWithWiki(input: {
   const imageSeed = input.image
     ? `${input.image.name}-${input.image.size}-${input.image.lastModified}`
     : `default-${Date.now()}`;
-  const context = buildScanContext(imageSeed, input.imageCount || 1);
+  const imageCount = input.imageCount || 1;
+  const context = buildScanContext({
+    imageCount,
+    anglesInferred: imageCount >= 3,
+  });
   return buildWikiResult({ imageSeed, context });
 }
 
@@ -58,7 +62,10 @@ export function buildWikiResult(input: {
   seed = seed % 1000; // Normalize to 0-999 range
 
   // Build context if not provided
-  const context = input.context || buildScanContext(input.imageSeed, 1);
+  const context = input.context || buildScanContext({
+    imageCount: 1,
+    anglesInferred: false,
+  });
 
   // 🔒 B.1.4 — Ensure variance: use seed variations for different calculations
   const seed2 = (seed * 1.7) % 1000;

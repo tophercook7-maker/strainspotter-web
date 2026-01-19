@@ -48,7 +48,7 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {
     imageCount: input.imageCount,
-    anglesInferred: input.imageCount > 1,
+    anglesInferred: input.imageCount >= 3,
   };
 
   // Generate synthesis
