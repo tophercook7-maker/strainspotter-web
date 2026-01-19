@@ -103,19 +103,19 @@ export default function ScannerPage() {
 
               {/* IMAGE PREVIEWS */}
               {images.length > 0 && (
-                <div className="space-y-3">
-                  {images.map((file, index) => {
-                    const url = URL.createObjectURL(file);
-                    return (
-                      <div key={index} className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                        <img
-                          src={url}
-                          alt={`Scan preview ${index + 1}`}
-                          className="w-full h-auto max-h-[420px] object-contain mx-auto"
-                        />
-                      </div>
-                    );
-                  })}
+                <div className="flex justify-center gap-4 my-6">
+                  {images.map((img, idx) => (
+                    <div
+                      key={idx}
+                      className="w-32 h-32 rounded-xl overflow-hidden border border-white/20"
+                    >
+                      <img
+                        src={URL.createObjectURL(img)}
+                        alt={`scan-${idx}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
