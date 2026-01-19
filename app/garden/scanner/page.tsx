@@ -18,7 +18,7 @@ export default function ScannerPage() {
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const MAX_IMAGES = 5;
+  const MAX_IMAGES = 3; // Phase 3.4 Part A — Allow 1-3 images per scan
 
   // NEVER clear result on re-render
   // Only clear when user selects NEW images
@@ -125,7 +125,7 @@ export default function ScannerPage() {
                 className="block w-full text-sm text-white/70"
               />
               <p className="text-xs text-white/50">
-                Add up to 5 photos — different angles help accuracy
+                Add 1-3 photos — different angles help accuracy
               </p>
 
               {/* IMAGE PREVIEWS - Thumbnail Grid */}

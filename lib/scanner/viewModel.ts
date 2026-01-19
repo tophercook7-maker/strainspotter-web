@@ -87,4 +87,11 @@ export interface ScannerViewModel {
   
   // Phase 2.9 Part P — Extended Strain Profile (Wiki-Depth Output)
   extendedProfile?: ExtendedStrainProfile;
+  
+  // Phase 3.4 Part C — Multi-Image Confidence Explanation
+  multiImageInfo?: {
+    imageCountText: string; // "Based on X images"
+    confidenceRange: string; // "86–92%"
+    improvementExplanation: string; // Why confidence improved
+  };
 }

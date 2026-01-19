@@ -74,6 +74,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   const fusedFeatures = fuseMultiImageFeatures(wikiResults);
   console.log("FUSED FEATURES:", fusedFeatures);
 
+  // Phase 3.4 Part A — Image Intake Rules
+  // Assign internal labels (Image A/B/C) without exposing to user
+  const imageLabels = assignImageLabels(input.imageCount);
+  console.log("Image labels assigned:", Array.from(imageLabels.entries()).map(([idx, info]) => 
+    `Image ${idx} → Label ${info.label} (${info.role})`
+  ));
+
   // Phase 3.0 Part A — Multi-Image Intake (1-3 images, independent observations)
   // Phase 3.0 Part B — Per-Image Analysis (Enhanced)
   let consensusResult: ConsensusResult | null = null;
@@ -218,6 +225,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   };
 
   const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
+  
+  // Phase 3.4 Part C — Add multi-image info to view model
+  viewModel.multiImageInfo = multiImageInfo;
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

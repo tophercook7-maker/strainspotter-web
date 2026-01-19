@@ -23,10 +23,28 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
         {result.name || result.title}
       </h1>
       
-      {/* 2. CONFIDENCE %} */}
-      <p className="text-2xl text-green-400 font-semibold">
-        {result.confidence}%
-      </p>
+      {/* Phase 3.4 Part C — Multi-Image Confidence Display */}
+      {result.multiImageInfo && (
+        <div className="space-y-2">
+          <p className="text-sm text-white/70">{result.multiImageInfo.imageCountText}</p>
+          <p className="text-2xl text-green-400 font-semibold">
+            {result.multiImageInfo.confidenceRange}
+          </p>
+          {result.multiImageInfo.improvementExplanation && (
+            <p className="text-sm text-white/80 leading-relaxed">
+              {result.multiImageInfo.improvementExplanation}
+            </p>
+          )}
+        </div>
+      )}
+      {!result.multiImageInfo && (
+        <>
+          {/* 2. CONFIDENCE %} (Fallback for legacy results) */}
+          <p className="text-2xl text-green-400 font-semibold">
+            {result.confidenceRange ? `${result.confidenceRange.min}–${result.confidenceRange.max}%` : `${result.confidence}%`}
+          </p>
+        </>
+      )}
 
       {/* Phase 2.8 Part O — Trust Layer (Always Visible) */}
       {result.trustLayer && (

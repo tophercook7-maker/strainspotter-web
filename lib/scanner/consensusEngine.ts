@@ -244,7 +244,8 @@ export function buildConsensusResultV3(
     }
   });
 
-  // If no consensus found, use highest single confidence
+  // Phase 3.4 Part D — Failure Handling: Always return a result, never fail silently
+  // Never return "Unknown" unless truly impossible
   if (!primaryMatch) {
     const topCandidate = imageResults[0]?.candidateStrains[0];
     if (topCandidate) {
@@ -254,8 +255,24 @@ export function buildConsensusResultV3(
         reason: "Best match based on visual analysis",
       };
     } else {
-      throw new Error("No candidates found in image results");
+      // Phase 3.4 Part D — Fallback: Use name-first matcher if no candidates
+      const fallbackResult = matchStrainNameFirst(fusedFeatures, imageCount);
+      primaryMatch = {
+        name: fallbackResult.primaryMatch.name,
+        confidence: Math.max(60, Math.min(85, fallbackResult.confidence)), // Cap at 85% for fallback
+        reason: "Closest known match based on visual characteristics. Images showed variation that made exact identification challenging.",
+      };
+      console.warn("Phase 3.4 Part D — Fallback to name-first matcher due to no consensus candidates");
     }
+  }
+  
+  // Phase 3.4 Part D — Ensure name is never "Unknown"
+  if (primaryMatch.name === "Unknown" || !primaryMatch.name || primaryMatch.name.trim().length === 0) {
+    const fallbackResult = matchStrainNameFirst(fusedFeatures, imageCount);
+    primaryMatch.name = fallbackResult.primaryMatch.name;
+    primaryMatch.confidence = Math.max(60, Math.min(85, fallbackResult.confidence));
+    primaryMatch.reason = "Closest known match identified. Please provide additional images from different angles for higher confidence.";
+    console.warn("Phase 3.4 Part D — Prevented 'Unknown' result, using fallback match");
   }
 
   // Phase 3.0 Part D — Confidence Calibration
