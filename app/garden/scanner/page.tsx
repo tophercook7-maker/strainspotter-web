@@ -7,6 +7,7 @@ import type { WikiSynthesis } from "@/lib/scanner/types";
 
 type ScanTier = "basic" | "pro" | "expert";
 import ResultPanel from "./ResultPanel";
+import WikiStyleResultPanel from "./WikiStyleResultPanel";
 import TopNav from "../_components/TopNav";
 
 /**
@@ -221,8 +222,9 @@ export default function ScannerPage() {
         </div>
 
         {/* C) Results Card(s) */}
+        {/* Phase 3.6 — Wiki-Style Result Expansion */}
         <section className="space-y-6">
-          {result && <ResultPanel result={result} imageCount={images.length} />}
+          {result && <WikiStyleResultPanel result={result} imageCount={images.length} />}
         </section>
       </main>
     </>
