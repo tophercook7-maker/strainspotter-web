@@ -67,10 +67,10 @@ export default function ScannerPage() {
     <main className="min-h-screen bg-black text-white">
       <TopNav title="Scanner" showBack />
 
-      <div className="relative z-10 mx-auto max-w-xl px-4 py-6 space-y-6">
-
-        <div className="flex flex-col items-center w-full px-4">
-          {/* CONTROLS */}
+      <div className="relative z-10 flex flex-col items-center px-4">
+        {/* SCAN CARD */}
+        <div className="w-full max-w-md mx-auto bg-black/40 backdrop-blur rounded-xl p-4 space-y-4">
+          {/* FILE PICKER */}
           <input
             type="file"
             accept="image/*"
@@ -89,32 +89,13 @@ export default function ScannerPage() {
             </div>
           )}
 
-          {/* SCAN BUTTON */}
+          {/* RUN SCAN BUTTON */}
           <button
             onClick={runScan}
             disabled={!file || isScanning}
-            className="
-              w-full
-              max-w-md
-              mx-auto
-              mt-4
-              flex
-              items-center
-              justify-center
-              gap-2
-              rounded-xl
-              bg-green-600
-              hover:bg-green-500
-              active:scale-[0.98]
-              text-white
-              text-lg
-              font-semibold
-              py-4
-              shadow-lg
-              transition
-            "
+            className="w-full py-4 text-lg font-semibold rounded-xl bg-green-600 hover:bg-green-500 active:scale-[0.98] transition cursor-pointer"
           >
-            🌿 Run Scan
+            Run Scan
           </button>
         </div>
 
@@ -122,7 +103,6 @@ export default function ScannerPage() {
         {result && <ResultPanel result={result} />}
 
         {synthesis && <WikiPanel synthesis={synthesis} />}
-
       </div>
     </main>
   );
