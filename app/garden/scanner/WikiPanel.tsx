@@ -43,7 +43,7 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
 
       {/* Content - collapsible */}
       {isOpen && (
-        <div className="mt-3 overflow-y-auto pr-2 space-y-4 text-sm text-white/80">
+        <div className="mt-3 overflow-y-auto pr-2 space-y-4">
           {/* Summary - h2 with muted lead, multiple paragraphs */}
           <section className="pb-5">
             <div className="flex items-start gap-3">
