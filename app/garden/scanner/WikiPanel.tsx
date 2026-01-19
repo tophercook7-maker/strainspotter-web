@@ -32,23 +32,18 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
       {/* Header - clickable to toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20 rounded-t-2xl"
+        className="w-full flex items-center justify-between text-sm font-semibold text-white/80 hover:text-white transition"
         aria-expanded={isOpen}
       >
-        <h3 className="text-lg font-semibold text-white tracking-tight">Analysis Insights</h3>
-        <svg
-          className={`w-5 h-5 text-white/70 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <span>Analysis Insights</span>
+        <span className="text-xs opacity-70">
+          {isOpen ? "▲" : "▼"}
+        </span>
       </button>
 
       {/* Content - collapsible */}
       {isOpen && (
-        <div className="px-6 pb-6 pt-3 space-y-0">
+        <div className="mt-3 space-y-3 text-sm text-white/70 max-h-[60vh] overflow-y-auto">
           {/* Summary - h2 with muted lead, multiple paragraphs */}
           <section className="pb-5 border-b border-white/10">
             <div className="flex items-start gap-3">
