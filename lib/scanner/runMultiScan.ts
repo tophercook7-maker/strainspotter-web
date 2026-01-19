@@ -116,6 +116,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Changed flow: Candidate Name Resolution happens FIRST
   // Everything else supports or challenges that name
   let nameFirstPipelineResult: ReturnType<typeof import("./nameFirstPipeline").runNameFirstPipeline> | null = null;
+  let primaryStrainNameFromPipeline: string | null = null; // Phase 4.3 Step 4.3.1 — Lock name early
+  let lockedStrainName: string | null = null; // Phase 4.3 Step 4.3.1 — Final locked name for all processing
   
   // Phase 4.0 Part B — Per-Image Analysis (supports 1-5 images)
   if (imageFiles && imageFiles.length >= 1 && imageFiles.length <= 5) {
@@ -163,9 +165,34 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   const namingResult = determineStrainName(fusedFeatures, input.imageCount, existingCandidates);
   console.log("NAMING RESULT:", namingResult);
   
-  // Phase 3.0 Part E — Name First Output
-  // Use consensus result if available, but ensure name comes from naming hierarchy
-  const nameFirstResult = consensusResult 
+  // Phase 4.3 Step 4.3.1 — Name-First Result (PRIORITY: Use pipeline result if available)
+  // RULE: UI MUST show a strain name immediately once resolved
+  // Everything else supports or challenges that name
+  const nameFirstResult = nameFirstPipelineResult
+    ? {
+        primaryMatch: {
+          name: nameFirstPipelineResult.primaryStrainName, // Phase 4.3 Step 4.3.1 — Use pipeline name (locked)
+          score: nameFirstPipelineResult.nameConfidencePercent,
+          confidence: nameFirstPipelineResult.nameConfidencePercent,
+          whyThisMatch: nameFirstPipelineResult.explanation.whyThisNameWon.join(". "),
+          matchedTraits: [],
+        },
+        alsoSimilar: nameFirstPipelineResult.alternateMatches.map(a => ({
+          name: a.name,
+          whyNotPrimary: a.whyNotPrimary,
+        })),
+        confidence: nameFirstPipelineResult.nameConfidencePercent,
+        confidenceRange: {
+          min: Math.max(60, nameFirstPipelineResult.nameConfidencePercent - 4),
+          max: Math.min(99, nameFirstPipelineResult.nameConfidencePercent + 4),
+          explanation: nameFirstPipelineResult.explanation.whyThisNameWon[0] || "",
+        },
+        whyThisMatch: nameFirstPipelineResult.explanation.whyThisNameWon.join(". "),
+        lowConfidence: nameFirstPipelineResult.nameConfidencePercent < 75,
+        imageCountBonus: input.imageCount * 3,
+        variancePenalty: 0,
+      }
+    : (consensusResult // Phase 4.3 Step 4.3.1 — Fallback to consensus/legacy if pipeline not available 
     ? {
         primaryMatch: {
           // Phase 3.5 Part A — Use naming hierarchy result, but prefer consensus name if it matches
@@ -208,21 +235,31 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         confidenceRange: namingResult.confidenceRange,
         imageCountBonus: input.imageCount * 3,
         variancePenalty: 0,
-      };
+      });
   console.log("NAME-FIRST RESULT:", nameFirstResult);
   console.log("CONSENSUS AGREEMENT SCORE:", consensusResult?.agreementScore || "N/A");
 
-  // Phase 2.3 Part G Step 3 — Wiki Lookup (Name Locked)
+  // Phase 4.3 Step 4.3.1 — Wiki Lookup (Name Locked from Pipeline - TOP PRIORITY)
+  // RULE: UI MUST show a strain name immediately once resolved
+  // Use primary strain name from pipeline if available, otherwise fallback
+  if (!lockedStrainName) {
+    // Phase 4.3 Step 4.3.1 — Fallback if pipeline didn't run or failed
+    lockedStrainName = primaryStrainNameFromPipeline || nameFirstResult.primaryMatch.name;
+    console.log("Phase 4.3 Step 4.3.1 — LOCKED STRAIN NAME (FALLBACK, ALL SUBSEQUENT PROCESSING USES THIS):", lockedStrainName);
+  } else {
+    console.log("Phase 4.3 Step 4.3.1 — USING LOCKED STRAIN NAME FROM PIPELINE:", lockedStrainName);
+  }
+  
   const dbEntry = CULTIVAR_LIBRARY.find(s => 
-    s.name === nameFirstResult.primaryMatch.name || 
-    s.aliases?.includes(nameFirstResult.primaryMatch.name)
+    s.name === lockedStrainName || 
+    s.aliases?.includes(lockedStrainName)
   );
-  const wikiData = fetchWiki(nameFirstResult.primaryMatch.name, dbEntry);
+  const wikiData = fetchWiki(lockedStrainName, dbEntry);
   console.log("WIKI DATA:", wikiData);
 
-  // Phase 2.3 Part G Step 4 — AI Reasoning Layer
+  // Phase 4.3 Step 4.3.1 — AI Reasoning Layer (Uses locked strain name)
   const aiReasoning = generateAIReasoning(
-    nameFirstResult.primaryMatch.name,
+    lockedStrainName,
     fusedFeatures,
     wikiData,
     nameFirstResult.primaryMatch,
@@ -230,9 +267,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   );
   console.log("AI REASONING:", aiReasoning);
 
-  // Phase 2.5 Part L Step 3 — Deep Analysis Sections
+  // Phase 4.3 Step 4.3.1 — Deep Analysis Sections (Uses locked strain name)
   const deepAnalysis = generateDeepAnalysis(
-    nameFirstResult.primaryMatch.name,
+    lockedStrainName,
     fusedFeatures,
     nameFirstResult.primaryMatch,
     wikiData,
@@ -281,8 +318,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 2.9 Part P Step 2 — Generate Extended Strain Profile
   // Phase 2.9 Part P Step 5 — Variance Check (use image count + variance as seed)
   const varianceSeed = input.imageCount * 10 + Math.round(fusedFeatures.variance);
-  const extendedProfile = generateExtendedProfile(
-    nameFirstResult.primaryMatch.name,
+  const     extendedProfile = generateExtendedProfile(
+    lockedStrainName, // Phase 4.3 Step 4.3.1 — Use locked name
     primaryWiki,
     dbEntry,
     wikiData,
@@ -392,9 +429,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 3.8 Part B — Add name resolution
   viewModel.nameResolution = nameResolution;
   
+  // Phase 4.3 Step 4.3.1 — All subsequent processing uses locked strain name
   // Phase 3.9 Part G — Find related strains for wiki expansion
   const relatedStrainsData = findRelatedStrains(
-    nameFirstResult.primaryMatch.name,
+    lockedStrainName, // Phase 4.3 Step 4.3.1 — Use locked name
     nameResolution.strainFamily,
     dbEntry
   );
@@ -402,7 +440,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // Phase 3.9 Part A — Generate origin story
   const originStoryText = generateOriginStory(
-    nameFirstResult.primaryMatch.name,
+    lockedStrainName, // Phase 4.3 Step 4.3.1 — Use locked name
     dbEntry,
     wikiData
   );
@@ -426,13 +464,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   if (imageResultsV3.length > 0) {
     const perImageFindings = generatePerImageFindings(
       imageResultsV3,
-      nameFirstResult.primaryMatch.name
+      lockedStrainName // Phase 4.3 Step 4.3.1 — Use locked name
     );
     viewModel.perImageFindings = perImageFindings;
     
     const consensusAlignment = generateConsensusAlignment(
       perImageFindings,
-      nameFirstResult.primaryMatch.name
+      lockedStrainName // Phase 4.3 Step 4.3.1 — Use locked name
     );
     viewModel.consensusAlignment = consensusAlignment;
     

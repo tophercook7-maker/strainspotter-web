@@ -36,6 +36,51 @@ export default function WikiReportPanel({
     <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 md:p-8 space-y-8 max-h-[85vh] overflow-y-auto max-w-4xl mx-auto">
       {/* Phase 4.2 Step 4.2.1 — REPORT SECTIONS (LOCKED ORDER) */}
       
+      {/* Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY (TOP PRIORITY) */}
+      {result.nameFirstDisplay && (
+        <div className="mb-8 space-y-4 pb-6 border-b border-white/10">
+          {/* Strain Name (H1) */}
+          <h1 className="text-4xl md:text-5xl font-bold text-white">
+            {result.nameFirstDisplay.primaryStrainName}
+          </h1>
+          
+          {/* Confidence Badge & Tagline */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`text-sm font-semibold px-4 py-2 rounded-full ${
+                result.nameFirstDisplay.confidenceTier === "very_high"
+                  ? "bg-green-500/30 text-green-200"
+                  : result.nameFirstDisplay.confidenceTier === "high"
+                  ? "bg-green-500/20 text-green-300"
+                  : result.nameFirstDisplay.confidenceTier === "medium"
+                  ? "bg-yellow-500/20 text-yellow-300"
+                  : "bg-orange-500/20 text-orange-300"
+              }`}
+            >
+              {result.nameFirstDisplay.confidencePercent}% Confidence
+            </span>
+            <p className="text-sm text-white/70 italic">
+              {result.nameFirstDisplay.tagline}
+            </p>
+          </div>
+          
+          {/* Alternate Matches (Phase 4.3 Step 4.3.4) */}
+          {result.nameFirstDisplay.alternateMatches && result.nameFirstDisplay.alternateMatches.length > 0 && (
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+              <p className="text-sm text-white/80 mb-2">
+                <strong>Often confused with:</strong>{" "}
+                {result.nameFirstDisplay.alternateMatches.map((alt, idx) => (
+                  <span key={idx}>
+                    {idx > 0 && ", "}
+                    <span className="font-medium text-white/90">{alt.name}</span>
+                  </span>
+                ))}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* 1. IDENTITY OVERVIEW (Phase 4.2 Step 4.2.2) */}
       <CollapsibleSection
         title="Identity Overview"
@@ -43,27 +88,31 @@ export default function WikiReportPanel({
         icon="🏷️"
       >
         <div className="space-y-4">
-          {/* Primary Strain Name (H1) */}
-          <h1 className="text-4xl md:text-5xl font-bold text-white">
-            {wikiReport.identityOverview.primaryName}
-          </h1>
+          {/* Primary Strain Name (H1) - Only show if nameFirstDisplay not shown */}
+          {!result.nameFirstDisplay && (
+            <h1 className="text-4xl md:text-5xl font-bold text-white">
+              {wikiReport.identityOverview.primaryName}
+            </h1>
+          )}
           
-          {/* Confidence Tier Badge */}
-          <div className="flex items-center gap-3">
-            <span
-              className={`text-sm font-semibold px-4 py-2 rounded-full ${
-                wikiReport.identityOverview.confidenceTier === "very_high"
-                  ? "bg-green-500/30 text-green-200"
-                  : wikiReport.identityOverview.confidenceTier === "high"
-                  ? "bg-green-500/20 text-green-300"
-                  : wikiReport.identityOverview.confidenceTier === "medium"
-                  ? "bg-yellow-500/20 text-yellow-300"
-                  : "bg-orange-500/20 text-orange-300"
-              }`}
-            >
-              {wikiReport.identityOverview.confidenceTier.replace("_", " ")} Confidence ({wikiReport.identityOverview.confidencePercent}%)
-            </span>
-          </div>
+          {/* Confidence Tier Badge - Only show if nameFirstDisplay not shown */}
+          {!result.nameFirstDisplay && (
+            <div className="flex items-center gap-3">
+              <span
+                className={`text-sm font-semibold px-4 py-2 rounded-full ${
+                  wikiReport.identityOverview.confidenceTier === "very_high"
+                    ? "bg-green-500/30 text-green-200"
+                    : wikiReport.identityOverview.confidenceTier === "high"
+                    ? "bg-green-500/20 text-green-300"
+                    : wikiReport.identityOverview.confidenceTier === "medium"
+                    ? "bg-yellow-500/20 text-yellow-300"
+                    : "bg-orange-500/20 text-orange-300"
+                }`}
+              >
+                {wikiReport.identityOverview.confidenceTier.replace("_", " ")} Confidence ({wikiReport.identityOverview.confidencePercent}%)
+              </span>
+            </div>
+          )}
           
           {/* Executive Summary (one-paragraph) */}
           <p className="text-base md:text-lg text-white/90 leading-relaxed">
