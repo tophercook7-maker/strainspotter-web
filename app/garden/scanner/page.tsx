@@ -48,6 +48,7 @@ export default function ScannerPage() {
     const file = imageFile;
     if (!file) return;
 
+    setIsScanning(true);
     setLoading(true);
 
     try {
@@ -80,27 +81,27 @@ export default function ScannerPage() {
       setIsScanning(false);
     } finally {
       setLoading(false);
+      setIsScanning(false);
     }
   }
 
   console.log("RENDER CHECK:", { result, synthesis })
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col overflow-y-auto">
+    <main className="min-h-screen bg-black text-white flex justify-center">
       <TopNav title="Scanner" showBack />
-      <div className="w-full flex justify-center px-4">
-        <div className="w-full max-w-2xl flex flex-col gap-4">
-          <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
+      <div className="w-full max-w-3xl px-4 py-6 space-y-6">
+        <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
             {/* SCANNER CONTENT GOES BELOW */}
             <h1 className="text-3xl font-bold mb-4">Scanner</h1>
 
       {/* Image Preview */}
       {previewUrl && (
-        <div className="w-full flex justify-center my-3">
+        <div className="flex justify-center">
           <img
             src={previewUrl}
-            alt="Selected plant"
-            className="max-h-[220px] w-auto rounded-md border border-white/20 object-contain"
+            alt="Scan preview"
+            className="max-h-64 rounded-xl border border-white/20 object-contain"
           />
         </div>
       )}
@@ -117,35 +118,22 @@ export default function ScannerPage() {
 
       <button
         onClick={runScan}
-        disabled={!imageFile || loading}
-        className="
-          w-full
-          max-w-sm
-          mx-auto
-          py-3
-          rounded-xl
-          bg-white
-          text-black
-          font-semibold
-          tracking-wide
-          transition
-          hover:bg-white/90
-          active:scale-[0.98]
-          disabled:opacity-40
-          disabled:cursor-not-allowed
-        "
+        disabled={isScanning}
+        className="w-full max-w-sm mx-auto block rounded-xl bg-white text-black py-3 font-semibold hover:bg-white/90 disabled:opacity-50"
       >
-        {loading ? "Scanning..." : "Run Scan"}
+        {isScanning ? "Scanning…" : "Run Scan"}
       </button>
 
       {/* LAYER 3 — WIKI UI */}
       <div ref={resultRef} className="flex-1 overflow-y-auto space-y-4 pb-6">
-        {result && <ResultPanel result={result} />}
+        {result && (
+          <div className="mt-6">
+            <ResultPanel result={result} />
+          </div>
+        )}
         {synthesis && <WikiPanel synthesis={synthesis} />}
       </div>
-          </div>
         </div>
-      </div>
 
       {/* Variance note */}
       {result && (
@@ -162,6 +150,7 @@ export default function ScannerPage() {
           </code>
         </div>
       )}
+      </div>
     </main>
   );
 }
