@@ -88,9 +88,9 @@ export function synthesizeWikiInsights(wiki: WikiResult, context?: ScanContext):
     matchStrengthLabel = "Moderate";
   }
 
-  // Phase 2.2: Use rationale from top match
+  // Phase 2.2: Use reasons from top match (rationale renamed to reasons)
   const matchRationale = topMatch
-    ? topMatch.rationale
+    ? topMatch.reasons
     : [
         "Visual characteristics suggest a hybrid phenotype",
         "No single named cultivar showed dominant alignment",
@@ -277,9 +277,9 @@ export function synthesizeWikiInsights(wiki: WikiResult, context?: ScanContext):
   // Phase 2.2: Use closestCultivarName from matcher (already computed above)
   const bestMatchName = closestCultivarName;
 
-  // Phase 2.2: Use rationale from top match for "why this match"
+  // Phase 2.2: Use reasons from top match for "why this match"
   const finalWhyThisMatch = topMatch
-    ? topMatch.rationale.slice(0, 5)
+    ? topMatch.reasons.slice(0, 5)
     : matchRationale.slice(0, 5);
 
   // Phase 2.1: Detailed morphology breakdown
