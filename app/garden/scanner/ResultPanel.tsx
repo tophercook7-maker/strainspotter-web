@@ -29,10 +29,11 @@ export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
       {/* BEST MATCH NAME - AT TOP */}
       {synthesis?.bestMatch && (
         <div className="mb-8 pb-8">
-          <h1 className="text-lg md:text-xl font-medium text-white/70 mb-3">Closest Visual Match</h1>
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">{synthesis.bestMatch.name}</h2>
-          <p className="text-sm md:text-base text-white/60 mb-4">
-            Based on visual and structural similarity — not genetic testing
+          <h1 className="text-3xl font-extrabold tracking-tight mb-1">
+            {synthesis.bestMatch.name}
+          </h1>
+          <p className="text-white/60 text-sm mb-4">
+            Closest known cultivar match
           </p>
           <p className="text-base md:text-lg text-white/80">
             {synthesis.bestMatch.explanation}
