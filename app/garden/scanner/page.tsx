@@ -18,7 +18,7 @@ export default function ScannerPage() {
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const MAX_IMAGES = 3;
+  const MAX_IMAGES = 5;
 
   // NEVER clear result on re-render
   // Only clear when user selects NEW images
@@ -41,15 +41,17 @@ export default function ScannerPage() {
     }
   }
 
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+  };
+
   return (
     <>
       <TopNav title="Scanner" showBack />
       
-      <main className="max-w-5xl mx-auto px-6">
-        <div className="mx-auto w-full max-w-3xl px-4 py-6 md:py-10">
-          <div className="space-y-4 md:space-y-6">
-            {/* A) Upload + Preview Card */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-4">
+      <main className="max-w-3xl mx-auto px-4 space-y-6">
+        {/* A) Upload + Preview Card */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-4">
               {/* FILE PICKER */}
               <input
                 type="file"
@@ -57,65 +59,64 @@ export default function ScannerPage() {
                 multiple
                 onChange={(e) => {
                   if (!e.target.files) return;
-                  const selected = Array.from(e.target.files).slice(0, MAX_IMAGES);
-                  setImages(selected);
+                  const selected = Array.from(e.target.files);
+                  if (selected.length > MAX_IMAGES) {
+                    alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
+                    setImages(selected.slice(0, MAX_IMAGES));
+                  } else {
+                    setImages(selected);
+                  }
                 }}
                 className="block w-full text-sm text-white/70"
               />
+              <p className="text-xs text-white/50">
+                Add up to 5 photos — different angles help accuracy
+              </p>
 
-              {/* IMAGE PREVIEWS */}
+              {/* IMAGE PREVIEWS - Thumbnail Grid */}
               {images.length > 0 && (
-                <div className="flex justify-center gap-4 my-6">
+                <div className="grid grid-cols-3 gap-3 mt-4">
                   {images.map((img, idx) => (
                     <div
                       key={idx}
-                      className="w-32 h-32 rounded-xl overflow-hidden border border-white/20"
+                      className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group"
                     >
                       <img
                         src={URL.createObjectURL(img)}
-                        alt={`scan-${idx}`}
-                        className="w-full h-full object-cover"
+                        alt={`scan-${idx + 1}`}
+                        className="w-full h-full object-cover max-h-[360px]"
                       />
+                      <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
+                        {idx + 1}
+                      </div>
+                      <button
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+        </div>
 
-            {/* B) Big Scan Button Card */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6">
+        {/* B) Big Scan Button Card */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 flex flex-col items-center">
               <button
                 disabled={images.length === 0 || isScanning}
                 onClick={runScan}
-                className="mx-auto px-8 py-3 rounded-xl bg-green-600 text-white font-semibold
-                           disabled:opacity-40 disabled:cursor-not-allowed"
+                className="min-h-[56px] px-8 text-lg rounded-full bg-green-600 text-white font-semibold
+                           disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
               >
-                {isScanning ? "Scanning…" : "Run Scan"}
+                {isScanning ? "Scanning…" : "Analyze Plant"}
               </button>
-              <p className="text-xs text-white/50 mt-3 text-center">
-                Tip: Use a close, well-lit photo of the bud or top cola.
-              </p>
-            </div>
-
-            {/* C) Results Card(s) */}
-            <section className="space-y-4">
-              {synthesis?.identity?.closestCultivarName && (
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6">
-                  <h1 className="text-3xl font-bold mb-2">
-                    Closest Known Cultivar
-                  </h1>
-                  <p className="text-xl text-green-400 font-semibold">
-                    {synthesis.identity.closestCultivarName}
-                  </p>
-                  <p className="text-sm text-white/60">
-                    Visual alignment based on {images.length} image{images.length > 1 ? "s" : ""}
-                  </p>
-                </div>
-              )}
-              {result && <ResultPanel result={result} />}
-            </section>
-          </div>
         </div>
+
+        {/* C) Results Card(s) */}
+        <section className="space-y-6">
+          {result && <ResultPanel result={result} imageCount={images.length} />}
+        </section>
       </main>
     </>
   );

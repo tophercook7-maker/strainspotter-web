@@ -24,26 +24,68 @@ type ScanPipelineInput = {
 
 /**
  * Run the scan pipeline with image seeds
+ * STEP 2.1.E — Process multiple images, average confidence, pick dominant candidate
  */
 async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
   if (input.imageCount === 0) {
     throw new Error("No images provided");
   }
 
-  // Use first image seed for now (can be extended to process multiple)
-  const firstSeed = input.imageSeeds[0];
-  // Create a minimal File object from seed data
-  const syntheticFile = new File([], firstSeed.name, {
-    lastModified: Date.now(),
-  });
-  Object.defineProperty(syntheticFile, 'size', { 
-    value: firstSeed.size,
-    writable: false,
-    configurable: false,
+  // Loop through all images and process each
+  const wikiResults = await Promise.all(
+    input.imageSeeds.map(async (seed) => {
+      const syntheticFile = new File([], seed.name, {
+        lastModified: Date.now(),
+      });
+      Object.defineProperty(syntheticFile, 'size', { 
+        value: seed.size,
+        writable: false,
+        configurable: false,
+      });
+      return await runWikiEngine(syntheticFile, input.imageCount);
+    })
+  );
+
+  // Average confidence across all images
+  const avgConfidence = Math.round(
+    wikiResults.reduce((sum, wiki) => sum + wiki.identity.confidence, 0) / wikiResults.length
+  );
+
+  // Pick dominant candidate (most common strain name, or highest confidence if tied)
+  const strainCounts = new Map<string, { count: number; maxConfidence: number }>();
+  wikiResults.forEach((wiki) => {
+    const name = wiki.identity.strainName;
+    const existing = strainCounts.get(name) || { count: 0, maxConfidence: 0 };
+    strainCounts.set(name, {
+      count: existing.count + 1,
+      maxConfidence: Math.max(existing.maxConfidence, wiki.identity.confidence),
+    });
   });
 
-  const wiki = await runWikiEngine(syntheticFile, input.imageCount);
-  const viewModel = wikiToViewModel(wiki);
+  let dominantStrain = wikiResults[0].identity.strainName;
+  let maxCount = 0;
+  let maxConf = 0;
+  strainCounts.forEach((value, name) => {
+    if (value.count > maxCount || (value.count === maxCount && value.maxConfidence > maxConf)) {
+      maxCount = value.count;
+      maxConf = value.maxConfidence;
+      dominantStrain = name;
+    }
+  });
+
+  // Use the dominant strain's wiki result for full data
+  const dominantWiki = wikiResults.find(w => w.identity.strainName === dominantStrain) || wikiResults[0];
+  
+  // Update confidence to averaged value
+  const finalWiki = {
+    ...dominantWiki,
+    identity: {
+      ...dominantWiki.identity,
+      confidence: avgConfidence,
+    },
+  };
+
+  const viewModel = wikiToViewModel(finalWiki);
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {
@@ -52,10 +94,10 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
   };
 
   // Generate synthesis
-  const synthesis = synthesizeWikiInsights(wiki, context);
+  const synthesis = synthesizeWikiInsights(finalWiki, context);
 
   // Log identification report
-  const identificationReport = matchCultivars(wiki, context);
+  const identificationReport = matchCultivars(finalWiki, context);
   console.log("IDENTIFICATION REPORT", identificationReport);
 
   return {
