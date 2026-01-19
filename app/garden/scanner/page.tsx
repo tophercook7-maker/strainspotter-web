@@ -28,16 +28,28 @@ export default function ScannerPage() {
   }, [images]);
 
   async function runScan() {
-    if (images.length === 0) return;
+    console.log("ANALYZE CLICKED");
+    
+    if (images.length === 0) {
+      console.log("ANALYZE BLOCKED: No images selected");
+      return;
+    }
 
+    console.log("ANALYZE STARTING: Processing", images.length, "image(s)");
     setIsScanning(true);
 
     try {
+      console.log("ANALYZE STEP 1: Calling scanImages");
       const scanResult = await scanImages(images);
+      console.log("ANALYZE STEP 2: Got scan result", scanResult);
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
+      console.log("ANALYZE STEP 3: State updated");
+    } catch (error) {
+      console.error("ANALYZE ERROR:", error);
     } finally {
       setIsScanning(false);
+      console.log("ANALYZE COMPLETE");
     }
   }
 
