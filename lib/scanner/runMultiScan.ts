@@ -73,16 +73,29 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   const fusedFeatures = fuseMultiImageFeatures(wikiResults);
   console.log("FUSED FEATURES:", fusedFeatures);
 
-  // Phase 2.7 Part N Step 2 — Per-Image Analysis (if image files provided)
-  let consensusResult = null;
+  // Phase 3.0 Part A — Multi-Image Intake (1-3 images, independent observations)
+  // Phase 3.0 Part B — Per-Image Analysis (Enhanced)
+  let consensusResult: ConsensusResult | null = null;
+  let imageResultsV3: ImageResult[] = [];
   let imageResults: any[] = [];
-  if (imageFiles && imageFiles.length >= 2) {
-    imageResults = await analyzePerImage(imageFiles, input.imageCount);
-    console.log("PER-IMAGE RESULTS:", imageResults);
+  
+  if (imageFiles && imageFiles.length >= 1 && imageFiles.length <= 3) {
+    // Phase 3.0 Part B — Use enhanced analysis for all images (1-3)
+    imageResultsV3 = await analyzePerImageV3(imageFiles, input.imageCount);
+    console.log("PER-IMAGE RESULTS V3:", imageResultsV3);
     
-    // Phase 2.7 Part N Step 3 — Consensus Engine
-    consensusResult = buildConsensusResult(imageResults, fusedFeatures, input.imageCount);
-    console.log("CONSENSUS RESULT:", consensusResult);
+    // Phase 3.0 Part C — Consensus Merge Engine
+    consensusResult = buildConsensusResultV3(imageResultsV3, fusedFeatures, input.imageCount);
+    console.log("CONSENSUS RESULT V3:", consensusResult);
+    
+    // Legacy compatibility
+    imageResults = imageResultsV3.map(r => ({
+      imageIndex: r.imageIndex,
+      strainCandidate: r.candidateStrains[0]?.name || "Unknown",
+      confidenceScore: r.candidateStrains[0]?.confidence || 60,
+      keyTraits: r.candidateStrains[0]?.traitsMatched || [],
+      wikiResult: r.wikiResult,
+    }));
   }
 
   // Phase 3.0 Part E — Name First Output
