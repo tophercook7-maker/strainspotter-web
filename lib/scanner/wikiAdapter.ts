@@ -3,8 +3,9 @@
 
 import type { WikiResult } from "./types";
 import type { ScannerViewModel } from "./viewModel";
+import type { NameFirstResult } from "./nameFirstMatcher";
 
-export function wikiToViewModel(wiki: WikiResult): ScannerViewModel {
+export function wikiToViewModel(wiki: WikiResult, nameFirstResult?: NameFirstResult): ScannerViewModel {
   const safeLineage = Array.isArray(wiki.genetics.lineage) ? wiki.genetics.lineage : [];
   const safeEffects = Array.isArray(wiki.experience.effects) ? wiki.experience.effects : [];
   const safePrimaryEffects = Array.isArray(wiki.experience.primaryEffects) ? wiki.experience.primaryEffects : [];
@@ -14,11 +15,17 @@ export function wikiToViewModel(wiki: WikiResult): ScannerViewModel {
   const safeTerpenes = Array.isArray(wiki.chemistry.terpenes) ? wiki.chemistry.terpenes : [];
   const safeAlternateMatches = Array.isArray(wiki.identity.alternateMatches) ? wiki.identity.alternateMatches : [];
   
+  // Use name-first result if provided, otherwise fall back to wiki
+  const primaryName = nameFirstResult?.primaryMatch.name || wiki.identity.strainName;
+  const confidence = nameFirstResult?.confidence || Math.min(95, wiki.identity.confidence);
+  const whyThisMatch = nameFirstResult?.primaryMatch.whyThisMatch || wiki.reasoning?.whyThisMatch || "Visual characteristics align with known cultivar profiles.";
+  const alsoSimilar = nameFirstResult?.alsoSimilar || [];
+  
   return {
-    name: wiki.identity.strainName,
-    title: wiki.identity.strainName, // Keep for backward compat
-    confidence: Math.min(95, wiki.identity.confidence),
-    whyThisMatch: wiki.reasoning?.whyThisMatch || "Visual characteristics align with known cultivar profiles.",
+    name: primaryName,
+    title: primaryName, // Keep for backward compat
+    confidence,
+    whyThisMatch,
     morphology: wiki.morphology.budStructure || "Flower structure shows typical hybrid characteristics.",
     trichomes: wiki.morphology.trichomes || "Trichome coverage appears typical for mature flowers.",
     pistils: wiki.morphology.coloration.includes("pistil") 
@@ -31,11 +38,17 @@ export function wikiToViewModel(wiki: WikiResult): ScannerViewModel {
     terpeneGuess: safeTerpenes.map(t => t.name),
     effectsShort: safePrimaryEffects.length > 0 ? safePrimaryEffects : safeEffects.slice(0, 3),
     effectsLong: [...safePrimaryEffects, ...safeSecondaryEffects, ...safeEffects],
-    comparisons: safeAlternateMatches.map(m => m.strainName),
-    uncertaintyExplanation: wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0
+    comparisons: alsoSimilar.length > 0 
+      ? alsoSimilar.map(s => `${s.name} (${s.whyNotPrimary})`)
+      : safeAlternateMatches.map(m => m.strainName),
+    uncertaintyExplanation: nameFirstResult
+      ? `Confidence: ${confidence}% (${nameFirstResult.imageCountBonus > 0 ? `+${nameFirstResult.imageCountBonus}% from multiple images` : ""}${nameFirstResult.variancePenalty > 0 ? `, -${nameFirstResult.variancePenalty}% variance penalty` : ""}). Visual identification has limitations and may not match genetic testing.`
+      : wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0
       ? `Some visual traits show variance from typical profile: ${wiki.reasoning.conflictingSignals.join(", ")}. Visual identification has limitations and may not match genetic testing.`
       : `Visual characteristics strongly align with documented specimens. However, visual identification has limitations and may not match genetic testing.`,
-    referenceStrains: safeAlternateMatches.length > 0
+    referenceStrains: alsoSimilar.length > 0
+      ? alsoSimilar.map(s => s.name)
+      : safeAlternateMatches.length > 0
       ? safeAlternateMatches.map(m => m.strainName)
       : [],
     genetics: {

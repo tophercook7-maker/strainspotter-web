@@ -25,8 +25,8 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
       </p>
 
       <div>
-        <h3 className="text-xl font-semibold text-white mb-2">Why This Match</h3>
-        <p className="text-white/90 leading-relaxed">{result.whyThisMatch}</p>
+        <h3 className="text-xl font-semibold text-white mb-2">Why This Strain</h3>
+        <p className="text-white/90 leading-relaxed whitespace-pre-line">{result.whyThisMatch}</p>
       </div>
 
       <div>
@@ -62,10 +62,21 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
 
       {safeReferenceStrains.length > 0 && (
         <div>
-          <h3 className="text-xl font-semibold text-white mb-2">Closest Known Cultivars</h3>
-          <ul className="list-disc list-inside space-y-1">
+          <h3 className="text-xl font-semibold text-white mb-2">Also Similar</h3>
+          <ul className="list-disc list-inside space-y-2">
             {safeReferenceStrains.map((strain, index) => (
               <li key={index} className="text-white/90">{strain}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.comparisons && result.comparisons.length > 0 && (
+        <div>
+          <h3 className="text-xl font-semibold text-white mb-2">Comparison</h3>
+          <ul className="list-disc list-inside space-y-2">
+            {result.comparisons.map((comp, index) => (
+              <li key={index} className="text-white/90">{comp}</li>
             ))}
           </ul>
         </div>

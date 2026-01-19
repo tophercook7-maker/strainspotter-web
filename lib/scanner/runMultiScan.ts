@@ -4,6 +4,8 @@ import { runWikiEngine } from "./wikiEngine";
 import { wikiToViewModel } from "./wikiAdapter";
 import { matchCultivars } from "./cultivarMatcher";
 import { matchCultivarsWithVoting } from "./nameMatcher";
+import { fuseMultiImageFeatures } from "./multiImageFusion";
+import { matchStrainNameFirst } from "./nameFirstMatcher";
 import { synthesizeWikiInsights } from "./wikiSynthesis";
 import type { ScannerViewModel } from "./viewModel";
 import type { WikiSynthesis, ScanContext } from "./types";
@@ -54,46 +56,30 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
 
   console.log("runScanPipeline: all wiki results processed", wikiResults.length);
 
-  // Average confidence across all images
-  const avgConfidence = Math.round(
-    wikiResults.reduce((sum, wiki) => sum + wiki.identity.confidence, 0) / wikiResults.length
-  );
+  // Phase 2.2 Part C — Fuse features across ALL images
+  const fusedFeatures = fuseMultiImageFeatures(wikiResults);
+  console.log("FUSED FEATURES:", fusedFeatures);
 
-  // Pick dominant candidate (most common strain name, or highest confidence if tied)
-  const strainCounts = new Map<string, { count: number; maxConfidence: number }>();
-  wikiResults.forEach((wiki) => {
-    const name = wiki.identity.strainName;
-    const existing = strainCounts.get(name) || { count: 0, maxConfidence: 0 };
-    strainCounts.set(name, {
-      count: existing.count + 1,
-      maxConfidence: Math.max(existing.maxConfidence, wiki.identity.confidence),
-    });
-  });
+  // Phase 2.2 Part D — Name-First Matching
+  const nameFirstResult = matchStrainNameFirst(fusedFeatures, input.imageCount);
+  console.log("NAME-FIRST RESULT:", nameFirstResult);
 
-  let dominantStrain = wikiResults[0].identity.strainName;
-  let maxCount = 0;
-  let maxConf = 0;
-  strainCounts.forEach((value, name) => {
-    if (value.count > maxCount || (value.count === maxCount && value.maxConfidence > maxConf)) {
-      maxCount = value.count;
-      maxConf = value.maxConfidence;
-      dominantStrain = name;
-    }
-  });
-
-  // Use the dominant strain's wiki result for full data
-  const dominantWiki = wikiResults.find(w => w.identity.strainName === dominantStrain) || wikiResults[0];
+  // Use the primary match name to find corresponding wiki result
+  const primaryWiki = wikiResults.find(w => 
+    w.identity.strainName === nameFirstResult.primaryMatch.name
+  ) || wikiResults[0];
   
-  // Update confidence to averaged value
+  // Update with name-first results
   const finalWiki = {
-    ...dominantWiki,
+    ...primaryWiki,
     identity: {
-      ...dominantWiki.identity,
-      confidence: avgConfidence,
+      ...primaryWiki.identity,
+      strainName: nameFirstResult.primaryMatch.name,
+      confidence: nameFirstResult.confidence,
     },
   };
 
-  const viewModel = wikiToViewModel(finalWiki);
+  const viewModel = wikiToViewModel(finalWiki, nameFirstResult);
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

@@ -33,10 +33,11 @@ export default function ScannerPage() {
     console.log("IMAGE COUNT:", images.length);
     console.log("IMAGES USED:", images.length);
 
-    if (images.length === 0) {
-      console.log("BLOCKED: No images");
-      return;
+    if (!images || images.length === 0) {
+      throw new Error("No images provided");
     }
+
+    console.log("ANALYZING", images.length, "IMAGES");
 
     console.log("STEP 1: PREP DONE");
     setIsScanning(true);

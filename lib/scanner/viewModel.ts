@@ -15,7 +15,7 @@ export interface ScannerViewModel {
   terpeneGuess: string[];
   effectsShort: string[];
   effectsLong: string[];
-  comparisons: string[];
+  comparisons?: string[];
   uncertaintyExplanation: string;
   referenceStrains: string[];
   genetics: {
