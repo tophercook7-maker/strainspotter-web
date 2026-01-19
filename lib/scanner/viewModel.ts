@@ -33,6 +33,18 @@ export interface ScannerViewModel {
     whyNotPrimary: string;
   }>;
   
+  // Phase 2.8 Part O — Trust & Explanation Engine
+  trustLayer: {
+    confidenceBreakdown: {
+      visualSimilarity: number;
+      traitOverlap: number;
+      consensusStrength: number;
+    };
+    whyThisMatch: string[]; // 3-5 bullet explanation
+    sourcesUsed: string[];
+    confidenceLanguage: string; // "Closest known match", "Most likely cultivar", etc.
+  };
+  
   // STEP 6 — AI + Wiki Blend
   aiWikiBlend: string; // Explicit blend of AI inference + known cultivar references
   

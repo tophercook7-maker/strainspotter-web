@@ -7,6 +7,7 @@ import { matchCultivarsWithVoting } from "./nameMatcher";
 import { fuseMultiImageFeatures } from "./multiImageFusion";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
 import { analyzePerImage, buildConsensusResult } from "./consensusEngine";
+import { buildTrustLayer } from "./trustEngine";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -72,8 +73,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
 
   // Phase 2.7 Part N Step 2 — Per-Image Analysis (if image files provided)
   let consensusResult = null;
+  let imageResults: any[] = [];
   if (imageFiles && imageFiles.length >= 2) {
-    const imageResults = await analyzePerImage(imageFiles, input.imageCount);
+    imageResults = await analyzePerImage(imageFiles, input.imageCount);
     console.log("PER-IMAGE RESULTS:", imageResults);
     
     // Phase 2.7 Part N Step 3 — Consensus Engine
@@ -133,6 +135,37 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   );
   console.log("DEEP ANALYSIS:", deepAnalysis);
 
+  // Phase 2.7 Part N Step 6 — Add accuracy tips if low confidence
+  if (consensusResult?.lowConfidence) {
+    deepAnalysis.accuracyTips.unshift(
+      "Confidence is below 70%. Try adding more images from different angles.",
+      "Ensure consistent lighting across all images for better agreement."
+    );
+  }
+
+  // Phase 2.8 Part O — Trust & Explanation Engine
+  // Create image results from wiki results if not already created
+  const imageResultsForTrust = imageResults.length > 0 
+    ? imageResults 
+    : wikiResults.map((w, i) => ({
+        imageIndex: i,
+        strainCandidate: w.identity.strainName,
+        confidenceScore: w.identity.confidence,
+        keyTraits: [],
+        wikiResult: w,
+      }));
+  
+  const trustLayer = buildTrustLayer(
+    imageResultsForTrust,
+    nameFirstResult.primaryMatch,
+    fusedFeatures,
+    consensusResult?.agreementLevel || (input.imageCount >= 2 ? "medium" : "low"),
+    nameFirstResult.confidenceRange,
+    wikiData,
+    dbEntry
+  );
+  console.log("TRUST LAYER:", trustLayer);
+
   // Use the primary match name to find corresponding wiki result
   const primaryWiki = wikiResults.find(w => 
     w.identity.strainName === nameFirstResult.primaryMatch.name
@@ -152,7 +185,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     },
   };
 
-  const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis);
+  const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer);
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

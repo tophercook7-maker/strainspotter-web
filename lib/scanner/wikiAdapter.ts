@@ -7,13 +7,15 @@ import type { NameFirstResult } from "./nameFirstMatcher";
 import type { WikiData } from "./wikiLookup";
 import type { AIReasoningResult } from "./aiReasoning";
 import type { DeepAnalysisSections } from "./deepAnalysis";
+import type { TrustLayer } from "./trustEngine";
 
 export function wikiToViewModel(
   wiki: WikiResult, 
   nameFirstResult?: NameFirstResult,
   wikiData?: WikiData | null,
   aiReasoning?: AIReasoningResult,
-  deepAnalysis?: DeepAnalysisSections
+  deepAnalysis?: DeepAnalysisSections,
+  trustLayer?: TrustLayer
 ): ScannerViewModel {
   const safeLineage = Array.isArray(wiki.genetics.lineage) ? wiki.genetics.lineage : [];
   const safeEffects = Array.isArray(wiki.experience.effects) ? wiki.experience.effects : [];
@@ -152,5 +154,20 @@ export function wikiToViewModel(
     disclaimer:
       "Results are AI-assisted estimates and not definitive identification.",
     sources: sources.length > 0 ? sources : ["Curated Database"],
+    
+    // Phase 2.8 Part O — Trust & Explanation Engine
+    trustLayer: trustLayer || {
+      confidenceBreakdown: {
+        visualSimilarity: 70,
+        traitOverlap: 70,
+        consensusStrength: 60,
+      },
+      whyThisMatch: [
+        "Visual characteristics align with known cultivar profiles",
+        "Observed traits match documented morphology",
+      ],
+      sourcesUsed: sources.length > 0 ? sources : ["Curated Database"],
+      confidenceLanguage: "Closest known match based on visual analysis",
+    },
   };
 }
