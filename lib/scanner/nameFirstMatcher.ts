@@ -35,36 +35,46 @@ function compareToStrain(fused: FusedFeatures, strain: CultivarReference): {
   let score = 0;
   const matchedTraits: string[] = [];
 
+  // Use visualProfile if available, fall back to morphology
+  const visualProfile = strain.visualProfile || {
+    trichomeDensity: strain.morphology.trichomeDensity,
+    pistilColor: strain.morphology.pistilColor,
+    budStructure: strain.morphology.budDensity,
+    leafShape: strain.morphology.leafShape,
+    colorProfile: "",
+  };
+
   // Bud density match (25 points)
-  if (fused.budStructure === strain.morphology.budDensity) {
+  if (fused.budStructure === visualProfile.budStructure) {
     score += 25;
     matchedTraits.push("Bud density matches");
   }
 
   // Trichome density match (25 points)
-  if (fused.trichomeDensity === strain.morphology.trichomeDensity) {
+  if (fused.trichomeDensity === visualProfile.trichomeDensity) {
     score += 25;
     matchedTraits.push("Trichome density matches");
   }
 
   // Leaf shape match (20 points)
-  if (fused.leafShape === strain.morphology.leafShape) {
+  if (fused.leafShape === visualProfile.leafShape) {
     score += 20;
     matchedTraits.push("Leaf shape matches");
   }
 
   // Pistil color match (15 points)
-  if (strain.morphology.pistilColor.some(c => c.toLowerCase() === fused.pistilColor.toLowerCase())) {
+  if (visualProfile.pistilColor.some(c => c.toLowerCase() === fused.pistilColor.toLowerCase())) {
     score += 15;
     matchedTraits.push("Pistil color matches");
   }
 
   // Genetics type match (15 points)
   // This is inferred from leaf shape and other traits
-  if (fused.leafShape === "broad" && (strain.dominantType === "Indica" || strain.dominantType === "Hybrid")) {
+  const strainType = strain.type || strain.dominantType;
+  if (fused.leafShape === "broad" && (strainType === "Indica" || strainType === "Hybrid")) {
     score += 15;
     matchedTraits.push("Genetics type aligns");
-  } else if (fused.leafShape === "narrow" && (strain.dominantType === "Sativa" || strain.dominantType === "Hybrid")) {
+  } else if (fused.leafShape === "narrow" && (strainType === "Sativa" || strainType === "Hybrid")) {
     score += 15;
     matchedTraits.push("Genetics type aligns");
   }
@@ -77,6 +87,7 @@ function compareToStrain(fused: FusedFeatures, strain: CultivarReference): {
 
 /**
  * Calculate confidence with image count bonus and variance penalty
+ * Phase 2.3 Part I — Confidence Governor
  */
 function calculateConfidence(
   topScore: number,
@@ -91,7 +102,24 @@ function calculateConfidence(
   const variancePenalty = variance * 0.1; // Scale variance to penalty
 
   const baseConfidence = (topScore / 100) * 100;
-  const adjustedConfidence = baseConfidence + imageCountBonus - variancePenalty;
+  let adjustedConfidence = baseConfidence + imageCountBonus - variancePenalty;
+
+  // Phase 2.3 Part I — Confidence Governor Rules
+  // 95-99% ONLY if: 3+ images, low variance, strong match
+  if (imageCount >= 3 && variance < 20 && topScore >= 80) {
+    adjustedConfidence = Math.min(99, adjustedConfidence);
+  } else if (imageCount >= 3 && variance < 30 && topScore >= 70) {
+    adjustedConfidence = Math.min(94, adjustedConfidence);
+  }
+  
+  // Cap at 85% if: single image, conflicting traits, or poor conditions
+  if (imageCount === 1) {
+    adjustedConfidence = Math.min(85, adjustedConfidence);
+  }
+  
+  if (variance > 40) {
+    adjustedConfidence = Math.min(85, adjustedConfidence);
+  }
 
   // Clamp between 60 and 99
   const confidence = Math.max(60, Math.min(99, Math.round(adjustedConfidence)));

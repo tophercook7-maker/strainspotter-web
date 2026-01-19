@@ -16,17 +16,30 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
   
   return (
     <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-      <h2 className="text-3xl font-bold text-white">
-        {result.name || result.title}
-      </h2>
+      {/* Phase 2.3 Part H — Output Structure (Final Order) */}
       
-      <p className="text-lg text-green-400 font-semibold">
-        Confidence: {result.confidence}%
+      {/* 1. STRAIN NAME (LARGE) */}
+      <h1 className="text-4xl font-bold text-white">
+        {result.name || result.title}
+      </h1>
+      
+      {/* 2. CONFIDENCE %} */}
+      <p className="text-2xl text-green-400 font-semibold">
+        {result.confidence}%
       </p>
 
+      {/* 3. WHY THIS MATCH (PARAGRAPH) */}
       <div>
-        <h3 className="text-xl font-semibold text-white mb-2">Why This Strain</h3>
+        <h3 className="text-xl font-semibold text-white mb-2">Why This Match</h3>
         <p className="text-white/90 leading-relaxed whitespace-pre-line">{result.whyThisMatch}</p>
+      </div>
+
+      {/* 4. GENETICS & LINEAGE */}
+      <div>
+        <h3 className="text-xl font-semibold text-white mb-2">Genetics & Lineage</h3>
+        <p className="text-white/90">
+          {result.genetics.dominance} {result.genetics.lineage && `• ${result.genetics.lineage}`}
+        </p>
       </div>
 
       <div>
@@ -44,9 +57,10 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
         )}
       </div>
 
+      {/* 6. TERPENE LIKELIHOOD */}
       {safeTerpeneGuess.length > 0 && (
         <div>
-          <h3 className="text-xl font-semibold text-white mb-2">Likely Terpenes</h3>
+          <h3 className="text-xl font-semibold text-white mb-2">Terpene Likelihood</h3>
           <p className="text-white/90">{safeTerpeneGuess.join(", ")}</p>
         </div>
       )}
@@ -60,11 +74,12 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
         </ul>
       </div>
 
+      {/* 7. SIMILAR STRAINS (2-3) */}
       {safeReferenceStrains.length > 0 && (
         <div>
-          <h3 className="text-xl font-semibold text-white mb-2">Also Similar</h3>
+          <h3 className="text-xl font-semibold text-white mb-2">Similar Strains</h3>
           <ul className="list-disc list-inside space-y-2">
-            {safeReferenceStrains.map((strain, index) => (
+            {safeReferenceStrains.slice(0, 3).map((strain, index) => (
               <li key={index} className="text-white/90">{strain}</li>
             ))}
           </ul>
@@ -75,19 +90,22 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
         <div>
           <h3 className="text-xl font-semibold text-white mb-2">Comparison</h3>
           <ul className="list-disc list-inside space-y-2">
-            {result.comparisons.map((comp, index) => (
+            {result.comparisons.slice(0, 3).map((comp, index) => (
               <li key={index} className="text-white/90">{comp}</li>
             ))}
           </ul>
         </div>
       )}
 
-      <div>
-        <h3 className="text-xl font-semibold text-white mb-2">Genetics</h3>
-        <p className="text-white/90">
-          {result.genetics.dominance} {result.genetics.lineage && `• ${result.genetics.lineage}`}
-        </p>
-      </div>
+      {/* 8. SOURCES (Wiki / DB) */}
+      {result.sources && result.sources.length > 0 && (
+        <div>
+          <h3 className="text-xl font-semibold text-white mb-2">Sources</h3>
+          <p className="text-sm text-white/60">
+            {result.sources.join(", ")}
+          </p>
+        </div>
+      )}
 
       <div>
         <h3 className="text-xl font-semibold text-white mb-2">Confidence & Limits</h3>

@@ -4,8 +4,15 @@
 import type { WikiResult } from "./types";
 import type { ScannerViewModel } from "./viewModel";
 import type { NameFirstResult } from "./nameFirstMatcher";
+import type { WikiData } from "./wikiLookup";
+import type { AIReasoningResult } from "./aiReasoning";
 
-export function wikiToViewModel(wiki: WikiResult, nameFirstResult?: NameFirstResult): ScannerViewModel {
+export function wikiToViewModel(
+  wiki: WikiResult, 
+  nameFirstResult?: NameFirstResult,
+  wikiData?: WikiData | null,
+  aiReasoning?: AIReasoningResult
+): ScannerViewModel {
   const safeLineage = Array.isArray(wiki.genetics.lineage) ? wiki.genetics.lineage : [];
   const safeEffects = Array.isArray(wiki.experience.effects) ? wiki.experience.effects : [];
   const safePrimaryEffects = Array.isArray(wiki.experience.primaryEffects) ? wiki.experience.primaryEffects : [];
@@ -18,8 +25,20 @@ export function wikiToViewModel(wiki: WikiResult, nameFirstResult?: NameFirstRes
   // Use name-first result if provided, otherwise fall back to wiki
   const primaryName = nameFirstResult?.primaryMatch.name || wiki.identity.strainName;
   const confidence = nameFirstResult?.confidence || Math.min(95, wiki.identity.confidence);
-  const whyThisMatch = nameFirstResult?.primaryMatch.whyThisMatch || wiki.reasoning?.whyThisMatch || "Visual characteristics align with known cultivar profiles.";
+  
+  // Phase 2.3 Part G — Use AI reasoning if available, otherwise fall back
+  const whyThisMatch = aiReasoning?.explanation || 
+    nameFirstResult?.primaryMatch.whyThisMatch || 
+    wiki.reasoning?.whyThisMatch || 
+    "Visual characteristics align with known cultivar profiles.";
+  
   const alsoSimilar = nameFirstResult?.alsoSimilar || [];
+  
+  // Use wiki data for genetics if available
+  const geneticsLineage = wikiData?.lineage || safeLineage;
+  
+  // Add sources if available
+  const sources = wikiData?.sources || [];
   
   return {
     name: primaryName,
@@ -53,7 +72,7 @@ export function wikiToViewModel(wiki: WikiResult, nameFirstResult?: NameFirstRes
       : [],
     genetics: {
       dominance: wiki.genetics.dominance,
-      lineage: safeLineage.join(" × "),
+      lineage: geneticsLineage.join(" × "),
     },
     experience: {
       effects: safeEffects, // NO SLICE - ALL EFFECTS
@@ -63,5 +82,6 @@ export function wikiToViewModel(wiki: WikiResult, nameFirstResult?: NameFirstRes
     },
     disclaimer:
       "Results are AI-assisted estimates and not definitive identification.",
+    sources: sources.length > 0 ? sources : ["Curated Database"],
   };
 }

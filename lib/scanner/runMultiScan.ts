@@ -6,7 +6,10 @@ import { matchCultivars } from "./cultivarMatcher";
 import { matchCultivarsWithVoting } from "./nameMatcher";
 import { fuseMultiImageFeatures } from "./multiImageFusion";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
+import { fetchWiki } from "./wikiLookup";
+import { generateAIReasoning } from "./aiReasoning";
 import { synthesizeWikiInsights } from "./wikiSynthesis";
+import { CULTIVAR_LIBRARY } from "./cultivarLibrary";
 import type { ScannerViewModel } from "./viewModel";
 import type { WikiSynthesis, ScanContext } from "./types";
 
@@ -64,12 +67,30 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
   const nameFirstResult = matchStrainNameFirst(fusedFeatures, input.imageCount);
   console.log("NAME-FIRST RESULT:", nameFirstResult);
 
+  // Phase 2.3 Part G Step 3 — Wiki Lookup (Name Locked)
+  const dbEntry = CULTIVAR_LIBRARY.find(s => 
+    s.name === nameFirstResult.primaryMatch.name || 
+    s.aliases?.includes(nameFirstResult.primaryMatch.name)
+  );
+  const wikiData = fetchWiki(nameFirstResult.primaryMatch.name, dbEntry);
+  console.log("WIKI DATA:", wikiData);
+
+  // Phase 2.3 Part G Step 4 — AI Reasoning Layer
+  const aiReasoning = generateAIReasoning(
+    nameFirstResult.primaryMatch.name,
+    fusedFeatures,
+    wikiData,
+    nameFirstResult.primaryMatch,
+    dbEntry?.terpeneProfile || dbEntry?.commonTerpenes || []
+  );
+  console.log("AI REASONING:", aiReasoning);
+
   // Use the primary match name to find corresponding wiki result
   const primaryWiki = wikiResults.find(w => 
     w.identity.strainName === nameFirstResult.primaryMatch.name
   ) || wikiResults[0];
   
-  // Update with name-first results
+  // Update with name-first results and AI reasoning
   const finalWiki = {
     ...primaryWiki,
     identity: {
@@ -77,9 +98,13 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
       strainName: nameFirstResult.primaryMatch.name,
       confidence: nameFirstResult.confidence,
     },
+    reasoning: {
+      ...primaryWiki.reasoning,
+      whyThisMatch: aiReasoning.explanation,
+    },
   };
 
-  const viewModel = wikiToViewModel(finalWiki, nameFirstResult);
+  const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning);
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

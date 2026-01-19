@@ -18,6 +18,7 @@ export interface ScannerViewModel {
   comparisons?: string[];
   uncertaintyExplanation: string;
   referenceStrains: string[];
+  sources?: string[];
   genetics: {
     dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
     lineage: string;
