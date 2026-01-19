@@ -16,19 +16,21 @@ import TopNav from "../_components/TopNav";
  */
 
 export default function ScannerPage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [identificationResult, setIdentificationResult] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [scanTier] = useState<ScanTier>("basic");
+  const MAX_IMAGES = 3;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
+    const selected = Array.from(e.target.files || []);
+    if (selected.length === 0) return;
 
-    setFile(selected);
-    setPreviewUrl(URL.createObjectURL(selected));
+    // Limit to MAX_IMAGES
+    const limited = selected.slice(0, MAX_IMAGES);
+    setImages(limited);
+    setPreviewUrls(limited.map(file => URL.createObjectURL(file)));
   };
 
   // TIER 1 (FREE / NORMAL):
@@ -36,8 +38,8 @@ export default function ScannerPage() {
   // - Core effects, aroma, genetics
   // - Educational summary only
   const runScan = async () => {
-    if (!file) {
-      alert("Please choose an image first.");
+    if (images.length === 0) {
+      alert("Please choose at least one image first.");
       return;
     }
 
@@ -47,9 +49,10 @@ export default function ScannerPage() {
     setIdentificationResult(null);
 
     try {
-      console.log("RUN SCAN CLICKED", file.name);
+      console.log("RUN SCAN CLICKED", images.map(img => img.name).join(", "));
 
-      const wiki = await runWikiEngine(file);
+      // Use first image for now (can be extended to process multiple)
+      const wiki = await runWikiEngine(images[0]);
       const viewModel = wikiToViewModel(wiki);
       setResult(viewModel);
 
@@ -99,18 +102,28 @@ export default function ScannerPage() {
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleFileChange}
                 className="block w-full text-sm text-white/70"
               />
+              {images.length > 0 && (
+                <p className="text-xs text-white/50">
+                  {images.length} of {MAX_IMAGES} image{images.length > 1 ? "s" : ""} selected
+                </p>
+              )}
 
-              {/* IMAGE PREVIEW */}
-              {previewUrl && (
-                <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                  <img
-                    src={previewUrl}
-                    alt="Scan preview"
-                    className="w-full h-auto max-h-[420px] object-contain mx-auto"
-                  />
+              {/* IMAGE PREVIEWS */}
+              {previewUrls.length > 0 && (
+                <div className="space-y-3">
+                  {previewUrls.map((url, index) => (
+                    <div key={index} className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                      <img
+                        src={url}
+                        alt={`Scan preview ${index + 1}`}
+                        className="w-full h-auto max-h-[420px] object-contain mx-auto"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -119,7 +132,7 @@ export default function ScannerPage() {
             <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6">
               <button
                 onClick={runScan}
-                disabled={isScanning}
+                disabled={images.length === 0 || isScanning}
                 className="w-full rounded-xl px-5 py-4 md:py-4 font-semibold bg-white text-black hover:bg-white/90 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ minHeight: '48px' }}
               >
