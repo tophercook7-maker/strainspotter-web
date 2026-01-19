@@ -17,6 +17,14 @@ import { determineStrainName } from "./namingHierarchy";
 import { generateNamingDisplay } from "./namingDisplay";
 import { buildStrainCandidatePool } from "./strainCandidatePool";
 import { resolveStrainName } from "./nameResolution";
+// Phase 4.1 — Name-First Disambiguation
+import { buildStrainShortlist } from "./strainShortlist";
+import { scoreNameCompetition } from "./nameCompetition";
+import { 
+  selectPrimaryName, 
+  generateNameExplanation,
+  type NameFirstDisambiguationResult 
+} from "./nameFirstDisambiguation";
 import { getConfidenceTierFromRange } from "./confidenceTier";
 import {
   findRelatedStrains,
@@ -102,11 +110,32 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   let imageResultsV3: ImageResult[] = [];
   let imageResults: any[] = [];
   
+  // Phase 4.3 Step 4.3.1 — NAME-FIRST PIPELINE (TOP PRIORITY)
+  // Changed flow: Candidate Name Resolution happens FIRST
+  // Everything else supports or challenges that name
+  let nameFirstPipelineResult: ReturnType<typeof import("./nameFirstPipeline").runNameFirstPipeline> | null = null;
+  
   // Phase 4.0 Part B — Per-Image Analysis (supports 1-5 images)
   if (imageFiles && imageFiles.length >= 1 && imageFiles.length <= 5) {
     // Phase 3.0 Part B — Use enhanced analysis for all images (1-3)
     imageResultsV3 = await analyzePerImageV3(imageFiles, input.imageCount);
     console.log("PER-IMAGE RESULTS V3:", imageResultsV3);
+    
+    // Phase 4.3 Step 4.3.1 — Run Name-First Pipeline
+    if (imageResultsV3.length > 0 && imageResultsV3.length >= 1) {
+      const { runNameFirstPipeline } = require("./nameFirstPipeline");
+      try {
+        nameFirstPipelineResult = runNameFirstPipeline(
+          imageResultsV3,
+          fusedFeatures,
+          input.imageCount
+        );
+        console.log("Phase 4.3 Step 4.3.1 — NAME-FIRST PIPELINE RESULT:", nameFirstPipelineResult);
+      } catch (error) {
+        console.error("Phase 4.3 Step 4.3.1 — Name-first pipeline error:", error);
+        nameFirstPipelineResult = null;
+      }
+    }
     
     // Phase 3.0 Part C — Consensus Merge Engine
     consensusResult = buildConsensusResultV3(imageResultsV3, fusedFeatures, input.imageCount);
@@ -328,6 +357,23 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   };
 
   const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
+  
+  // Phase 4.3 Step 4.3.6 — Add Name-First Display (TOP PRIORITY)
+  if (nameFirstPipelineResult) {
+    viewModel.nameFirstDisplay = {
+      primaryStrainName: nameFirstPipelineResult.primaryStrainName,
+      confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
+      confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
+      tagline: "Closest known match based on visual + database consensus",
+      alternateMatches: nameFirstPipelineResult.alternateMatches.length > 0
+        ? nameFirstPipelineResult.alternateMatches.map(a => ({
+            name: a.name,
+            whyNotPrimary: a.whyNotPrimary,
+          }))
+        : undefined,
+    };
+    console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
+  }
   
   // Phase 3.4 Part C — Add multi-image info to view model
   viewModel.multiImageInfo = multiImageInfo;

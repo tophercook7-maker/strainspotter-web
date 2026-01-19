@@ -60,12 +60,58 @@ export default function WikiStyleResultPanel({
 
   return (
     <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-6 max-h-[85vh] overflow-y-auto max-w-4xl mx-auto">
-      {/* Phase 3.9 Part A — CORE IDENTITY (ABOVE THE FOLD) */}
-      <div className="space-y-4 pb-4 border-b border-white/10">
-        <div className="space-y-2">
+      {/* Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY (TOP PRIORITY) */}
+      {result.nameFirstDisplay && (
+        <div className="mb-6 space-y-4 pb-6 border-b border-white/10">
+          {/* Strain Name (H1) */}
           <h1 className="text-4xl md:text-5xl font-bold text-white">
-            {result.name || result.title}
+            {result.nameFirstDisplay.primaryStrainName}
           </h1>
+          
+          {/* Confidence Badge & Tagline */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`text-sm font-semibold px-4 py-2 rounded-full ${
+                result.nameFirstDisplay.confidenceTier === "very_high"
+                  ? "bg-green-500/30 text-green-200"
+                  : result.nameFirstDisplay.confidenceTier === "high"
+                  ? "bg-green-500/20 text-green-300"
+                  : result.nameFirstDisplay.confidenceTier === "medium"
+                  ? "bg-yellow-500/20 text-yellow-300"
+                  : "bg-orange-500/20 text-orange-300"
+              }`}
+            >
+              {result.nameFirstDisplay.confidencePercent}% Confidence
+            </span>
+            <p className="text-sm text-white/70 italic">
+              {result.nameFirstDisplay.tagline}
+            </p>
+          </div>
+          
+          {/* Alternate Matches (Phase 4.3 Step 4.3.4) */}
+          {result.nameFirstDisplay.alternateMatches && result.nameFirstDisplay.alternateMatches.length > 0 && (
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+              <p className="text-sm text-white/80 mb-2">
+                <strong>Often confused with:</strong>{" "}
+                {result.nameFirstDisplay.alternateMatches.map((alt, idx) => (
+                  <span key={idx}>
+                    {idx > 0 && ", "}
+                    <span className="font-medium text-white/90">{alt.name}</span>
+                  </span>
+                ))}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Phase 3.9 Part A — CORE IDENTITY (ABOVE THE FOLD) */}
+      {!result.nameFirstDisplay && (
+        <div className="space-y-4 pb-4 border-b border-white/10">
+          <div className="space-y-2">
+            <h1 className="text-4xl md:text-5xl font-bold text-white">
+              {result.name || result.title}
+            </h1>
 
           {/* Match type label */}
           {result.namingInfo && (
@@ -144,8 +190,10 @@ export default function WikiStyleResultPanel({
             </p>
           )}
         </div>
+        </div>
+      )}
 
-        {/* Phase 3.8 Part E — Why This Match (Expandable) */}
+      {/* Phase 3.8 Part E — Why This Match (Expandable) */}
         {result.nameReasoning && result.nameReasoning.bullets.length > 0 && (
           <CollapsibleSection
             title="Why This Name?"
@@ -202,7 +250,6 @@ export default function WikiStyleResultPanel({
             </div>
           </CollapsibleSection>
         )}
-      </div>
 
       {/* Phase 3.6 Part C — GENETICS & LINEAGE (Expanded by default) */}
       <CollapsibleSection

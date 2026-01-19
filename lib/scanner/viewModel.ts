@@ -125,6 +125,18 @@ export interface ScannerViewModel {
     whatDiffered: string[];
   };
   
+  // Phase 4.3 Step 4.3.6 — Name-First Display
+  nameFirstDisplay?: {
+    primaryStrainName: string;
+    confidencePercent: number;
+    confidenceTier: "very_high" | "high" | "medium" | "low";
+    tagline: string; // "Closest known match based on visual + database consensus"
+    alternateMatches?: Array<{
+      name: string;
+      whyNotPrimary: string;
+    }>; // "Often confused with: X, Y"
+  };
+  
   // Phase 3.8 Part D — Why This Name (Enhanced)
   nameReasoning?: {
     bullets: string[]; // Visual traits, strain markers, cross-image agreement, cultivar behaviors
