@@ -20,6 +20,11 @@ export type CandidateStrain = {
   traitsMatched: string[];
 };
 
+export type ImageObservation = { // Phase 3.1 Part A — Image type classification
+  imageType: "plant" | "bud" | "macro" | "unknown";
+  confidence: number;
+};
+
 export type ImageResult = {
   imageIndex: number;
   candidateStrains: CandidateStrain[]; // Phase 3.0 Part B — Multiple candidates per image
@@ -31,6 +36,7 @@ export type ImageResult = {
   };
   uncertaintySignals: string[];
   wikiResult: WikiResult;
+  imageObservation?: ImageObservation; // Phase 3.1 Part A — Image type classification
 };
 
 // Legacy type (keep for backward compat)
@@ -145,26 +151,37 @@ export function buildConsensusResultV3(
     throw new Error("No image results provided for consensus");
   }
 
+  // Phase 3.1 Part D — Track image types for diversity bonus
+  const imageTypes = imageResults.map(r => r.imageObservation?.imageType || "unknown");
+  const uniqueImageTypes = new Set(imageTypes.filter(t => t !== "unknown"));
+  const hasTypeDiversity = uniqueImageTypes.size > 1;
+  console.log(`Image types: ${imageTypes.join(", ")}, Diversity: ${hasTypeDiversity}`);
+
   // Phase 3.0 Part C — Identify overlapping strain names across images
+  // Phase 3.1 Part D — Also track image types per strain
   const strainAggregates = new Map<string, {
     appearances: number;
     totalConfidence: number;
     traitMatches: Set<string>;
     imageIndices: number[];
+    imageTypes: Set<string>; // Phase 3.1 Part D — Track which image types agreed
   }>();
 
   imageResults.forEach((result, idx) => {
+    const imageType = result.imageObservation?.imageType || "unknown";
     result.candidateStrains.forEach(candidate => {
       const existing = strainAggregates.get(candidate.name) || {
         appearances: 0,
         totalConfidence: 0,
         traitMatches: new Set<string>(),
         imageIndices: [],
+        imageTypes: new Set<string>(), // Phase 3.1 Part D
       };
       existing.appearances++;
       existing.totalConfidence += candidate.confidence;
       candidate.traitsMatched.forEach(trait => existing.traitMatches.add(trait));
       existing.imageIndices.push(idx);
+      existing.imageTypes.add(imageType); // Phase 3.1 Part D — Track image type
       strainAggregates.set(candidate.name, existing);
     });
   });
@@ -190,6 +207,14 @@ export function buildConsensusResultV3(
     const traitAlignmentBonus = data.traitMatches.size * 2; // +2% per unique matched trait
     score += traitAlignmentBonus;
 
+    // Phase 3.1 Part D — Boost when agreeing traits come from DIFFERENT image types
+    // Example: Plant structure + bud trichomes = strong match
+    if (data.imageTypes.size > 1) {
+      const typeDiversityBonus = (data.imageTypes.size - 1) * 8; // +8% per additional unique image type
+      score += typeDiversityBonus;
+      console.log(`Strain ${strainName}: ${data.imageTypes.size} different image types agree (+${typeDiversityBonus}%)`);
+    }
+
     // Phase 3.0 Part C — Penalize when images disagree (variance in traits)
     const variancePenalty = calculateTraitVariance(imageResults, strainName, data.imageIndices) * 0.5;
     score -= variancePenalty;
@@ -197,9 +222,19 @@ export function buildConsensusResultV3(
     if (score > maxScore) {
       maxScore = score;
       const appearances = data.appearances;
-      const reason = appearances >= 2
-        ? `${appearances} out of ${imageCount} images identified this strain, with ${data.traitMatches.size} matching traits`
-        : `Best match based on visual analysis with ${data.traitMatches.size} matching traits`;
+      const typeDiversity = data.imageTypes.size > 1;
+      
+      // Phase 3.1 Part D — Enhanced reason with image type diversity
+      let reason = "";
+      if (appearances >= 2) {
+        if (typeDiversity) {
+          reason = `${appearances} out of ${imageCount} images (${Array.from(data.imageTypes).join(", ")}) identified this strain, with ${data.traitMatches.size} matching traits across different perspectives`;
+        } else {
+          reason = `${appearances} out of ${imageCount} images identified this strain, with ${data.traitMatches.size} matching traits`;
+        }
+      } else {
+        reason = `Best match based on visual analysis with ${data.traitMatches.size} matching traits`;
+      }
       
       primaryMatch = {
         name: strainName,
@@ -267,11 +302,24 @@ export function buildConsensusResultV3(
     });
   });
 
+  // Phase 3.1 Part E — Get primary strain data for agreement score boost
+  const primaryStrainDataForAgreement = strainAggregates.get(primaryMatch.name);
+  const hasMultiTypeAgreementForAgreement = primaryStrainDataForAgreement && primaryStrainDataForAgreement.imageTypes.size > 1;
+  const hasAgreementForAgreement = primaryStrainDataForAgreement && primaryStrainDataForAgreement.appearances >= 2;
+
+  // Phase 3.1 Part E — Update agreement score based on type diversity
+  if (hasMultiTypeAgreementForAgreement && hasAgreementForAgreement) {
+    agreementScore = Math.min(100, agreementScore + (primaryStrainDataForAgreement.imageTypes.size - 1) * 15);
+    console.log(`Phase 3.1 Part E — Agreement score boosted to ${agreementScore}% due to type diversity`);
+  }
+
   // Legacy compatibility
   const confidenceRange = {
     min: Math.max(80, primaryMatch.confidence - 4),
     max: Math.min(99, primaryMatch.confidence + 4),
-    explanation: agreementScore >= 80 
+    explanation: hasMultiTypeAgreementForAgreement && hasAgreementForAgreement
+      ? `High agreement across ${primaryStrainDataForAgreement.imageTypes.size} different image types`
+      : agreementScore >= 80 
       ? "High agreement across multiple images"
       : agreementScore >= 60
       ? "Moderate agreement with some variation"

@@ -1,11 +1,16 @@
 // lib/scanner/imageAnalysis.ts
 // Phase 3.0 Part B — Per-Image Analysis
+// Phase 3.1 Part A — Image Type Classification
+// Phase 3.1 Part C — Apply Trait Weights
 
 import type { WikiResult } from "./types";
 import type { CandidateStrain, ImageResult } from "./consensusEngine";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
 import { fuseMultiImageFeatures } from "./multiImageFusion";
 import type { FusedFeatures } from "./multiImageFusion";
+import { classifyImageType } from "./imageTypeClassifier";
+import type { ImageObservation } from "./consensusEngine";
+import { getTraitWeight, mapTraitToWeightable, type WeightableTrait } from "./traitWeights";
 
 /**
  * Phase 3.0 Part B — Analyze single image independently
@@ -19,6 +24,10 @@ export async function analyzeImage(
   // Run wiki engine independently for this image
   const { runWikiEngine } = await import("./wikiEngine");
   const wikiResult = await runWikiEngine(image, totalImages);
+
+  // Phase 3.1 Part A — Classify image type
+  const imageObservation = classifyImageType(wikiResult);
+  console.log(`Image ${imageIndex} classified as: ${imageObservation.imageType} (${imageObservation.confidence}% confidence)`);
 
   // Extract detected traits
   const detectedTraits = {
@@ -41,18 +50,93 @@ export async function analyzeImage(
     variance: 0, // Single image = no variance
   };
 
+  // Phase 3.1 Part C — Apply trait weights before matching
+  const traitWeights = {
+    budStructure: getTraitWeight(imageObservation.imageType, "structure"),
+    trichomeDensity: getTraitWeight(imageObservation.imageType, "trichomes"),
+    pistilColor: getTraitWeight(imageObservation.imageType, "pistils"),
+    leafShape: getTraitWeight(imageObservation.imageType, "leafShape"),
+  };
+  console.log(`Image ${imageIndex} trait weights:`, traitWeights);
+
   const nameFirstResult = matchStrainNameFirst(singleImageFused, 1);
 
-  // Build candidate strains array (top 3 matches)
+  // Phase 3.1 Part C — Apply weights to candidate confidence
+  // Multiply confidence by relevant trait weights based on matched traits
+  const baseConfidence = nameFirstResult.confidence;
+  const matchedTraitNames = nameFirstResult.primaryMatch.matchedTraits;
+  
+  // Calculate weighted average based on matched traits
+  let totalWeight = 0;
+  let weightedSum = 0;
+
+  // Map matched traits to weights
+  if (matchedTraitNames.some(t => t.toLowerCase().includes("bud") || t.toLowerCase().includes("density") || t.toLowerCase().includes("structure"))) {
+    const weight = traitWeights.budStructure;
+    weightedSum += baseConfidence * weight;
+    totalWeight += weight;
+  }
+  if (matchedTraitNames.some(t => t.toLowerCase().includes("trichome"))) {
+    const weight = traitWeights.trichomeDensity;
+    weightedSum += baseConfidence * weight;
+    totalWeight += weight;
+  }
+  if (matchedTraitNames.some(t => t.toLowerCase().includes("pistil") || t.toLowerCase().includes("color"))) {
+    const weight = traitWeights.pistilColor;
+    weightedSum += baseConfidence * weight;
+    totalWeight += weight;
+  }
+  if (matchedTraitNames.some(t => t.toLowerCase().includes("leaf") || t.toLowerCase().includes("genetics"))) {
+    const weight = traitWeights.leafShape;
+    weightedSum += baseConfidence * weight;
+    totalWeight += weight;
+  }
+
+  // If we have weighted traits, use weighted average
+  let weightedConfidence = baseConfidence;
+  if (totalWeight > 0) {
+    weightedConfidence = Math.round(weightedSum / totalWeight);
+  } else {
+    // Default: apply average weight
+    const avgWeight = (traitWeights.budStructure + traitWeights.trichomeDensity + traitWeights.pistilColor + traitWeights.leafShape) / 4;
+    weightedConfidence = Math.round(baseConfidence * avgWeight);
+  }
+
+  // Clamp to 60-99% range
+  weightedConfidence = Math.max(60, Math.min(99, weightedConfidence));
+
+  // Phase 3.1 Part C — Ignore LOW weighted traits if conflicting
+  // Filter out traits that are marked as low/very_low and conflict with high-weighted traits
+  const filteredTraits = nameFirstResult.primaryMatch.matchedTraits.filter(trait => {
+    const traitLower = trait.toLowerCase();
+    
+    // If it's a structure trait and structure weight is low, only keep if no high-weighted traits match
+    if ((traitLower.includes("bud") || traitLower.includes("structure")) && traitWeights.budStructure < 0.8) {
+      const hasHighWeightMatch = matchedTraitNames.some(t => {
+        const tLower = t.toLowerCase();
+        return (
+          (tLower.includes("trichome") && traitWeights.trichomeDensity >= 1.0) ||
+          (tLower.includes("pistil") && traitWeights.pistilColor >= 1.0) ||
+          (tLower.includes("leaf") && traitWeights.leafShape >= 1.0)
+        );
+      });
+      return !hasHighWeightMatch; // Keep if no high-weighted matches exist
+    }
+    
+    // Similar logic for other low-weighted traits
+    return true; // Default: keep the trait
+  });
+
+  // Build candidate strains array (top 3 matches) with weighted confidence
   const candidateStrains: CandidateStrain[] = [
     {
       name: nameFirstResult.primaryMatch.name,
-      confidence: nameFirstResult.confidence,
-      traitsMatched: nameFirstResult.primaryMatch.matchedTraits,
+      confidence: weightedConfidence, // Phase 3.1 Part C — Use weighted confidence
+      traitsMatched: filteredTraits.length > 0 ? filteredTraits : nameFirstResult.primaryMatch.matchedTraits, // Phase 3.1 Part C — Use filtered traits
     },
     ...nameFirstResult.alsoSimilar.slice(0, 2).map(alt => ({
       name: alt.name,
-      confidence: Math.max(60, nameFirstResult.confidence - 15), // Lower confidence for alternates
+      confidence: Math.max(60, weightedConfidence - 15), // Lower confidence for alternates, also weighted
       traitsMatched: [],
     })),
   ];
@@ -75,6 +159,7 @@ export async function analyzeImage(
     detectedTraits,
     uncertaintySignals,
     wikiResult,
+    imageObservation, // Phase 3.1 Part A — Include image type observation
   };
 }
 
