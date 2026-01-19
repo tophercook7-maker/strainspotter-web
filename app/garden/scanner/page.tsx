@@ -17,21 +17,11 @@ import TopNav from "../_components/TopNav";
 
 export default function ScannerPage() {
   const [images, setImages] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [identificationResult, setIdentificationResult] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
   const MAX_IMAGES = 3;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(e.target.files || []);
-    if (selected.length === 0) return;
-
-    // Limit to MAX_IMAGES
-    const limited = selected.slice(0, MAX_IMAGES);
-    setImages(limited);
-    setPreviewUrls(limited.map(file => URL.createObjectURL(file)));
-  };
 
   // TIER 1 (FREE / NORMAL):
   // - General identification
@@ -103,27 +93,29 @@ export default function ScannerPage() {
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={handleFileChange}
+                onChange={(e) => {
+                  if (!e.target.files) return;
+                  const selected = Array.from(e.target.files).slice(0, MAX_IMAGES);
+                  setImages(selected);
+                }}
                 className="block w-full text-sm text-white/70"
               />
-              {images.length > 0 && (
-                <p className="text-xs text-white/50">
-                  {images.length} of {MAX_IMAGES} image{images.length > 1 ? "s" : ""} selected
-                </p>
-              )}
 
               {/* IMAGE PREVIEWS */}
-              {previewUrls.length > 0 && (
+              {images.length > 0 && (
                 <div className="space-y-3">
-                  {previewUrls.map((url, index) => (
-                    <div key={index} className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                      <img
-                        src={url}
-                        alt={`Scan preview ${index + 1}`}
-                        className="w-full h-auto max-h-[420px] object-contain mx-auto"
-                      />
-                    </div>
-                  ))}
+                  {images.map((file, index) => {
+                    const url = URL.createObjectURL(file);
+                    return (
+                      <div key={index} className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                        <img
+                          src={url}
+                          alt={`Scan preview ${index + 1}`}
+                          className="w-full h-auto max-h-[420px] object-contain mx-auto"
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
