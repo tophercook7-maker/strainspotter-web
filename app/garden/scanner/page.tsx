@@ -123,10 +123,10 @@ export default function ScannerPage() {
             {/* B) Big Scan Button Card */}
             <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6">
               <button
-                onClick={runScan}
                 disabled={images.length === 0 || isScanning}
-                className="w-full rounded-xl px-5 py-4 md:py-4 font-semibold bg-white text-black hover:bg-white/90 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ minHeight: '48px' }}
+                onClick={runScan}
+                className="mx-auto px-8 py-3 rounded-xl bg-green-600 text-white font-semibold
+                           disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isScanning ? "Scanning…" : "Run Scan"}
               </button>
