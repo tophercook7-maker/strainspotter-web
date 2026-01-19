@@ -27,22 +27,47 @@ export default function ScannerPage() {
     setSynthesis(null);
   }, [images]);
 
+  // Phase 2.4 Part K — Multi-image validation
+  function validateImages(): { valid: boolean; warning?: string } {
+    if (!images || images.length === 0) {
+      return { valid: false, warning: "Please select at least 1 image to analyze." };
+    }
+    if (images.length < 3) {
+      return { 
+        valid: true, 
+        warning: `Using ${images.length} image${images.length > 1 ? "s" : ""}. For best accuracy, we recommend 3+ images from different angles.` 
+      };
+    }
+    return { valid: true };
+  }
+
+  // Phase 2.4 Part J Step 4 — Guaranteed event fire
   async function handleAnalyzePlant() {
+    // Step 4.1 — Log immediately
+    console.log("ANALYZE CLICKED");
+    
+    // Step 4.2 — Validate images
+    const validation = validateImages();
+    if (!validation.valid) {
+      alert(validation.warning);
+      return;
+    }
+
+    // Step 4.3 — Warn if <3 images but proceed
+    if (validation.warning) {
+      console.warn("IMAGE COUNT WARNING:", validation.warning);
+      // Don't block, just warn
+    }
+
     console.log("HANDLER START");
     console.log("IMAGES:", images);
     console.log("IMAGE COUNT:", images.length);
-    console.log("IMAGES USED:", images.length);
-
-    if (!images || images.length === 0) {
-      throw new Error("No images provided");
-    }
-
     console.log("ANALYZING", images.length, "IMAGES");
 
-    console.log("STEP 1: PREP DONE");
     setIsScanning(true);
 
     try {
+      console.log("STEP 1: PREP DONE");
       console.log("STEP 2: CONTEXT BUILT");
       console.log("STEP 3: ENGINE CALLED");
       const scanResult = await scanImages(images);
@@ -51,14 +76,22 @@ export default function ScannerPage() {
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
       console.log("STEP 5: STATE UPDATED");
-      
-      // Force state update test
-      console.log("RESULT FORCED");
     } catch (error) {
       console.error("ERROR:", error);
+      alert("Analysis failed. Please try again with different images.");
     } finally {
       setIsScanning(false);
       console.log("HANDLER COMPLETE");
+    }
+  }
+
+  // Phase 2.4 Part J Step 5 — Fail-safe trigger (keyboard support)
+  function handleKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (images.length > 0 && !isScanning) {
+        handleAnalyzePlant();
+      }
     }
   }
 
@@ -123,20 +156,64 @@ export default function ScannerPage() {
         </div>
 
         {/* B) Big Scan Button Card */}
+        {/* Phase 2.4 Part J — Analyze Plant Button Fix */}
         <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 flex flex-col items-center">
-              <button
-                disabled={images.length === 0 || isScanning}
-                onClick={handleAnalyzePlant}
-                className="relative z-50 flex items-center justify-center
-                           px-8 py-4
-                           min-h-[56px] min-w-[200px]
-                           rounded-full
-                           bg-white text-black font-semibold
-                           pointer-events-auto
-                           disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {isScanning ? "Scanning…" : "Analyze Plant"}
-              </button>
+          {/* Phase 2.4 Part K — Multi-image validation warning */}
+          {images.length > 0 && images.length < 3 && (
+            <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md">
+              💡 For best accuracy, add {3 - images.length} more image{3 - images.length > 1 ? "s" : ""} from different angles
+            </div>
+          )}
+          
+          {/* Phase 2.4 Part J Step 1 — Real button element */}
+          <button
+            type="button"
+            disabled={images.length === 0 || isScanning}
+            onClick={handleAnalyzePlant}
+            onKeyDown={handleKeyDown}
+            className="relative z-50 
+                       flex items-center justify-center gap-2
+                       px-6 py-4
+                       min-h-[56px] min-w-[200px]
+                       rounded-full
+                       bg-white text-black font-semibold text-lg
+                       pointer-events-auto
+                       transition-all duration-200
+                       hover:bg-white/90 active:scale-95
+                       disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100
+                       focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent"
+            aria-label={isScanning ? "Analyzing plant" : "Analyze plant"}
+            aria-busy={isScanning}
+          >
+            {/* Phase 2.4 Part J Step 3 — Disable state feedback with spinner */}
+            {isScanning ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-black"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                <span>Analyzing…</span>
+              </>
+            ) : (
+              "Analyze Plant"
+            )}
+          </button>
         </div>
 
         {/* C) Results Card(s) */}
