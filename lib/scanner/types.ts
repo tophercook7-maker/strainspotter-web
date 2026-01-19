@@ -107,4 +107,38 @@ export interface WikiSynthesis {
     matchStrength: "Very Strong" | "Strong" | "Moderate"
     whyThisMatch: string[] // 3-5 bullets explaining why
   }
+  // Phase 2.1: Extensive free-tier results
+  identity: {
+    closestCultivarName: string
+    matchStrengthLabel: "Very Strong" | "Strong" | "Moderate"
+    matchRationale: string[]
+  }
+  morphologyAnalysis: {
+    flowerStructure: string
+    trichomeCoverage: string
+    pistilCharacteristics: string
+    colorationNotes: string
+  }
+  terpeneInference: {
+    likelyPrimary: string[]
+    supportingTerpenes: string[]
+    aromaDescriptors: string[]
+    inferenceReasoning: string
+  }
+  effectProfile: {
+    onsetDescription: string
+    primaryEffects: string[]
+    secondaryEffects: string[]
+    durationEstimate: string
+    functionalNotes: string
+  }
+  cultivationContext: {
+    typicalGrowthType: string
+    indoorOutdoorNotes: string
+    harvestTimingClues: string
+  }
+  limitations: {
+    uncertaintyFactors: string[]
+    whyExactIDIsHard: string
+  }
 }

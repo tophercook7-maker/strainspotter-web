@@ -45,21 +45,25 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   const safeGrowthIndicators = Array.isArray(growthIndicators) ? growthIndicators : [];
   const safeConflictingSignals = Array.isArray(wiki.reasoning?.conflictingSignals) ? wiki.reasoning.conflictingSignals : [];
 
-  // Generate summary (2-3 paragraphs)
+  // Phase 2.1: STRONG OPENING PARAGRAPH (3-4 sentences)
+  // Names the closest cultivar immediately, explains WHY, mentions visible traits, sets expectations
+  const openingParagraph = `This plant most closely aligns with ${strainName}, a well-documented ${dominance.toLowerCase()}-leaning cultivar. ` +
+    `The identification is driven by observed flower structure, ${wiki.morphology.trichomes.toLowerCase()}, and leaf morphology consistent with known ${strainName} phenotypes. ` +
+    `Visual analysis reveals ${wiki.morphology.budStructure.toLowerCase()}, with ${wiki.morphology.coloration.toLowerCase()} that aligns with documented specimens of this cultivar. ` +
+    `This assessment is based on visual similarity to reference materials and should not be considered a genetic confirmation; laboratory testing provides definitive identification.`;
+
+  // Generate summary (expanded with opening paragraph)
   const summary: string[] = [
-    `Based on observed morphology from ${reasoningText ? "the analysis" : "visual characteristics"}, ` +
-    `this cultivar aligns with ${strainName}. Genetic analysis indicates ${dominance} dominance with lineage tracing to ${lineage}. ` +
-    `Terpene likelihoods suggest ${topTerpene} as a primary compound, with ${safeTopThreeTerpenes.slice(1).join(" and ")} also present in the profile.`,
+    openingParagraph,
+    
+    `Genetic analysis indicates ${dominance} dominance with lineage tracing to ${lineage}. ` +
+    `Terpene likelihoods suggest ${topTerpene} as a primary compound, with ${safeTopThreeTerpenes.slice(1).join(" and ")} also present in the profile. ` +
+    `These terpene inferences are based on visual characteristics and typical profiles for this cultivar type, not direct chemical analysis.`,
     
     `Effects typically include ${safePrimaryEffects.join(", ").toLowerCase()}, which aligns with the ${dominance.toLowerCase()} genetic profile. ` +
     `The morphology data shows ${wiki.morphology.budStructure.toLowerCase()}, with ${wiki.morphology.coloration.toLowerCase()}. ` +
-    `Trichome characteristics (${wiki.morphology.trichomes.toLowerCase()}) suggest appropriate maturity for analysis.`,
-    
-    confidence < 80
-      ? `Confidence in this identification is estimated at ${confidence}%, reflecting visual similarity to documented specimens. ` +
-        `Phenotypic variation and environmental factors may cause deviations from typical profiles. This analysis is not laboratory-verified.`
-      : `Visual characteristics show strong alignment with documented genetic profiles for this cultivar. ` +
-        `However, identification relies on visual analysis rather than laboratory testing, and natural variation between phenotypes is expected.`
+    `Trichome characteristics (${wiki.morphology.trichomes.toLowerCase()}) suggest appropriate maturity for analysis. ` +
+    `However, identification relies on visual analysis rather than laboratory testing, and natural variation between phenotypes is expected.`
   ].filter(p => p.length > 0);
 
   // Generate whyThisMatters (2-3 paragraphs)
@@ -196,13 +200,13 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
 
   // Generate bestMatch (name matching layer)
   const contradictionCount = safeConflictingSignals.length;
-  const confidenceDecimal = confidence / 100;
+  const confidenceDecimalForMatch = confidence / 100;
   
   // Determine match strength (NOT percentage)
   let matchStrength: "Very Strong" | "Strong" | "Moderate";
-  if (confidenceDecimal >= 0.88 && contradictionCount === 0) {
+  if (confidenceDecimalForMatch >= 0.88 && contradictionCount === 0) {
     matchStrength = "Very Strong";
-  } else if (confidenceDecimal >= 0.78 && contradictionCount <= 1) {
+  } else if (confidenceDecimalForMatch >= 0.78 && contradictionCount <= 1) {
     matchStrength = "Strong";
   } else {
     matchStrength = "Moderate";
@@ -250,6 +254,121 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
     }
   }
 
+  // Phase 2.1: Compute match strength label (trust-building)
+  const varianceSignals = safeConflictingSignals.length;
+  const supportingTraitsCount = safeVisualTraits.length + (wiki.morphology.budStructure ? 1 : 0) + (wiki.morphology.trichomes ? 1 : 0);
+  
+  let matchStrengthLabel: "Very Strong" | "Strong" | "Moderate";
+  if (confidenceDecimalForMatch >= 0.88 && varianceSignals === 0 && supportingTraitsCount >= 4) {
+    matchStrengthLabel = "Very Strong";
+  } else if (confidenceDecimalForMatch >= 0.78 && varianceSignals <= 1 && supportingTraitsCount >= 3) {
+    matchStrengthLabel = "Strong";
+  } else {
+    matchStrengthLabel = "Moderate";
+  }
+
+  // Phase 2.1: Match rationale (why this cultivar was chosen)
+  const matchRationale: string[] = [];
+  if (wiki.morphology.budStructure) {
+    matchRationale.push(`Flower structure (${wiki.morphology.budStructure.toLowerCase()}) matches documented ${strainName} morphology`);
+  }
+  if (safeVisualTraits.length > 0) {
+    matchRationale.push(`Observed visual traits (${safeVisualTraits.slice(0, 2).join(", ")}) align with ${strainName} characteristics`);
+  }
+  if (wiki.morphology.trichomes) {
+    matchRationale.push(`Trichome coverage and type (${wiki.morphology.trichomes.toLowerCase()}) consistent with ${strainName} profiles`);
+  }
+  if (dominance !== "Unknown") {
+    matchRationale.push(`${dominance} genetic dominance matches ${strainName} lineage`);
+  }
+  if (safePrimaryEffects.length > 0) {
+    matchRationale.push(`Expected effect profile aligns with ${strainName} user reports`);
+  }
+
+  // Phase 2.1: Detailed morphology breakdown
+  const budStructureDesc = wiki.morphology.budStructure || "Flower structure shows typical hybrid characteristics";
+  const trichomeDesc = wiki.morphology.trichomes || "Trichome coverage appears typical for mature flowers";
+  const pistilDesc = wiki.morphology.coloration.includes("pistil") 
+    ? wiki.morphology.coloration 
+    : `Pistil color and maturity appear consistent with ${strainName} characteristics`;
+  const colorNotes = wiki.morphology.coloration || `Coloration patterns align with ${strainName} visual profiles`;
+
+  // Phase 2.1: Terpene & aroma inference (clearly labeled)
+  const likelyPrimary = topThreeTerpenes.slice(0, 2);
+  const supportingTerpenes = topThreeTerpenes.slice(2);
+  const aromaDescriptors: string[] = [];
+  if (topTerpene === "Myrcene") {
+    aromaDescriptors.push("earthy", "musky", "herbal");
+  } else if (topTerpene === "Limonene") {
+    aromaDescriptors.push("citrus", "lemon", "bright");
+  } else if (topTerpene === "Caryophyllene") {
+    aromaDescriptors.push("peppery", "spicy", "woody");
+  } else if (topTerpene === "Pinene") {
+    aromaDescriptors.push("pine", "fresh", "resinous");
+  } else if (topTerpene === "Linalool") {
+    aromaDescriptors.push("floral", "lavender", "sweet");
+  } else {
+    aromaDescriptors.push("complex", "layered", "terpene-rich");
+  }
+
+  const inferenceReasoning = `Terpene inference is based on visual characteristics, trichome appearance, and typical profiles for ${strainName}. ` +
+    `Aroma descriptors (${aromaDescriptors.join(", ")}) are inferred from likely terpene presence, not direct olfactory analysis. ` +
+    `Actual terpene content can only be confirmed through laboratory testing.`;
+
+  // Phase 2.1: Effect profile (structured, not listy)
+  const onsetDescription = wiki.experience.onset === "Quick" 
+    ? "Effects typically develop rapidly, often within 5-15 minutes of consumption"
+    : wiki.experience.onset === "Gradual"
+    ? "Effects develop gradually over 20-45 minutes, building to peak intensity"
+    : "Effects develop at a moderate pace, reaching peak intensity within 15-30 minutes";
+
+  const secondaryEffects = wiki.experience.secondaryEffects || wiki.experience.effects.slice(2, 4) || [];
+  const durationEstimate = wiki.experience.duration || "2-4 hours typical duration";
+  
+  const functionalNotes = dominance === "Indica" 
+    ? "This profile suggests body-focused effects that may be better suited for evening use or relaxation contexts"
+    : dominance === "Sativa"
+    ? "This profile suggests energizing, cerebral effects that may be better suited for daytime use or creative activities"
+    : "This hybrid profile balances both mental and physical effects, with the specific balance varying by phenotype and individual response";
+
+  // Phase 2.1: Cultivar context
+  const typicalGrowthType = dominance === "Indica"
+    ? "Compact, bushy growth pattern typical of indica-dominant cultivars"
+    : dominance === "Sativa"
+    ? "Taller, more elongated growth pattern typical of sativa-dominant cultivars"
+    : "Balanced growth pattern showing characteristics of both indica and sativa lineages";
+
+  const indoorOutdoorNotes = dominance === "Indica"
+    ? "Well-suited for indoor cultivation due to compact structure; also performs well outdoors in temperate climates"
+    : dominance === "Sativa"
+    ? "Requires more vertical space; performs excellently outdoors in warm climates with long growing seasons"
+    : "Adaptable to both indoor and outdoor cultivation, with structure varying by phenotype expression";
+
+  const harvestTimingClues = wiki.morphology.trichomes.includes("high density") || wiki.morphology.trichomes.includes("heavy")
+    ? "High trichome density suggests approaching or at optimal harvest window"
+    : wiki.morphology.trichomes.includes("mature") || wiki.morphology.trichomes.includes("capitate")
+    ? "Trichome maturity indicators suggest flowers are within harvest window"
+    : "Trichome development appears consistent with mid-to-late flowering stage";
+
+  // Phase 2.1: Limitations section
+  const uncertaintyFactors: string[] = [];
+  if (hasUncertainty) {
+    uncertaintyFactors.push(`Conflicting visual signals: ${safeConflictingSignals.join(", ")}`);
+  }
+  if (confidence < 80) {
+    uncertaintyFactors.push("Visual characteristics show some variance from typical profiles");
+  }
+  if (wiki.identity.alternateMatches && wiki.identity.alternateMatches.length > 0) {
+    uncertaintyFactors.push(`Similar visual characteristics to ${wiki.identity.alternateMatches[0].strainName} suggest potential misidentification`);
+  }
+  uncertaintyFactors.push("Environmental factors (lighting, nutrients, growing techniques) can significantly alter visual appearance");
+  uncertaintyFactors.push("Phenotype variation within the same genetic line can produce different visual characteristics");
+
+  const whyExactIDIsHard = `Exact cultivar identification from visual analysis alone is challenging because many cannabis varieties share similar morphological traits. ` +
+    `Cultivars within the same genetic family (such as ${lineage}) often exhibit overlapping visual characteristics, making distinction difficult without genetic testing. ` +
+    `Additionally, environmental factors, harvest timing, and phenotype expression can cause the same cultivar to appear quite different across different growing conditions. ` +
+    `For definitive identification, DNA analysis or comprehensive laboratory testing provides the most accurate results.`;
+
   return {
     summary,
     whyThisMatters,
@@ -261,6 +380,40 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
       name: bestMatchName,
       matchStrength,
       whyThisMatch: finalWhyThisMatch,
+    },
+    // Phase 2.1: Extensive free-tier results
+    identity: {
+      closestCultivarName: strainName,
+      matchStrengthLabel,
+      matchRationale,
+    },
+    morphologyAnalysis: {
+      flowerStructure: budStructureDesc,
+      trichomeCoverage: trichomeDesc,
+      pistilCharacteristics: pistilDesc,
+      colorationNotes: colorNotes,
+    },
+    terpeneInference: {
+      likelyPrimary,
+      supportingTerpenes,
+      aromaDescriptors,
+      inferenceReasoning,
+    },
+    effectProfile: {
+      onsetDescription,
+      primaryEffects: safePrimaryEffects,
+      secondaryEffects: secondaryEffects.length > 0 ? secondaryEffects : [],
+      durationEstimate,
+      functionalNotes,
+    },
+    cultivationContext: {
+      typicalGrowthType,
+      indoorOutdoorNotes,
+      harvestTimingClues,
+    },
+    limitations: {
+      uncertaintyFactors,
+      whyExactIDIsHard,
     },
   };
 }
