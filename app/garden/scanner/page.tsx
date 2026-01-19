@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { buildWikiResult } from "@/lib/scanner/wikiEngine";
+import { runWikiEngine } from "@/lib/scanner/wikiEngine";
 import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
 import { synthesizeWikiInsights } from "@/lib/scanner/wikiSynthesis";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
@@ -22,67 +22,34 @@ const revealOut =
   "opacity-0 translate-y-3";
 
 export default function ScannerPage() {
+  const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [imageSeed, setImageSeed] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const resultRef = useRef<HTMLDivElement | null>(null);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    setFile(selected);
+    setPreviewUrl(URL.createObjectURL(selected));
+  };
+
+  const runScan = async () => {
+    console.log("RUN SCAN FIRED", file);
     if (!file) return;
-    setPreviewUrl(URL.createObjectURL(file));
-    setImageFile(file);
-    setResult(null);
-    setSynthesis(null);
-    setImageSeed(null);
-  }
-
-  async function runScan() {
-    console.log("RUN SCAN CLICKED");
-
-    if (!imageSeed) return;
 
     setIsScanning(true);
 
-    try {
-      const file = imageFile;
-      if (!file) return;
+    const wiki = await runWikiEngine(file);
+    const viewModel = wikiToViewModel(wiki);
+    const synthesis = synthesizeWikiInsights(wiki);
 
-      const seed = file.name + file.size + file.lastModified;
-      setImageSeed(seed);
-
-      // 🔒 B.2.4 — Call wiki engine, adapter, then synthesis
-      const wiki = buildWikiResult({
-        imageSeed: seed,
-      });
-      console.log("C: wiki", wiki)
-
-      const viewModel = wikiToViewModel(wiki);
-      console.log("D: viewModel", viewModel)
-      const wikiSynthesis = synthesizeWikiInsights(wiki);
-      
-      setResult(viewModel);
-      setSynthesis(wikiSynthesis);
-      
-      // B.2.5 — Log synthesis for verification (no UI consumption yet)
-      console.log("Wiki Synthesis:", wikiSynthesis);
-      
-      // Scroll to results after render
-      setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    } catch (err) {
-      console.error("Scan failed", err);
-    } finally {
-      setIsScanning(false);
-    }
-  }
-
-  console.log("RENDER CHECK:", { result, synthesis })
+    setResult(viewModel);
+    setSynthesis(synthesis);
+    setIsScanning(false);
+  };
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -112,10 +79,9 @@ export default function ScannerPage() {
 
           <button
             onClick={runScan}
-            disabled={!imageFile || isScanning}
-            className="w-full rounded-lg bg-green-600 py-3 font-semibold text-black disabled:opacity-40"
+            className="w-full rounded-lg bg-green-600 py-3 font-semibold text-black"
           >
-            {isScanning ? "Scanning…" : "Run Scan"}
+            Run Scan
           </button>
         </div>
 
