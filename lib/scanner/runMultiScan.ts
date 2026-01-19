@@ -6,7 +6,8 @@ import { matchCultivars } from "./cultivarMatcher";
 import { matchCultivarsWithVoting } from "./nameMatcher";
 import { fuseMultiImageFeatures } from "./multiImageFusion";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
-import { analyzePerImage, buildConsensusResult } from "./consensusEngine";
+import { analyzePerImage, analyzePerImageV3, buildConsensusResult, buildConsensusResultV3 } from "./consensusEngine";
+import type { ImageResult, ConsensusResult } from "./consensusEngine";
 import { buildTrustLayer } from "./trustEngine";
 import { generateExtendedProfile } from "./extendedProfile";
 import { fetchWiki } from "./wikiLookup";
@@ -84,27 +85,29 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     console.log("CONSENSUS RESULT:", consensusResult);
   }
 
-  // Phase 2.2 Part D — Name-First Matching (use consensus if available, otherwise fallback)
+  // Phase 3.0 Part E — Name First Output
+  // Use consensus result if available (always use for 1-3 images)
   const nameFirstResult = consensusResult 
     ? {
         primaryMatch: {
-          name: consensusResult.strainName,
+          name: consensusResult.primaryMatch.name, // Phase 3.0 Part E — Name first
           score: 0,
-          confidence: Math.round((consensusResult.confidenceRange.min + consensusResult.confidenceRange.max) / 2),
-          whyThisMatch: consensusResult.whyThisMatch,
+          confidence: consensusResult.primaryMatch.confidence, // Phase 3.0 Part D — Calibrated confidence (80-99%)
+          whyThisMatch: consensusResult.primaryMatch.reason,
           matchedTraits: [],
         },
-        alsoSimilar: consensusResult.alternateMatches.map(a => ({
+        alsoSimilar: consensusResult.alternates.map(a => ({
           name: a.name,
-          whyNotPrimary: a.whyNotPrimary,
+          whyNotPrimary: `Confidence: ${a.confidence}% (lower than primary match)`,
         })),
-        confidence: Math.round((consensusResult.confidenceRange.min + consensusResult.confidenceRange.max) / 2),
-        confidenceRange: consensusResult.confidenceRange,
+        confidence: consensusResult.primaryMatch.confidence, // Phase 3.0 Part D — Never 100%
+        confidenceRange: consensusResult.confidenceRange, // Legacy range format
         imageCountBonus: input.imageCount * 3,
         variancePenalty: 0,
       }
     : matchStrainNameFirst(fusedFeatures, input.imageCount);
   console.log("NAME-FIRST RESULT:", nameFirstResult);
+  console.log("CONSENSUS AGREEMENT SCORE:", consensusResult?.agreementScore || "N/A");
 
   // Phase 2.3 Part G Step 3 — Wiki Lookup (Name Locked)
   const dbEntry = CULTIVAR_LIBRARY.find(s => 
@@ -161,7 +164,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     nameFirstResult.primaryMatch,
     fusedFeatures,
     consensusResult?.agreementLevel || (input.imageCount >= 2 ? "medium" : "low"),
-    nameFirstResult.confidenceRange,
+    consensusResult?.confidenceRange || nameFirstResult.confidenceRange,
     wikiData,
     dbEntry
   );

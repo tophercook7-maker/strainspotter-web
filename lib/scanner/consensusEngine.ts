@@ -13,6 +13,27 @@ export type MultiImageScanInput = {
   angles?: ImageAngle[]; // Optional angle hints
 };
 
+// Phase 3.0 Part B — Per-Image Analysis
+export type CandidateStrain = {
+  name: string;
+  confidence: number;
+  traitsMatched: string[];
+};
+
+export type ImageResult = {
+  imageIndex: number;
+  candidateStrains: CandidateStrain[]; // Phase 3.0 Part B — Multiple candidates per image
+  detectedTraits: {
+    budStructure?: "low" | "medium" | "high";
+    trichomeDensity?: "low" | "medium" | "high";
+    pistilColor?: string;
+    leafShape?: "narrow" | "broad";
+  };
+  uncertaintySignals: string[];
+  wikiResult: WikiResult;
+};
+
+// Legacy type (keep for backward compat)
 export type ImageScanResult = {
   imageIndex: number;
   strainCandidate: string;
@@ -21,20 +42,52 @@ export type ImageScanResult = {
   wikiResult: WikiResult;
 };
 
+// Phase 3.0 Part C — Consensus Merge
 export type ConsensusResult = {
-  strainName: string; // Phase 2.7 Part N Step 5 — Name First Guarantee
-  confidenceRange: { min: number; max: number; explanation: string };
-  whyThisMatch: string;
+  primaryMatch: {
+    name: string;
+    confidence: number; // Phase 3.0 Part D — 80-99% calibrated
+    reason: string;
+  };
+  alternates: Array<{
+    name: string;
+    confidence: number;
+  }>;
+  agreementScore: number; // Phase 3.0 Part C — 0-100
+  strainName: string; // Legacy (use primaryMatch.name)
+  confidenceRange: { min: number; max: number; explanation: string }; // Legacy
+  whyThisMatch: string; // Legacy (use primaryMatch.reason)
   alternateMatches: Array<{
     name: string;
     whyNotPrimary: string;
-  }>;
-  lowConfidence: boolean; // Phase 2.7 Part N Step 6 — Fallback Rule
-  agreementLevel: "high" | "medium" | "low"; // How many images agreed
+  }>; // Legacy
+  lowConfidence: boolean; // Legacy
+  agreementLevel: "high" | "medium" | "low"; // Legacy
 };
 
 /**
- * Phase 2.7 Part N Step 2 — Per-Image Analysis
+ * Phase 3.0 Part B — Per-Image Analysis (Enhanced)
+ * Run wiki engine independently for each image
+ * Returns ImageResult[] with candidateStrains[] array
+ */
+export async function analyzePerImageV3(
+  images: File[],
+  imageCount: number
+): Promise<ImageResult[]> {
+  const { analyzeImage } = await import("./imageAnalysis");
+  const results: ImageResult[] = [];
+
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i];
+    const result = await analyzeImage(image, i, imageCount);
+    results.push(result);
+  }
+
+  return results;
+}
+
+/**
+ * Phase 2.7 Part N Step 2 — Per-Image Analysis (Legacy)
  * Run wiki engine independently for each image
  */
 export async function analyzePerImage(
@@ -79,7 +132,206 @@ export async function analyzePerImage(
 }
 
 /**
- * Phase 2.7 Part N Step 3 — Consensus Engine
+ * Phase 3.0 Part C — Consensus Merge Engine
+ * Build consensus result from multiple image results
+ * Enhanced version with overlap detection and trait alignment
+ */
+export function buildConsensusResultV3(
+  imageResults: ImageResult[],
+  fusedFeatures: FusedFeatures,
+  imageCount: number
+): ConsensusResult {
+  if (imageResults.length === 0) {
+    throw new Error("No image results provided for consensus");
+  }
+
+  // Phase 3.0 Part C — Identify overlapping strain names across images
+  const strainAggregates = new Map<string, {
+    appearances: number;
+    totalConfidence: number;
+    traitMatches: Set<string>;
+    imageIndices: number[];
+  }>();
+
+  imageResults.forEach((result, idx) => {
+    result.candidateStrains.forEach(candidate => {
+      const existing = strainAggregates.get(candidate.name) || {
+        appearances: 0,
+        totalConfidence: 0,
+        traitMatches: new Set<string>(),
+        imageIndices: [],
+      };
+      existing.appearances++;
+      existing.totalConfidence += candidate.confidence;
+      candidate.traitsMatched.forEach(trait => existing.traitMatches.add(trait));
+      existing.imageIndices.push(idx);
+      strainAggregates.set(candidate.name, existing);
+    });
+  });
+
+  // Phase 3.0 Part C — Boost confidence when same strain appears in ≥2 images
+  // Calculate agreement score based on overlap
+  let primaryMatch: { name: string; confidence: number; reason: string } | null = null;
+  let maxScore = 0;
+  let agreementScore = 0;
+
+  strainAggregates.forEach((data, strainName) => {
+    const avgConfidence = data.totalConfidence / data.appearances;
+    let score = avgConfidence;
+
+    // Phase 3.0 Part C — Boost when same strain appears in ≥2 images
+    if (data.appearances >= 2) {
+      const agreementBonus = (data.appearances - 1) * 12; // +12% per additional agreeing image
+      score += agreementBonus;
+      agreementScore = Math.max(agreementScore, Math.round((data.appearances / imageCount) * 100));
+    }
+
+    // Phase 3.0 Part C — Boost when traits align
+    const traitAlignmentBonus = data.traitMatches.size * 2; // +2% per unique matched trait
+    score += traitAlignmentBonus;
+
+    // Phase 3.0 Part C — Penalize when images disagree (variance in traits)
+    const variancePenalty = calculateTraitVariance(imageResults, strainName, data.imageIndices) * 0.5;
+    score -= variancePenalty;
+
+    if (score > maxScore) {
+      maxScore = score;
+      const appearances = data.appearances;
+      const reason = appearances >= 2
+        ? `${appearances} out of ${imageCount} images identified this strain, with ${data.traitMatches.size} matching traits`
+        : `Best match based on visual analysis with ${data.traitMatches.size} matching traits`;
+      
+      primaryMatch = {
+        name: strainName,
+        confidence: Math.round(Math.max(80, Math.min(99, score))), // Phase 3.0 Part D — 80-99% range
+        reason,
+      };
+    }
+  });
+
+  // If no consensus found, use highest single confidence
+  if (!primaryMatch) {
+    const topCandidate = imageResults[0]?.candidateStrains[0];
+    if (topCandidate) {
+      primaryMatch = {
+        name: topCandidate.name,
+        confidence: Math.min(92, topCandidate.confidence), // Phase 3.0 Part D — 1 image cap at 92%
+        reason: "Best match based on visual analysis",
+      };
+    } else {
+      throw new Error("No candidates found in image results");
+    }
+  }
+
+  // Phase 3.0 Part D — Confidence Calibration
+  // Apply caps based on image count
+  if (imageCount === 1) {
+    primaryMatch.confidence = Math.min(92, primaryMatch.confidence);
+  } else if (imageCount === 2 && primaryMatch.confidence > 96) {
+    // Check if both images agreed
+    const agreementCount = strainAggregates.get(primaryMatch.name)?.appearances || 0;
+    if (agreementCount < 2) {
+      primaryMatch.confidence = Math.min(92, primaryMatch.confidence);
+    } else {
+      primaryMatch.confidence = Math.min(96, primaryMatch.confidence);
+    }
+  } else if (imageCount === 3) {
+    const agreementCount = strainAggregates.get(primaryMatch.name)?.appearances || 0;
+    if (agreementCount >= 2) {
+      primaryMatch.confidence = Math.min(99, primaryMatch.confidence);
+    } else {
+      primaryMatch.confidence = Math.min(96, primaryMatch.confidence);
+    }
+  }
+
+  // Build alternates (top 3 other strains)
+  const alternates: Array<{ name: string; confidence: number }> = [];
+  const sortedStrains = Array.from(strainAggregates.entries())
+    .filter(([name]) => name !== primaryMatch.name)
+    .sort((a, b) => {
+      const scoreA = (a[1].totalConfidence / a[1].appearances) + (a[1].appearances >= 2 ? (a[1].appearances - 1) * 12 : 0);
+      const scoreB = (b[1].totalConfidence / b[1].appearances) + (b[1].appearances >= 2 ? (b[1].appearances - 1) * 12 : 0);
+      return scoreB - scoreA;
+    })
+    .slice(0, 3);
+
+  sortedStrains.forEach(([name, data]) => {
+    const avgConfidence = data.totalConfidence / data.appearances;
+    let altConfidence = avgConfidence;
+    if (data.appearances >= 2) {
+      altConfidence += (data.appearances - 1) * 12;
+    }
+    alternates.push({
+      name,
+      confidence: Math.round(Math.max(60, Math.min(95, altConfidence))),
+    });
+  });
+
+  // Legacy compatibility
+  const confidenceRange = {
+    min: Math.max(80, primaryMatch.confidence - 4),
+    max: Math.min(99, primaryMatch.confidence + 4),
+    explanation: agreementScore >= 80 
+      ? "High agreement across multiple images"
+      : agreementScore >= 60
+      ? "Moderate agreement with some variation"
+      : "Lower agreement due to image variation",
+  };
+
+  // Determine agreement level
+  const agreementLevel: "high" | "medium" | "low" = agreementScore >= 80 ? "high" : agreementScore >= 60 ? "medium" : "low";
+  const lowConfidence = primaryMatch.confidence < 70;
+
+  return {
+    // Phase 3.0 Part C — New structure
+    primaryMatch,
+    alternates,
+    agreementScore,
+    // Legacy fields
+    strainName: primaryMatch.name,
+    confidenceRange,
+    whyThisMatch: primaryMatch.reason,
+    alternateMatches: alternates.map(a => ({
+      name: a.name,
+      whyNotPrimary: `Confidence: ${a.confidence}% (lower than primary match)`,
+    })),
+    lowConfidence,
+    agreementLevel,
+  };
+}
+
+/**
+ * Calculate trait variance across images for a specific strain
+ * Phase 3.0 Part C — Penalize when images disagree
+ */
+function calculateTraitVariance(
+  imageResults: ImageResult[],
+  strainName: string,
+  imageIndices: number[]
+): number {
+  if (imageIndices.length <= 1) return 0;
+
+  const relevantResults = imageResults.filter((_, idx) => imageIndices.includes(idx));
+  const traitSets = relevantResults.map(r => {
+    const candidate = r.candidateStrains.find(c => c.name === strainName);
+    return candidate?.traitsMatched || [];
+  });
+
+  // Count disagreements
+  let disagreements = 0;
+  const allTraits = new Set(traitSets.flat());
+  allTraits.forEach(trait => {
+    const presenceCount = traitSets.filter(ts => ts.includes(trait)).length;
+    if (presenceCount > 0 && presenceCount < relevantResults.length) {
+      disagreements++; // Trait present in some but not all
+    }
+  });
+
+  return Math.round((disagreements / allTraits.size) * 100);
+}
+
+/**
+ * Phase 2.7 Part N Step 3 — Consensus Engine (Legacy)
  * Build consensus result from multiple image scan results
  */
 export function buildConsensusResult(
@@ -146,12 +398,33 @@ export function buildConsensusResult(
     primaryStrain = nameFirstResult.primaryMatch.name;
   }
 
+  // Phase 3.0 Part D — Confidence Calibration
+  // 1 image → cap at 92%, 2 images agreeing → up to 96%, 3 images agreeing → up to 99%
+  let calibratedConfidence = Math.round(maxScore);
+  if (imageCount === 1) {
+    calibratedConfidence = Math.min(92, calibratedConfidence);
+  } else if (imageCount === 2) {
+    const agreementCount = strainCounts.get(primaryStrain)?.count || 0;
+    if (agreementCount >= 2) {
+      calibratedConfidence = Math.min(96, calibratedConfidence);
+    } else {
+      calibratedConfidence = Math.min(92, calibratedConfidence);
+    }
+  } else if (imageCount === 3) {
+    const agreementCount = strainCounts.get(primaryStrain)?.count || 0;
+    if (agreementCount >= 2) {
+      calibratedConfidence = Math.min(99, calibratedConfidence);
+    } else {
+      calibratedConfidence = Math.min(96, calibratedConfidence);
+    }
+  }
+  
   // Phase 2.7 Part N Step 4 — Confidence Normalization
-  // Range format, cap max at 96%, NEVER show 100%
-  const baseConfidence = Math.min(96, Math.max(60, Math.round(maxScore)));
+  // Range format, cap max at 99%, NEVER show 100%
+  const baseConfidence = Math.min(99, Math.max(80, calibratedConfidence));
   const rangeWidth = agreementLevel === "high" ? 4 : agreementLevel === "medium" ? 6 : 8;
-  const confidenceMin = Math.max(60, baseConfidence - Math.floor(rangeWidth / 2));
-  const confidenceMax = Math.min(96, baseConfidence + Math.ceil(rangeWidth / 2));
+  const confidenceMin = Math.max(80, baseConfidence - Math.floor(rangeWidth / 2));
+  const confidenceMax = Math.min(99, baseConfidence + Math.ceil(rangeWidth / 2));
 
   // Phase 2.7 Part N Step 6 — Fallback Rule
   const lowConfidence = confidenceMax < 70;
@@ -196,8 +469,43 @@ export function buildConsensusResult(
     });
   }
 
+  // Calculate agreement score (0-100)
+  const agreementScore = Math.round((agreeingImages / imageResults.length) * 100);
+  
+  // Phase 3.0 Part D — Apply confidence calibration
+  let calibratedConf = Math.round(maxScore);
+  if (imageCount === 1) {
+    calibratedConf = Math.min(92, calibratedConf);
+  } else if (imageCount === 2 && agreeingImages >= 2) {
+    calibratedConf = Math.min(96, calibratedConf);
+  } else if (imageCount === 3 && agreeingImages >= 2) {
+    calibratedConf = Math.min(99, calibratedConf);
+  }
+  
+  // Build primary match
+  const primaryMatch = {
+    name: primaryStrain,
+    confidence: calibratedConf, // Phase 3.0 Part D — Calibrated confidence
+    reason: whyThisMatch,
+  };
+
+  // Build alternates
+  const alternates = alternateMatches.slice(0, 3).map(alt => {
+    const altData = strainCounts.get(alt.name);
+    const avgConfidence = altData ? altData.totalConfidence / altData.count : 60;
+    return {
+      name: alt.name,
+      confidence: Math.round(avgConfidence),
+    };
+  });
+
   return {
-    strainName: primaryStrain, // Phase 2.7 Part N Step 5 — Always present
+    // Phase 3.0 Part C — New structure
+    primaryMatch,
+    alternates,
+    agreementScore,
+    // Legacy fields (keep for backward compat)
+    strainName: primaryStrain,
     confidenceRange: {
       min: confidenceMin,
       max: confidenceMax,
@@ -208,8 +516,8 @@ export function buildConsensusResult(
         : "Lower agreement due to image variation",
     },
     whyThisMatch,
-    alternateMatches: alternateMatches.slice(0, 3), // Max 3 alternates
-    lowConfidence, // Phase 2.7 Part N Step 6
+    alternateMatches: alternateMatches.slice(0, 3),
+    lowConfidence,
     agreementLevel,
   };
 }
