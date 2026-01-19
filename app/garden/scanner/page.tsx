@@ -101,7 +101,7 @@ export default function ScannerPage() {
               type="button"
               onClick={runScan}
               disabled={!file || isScanning}
-              className="w-full py-4 rounded-2xl bg-green-600 hover:bg-green-500 font-bold text-lg shadow-lg active:scale-[0.99] transition"
+              className="w-full h-12 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 font-bold text-lg shadow-lg active:scale-[0.99] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Run Scan
             </button>
