@@ -27,29 +27,36 @@ export default function ScannerPage() {
     setSynthesis(null);
   }, [images]);
 
-  async function runScan() {
-    console.log("ANALYZE CLICKED");
-    
+  async function handleAnalyzePlant() {
+    console.log("HANDLER START");
+    console.log("IMAGES:", images);
+    console.log("IMAGE COUNT:", images.length);
+
     if (images.length === 0) {
-      console.log("ANALYZE BLOCKED: No images selected");
+      console.log("BLOCKED: No images");
       return;
     }
 
-    console.log("ANALYZE STARTING: Processing", images.length, "image(s)");
+    console.log("STEP 1: PREP DONE");
     setIsScanning(true);
 
     try {
-      console.log("ANALYZE STEP 1: Calling scanImages");
+      console.log("STEP 2: CONTEXT BUILT");
+      console.log("STEP 3: ENGINE CALLED");
       const scanResult = await scanImages(images);
-      console.log("ANALYZE STEP 2: Got scan result", scanResult);
+      console.log("STEP 4: RESULT RECEIVED", scanResult);
+      
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
-      console.log("ANALYZE STEP 3: State updated");
+      console.log("STEP 5: STATE UPDATED");
+      
+      // Force state update test
+      console.log("RESULT FORCED");
     } catch (error) {
-      console.error("ANALYZE ERROR:", error);
+      console.error("ERROR:", error);
     } finally {
       setIsScanning(false);
-      console.log("ANALYZE COMPLETE");
+      console.log("HANDLER COMPLETE");
     }
   }
 
@@ -117,7 +124,7 @@ export default function ScannerPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 flex flex-col items-center">
               <button
                 disabled={images.length === 0 || isScanning}
-                onClick={runScan}
+                onClick={handleAnalyzePlant}
                 className="min-h-[56px] px-8 text-lg rounded-full bg-green-600 text-white font-semibold
                            disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
               >

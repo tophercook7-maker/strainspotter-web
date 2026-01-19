@@ -28,10 +28,13 @@ type ScanPipelineInput = {
  * STEP 2.1.E — Process multiple images, average confidence, pick dominant candidate
  */
 async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
+  console.log("runScanPipeline: starting with", input.imageCount, "images");
+  
   if (input.imageCount === 0) {
     throw new Error("No images provided");
   }
 
+  console.log("runScanPipeline: processing wiki results");
   // Loop through all images and process each
   const wikiResults = await Promise.all(
     input.imageSeeds.map(async (seed) => {
@@ -43,9 +46,13 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
         writable: false,
         configurable: false,
       });
-      return await runWikiEngine(syntheticFile, input.imageCount);
+      const wiki = await runWikiEngine(syntheticFile, input.imageCount);
+      console.log("runScanPipeline: wiki result for", seed.name, wiki.identity.strainName);
+      return wiki;
     })
   );
+
+  console.log("runScanPipeline: all wiki results processed", wikiResults.length);
 
   // Average confidence across all images
   const avgConfidence = Math.round(
@@ -115,13 +122,28 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
  * Scan images and return result + synthesis
  */
 export async function scanImages(images: File[]): Promise<ScanResult> {
+  console.log("scanImages called with", images.length, "images");
+  
+  if (!images || images.length === 0) {
+    throw new Error("No images provided to scanImages");
+  }
+
   const imageSeeds = images.map((img) => ({
     name: img.name,
     size: img.size,
   }));
 
-  return runScanPipeline({
-    imageSeeds,
-    imageCount: images.length,
-  });
+  console.log("scanImages: imageSeeds created", imageSeeds.length);
+  
+  try {
+    const result = await runScanPipeline({
+      imageSeeds,
+      imageCount: images.length,
+    });
+    console.log("scanImages: pipeline completed", result);
+    return result;
+  } catch (error) {
+    console.error("scanImages: pipeline error", error);
+    throw error;
+  }
 }
