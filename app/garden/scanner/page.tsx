@@ -87,11 +87,11 @@ export default function ScannerPage() {
 
           {/* IMAGE PREVIEW */}
           {previewUrl && (
-            <div className="rounded-xl overflow-hidden border border-white/10 bg-black">
+            <div className="flex justify-center">
               <img
                 src={previewUrl}
-                alt="Selected"
-                className="w-full max-h-[320px] object-contain pointer-events-none"
+                alt="Scan preview"
+                className="max-h-72 w-auto rounded-xl border border-white/20 shadow-lg"
               />
             </div>
           )}
