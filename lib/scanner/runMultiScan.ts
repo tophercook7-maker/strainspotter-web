@@ -3,6 +3,7 @@
 import { runWikiEngine } from "./wikiEngine";
 import { wikiToViewModel } from "./wikiAdapter";
 import { matchCultivars } from "./cultivarMatcher";
+import { matchCultivarsWithVoting } from "./nameMatcher";
 import { synthesizeWikiInsights } from "./wikiSynthesis";
 import type { ScannerViewModel } from "./viewModel";
 import type { WikiSynthesis, ScanContext } from "./types";
@@ -96,9 +97,13 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
   // Generate synthesis
   const synthesis = synthesizeWikiInsights(finalWiki, context);
 
-  // Log identification report
+  // Phase 2.2 — Use visual-feature voting for multi-image matching
+  const nameMatchResult = matchCultivarsWithVoting(wikiResults, context);
+  console.log("NAME MATCH RESULT (Phase 2.2)", nameMatchResult);
+
+  // Also log legacy report for comparison
   const identificationReport = matchCultivars(finalWiki, context);
-  console.log("IDENTIFICATION REPORT", identificationReport);
+  console.log("IDENTIFICATION REPORT (Legacy)", identificationReport);
 
   return {
     result: viewModel,
