@@ -11,6 +11,8 @@ import type { ImageResult, ConsensusResult } from "./consensusEngine";
 import { buildTrustLayer } from "./trustEngine";
 import { generateExtendedProfile } from "./extendedProfile";
 import { checkConsistency } from "./freeTierDepth";
+import { generateConfidenceExplanation } from "./confidenceExplanation";
+import { assignImageLabels } from "./imageIntakeLabels";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
