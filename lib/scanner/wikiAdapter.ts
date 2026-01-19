@@ -5,12 +5,14 @@ import type { WikiResult } from "./types";
 import type { ScannerViewModel } from "./viewModel";
 
 export function wikiToViewModel(wiki: WikiResult): ScannerViewModel {
+  const safeLineage = Array.isArray(wiki.genetics.lineage) ? wiki.genetics.lineage : [];
+  
   return {
     title: wiki.identity.strainName,
     confidence: Math.min(95, wiki.identity.confidence),
     genetics: {
       dominance: wiki.genetics.dominance,
-      lineage: wiki.genetics.lineage.join(" × "),
+      lineage: safeLineage.join(" × "),
     },
     experience: {
       effects: wiki.experience.effects.slice(0, 3),

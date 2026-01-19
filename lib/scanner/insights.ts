@@ -28,23 +28,26 @@ export function buildScannerInsights(
   }
 
   if (result.userFacingHighlights?.aromaProfile?.length) {
+    const safeAromas = Array.isArray(result.userFacingHighlights.aromaProfile) ? result.userFacingHighlights.aromaProfile : [];
     insights.push({
       title: "Aroma Profile",
-      description: result.userFacingHighlights.aromaProfile.join(", "),
+      description: safeAromas.join(", "),
     });
   }
 
   if (result.userFacingHighlights?.effects?.length) {
+    const safeEffects = Array.isArray(result.userFacingHighlights.effects) ? result.userFacingHighlights.effects : [];
     insights.push({
       title: "Effects",
-      description: result.userFacingHighlights.effects.join(", "),
+      description: safeEffects.join(", "),
     });
   }
 
   if (result.userFacingHighlights?.bestFor?.length) {
+    const safeBestFor = Array.isArray(result.userFacingHighlights.bestFor) ? result.userFacingHighlights.bestFor : [];
     insights.push({
       title: "Best For",
-      description: result.userFacingHighlights.bestFor.join(", "),
+      description: safeBestFor.join(", "),
     });
   }
 

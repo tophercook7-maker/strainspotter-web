@@ -7,6 +7,7 @@ import { synthesizeWikiInsights } from "@/lib/scanner/wikiSynthesis";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis } from "@/lib/scanner/types";
 import WikiPanel from "./WikiPanel";
+import ResultPanel from "./ResultPanel";
 import TopNav from "../_components/TopNav";
 
 /**
@@ -25,6 +26,7 @@ export default function ScannerPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
   const [imageSeed, setImageSeed] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +40,10 @@ export default function ScannerPage() {
     setImageSeed(null);
   }
 
-  async function runScan() {
+  function runScan() {
+    console.log("A: runScan clicked")
+    console.log("B: imageSeed", imageSeed)
+
     const file = imageFile;
     if (!file) return;
 
@@ -52,21 +57,27 @@ export default function ScannerPage() {
       const wiki = buildWikiResult({
         imageSeed: seed,
       });
+      console.log("C: wiki", wiki)
 
       const viewModel = wikiToViewModel(wiki);
+      console.log("D: viewModel", viewModel)
       const wikiSynthesis = synthesizeWikiInsights(wiki);
       
       setResult(viewModel);
       setSynthesis(wikiSynthesis);
+      setIsScanning(false);
       
       // B.2.5 — Log synthesis for verification (no UI consumption yet)
       console.log("Wiki Synthesis:", wikiSynthesis);
-    } catch (e) {
-      console.error("Scan failed", e);
+    } catch (err) {
+      console.error("Scan failed", err);
+      setIsScanning(false);
     } finally {
       setLoading(false);
     }
   }
+
+  console.log("RENDER CHECK:", { result, synthesis })
 
   return (
     <>
@@ -104,29 +115,7 @@ export default function ScannerPage() {
       </button>
 
       {/* LAYER 3 — WIKI UI */}
-      {result && (
-        <div className="mt-6 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 text-white space-y-4">
-          <h2 className="text-2xl font-bold">{result.title}</h2>
-          <p className="text-white/70">{result.disclaimer}</p>
-
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><strong>Dominance:</strong> {result.genetics.dominance}</div>
-            <div><strong>Confidence:</strong> {result.confidence}%</div>
-            <div><strong>Effects:</strong> {result.experience.effects.join(", ")}</div>
-            <div><strong>Best For:</strong> {result.experience.bestFor.join(", ")}</div>
-            {result.genetics.lineage && (
-              <div className="col-span-2">
-                <strong>Genetics:</strong> {result.genetics.lineage}
-              </div>
-            )}
-            {result.experience.bestTime && (
-              <div className="col-span-2">
-                <strong>Best Time:</strong> {result.experience.bestTime}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {result && <ResultPanel result={result} />}
 
       {/* 🔒 C.1 — WikiPanel (read-only, collapsible) */}
       {synthesis && <WikiPanel synthesis={synthesis} />}

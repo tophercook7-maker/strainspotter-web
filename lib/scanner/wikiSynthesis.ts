@@ -18,7 +18,8 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   const strainName = wiki.identity.strainName;
   const confidence = wiki.identity.confidence;
   const dominance = wiki.genetics.dominance;
-  const lineage = wiki.genetics.lineage.join(" × ");
+  const safeLineage = Array.isArray(wiki.genetics.lineage) ? wiki.genetics.lineage : [];
+  const lineage = safeLineage.join(" × ");
   const reasoningText = wiki.reasoning?.whyThisMatch || "";
   const hasUncertainty = wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0;
   const primaryEffects = wiki.experience.primaryEffects || wiki.experience.effects.slice(0, 2);
@@ -37,13 +38,20 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   }
   seed = (seed + confidence) % 4; // 0-3 variation
 
+  // Safe arrays
+  const safeTopThreeTerpenes = Array.isArray(topThreeTerpenes) ? topThreeTerpenes : [];
+  const safePrimaryEffects = Array.isArray(primaryEffects) ? primaryEffects : [];
+  const safeVisualTraits = Array.isArray(visualTraits) ? visualTraits : [];
+  const safeGrowthIndicators = Array.isArray(growthIndicators) ? growthIndicators : [];
+  const safeConflictingSignals = Array.isArray(wiki.reasoning?.conflictingSignals) ? wiki.reasoning.conflictingSignals : [];
+
   // Generate summary (2-3 paragraphs)
   const summary: string[] = [
     `Based on observed morphology from ${reasoningText ? "the analysis" : "visual characteristics"}, ` +
     `this cultivar aligns with ${strainName}. Genetic analysis indicates ${dominance} dominance with lineage tracing to ${lineage}. ` +
-    `Terpene likelihoods suggest ${topTerpene} as a primary compound, with ${topThreeTerpenes.slice(1).join(" and ")} also present in the profile.`,
+    `Terpene likelihoods suggest ${topTerpene} as a primary compound, with ${safeTopThreeTerpenes.slice(1).join(" and ")} also present in the profile.`,
     
-    `Effects typically include ${primaryEffects.join(", ").toLowerCase()}, which aligns with the ${dominance.toLowerCase()} genetic profile. ` +
+    `Effects typically include ${safePrimaryEffects.join(", ").toLowerCase()}, which aligns with the ${dominance.toLowerCase()} genetic profile. ` +
     `The morphology data shows ${wiki.morphology.budStructure.toLowerCase()}, with ${wiki.morphology.coloration.toLowerCase()}. ` +
     `Trichome characteristics (${wiki.morphology.trichomes.toLowerCase()}) suggest appropriate maturity for analysis.`,
     
@@ -80,7 +88,7 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
 
   const uncertaintyExplanation: string[] = hasUncertainty
     ? [
-        `Visual analysis shows conflicting traits: ${wiki.reasoning?.conflictingSignals?.join(", ")}. ` +
+        `Visual analysis shows conflicting traits: ${safeConflictingSignals.join(", ")}. ` +
         `This analysis is ${confidencePhrasing}, reflecting the ambiguity present in the visual data. ` +
         `Identification relies on visual similarity to documented specimens, not laboratory testing.`,
         
@@ -102,7 +110,7 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
         `Laboratory testing would provide definitive identification and cannabinoid quantification.`,
         
         `For cultivation purposes, understanding the genetic dominance and typical effects profile may be more useful than exact strain identification. ` +
-        `The ${dominance.toLowerCase()} characteristics and expected effects (${primaryEffects.join(", ").toLowerCase()}) provide practical guidance regardless of cultivar name accuracy.`
+        `The ${dominance.toLowerCase()} characteristics and expected effects (${safePrimaryEffects.join(", ").toLowerCase()}) provide practical guidance regardless of cultivar name accuracy.`
       ]
     : [
         `This analysis is ${confidencePhrasing}. While visual characteristics show strong alignment with documented profiles, ` +
@@ -124,7 +132,7 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   }
   
   if (visualTraits.length > 0) {
-    signalsConsidered.push(`Visual traits observed: ${visualTraits.slice(0, 3).join(", ")}`);
+    signalsConsidered.push(`Visual traits observed: ${safeVisualTraits.slice(0, 3).join(", ")}`);
   }
   
   if (wiki.morphology.budStructure) {
@@ -140,7 +148,7 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   }
   
   if (topThreeTerpenes.length > 0) {
-    signalsConsidered.push(`Terpene likelihoods: ${topThreeTerpenes.join(", ")} (from chemistry analysis)`);
+    signalsConsidered.push(`Terpene likelihoods: ${safeTopThreeTerpenes.join(", ")} (from chemistry analysis)`);
   }
   
   if (wiki.genetics.lineage.length > 0) {
@@ -148,7 +156,7 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   }
   
   if (hasUncertainty && wiki.reasoning?.conflictingSignals) {
-    signalsConsidered.push(`Conflicting signals: ${wiki.reasoning.conflictingSignals.join("; ")}`);
+    signalsConsidered.push(`Conflicting signals: ${safeConflictingSignals.join("; ")}`);
   }
 
   // Generate patternsObserved (explicit reasoning)
@@ -167,11 +175,11 @@ export function synthesizeWikiInsights(wiki: WikiResult): WikiSynthesis {
   }
 
   if (terpenes.length >= 2) {
-    patternsObserved.push(`Terpene profile (${topThreeTerpenes.join(", ")}) from chemistry data influences both aroma and how cannabinoids interact with receptors`);
+    patternsObserved.push(`Terpene profile (${safeTopThreeTerpenes.join(", ")}) from chemistry data influences both aroma and how cannabinoids interact with receptors`);
   }
 
   if (growthIndicators.length > 0) {
-    patternsObserved.push(`Growth indicators suggest: ${growthIndicators.join(", ")}`);
+    patternsObserved.push(`Growth indicators suggest: ${safeGrowthIndicators.join(", ")}`);
   }
 
   if (wiki.identity.alternateMatches && wiki.identity.alternateMatches.length > 0) {

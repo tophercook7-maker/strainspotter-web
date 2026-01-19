@@ -8,6 +8,9 @@ interface ResultPanelProps {
 }
 
 export default function ResultPanel({ result }: ResultPanelProps) {
+  const safeEffects = Array.isArray(result.experience.effects) ? result.experience.effects : [];
+  const safeBestFor = Array.isArray(result.experience.bestFor) ? result.experience.bestFor : [];
+
   return (
     <>
       <h2 className="text-xl font-semibold">{result.title}</h2>
@@ -23,8 +26,8 @@ export default function ResultPanel({ result }: ResultPanelProps) {
 
       <section>
         <h3>Experience</h3>
-        <p>Effects: {result.experience.effects.join(", ")}</p>
-        <p>Best for: {result.experience.bestFor.join(", ")}</p>
+        <p>Effects: {safeEffects.join(", ")}</p>
+        <p>Best for: {safeBestFor.join(", ")}</p>
         {result.experience.bestTime && (
           <p>Best time: {result.experience.bestTime}</p>
         )}
