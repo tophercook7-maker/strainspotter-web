@@ -28,6 +28,32 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
         {result.confidence}%
       </p>
 
+      {/* Phase 2.8 Part O — Trust Layer (Always Visible) */}
+      {result.trustLayer && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
+            {result.trustLayer.confidenceLanguage}
+          </h3>
+          <div className="space-y-3">
+            <div>
+              <h4 className="text-sm font-semibold text-white/90 mb-1">Why This Match:</h4>
+              <ul className="list-disc list-inside space-y-1 text-sm text-white/80">
+                {result.trustLayer.whyThisMatch.map((bullet, idx) => (
+                  <li key={idx}>{bullet}</li>
+                ))}
+              </ul>
+            </div>
+            {result.trustLayer.sourcesUsed.length > 0 && (
+              <div className="pt-2 border-t border-white/10">
+                <p className="text-xs text-white/60">
+                  Sources: {result.trustLayer.sourcesUsed.join(", ")}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 3. WHY THIS MATCH (PARAGRAPH) */}
       <div>
         <h3 className="text-xl font-semibold text-white mb-2">Why This Match</h3>
