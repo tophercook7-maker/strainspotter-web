@@ -69,7 +69,7 @@ export default function ScannerPage() {
 
       <div className="mx-auto max-w-xl px-4 py-6 space-y-6">
 
-        <div className="flex w-full flex-col items-center px-4">
+        <div className="flex flex-col items-center w-full px-4">
           {/* CONTROLS */}
           <input
             type="file"
@@ -84,7 +84,7 @@ export default function ScannerPage() {
               <img
                 src={previewUrl}
                 alt="Selected"
-                className="w-full max-h-[320px] object-contain"
+                className="w-full max-h-[320px] object-contain pointer-events-none"
               />
             </div>
           )}
@@ -92,19 +92,26 @@ export default function ScannerPage() {
           {/* SCAN BUTTON */}
           <button
             onClick={runScan}
+            disabled={!file || isScanning}
             className="
-              mx-auto
-              mt-6
               w-full
               max-w-md
-              rounded-2xl
-              bg-green-500
-              py-5
-              text-xl
-              font-bold
-              text-black
-              shadow-lg
+              mx-auto
+              mt-4
+              flex
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-green-600
+              hover:bg-green-500
               active:scale-[0.98]
+              text-white
+              text-lg
+              font-semibold
+              py-4
+              shadow-lg
+              transition
             "
           >
             🌿 Run Scan
