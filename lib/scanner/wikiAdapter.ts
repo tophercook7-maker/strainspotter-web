@@ -8,6 +8,7 @@ import type { WikiData } from "./wikiLookup";
 import type { AIReasoningResult } from "./aiReasoning";
 import type { DeepAnalysisSections } from "./deepAnalysis";
 import type { TrustLayer } from "./trustEngine";
+import type { ExtendedStrainProfile } from "./extendedProfile";
 
 export function wikiToViewModel(
   wiki: WikiResult, 
@@ -15,7 +16,8 @@ export function wikiToViewModel(
   wikiData?: WikiData | null,
   aiReasoning?: AIReasoningResult,
   deepAnalysis?: DeepAnalysisSections,
-  trustLayer?: TrustLayer
+  trustLayer?: TrustLayer,
+  extendedProfile?: ExtendedStrainProfile
 ): ScannerViewModel {
   const safeLineage = Array.isArray(wiki.genetics.lineage) ? wiki.genetics.lineage : [];
   const safeEffects = Array.isArray(wiki.experience.effects) ? wiki.experience.effects : [];
@@ -169,5 +171,8 @@ export function wikiToViewModel(
       sourcesUsed: sources.length > 0 ? sources : ["Curated Database"],
       confidenceLanguage: "Closest known match based on visual analysis",
     },
+    
+    // Phase 2.9 Part P Step 4 — Free Tier Guarantee (full profile, no truncation)
+    extendedProfile,
   };
 }

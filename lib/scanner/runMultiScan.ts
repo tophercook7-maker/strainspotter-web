@@ -8,6 +8,7 @@ import { fuseMultiImageFeatures } from "./multiImageFusion";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
 import { analyzePerImage, buildConsensusResult } from "./consensusEngine";
 import { buildTrustLayer } from "./trustEngine";
+import { generateExtendedProfile } from "./extendedProfile";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -170,6 +171,20 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   const primaryWiki = wikiResults.find(w => 
     w.identity.strainName === nameFirstResult.primaryMatch.name
   ) || wikiResults[0];
+
+  // Phase 2.9 Part P Step 2 — Generate Extended Strain Profile
+  // Phase 2.9 Part P Step 5 — Variance Check (use image count + variance as seed)
+  const varianceSeed = input.imageCount * 10 + Math.round(fusedFeatures.variance);
+  const extendedProfile = generateExtendedProfile(
+    nameFirstResult.primaryMatch.name,
+    primaryWiki,
+    dbEntry,
+    wikiData,
+    fusedFeatures,
+    input.imageCount,
+    varianceSeed
+  );
+  console.log("EXTENDED PROFILE:", extendedProfile);
   
   // Update with name-first results and AI reasoning
   const finalWiki = {
@@ -185,7 +200,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     },
   };
 
-  const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer);
+  const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

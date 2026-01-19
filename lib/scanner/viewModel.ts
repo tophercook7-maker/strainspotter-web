@@ -2,6 +2,11 @@
 // 🔒 A.2 — LOCK ScannerViewModel
 // Single source of truth for UI-facing scan data
 
+// Phase 2.9 Part P Step 1 — Extended Strain Profile type
+import type { ExtendedStrainProfile } from "./extendedProfile";
+
+export type { ExtendedStrainProfile };
+
 // Phase 2.5 Part L — Premium-Grade Result Structure
 export interface ScannerViewModel {
   // STEP 1 — Hard Require: Strain Name
@@ -79,4 +84,7 @@ export interface ScannerViewModel {
     summary?: string;
   };
   disclaimer: string;
+  
+  // Phase 2.9 Part P — Extended Strain Profile (Wiki-Depth Output)
+  extendedProfile?: ExtendedStrainProfile;
 }
