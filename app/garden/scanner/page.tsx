@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { runWikiEngine } from "@/lib/scanner/wikiEngine";
 import { wikiToViewModel } from "@/lib/scanner/wikiAdapter";
-import { synthesizeWikiInsights } from "@/lib/scanner/wikiSynthesis";
-import { generateIdentificationReport } from "@/lib/scanner/identificationReport";
+import { matchCultivars } from "@/lib/scanner/cultivarMatcher";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
-import type { WikiSynthesis, IdentificationReport, ScanContext } from "@/lib/scanner/types";
+import type { ScanContext } from "@/lib/scanner/types";
 
 type ScanTier = "basic" | "pro" | "expert";
-import WikiPanel from "./WikiPanel";
 import ResultPanel from "./ResultPanel";
 import TopNav from "../_components/TopNav";
 
@@ -21,8 +19,7 @@ export default function ScannerPage() {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
-  const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
-  const [identificationReport, setIdentificationReport] = useState<IdentificationReport | null>(null);
+  const [identificationResult, setIdentificationResult] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanTier] = useState<ScanTier>("basic");
 
@@ -47,8 +44,7 @@ export default function ScannerPage() {
     setIsScanning(true);
     // Clear previous results when starting new scan
     setResult(null);
-    setSynthesis(null);
-    setIdentificationReport(null);
+    setIdentificationResult(null);
 
     try {
       console.log("RUN SCAN CLICKED", file.name);
@@ -57,7 +53,7 @@ export default function ScannerPage() {
       const viewModel = wikiToViewModel(wiki);
       setResult(viewModel);
 
-      // Generate context for identification report
+      // Generate context for cultivar matching
       const context: ScanContext = {
         imageQuality: {
           focus: "moderate",
@@ -65,24 +61,26 @@ export default function ScannerPage() {
           lighting: "good",
         },
         detectedFeatures: {
-          leafShape: wiki.morphology.visualTraits?.find(t => t.toLowerCase().includes("leaf") || t.toLowerCase().includes("broad") || t.toLowerCase().includes("narrow")) || undefined,
+          leafShape: wiki.morphology.visualTraits?.find(t => {
+            const lower = t.toLowerCase();
+            return lower.includes("leaf") || lower.includes("broad") || lower.includes("narrow");
+          }) || undefined,
           trichomeDensity: wiki.morphology.trichomes,
-          pistilColor: wiki.morphology.coloration.includes("pistil") ? wiki.morphology.coloration : undefined,
+          pistilColor: wiki.morphology.coloration.includes("pistil") 
+            ? wiki.morphology.coloration 
+            : undefined,
         },
         uncertaintySignals: wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0
           ? { conflictingTraits: wiki.reasoning.conflictingSignals }
           : undefined,
       };
 
-      // Generate strict IdentificationReport (PRIMARY OUTPUT - no prose)
-      const report = generateIdentificationReport(wiki, context);
-      setIdentificationReport(report);
-      console.log("=== IDENTIFICATION REPORT ===");
-      console.log(JSON.stringify(report, null, 2));
-
-      // REMOVED: Prose-based synthesis from main flow
-      // WikiSynthesis kept only for backward compatibility if needed
-      setSynthesis(null);
+      // REPLACE "Closest Known Cultivar" logic with matchCultivars()
+      const identificationReport = matchCultivars(wiki, context);
+      setIdentificationResult(identificationReport);
+      
+      // Log full result to console
+      console.log("IDENTIFICATION REPORT", identificationReport);
     } finally {
       setIsScanning(false);
     }
@@ -134,8 +132,7 @@ export default function ScannerPage() {
 
             {/* C) Results Card(s) */}
             <section className="space-y-4">
-              {result && <ResultPanel result={result} synthesis={synthesis} />}
-              {synthesis && <WikiPanel synthesis={synthesis} />}
+              {result && <ResultPanel result={result} />}
             </section>
           </div>
         </div>

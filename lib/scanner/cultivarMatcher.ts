@@ -1,119 +1,221 @@
 // lib/scanner/cultivarMatcher.ts
-// 🔒 Phase 2.2 — Cultivar Name Matching & Ranking Engine
+// Phase 2.3 — Cultivar Matching Engine (DATA ONLY, NO PROSE)
 
 import type { WikiResult, ScanContext } from "./types";
-import { CULTIVAR_LIBRARY } from "./cultivarReference";
+import { CULTIVAR_LIBRARY, type CultivarReference } from "./cultivarLibrary";
 
-export type CultivarMatch = {
-  name: string;
-  score: number; // Raw score 0-100
-  confidenceRange: string; // Normalized percentage range (e.g. "72-84%")
-  reasons: string[];
+export type CultivarMatchResult = {
+  primary: {
+    name: string;
+    score: number; // 0-100
+    confidenceRange: string; // e.g. "72-84%"
+    reasons: string[];
+  };
+  alternates: Array<{
+    name: string;
+    score: number;
+    confidenceRange: string;
+    reason: string; // Single primary reason
+  }>;
 };
 
 /**
- * Normalize raw score to percentage range
+ * Normalize score to confidence range
  */
-function normalizeScoreToRange(rawScore: number): string {
-  // Map raw score (0-100) to percentage range
-  // Higher scores get tighter ranges, lower scores get wider ranges
-  if (rawScore >= 60) {
-    const base = 72 + Math.floor((rawScore - 60) / 40 * 12); // 72-84%
-    return `${base}-${base + 4}%`;
-  } else if (rawScore >= 40) {
-    const base = 60 + Math.floor((rawScore - 40) / 20 * 12); // 60-72%
-    return `${base}-${base + 6}%`;
-  } else if (rawScore >= 20) {
-    const base = 45 + Math.floor((rawScore - 20) / 20 * 15); // 45-60%
-    return `${base}-${base + 8}%`;
-  } else {
-    return "30-45%";
+function scoreToConfidenceRange(score: number): string {
+  if (score >= 70) return "78-88%";
+  if (score >= 60) return "72-82%";
+  if (score >= 50) return "65-75%";
+  if (score >= 40) return "58-68%";
+  if (score >= 30) return "50-60%";
+  if (score >= 20) return "42-52%";
+  return "35-45%";
+}
+
+/**
+ * Extract morphology density from wiki
+ */
+function extractBudDensity(wiki: WikiResult): "low" | "medium" | "high" {
+  const structure = wiki.morphology.budStructure.toLowerCase();
+  if (structure.includes("dense") || structure.includes("compact") || structure.includes("chunky")) {
+    return "high";
   }
+  if (structure.includes("airy") || structure.includes("elongated") || structure.includes("foxtailed")) {
+    return "low";
+  }
+  return "medium";
+}
+
+/**
+ * Extract trichome density from wiki
+ */
+function extractTrichomeDensity(wiki: WikiResult): "low" | "medium" | "high" {
+  const trichomes = wiki.morphology.trichomes.toLowerCase();
+  if (trichomes.includes("very") || trichomes.includes("extremely") || trichomes.includes("heavy")) {
+    return "high";
+  }
+  if (trichomes.includes("moderate") || trichomes.includes("medium")) {
+    return "medium";
+  }
+  return "low";
+}
+
+/**
+ * Extract leaf shape from context or infer from genetics
+ */
+function extractLeafShape(wiki: WikiResult, context: ScanContext): "narrow" | "broad" {
+  if (context.detectedFeatures?.leafShape) {
+    const shape = context.detectedFeatures.leafShape.toLowerCase();
+    if (shape.includes("narrow") || shape.includes("thin")) return "narrow";
+    if (shape.includes("broad") || shape.includes("wide")) return "broad";
+  }
+  
+  // Infer from genetics
+  const dominance = wiki.genetics.dominance.toLowerCase();
+  if (dominance.includes("indica")) return "broad";
+  if (dominance.includes("sativa")) return "narrow";
+  return "broad"; // Default
+}
+
+/**
+ * Extract pistil colors from wiki
+ */
+function extractPistilColors(wiki: WikiResult): string[] {
+  const coloration = wiki.morphology.coloration.toLowerCase();
+  const colors: string[] = [];
+  
+  if (coloration.includes("orange")) colors.push("orange");
+  if (coloration.includes("amber")) colors.push("amber");
+  if (coloration.includes("white")) colors.push("white");
+  if (coloration.includes("pink")) colors.push("pink");
+  
+  return colors.length > 0 ? colors : ["orange"]; // Default
 }
 
 /**
  * Match cultivars based on WikiResult and ScanContext
- * Returns top 5 matches sorted by score (highest first)
- * Scores based on: bud structure, trichome density, leaf shape, pistil color, effect overlap
+ * Returns primary match + ranked alternates
+ * NO PROSE - DATA ONLY
  */
 export function matchCultivars(
   wiki: WikiResult,
   context: ScanContext
-): CultivarMatch[] {
-  // Extract wiki data
-  const wikiBudStructure = wiki.morphology.budStructure.toLowerCase();
-  const wikiTrichomes = wiki.morphology.trichomes.toLowerCase();
-  const wikiColoration = wiki.morphology.coloration.toLowerCase();
-  const wikiPrimaryEffects = (wiki.experience.primaryEffects || wiki.experience.effects).map(e => e.toLowerCase());
-  const wikiLeafShape = context.detectedFeatures?.leafShape?.toLowerCase() || "";
+): CultivarMatchResult {
+  // Extract wiki morphology
+  const wikiBudDensity = extractBudDensity(wiki);
+  const wikiTrichomeDensity = extractTrichomeDensity(wiki);
+  const wikiLeafShape = extractLeafShape(wiki, context);
+  const wikiPistilColors = extractPistilColors(wiki);
+  const wikiEffects = (wiki.experience.primaryEffects || wiki.experience.effects).map(e => e.toLowerCase());
 
-  return CULTIVAR_LIBRARY.map(cultivar => {
+  // Score each cultivar
+  const scored: Array<{
+    cultivar: CultivarReference;
+    score: number;
+    reasons: string[];
+  }> = [];
+
+  for (const cultivar of CULTIVAR_LIBRARY) {
     let score = 0;
     const reasons: string[] = [];
 
-    // 1. Bud structure match (0-25 points)
-    const cultivarBudStructures = cultivar.traits.budStructure.map(s => s.toLowerCase());
-    if (cultivarBudStructures.some(trait => wikiBudStructure.includes(trait))) {
-      score += 25;
-      reasons.push("Bud structure closely matches reference specimens");
+    // 1. Morphology match = 45% (45 points)
+    if (cultivar.morphology.budDensity === wikiBudDensity) {
+      score += 20;
+      reasons.push("Bud density matches");
     }
-
-    // 2. Trichome density match (0-25 points)
-    const cultivarTrichomes = cultivar.traits.trichomes.map(t => t.toLowerCase());
-    if (cultivarTrichomes.some(trait => 
-      wikiTrichomes.includes(trait) || 
-      (trait === "heavy" && wikiTrichomes.includes("high")) ||
-      (trait === "moderate" && wikiTrichomes.includes("moderate")) ||
-      (trait === "very high" && (wikiTrichomes.includes("very") || wikiTrichomes.includes("extremely")))
-    )) {
-      score += 25;
-      reasons.push("Trichome density aligns with known phenotype");
-    }
-
-    // 3. Pistil color match (0-15 points)
-    const cultivarPistils = cultivar.traits.pistils.map(p => p.toLowerCase());
-    if (cultivarPistils.some(pistil => wikiColoration.includes(pistil))) {
+    if (cultivar.morphology.leafShape === wikiLeafShape) {
       score += 15;
-      reasons.push("Pistil color matches documented characteristics");
+      reasons.push("Leaf shape matches");
+    }
+    if (cultivar.morphology.budDensity === wikiBudDensity && cultivar.morphology.leafShape === wikiLeafShape) {
+      score += 10; // Bonus for both matching
     }
 
-    // 4. Leaf shape match (0-15 points) - if available in context
-    if (wikiLeafShape && context.detectedFeatures?.leafShape) {
-      // Basic leaf shape matching (broad vs narrow)
-      const isBroad = wikiLeafShape.includes("broad") || wikiLeafShape.includes("wide");
-      const isNarrow = wikiLeafShape.includes("narrow") || wikiLeafShape.includes("thin");
-      
-      // Indica-dominant typically has broader leaves, Sativa has narrower
-      const cultivarGenetics = cultivar.genetics.toLowerCase();
-      if ((isBroad && cultivarGenetics.includes("indica")) || 
-          (isNarrow && cultivarGenetics.includes("sativa"))) {
-        score += 15;
-        reasons.push("Leaf shape aligns with genetic profile");
-      }
+    // 2. Trichome density = 20% (20 points)
+    if (cultivar.morphology.trichomeDensity === wikiTrichomeDensity) {
+      score += 20;
+      reasons.push("Trichome density matches");
     }
 
-    // 5. Effect profile overlap (0-20 points)
-    const cultivarEffects = cultivar.traits.effects.map(e => e.toLowerCase());
+    // 3. Leaf shape = 15% (15 points) - already counted in morphology, but separate check
+    // (Already included above)
+
+    // 4. Pistil color = 10% (10 points)
+    const pistilMatch = cultivar.morphology.pistilColor.some(c => 
+      wikiPistilColors.some(w => w === c.toLowerCase())
+    );
+    if (pistilMatch) {
+      score += 10;
+      reasons.push("Pistil color matches");
+    }
+
+    // 5. Effect overlap = 10% (10 points)
+    const cultivarEffects = cultivar.effects.map(e => e.toLowerCase());
     const effectMatches = cultivarEffects.filter(e =>
-      wikiPrimaryEffects.some(we => we.includes(e) || e.includes(we))
+      wikiEffects.some(we => we.includes(e) || e.includes(we))
     ).length;
-    
     if (effectMatches > 0) {
-      const effectScore = Math.min(20, effectMatches * 7);
+      const effectScore = Math.min(10, effectMatches * 3);
       score += effectScore;
-      reasons.push(`${effectMatches} effect match${effectMatches > 1 ? "es" : ""} with documented profile`);
+      reasons.push(`${effectMatches} effect match${effectMatches > 1 ? "es" : ""}`);
     }
 
-    // Normalize score to percentage range
-    const confidenceRange = normalizeScoreToRange(score);
+    if (score > 0) {
+      scored.push({
+        cultivar,
+        score: Math.min(100, Math.round(score)),
+        reasons,
+      });
+    }
+  }
 
-    return {
-      name: cultivar.name,
-      score: Math.min(100, Math.round(score)),
-      confidenceRange,
-      reasons
-    };
-  })
-  .sort((a, b) => b.score - a.score)
-  .slice(0, 5);
+  // Sort by score (highest first)
+  scored.sort((a, b) => b.score - a.score);
+
+  // Primary match (top scorer)
+  const primary = scored[0];
+  const primaryMatch = primary
+    ? {
+        name: primary.cultivar.name,
+        score: primary.score,
+        confidenceRange: scoreToConfidenceRange(primary.score),
+        reasons: primary.reasons,
+      }
+    : {
+        name: "Phenotype-Closest Hybrid",
+        score: 0,
+        confidenceRange: "30-40%",
+        reasons: ["No strong cultivar match found"],
+      };
+
+  // Alternates (at least 3, exclude primary)
+  const alternates = scored
+    .slice(1, 4) // Top 3 alternates
+    .map(m => ({
+      name: m.cultivar.name,
+      score: m.score,
+      confidenceRange: scoreToConfidenceRange(m.score),
+      reason: m.reasons[0] || "Partial morphological match",
+    }));
+
+  // Ensure at least 3 alternates
+  while (alternates.length < 3 && scored.length > alternates.length + 1) {
+    const next = scored[alternates.length + 1];
+    if (next) {
+      alternates.push({
+        name: next.cultivar.name,
+        score: next.score,
+        confidenceRange: scoreToConfidenceRange(next.score),
+        reason: next.reasons[0] || "Partial match",
+      });
+    } else {
+      break;
+    }
+  }
+
+  return {
+    primary: primaryMatch,
+    alternates,
+  };
 }

@@ -2,14 +2,12 @@
 // 🔒 A.2 — UI reads ONLY from ScannerViewModel (LOCKED)
 
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
-import type { WikiSynthesis } from "@/lib/scanner/types";
 
 interface ResultPanelProps {
   result: ScannerViewModel;
-  synthesis?: WikiSynthesis;
 }
 
-export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
+export default function ResultPanel({ result }: ResultPanelProps) {
   const safeEffects = Array.isArray(result.experience.effects) ? result.experience.effects : [];
   const safeBestFor = Array.isArray(result.experience.bestFor) ? result.experience.bestFor : [];
 
@@ -26,28 +24,6 @@ export default function ResultPanel({ result, synthesis }: ResultPanelProps) {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6">
-      {/* BEST MATCH NAME - AT TOP */}
-      {synthesis?.bestMatch && (
-        <div className="mb-6">
-          <p className="text-white/60 text-sm mb-2">
-            Closest Known Cultivar (reference): <span className="font-semibold text-white/80">{synthesis.bestMatch.name}</span>
-          </p>
-          <p className="text-white/60 text-sm mb-4">
-            Match strength: <span className="font-semibold text-white/80">{synthesis.bestMatch.matchStrength}</span>
-          </p>
-          <div className="space-y-2">
-            <p className="text-white/70 text-sm font-medium mb-2">Why this match:</p>
-            <ul className="space-y-1.5">
-              {synthesis.bestMatch.whyThisMatch.map((reason, index) => (
-                <li key={index} className="text-sm text-white/80 flex items-start">
-                  <span className="text-white/50 mr-2">•</span>
-                  <span>{reason}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
 
       <div className="h-6" />
 
