@@ -22,7 +22,7 @@ const revealOut =
   "opacity-0 translate-y-3";
 
 export default function ScannerPage() {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
@@ -34,7 +34,7 @@ export default function ScannerPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageUrl(URL.createObjectURL(file));
+    setPreviewUrl(URL.createObjectURL(file));
     setImageFile(file);
     setResult(null);
     setSynthesis(null);
@@ -88,41 +88,52 @@ export default function ScannerPage() {
   return (
     <main className="min-h-screen bg-black text-white flex flex-col overflow-y-auto">
       <TopNav title="Scanner" showBack />
-      <div className="w-full max-w-2xl mx-auto px-4">
-        <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
-          {/* SCANNER CONTENT GOES BELOW */}
-          <h1 className="text-3xl font-bold mb-4">Scanner</h1>
+      <div className="w-full flex justify-center px-4">
+        <div className="w-full max-w-2xl flex flex-col gap-4">
+          <div className="rounded-3xl border border-white/20 bg-black/70 backdrop-blur-xl p-6 text-white">
+            {/* SCANNER CONTENT GOES BELOW */}
+            <h1 className="text-3xl font-bold mb-4">Scanner</h1>
 
       {/* Image Preview */}
-      {imageUrl && (
+      {previewUrl && (
         <div className="w-full flex justify-center my-3">
           <img
-            src={imageUrl}
+            src={previewUrl}
             alt="Selected plant"
-            className="
-              max-h-[220px]
-              w-auto
-              rounded-md
-              border
-              border-white/20
-              object-contain
-            "
+            className="max-h-[220px] w-auto rounded-md border border-white/20 object-contain"
           />
         </div>
       )}
 
       {/* Controls */}
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="block w-full text-sm mb-4"
-      />
+      <div className="w-full max-w-sm mx-auto">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="w-full text-sm text-white"
+        />
+      </div>
 
       <button
         onClick={runScan}
         disabled={!imageFile || loading}
-        className="w-full mt-4 py-3 rounded-full bg-white text-black font-medium tracking-wide hover:bg-white/90 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="
+          w-full
+          max-w-sm
+          mx-auto
+          py-3
+          rounded-xl
+          bg-white
+          text-black
+          font-semibold
+          tracking-wide
+          transition
+          hover:bg-white/90
+          active:scale-[0.98]
+          disabled:opacity-40
+          disabled:cursor-not-allowed
+        "
       >
         {loading ? "Scanning..." : "Run Scan"}
       </button>
@@ -131,6 +142,9 @@ export default function ScannerPage() {
       <div ref={resultRef} className="flex-1 overflow-y-auto space-y-4 pb-6">
         {result && <ResultPanel result={result} />}
         {synthesis && <WikiPanel synthesis={synthesis} />}
+      </div>
+          </div>
+        </div>
       </div>
 
       {/* Variance note */}
@@ -148,8 +162,6 @@ export default function ScannerPage() {
           </code>
         </div>
       )}
-        </div>
-      </div>
     </main>
   );
 }
