@@ -1,5 +1,5 @@
 // app/garden/scanner/ResultPanel.tsx
-// STEP 2.1.F — Simplified result display
+// PART B — Full report display (NO TRUNCATION)
 
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 
@@ -9,55 +9,83 @@ interface ResultPanelProps {
 }
 
 export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
-  const safeEffects = Array.isArray(result.experience.effects) ? result.experience.effects : [];
+  const safeEffectsLong = Array.isArray(result.effectsLong) ? result.effectsLong : [];
+  const safeReferenceStrains = Array.isArray(result.referenceStrains) ? result.referenceStrains : [];
+  const safeGrowthTraits = Array.isArray(result.growthTraits) ? result.growthTraits : [];
+  const safeTerpeneGuess = Array.isArray(result.terpeneGuess) ? result.terpeneGuess : [];
   
-  // Calculate confidence range (simple ±5% around confidence)
-  const confidence = result.confidence;
-  const minConf = Math.max(0, confidence - 5);
-  const maxConf = Math.min(100, confidence + 5);
-  const confidenceRange = `${minConf}–${maxConf}%`;
-
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-4">
-      {/* Large strain name (H1) */}
-      <h1 className="text-3xl font-bold text-white">
-        {result.title}
-      </h1>
-
-      {/* Confidence range */}
+    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+      <h2 className="text-3xl font-bold text-white">
+        {result.name || result.title}
+      </h2>
+      
       <p className="text-lg text-green-400 font-semibold">
-        {confidenceRange}
+        Confidence: {result.confidence}%
       </p>
 
-      {/* Based on visual similarity */}
-      <p className="text-sm text-white/60">
-        Based on visual similarity across {imageCount} photo{imageCount > 1 ? "s" : ""}
-      </p>
+      <div>
+        <h3 className="text-xl font-semibold text-white mb-2">Why This Match</h3>
+        <p className="text-white/90 leading-relaxed">{result.whyThisMatch}</p>
+      </div>
 
-      {/* 3 bullet effects */}
-      {safeEffects.length > 0 && (
-        <div className="pt-2">
-          <ul className="space-y-2">
-            {safeEffects.slice(0, 3).map((effect, index) => (
-              <li key={index} className="text-base text-white/90">• {effect}</li>
+      <div>
+        <h3 className="text-xl font-semibold text-white mb-2">Visual & Structural Analysis</h3>
+        <p className="text-white/90 leading-relaxed mb-2">{result.morphology}</p>
+        <p className="text-white/90 leading-relaxed mb-2">{result.trichomes}</p>
+        <p className="text-white/90 leading-relaxed mb-2">{result.pistils}</p>
+        <p className="text-white/90 leading-relaxed mb-2">{result.structure}</p>
+        {safeGrowthTraits.length > 0 && (
+          <ul className="list-disc list-inside space-y-1 mt-2">
+            {safeGrowthTraits.map((trait, idx) => (
+              <li key={idx} className="text-white/90">{trait}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {safeTerpeneGuess.length > 0 && (
+        <div>
+          <h3 className="text-xl font-semibold text-white mb-2">Likely Terpenes</h3>
+          <p className="text-white/90">{safeTerpeneGuess.join(", ")}</p>
+        </div>
+      )}
+
+      <div>
+        <h3 className="text-xl font-semibold text-white mb-2">Likely Effects</h3>
+        <ul className="list-disc list-inside space-y-1">
+          {safeEffectsLong.map((effect, index) => (
+            <li key={index} className="text-white/90">{effect}</li>
+          ))}
+        </ul>
+      </div>
+
+      {safeReferenceStrains.length > 0 && (
+        <div>
+          <h3 className="text-xl font-semibold text-white mb-2">Closest Known Cultivars</h3>
+          <ul className="list-disc list-inside space-y-1">
+            {safeReferenceStrains.map((strain, index) => (
+              <li key={index} className="text-white/90">{strain}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Genetics line */}
-      <div className="pt-2">
-        <p className="text-sm text-white/70">
-          <span className="font-medium">Genetics:</span> {result.genetics.dominance} {result.genetics.lineage && `• ${result.genetics.lineage}`}
+      <div>
+        <h3 className="text-xl font-semibold text-white mb-2">Genetics</h3>
+        <p className="text-white/90">
+          {result.genetics.dominance} {result.genetics.lineage && `• ${result.genetics.lineage}`}
         </p>
       </div>
 
-      {/* Clear disclaimer */}
-      <div className="pt-4 border-t border-white/10">
-        <p className="text-xs text-white/50 italic">
-          {result.disclaimer}
+      <div>
+        <h3 className="text-xl font-semibold text-white mb-2">Confidence & Limits</h3>
+        <p className="text-white/90 leading-relaxed">{result.uncertaintyExplanation}</p>
+        <p className="text-sm text-white/60 italic mt-2">{result.disclaimer}</p>
+        <p className="text-sm text-white/60 mt-2">
+          Based on visual similarity across {imageCount} photo{imageCount > 1 ? "s" : ""}
         </p>
       </div>
-    </div>
+    </section>
   );
 }

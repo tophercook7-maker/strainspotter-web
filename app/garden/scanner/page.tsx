@@ -31,6 +31,7 @@ export default function ScannerPage() {
     console.log("HANDLER START");
     console.log("IMAGES:", images);
     console.log("IMAGE COUNT:", images.length);
+    console.log("IMAGES USED:", images.length);
 
     if (images.length === 0) {
       console.log("BLOCKED: No images");
@@ -121,12 +122,17 @@ export default function ScannerPage() {
         </div>
 
         {/* B) Big Scan Button Card */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 flex flex-col items-center">
+        <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 flex flex-col items-center">
               <button
                 disabled={images.length === 0 || isScanning}
                 onClick={handleAnalyzePlant}
-                className="min-h-[56px] px-8 text-lg rounded-full bg-green-600 text-white font-semibold
-                           disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                className="relative z-50 flex items-center justify-center
+                           px-8 py-4
+                           min-h-[56px] min-w-[200px]
+                           rounded-full
+                           bg-white text-black font-semibold
+                           pointer-events-auto
+                           disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isScanning ? "Scanning…" : "Analyze Plant"}
               </button>
