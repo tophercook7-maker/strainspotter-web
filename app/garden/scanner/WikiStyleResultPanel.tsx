@@ -74,6 +74,28 @@ export default function WikiStyleResultPanel({
             </p>
           )}
 
+          {/* Phase 3.8 Part C — Confidence Tier Badge */}
+          {result.confidenceTier && (
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                  result.confidenceTier.tier === "high"
+                    ? "bg-green-500/20 text-green-300"
+                    : result.confidenceTier.tier === "moderate"
+                    ? "bg-yellow-500/20 text-yellow-300"
+                    : "bg-orange-500/20 text-orange-300"
+                }`}
+              >
+                {result.confidenceTier.label}
+              </span>
+              {result.nameResolution?.strainFamily && (
+                <span className="text-xs text-white/60">
+                  • {result.nameResolution.strainFamily}-type
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Confidence & image count */}
           {result.multiImageInfo ? (
             <div className="space-y-2">
@@ -121,39 +143,63 @@ export default function WikiStyleResultPanel({
           )}
         </div>
 
-        {/* Alternate matches & strain family */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-          {/* Alternate matches */}
-          {safeSecondaryMatches.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-white/70 mb-2 uppercase tracking-wide">
-                Also Similar To
-              </h3>
-              <ul className="space-y-1">
-                {safeSecondaryMatches.slice(0, 3).map((match, idx) => (
-                  <li key={idx} className="text-white/80 text-sm">
-                    • {match.name}
-                    {match.whyNotPrimary && (
-                      <span className="text-white/60 ml-2">
-                        ({match.whyNotPrimary})
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+        {/* Phase 3.8 Part E — Why This Match (Expandable) */}
+        {result.nameReasoning && result.nameReasoning.bullets.length > 0 && (
+          <CollapsibleSection
+            title="Why This Name?"
+            defaultExpanded={true}
+            icon="💡"
+          >
+            <ul className="space-y-2">
+              {result.nameReasoning.bullets.map((bullet, idx) => (
+                <li key={idx} className="text-white/80 text-sm flex items-start gap-2">
+                  <span className="text-white/40 mt-1">•</span>
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          </CollapsibleSection>
+        )}
 
-          {/* Strain family */}
-          {strainFamily && (
-            <div>
-              <h3 className="text-sm font-semibold text-white/70 mb-2 uppercase tracking-wide">
-                Strain Family
-              </h3>
-              <p className="text-white/80 text-sm">{strainFamily}-type</p>
+        {/* Phase 3.8 Part E — Closest Alternatives (Collapsed) */}
+        {(safeSecondaryMatches.length > 0 || result.nameResolution?.closestAlternate) && (
+          <CollapsibleSection
+            title="Closest Alternatives"
+            defaultExpanded={false}
+            icon="🔍"
+          >
+            <div className="space-y-3">
+              {/* Show name resolution alternate first if available */}
+              {result.nameResolution?.closestAlternate && (
+                <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="font-semibold text-white">
+                      {result.nameResolution.closestAlternate.name}
+                    </p>
+                    <span className="text-xs text-white/60">
+                      {result.nameResolution.closestAlternate.confidence}%
+                    </span>
+                  </div>
+                  <p className="text-sm text-white/70">
+                    {result.nameResolution.closestAlternate.whyNotPrimary}
+                  </p>
+                </div>
+              )}
+              
+              {/* Show other alternates */}
+              {safeSecondaryMatches.slice(0, 3).map((match, idx) => (
+                <div key={idx} className="p-3 rounded-lg border border-white/10 bg-white/5">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="font-semibold text-white">{match.name}</p>
+                  </div>
+                  {match.whyNotPrimary && (
+                    <p className="text-sm text-white/70">{match.whyNotPrimary}</p>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+          </CollapsibleSection>
+        )}
       </div>
 
       {/* Phase 3.6 Part C — GENETICS & LINEAGE (Expanded by default) */}

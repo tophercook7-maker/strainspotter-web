@@ -15,6 +15,9 @@ import { generateConfidenceExplanation } from "./confidenceExplanation";
 import { assignImageLabels } from "./imageIntakeLabels";
 import { determineStrainName } from "./namingHierarchy";
 import { generateNamingDisplay } from "./namingDisplay";
+import { buildStrainCandidatePool } from "./strainCandidatePool";
+import { resolveStrainName } from "./nameResolution";
+import { getConfidenceTierFromRange } from "./confidenceTier";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -274,6 +277,46 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 3.5 Part C — Generate naming display info (namingResult already defined above)
   const namingDisplay = generateNamingDisplay(namingResult, input.imageCount);
   console.log("NAMING DISPLAY:", namingDisplay);
+  
+  // Phase 3.8 Part A — Build strain candidate pool (Top 5)
+  const candidatePool = buildStrainCandidatePool(
+    fusedFeatures,
+    input.imageCount,
+    imageResultsV3.length > 0
+      ? imageResultsV3.flatMap(r => r.candidateStrains.map(c => ({ name: c.name, confidence: c.confidence })))
+      : undefined
+  );
+  console.log("CANDIDATE POOL (Top 5):", candidatePool);
+  
+  // Phase 3.8 Part B — Resolve final name
+  const nameResolution = resolveStrainName(candidatePool, consensusResult, input.imageCount);
+  console.log("NAME RESOLUTION:", nameResolution);
+  
+  // Phase 3.8 Part C — Get confidence tier
+  const confidenceTier = getConfidenceTierFromRange(
+    nameFirstResult.confidenceRange.min,
+    nameFirstResult.confidenceRange.max
+  );
+  console.log("CONFIDENCE TIER:", confidenceTier);
+  
+  // Phase 3.8 Part D — Build "Why This Name" reasoning bullets
+  const nameReasoning = {
+    bullets: [
+      ...nameResolution.reasoning,
+      // Add cross-image agreement if applicable
+      ...(input.imageCount > 1 && consensusResult && consensusResult.agreementScore >= 70
+        ? [`Cross-image agreement: ${consensusResult.agreementScore}% of images identified this strain`]
+        : []),
+      // Add trait information
+      ...(candidatePool[0]?.matchedTraits.length > 0
+        ? [`Matched visual traits: ${candidatePool[0].matchedTraits.slice(0, 4).join(", ")}`]
+        : []),
+      // Add cultivar behavior note
+      ...(candidatePool[0]?.strainFamily
+        ? [`Known ${candidatePool[0].strainFamily} lineage characteristics observed`]
+        : []),
+    ],
+  };
 
   const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
   
@@ -282,6 +325,15 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // Phase 3.5 Part C — Add naming info to view model
   viewModel.namingInfo = namingDisplay;
+  
+  // Phase 3.8 Part C — Add confidence tier
+  viewModel.confidenceTier = confidenceTier;
+  
+  // Phase 3.8 Part D — Add name reasoning
+  viewModel.nameReasoning = nameReasoning;
+  
+  // Phase 3.8 Part B — Add name resolution
+  viewModel.nameResolution = nameResolution;
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {

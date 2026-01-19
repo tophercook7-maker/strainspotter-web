@@ -101,4 +101,27 @@ export interface ScannerViewModel {
     displayLabel: string; // "Closest known match" or "Exact match"
     rationale: string; // One-sentence explanation
   };
+  
+  // Phase 3.8 Part C — Confidence Tier
+  confidenceTier?: {
+    tier: "high" | "moderate" | "low";
+    label: string;
+    description: string;
+  };
+  
+  // Phase 3.8 Part D — Why This Name (Enhanced)
+  nameReasoning?: {
+    bullets: string[]; // Visual traits, strain markers, cross-image agreement, cultivar behaviors
+  };
+  
+  // Phase 3.8 Part B — Name Resolution
+  nameResolution?: {
+    matchType: "clear_winner" | "close_alternatives" | "family_level";
+    closestAlternate?: {
+      name: string;
+      confidence: number;
+      whyNotPrimary: string;
+    };
+    strainFamily?: string;
+  };
 }
