@@ -39,7 +39,7 @@ export default function ScannerPage() {
     <>
       <TopNav title="Scanner" showBack />
       
-      <main className="min-h-screen bg-black text-white">
+      <main className="max-w-5xl mx-auto px-6">
         <div className="mx-auto w-full max-w-3xl px-4 py-6 md:py-10">
           <div className="space-y-4 md:space-y-6">
             {/* A) Upload + Preview Card */}

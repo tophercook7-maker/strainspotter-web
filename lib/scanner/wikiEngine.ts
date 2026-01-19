@@ -6,52 +6,40 @@ import type { WikiResult, ScanContext } from "./types";
 /**
  * 🔒 B.1.2 — Build ScanContext from imageSeed (foundation only, no real inference yet)
  */
-function buildScanContext(imageSeed: string): ScanContext {
+function buildScanContext(imageSeed: string, imageCount: number = 1): ScanContext {
   // Create deterministic seed from string
   let seed = 0;
   for (let i = 0; i < imageSeed.length; i++) {
     seed += imageSeed.charCodeAt(i);
   }
 
-  // Generate context from seed (varied, but deterministic per image)
-  const focusOptions: Array<"sharp" | "moderate" | "blurry"> = ["sharp", "moderate", "blurry"];
-  const noiseOptions: Array<"low" | "moderate" | "high"> = ["low", "moderate", "high"];
-  const lightingOptions: Array<"good" | "dim" | "harsh"> = ["good", "dim", "harsh"];
+  // Infer angles based on image count (multiple images suggest multiple angles)
+  const anglesInferred = imageCount > 1;
 
   return {
-    imageQuality: {
-      focus: focusOptions[seed % focusOptions.length],
-      noise: noiseOptions[(seed * 2) % noiseOptions.length],
-      lighting: lightingOptions[(seed * 3) % lightingOptions.length],
-    },
-    detectedFeatures: {
-      leafShape: seed % 5 === 0 ? "broad" : seed % 5 === 1 ? "narrow" : "varies",
-      trichomeDensity: seed % 4 === 0 ? "heavy" : seed % 4 === 1 ? "moderate" : seed % 4 === 2 ? "light" : "very dense",
-      pistilColor: seed % 6 === 0 ? "orange" : seed % 6 === 1 ? "amber" : seed % 6 === 2 ? "white" : seed % 6 === 3 ? "pink" : "mixed",
-    },
-    uncertaintySignals: seed % 7 === 0 ? {
-      conflictingTraits: ["Leaf structure suggests different lineage", "Trichome density unusual for reported type"]
-    } : undefined,
+    imageCount,
+    anglesInferred,
   };
 }
 
-export async function runWikiEngine(imageFile: File): Promise<WikiResult> {
+export async function runWikiEngine(imageFile: File, imageCount: number = 1): Promise<WikiResult> {
   // Generate hash with variation from file metadata + timestamp
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 10000);
   const imageSeed = `${imageFile.name}-${imageFile.size}-${imageFile.lastModified}-${timestamp}-${random}`;
-  const context = buildScanContext(imageSeed);
+  const context = buildScanContext(imageSeed, imageCount);
   return buildWikiResult({ imageSeed, context });
 }
 
 export async function analyzeWithWiki(input: {
   image: File | null;
+  imageCount?: number;
 }): Promise<WikiResult> {
   // Generate deterministic hash from file metadata
   const imageSeed = input.image
     ? `${input.image.name}-${input.image.size}-${input.image.lastModified}`
     : `default-${Date.now()}`;
-  const context = buildScanContext(imageSeed);
+  const context = buildScanContext(imageSeed, input.imageCount || 1);
   return buildWikiResult({ imageSeed, context });
 }
 
@@ -70,7 +58,7 @@ export function buildWikiResult(input: {
   seed = seed % 1000; // Normalize to 0-999 range
 
   // Build context if not provided
-  const context = input.context || buildScanContext(input.imageSeed);
+  const context = input.context || buildScanContext(input.imageSeed, 1);
 
   // 🔒 B.1.4 — Ensure variance: use seed variations for different calculations
   const seed2 = (seed * 1.7) % 1000;
@@ -109,7 +97,8 @@ export function buildWikiResult(input: {
   const dominanceIndex = Math.floor((seed * 1.3) % dominanceOptions.length);
 
   // Conditional branches based on context (B.1.4)
-  const hasUncertainty = context.uncertaintySignals !== undefined;
+  // Multiple images or inferred angles may reduce confidence slightly
+  const hasUncertainty = context.anglesInferred || context.imageCount > 1;
   const confidenceAdjustment = hasUncertainty ? -5 : 0;
   const finalConfidence = Math.max(65, confidence + confidenceAdjustment);
 
@@ -235,10 +224,11 @@ export function buildWikiResult(input: {
     ? "Visual characteristics strongly align with documented specimens of this cultivar."
     : undefined;
 
-  // Conflicting signals for reasoning
-  const conflictingSignals = hasUncertainty && context.uncertaintySignals?.conflictingTraits
-    ? context.uncertaintySignals.conflictingTraits
-    : undefined;
+  // Conflicting signals for reasoning (generated deterministically from seed)
+  const conflictingSignals = seed % 7 === 0 ? [
+    "Leaf structure suggests different lineage",
+    "Trichome density unusual for reported type"
+  ] : undefined;
 
   return {
     identity: {

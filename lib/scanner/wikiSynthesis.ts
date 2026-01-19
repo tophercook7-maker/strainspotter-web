@@ -49,15 +49,8 @@ export function synthesizeWikiInsights(wiki: WikiResult, context?: ScanContext):
   // Phase 2.2: Cultivar matching engine (run early to get closestCultivarName)
   // Build context from wiki if not provided
   const scanContext: ScanContext = context || {
-    imageQuality: {
-      focus: "moderate",
-      noise: "moderate",
-      lighting: "good",
-    },
-    detectedFeatures: {},
-    uncertaintySignals: hasUncertainty ? {
-      conflictingTraits: safeConflictingSignals,
-    } : undefined,
+    imageCount: 1,
+    anglesInferred: false,
   };
 
   // Match cultivars and get ranked results

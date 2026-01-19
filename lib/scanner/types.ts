@@ -20,20 +20,9 @@ export interface ScannerResult {
 }
 
 // 🔒 B.1.2 — ScanContext (foundation layer for image-dependent intelligence)
-export interface ScanContext {
-  imageQuality: {
-    focus: "sharp" | "moderate" | "blurry"
-    noise: "low" | "moderate" | "high"
-    lighting: "good" | "dim" | "harsh"
-  }
-  detectedFeatures: {
-    leafShape?: string
-    trichomeDensity?: string
-    pistilColor?: string
-  }
-  uncertaintySignals?: {
-    conflictingTraits?: string[]
-  }
+export type ScanContext = {
+  imageCount: number
+  anglesInferred: boolean
 }
 
 // 🔒 B.1.3 — WIKI RESULT CONTRACT (expanded structure)

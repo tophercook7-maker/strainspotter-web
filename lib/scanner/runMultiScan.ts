@@ -42,29 +42,13 @@ async function runScanPipeline(input: ScanPipelineInput): Promise<ScanResult> {
     configurable: false,
   });
 
-  const wiki = await runWikiEngine(syntheticFile);
+  const wiki = await runWikiEngine(syntheticFile, input.imageCount);
   const viewModel = wikiToViewModel(wiki);
 
   // Generate context for cultivar matching and synthesis
   const context: ScanContext = {
-    imageQuality: {
-      focus: "moderate",
-      noise: "moderate",
-      lighting: "good",
-    },
-    detectedFeatures: {
-      leafShape: wiki.morphology.visualTraits?.find(t => {
-        const lower = t.toLowerCase();
-        return lower.includes("leaf") || lower.includes("broad") || lower.includes("narrow");
-      }) || undefined,
-      trichomeDensity: wiki.morphology.trichomes,
-      pistilColor: wiki.morphology.coloration.includes("pistil") 
-        ? wiki.morphology.coloration 
-        : undefined,
-    },
-    uncertaintySignals: wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0
-      ? { conflictingTraits: wiki.reasoning.conflictingSignals }
-      : undefined,
+    imageCount: input.imageCount,
+    anglesInferred: input.imageCount > 1,
   };
 
   // Generate synthesis

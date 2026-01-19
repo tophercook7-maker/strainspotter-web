@@ -61,15 +61,9 @@ function extractTrichomeDensity(wiki: WikiResult): "low" | "medium" | "high" {
 }
 
 /**
- * Extract leaf shape from context or infer from genetics
+ * Extract leaf shape from wiki (infer from genetics)
  */
-function extractLeafShape(wiki: WikiResult, context: ScanContext): "narrow" | "broad" {
-  if (context.detectedFeatures?.leafShape) {
-    const shape = context.detectedFeatures.leafShape.toLowerCase();
-    if (shape.includes("narrow") || shape.includes("thin")) return "narrow";
-    if (shape.includes("broad") || shape.includes("wide")) return "broad";
-  }
-  
+function extractLeafShape(wiki: WikiResult): "narrow" | "broad" {
   // Infer from genetics
   const dominance = wiki.genetics.dominance.toLowerCase();
   if (dominance.includes("indica")) return "broad";
@@ -104,7 +98,7 @@ export function matchCultivars(
   // Extract wiki morphology
   const wikiBudDensity = extractBudDensity(wiki);
   const wikiTrichomeDensity = extractTrichomeDensity(wiki);
-  const wikiLeafShape = extractLeafShape(wiki, context);
+  const wikiLeafShape = extractLeafShape(wiki);
   const wikiPistilColors = extractPistilColors(wiki);
   const wikiEffects = (wiki.experience.primaryEffects || wiki.experience.effects).map(e => e.toLowerCase());
 
