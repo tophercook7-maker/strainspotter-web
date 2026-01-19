@@ -94,50 +94,53 @@ export interface WikiResult {
   disclaimer: string
 }
 
-// 🔒 Phase 2.1 RESET — IdentificationReport (strict structured identification)
+// 🔒 Phase 2.2 — IdentificationReport (authoritative naming)
 export interface IdentificationReport {
-  // PRIMARY OUTPUT: The cultivar name
-  primaryCultivar: {
+  // PRIMARY OUTPUT: The cultivar name with confidence range
+  primaryMatch: {
     name: string;
-    matchStrength: "Very Strong" | "Strong" | "Moderate";
-    confidenceRationale: string[]; // Why this name was chosen
+    confidenceRange: string; // e.g. "72-84%"
+    whyItWon: string[]; // Bullet-point reasons why this name was chosen
   };
   
   // Ranked alternates (from cultivarMatcher)
-  rankedAlternates: Array<{
+  alternateMatches: Array<{
     name: string;
-    score: number; // Internal only, 0-70
+    confidenceRange: string; // e.g. "60-72%"
     reasons: string[];
   }>;
   
-  // Visual evidence supporting the identification
+  // Visual evidence (bullet-point factual traits)
   visualEvidence: {
     budStructure: string;
     trichomeDensity: string;
     pistilColor: string;
     coloration: string;
+    leafShape?: string;
     matchingTraits: string[]; // Which traits matched the primary cultivar
   };
   
-  // Clear limitations
+  // Known profile (genetics, effects, terpenes)
+  knownProfile: {
+    genetics: {
+      dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
+      lineage: string[];
+    };
+    effects: {
+      primary: string[];
+      secondary: string[];
+    };
+    terpenes: {
+      likely: string[];
+      inferred: string[];
+    };
+  };
+  
+  // Clear limitations (professional, factual)
   limitations: {
     uncertaintyFactors: string[];
     whyExactIDIsHard: string;
     disclaimer: string;
-  };
-  
-  // Additional structured data (optional, for future use)
-  genetics?: {
-    dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
-    lineage: string[];
-  };
-  effects?: {
-    primary: string[];
-    secondary: string[];
-  };
-  terpenes?: {
-    likely: string[];
-    inferred: string[];
   };
 }
 

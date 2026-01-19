@@ -64,20 +64,25 @@ export default function ScannerPage() {
           noise: "moderate",
           lighting: "good",
         },
-        detectedFeatures: {},
+        detectedFeatures: {
+          leafShape: wiki.morphology.visualTraits?.find(t => t.toLowerCase().includes("leaf") || t.toLowerCase().includes("broad") || t.toLowerCase().includes("narrow")) || undefined,
+          trichomeDensity: wiki.morphology.trichomes,
+          pistilColor: wiki.morphology.coloration.includes("pistil") ? wiki.morphology.coloration : undefined,
+        },
         uncertaintySignals: wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0
           ? { conflictingTraits: wiki.reasoning.conflictingSignals }
           : undefined,
       };
 
-      // Generate strict IdentificationReport (primary output)
+      // Generate strict IdentificationReport (PRIMARY OUTPUT - no prose)
       const report = generateIdentificationReport(wiki, context);
       setIdentificationReport(report);
-      console.log("Identification Report:", report);
+      console.log("=== IDENTIFICATION REPORT ===");
+      console.log(JSON.stringify(report, null, 2));
 
-      // Keep WikiSynthesis for backward compatibility
-      const wikiSynthesis = synthesizeWikiInsights(wiki, context);
-      setSynthesis(wikiSynthesis);
+      // REMOVED: Prose-based synthesis from main flow
+      // WikiSynthesis kept only for backward compatibility if needed
+      setSynthesis(null);
     } finally {
       setIsScanning(false);
     }

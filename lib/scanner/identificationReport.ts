@@ -6,7 +6,7 @@ import { matchCultivars, type CultivarMatch } from "./cultivarMatcher";
 
 /**
  * Generate strict IdentificationReport from WikiResult
- * NAME is the primary output
+ * NAME is the primary output - authoritative naming with ranked alternatives
  */
 export function generateIdentificationReport(
   wiki: WikiResult,
@@ -16,29 +16,18 @@ export function generateIdentificationReport(
   const matches = matchCultivars(wiki, context);
   console.log("Ranked cultivar matches:", matches);
 
-  // Select primary cultivar (top match if score >= 30, otherwise fallback)
+  // Select primary match (top match if score >= 30, otherwise fallback)
   const topMatch = matches.length > 0 && matches[0].score >= 30 ? matches[0] : null;
   
-  const primaryCultivarName = topMatch
+  const primaryName = topMatch
     ? topMatch.name
     : "Phenotype-Closest Hybrid";
 
-  // Determine match strength from score
-  let matchStrength: "Very Strong" | "Strong" | "Moderate";
-  if (topMatch) {
-    if (topMatch.score >= 50) {
-      matchStrength = "Very Strong";
-    } else if (topMatch.score >= 35) {
-      matchStrength = "Strong";
-    } else {
-      matchStrength = "Moderate";
-    }
-  } else {
-    matchStrength = "Moderate";
-  }
+  const primaryConfidenceRange = topMatch
+    ? topMatch.confidenceRange
+    : "30-45%";
 
-  // Confidence rationale (why this name was chosen)
-  const confidenceRationale = topMatch
+  const whyItWon = topMatch
     ? topMatch.reasons
     : [
         "Visual characteristics suggest a hybrid phenotype",
@@ -46,15 +35,28 @@ export function generateIdentificationReport(
         "Multiple cultivars share similar morphological traits",
       ];
 
-  // Ranked alternates (exclude primary if it's in the list)
-  const rankedAlternates = matches
-    .filter(m => m.name !== primaryCultivarName)
+  // Ranked alternates (at least 2, exclude primary if it's in the list)
+  const alternateMatches = matches
+    .filter(m => m.name !== primaryName)
     .slice(0, 4) // Top 4 alternates
     .map(m => ({
       name: m.name,
-      score: m.score,
+      confidenceRange: m.confidenceRange,
       reasons: m.reasons,
     }));
+
+  // Ensure at least 2 alternates (if we have matches)
+  if (alternateMatches.length < 2 && matches.length >= 2) {
+    // Include the second match even if it's the primary (for fallback cases)
+    const secondMatch = matches[1];
+    if (secondMatch && !alternateMatches.some(a => a.name === secondMatch.name)) {
+      alternateMatches.push({
+        name: secondMatch.name,
+        confidenceRange: secondMatch.confidenceRange,
+        reasons: secondMatch.reasons,
+      });
+    }
+  }
 
   // Visual evidence
   const matchingTraits: string[] = [];
@@ -81,6 +83,9 @@ export function generateIdentificationReport(
     : wiki.morphology.coloration.includes("white")
     ? "White"
     : "Mixed";
+
+  // Extract leaf shape from context if available
+  const leafShape = context.detectedFeatures?.leafShape || undefined;
 
   // Limitations
   const hasUncertainty = wiki.reasoning?.conflictingSignals && wiki.reasoning.conflictingSignals.length > 0;
@@ -109,35 +114,38 @@ export function generateIdentificationReport(
   const disclaimer = "This identification is based on visual similarity to reference materials and should not be considered a genetic confirmation. Laboratory testing provides definitive identification.";
 
   return {
-    primaryCultivar: {
-      name: primaryCultivarName,
-      matchStrength,
-      confidenceRationale,
+    primaryMatch: {
+      name: primaryName,
+      confidenceRange: primaryConfidenceRange,
+      whyItWon,
     },
-    rankedAlternates,
+    alternateMatches,
     visualEvidence: {
       budStructure: wiki.morphology.budStructure,
       trichomeDensity: wiki.morphology.trichomes,
       pistilColor,
       coloration: wiki.morphology.coloration,
+      leafShape,
       matchingTraits,
+    },
+    knownProfile: {
+      genetics: {
+        dominance: wiki.genetics.dominance,
+        lineage: wiki.genetics.lineage,
+      },
+      effects: {
+        primary: wiki.experience.primaryEffects || wiki.experience.effects.slice(0, 3),
+        secondary: wiki.experience.secondaryEffects || wiki.experience.effects.slice(3, 6) || [],
+      },
+      terpenes: {
+        likely: wiki.chemistry.terpenes.slice(0, 3).map(t => t.name),
+        inferred: wiki.chemistry.likelyTerpenes?.map(t => t.name) || [],
+      },
     },
     limitations: {
       uncertaintyFactors,
       whyExactIDIsHard,
       disclaimer,
-    },
-    genetics: {
-      dominance: wiki.genetics.dominance,
-      lineage: wiki.genetics.lineage,
-    },
-    effects: {
-      primary: wiki.experience.primaryEffects || wiki.experience.effects.slice(0, 3),
-      secondary: wiki.experience.secondaryEffects || wiki.experience.effects.slice(3, 6) || [],
-    },
-    terpenes: {
-      likely: wiki.chemistry.terpenes.slice(0, 3).map(t => t.name),
-      inferred: wiki.chemistry.likelyTerpenes?.map(t => t.name) || [],
     },
   };
 }
