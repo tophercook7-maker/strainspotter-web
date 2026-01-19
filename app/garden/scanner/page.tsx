@@ -97,16 +97,15 @@ export default function ScannerPage() {
           )}
 
           {/* RUN SCAN BUTTON */}
-          <div className="w-full">
-            <button
-              type="button"
-              onClick={runScan}
-              disabled={!file || isScanning}
-              className="w-full h-12 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 font-bold text-lg shadow-lg active:scale-[0.99] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Run Scan
-            </button>
-          </div>
+          <button
+            onClick={runScan}
+            disabled={isScanning}
+            className="w-full py-4 text-lg font-semibold rounded-xl
+                       bg-green-600 hover:bg-green-500 active:scale-[0.98]
+                       transition-all shadow-lg"
+          >
+            {isScanning ? "Scanning…" : "Run Scan"}
+          </button>
         </div>
 
         {/* ResultPanel */}
