@@ -275,9 +275,8 @@ export function resolveStrainRatio(
   // Phase 4.8 Step 4.8.2 — LINEAGE INFERENCE (weight 25%)
   const lineageInference = inferRatioFromLineage(dbEntry);
 
-  // Phase 5.0 Step 5.0.2 — IMAGE-BASED PHENOTYPE ADJUSTMENT (weight 15%, cap ±12%)
-  // Phase 5.0 Step 5.0.3 — MULTI-IMAGE CONSENSUS: Pass imageResults for outlier discarding and close-up weighting
-  const morphologyAdjustment = calculateMorphologyAdjustment(fusedFeatures, imageResults);
+  // Phase 4.8 Step 4.8.3 — MORPHOLOGY ADJUSTMENT (weight 15%)
+  const morphologyAdjustment = calculateMorphologyAdjustment(fusedFeatures);
 
   // Phase 4.8 Step 4.8.4 — FINAL RATIO CALCULATION (Weighted combination)
   // Formula: (DB × 0.60) + (Lineage × 0.25) + (Image × 0.15)
@@ -416,9 +415,9 @@ export function resolveStrainRatio(
   return {
     indicaPercent: finalIndicaPercent,
     sativaPercent: finalSativaPercent,
-    // Phase 5.0 Step 5.0.4 — Include range if variance exists
-    indicaRange: indicaRange && indicaRange.max - indicaRange.min > 3 ? indicaRange : undefined,
-    sativaRange: sativaRange && sativaRange.max - sativaRange.min > 3 ? sativaRange : undefined,
+    // Phase 5.0 Step 5.0.4 — Include range if variance exists (currently disabled - user reverted Phase 5.0 multi-image logic)
+    indicaRange: undefined,
+    sativaRange: undefined,
     dominance,
     displayText,
     explanation: {
@@ -429,8 +428,7 @@ export function resolveStrainRatio(
       lineageInference: lineageInference?.inference,
       morphologyAdjustment: morphologyAdjustment ? `${morphologyAdjustment.reasoning} (±${Math.abs(morphologyAdjustment.adjustment).toFixed(1)}%)` : undefined,
       confidenceLevel,
-      // Phase 5.0 Step 5.0.4 — Include variance range explanation
-      varianceRange,
+      varianceRange: undefined, // Phase 5.0 — Range explanation if variance exists (currently disabled)
     },
   };
 }
