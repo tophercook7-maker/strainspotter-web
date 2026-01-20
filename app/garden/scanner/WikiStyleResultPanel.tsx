@@ -173,6 +173,35 @@ export default function WikiStyleResultPanel({
           )}
         </div>
           
+          {/* Phase 4.7 Step 4.7.2 — CLOSELY RELATED VARIANTS (if ambiguous, collapsed) */}
+          {result.nameFirstDisplay.closelyRelatedVariants && 
+           result.nameFirstDisplay.closelyRelatedVariants.length > 0 && 
+           result.nameFirstDisplay.isAmbiguous && (
+            <CollapsibleSection
+              title={`Closely Related Variants (${result.nameFirstDisplay.closelyRelatedVariants.length} ${result.nameFirstDisplay.closelyRelatedVariants.length === 1 ? 'variant' : 'variants'})`}
+              defaultExpanded={false}
+              icon="🔗"
+            >
+              <div className="space-y-2 pt-2">
+                {result.nameFirstDisplay.closelyRelatedVariants.map((variant, idx) => (
+                  <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                    <p className="text-sm text-white/90 font-medium mb-1">
+                      {variant.name}
+                    </p>
+                    {variant.whyNotPrimary && (
+                      <p className="text-xs text-white/70 leading-relaxed">
+                        {variant.whyNotPrimary}
+                      </p>
+                    )}
+                  </div>
+                ))}
+                <p className="text-xs text-white/60 mt-3 italic">
+                  These variants share the same root name but may differ in phenotype or lineage. The primary match above was selected as the most likely canonical cultivar based on visual traits and database classification.
+                </p>
+              </div>
+            </CollapsibleSection>
+          )}
+
           {/* Phase 4.5 Step 4.5.2 — SECONDARY CANDIDATES (Optional, Collapsed if confidence < 92%) */}
           {result.nameFirstDisplay.alternateMatches && 
            result.nameFirstDisplay.alternateMatches.length > 0 && 

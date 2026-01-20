@@ -8,6 +8,8 @@ import { scoreNameCompetition } from "./nameCompetition";
 import { selectPrimaryName, generateNameExplanation } from "./nameFirstDisambiguation";
 // Phase 4.4 — Database Leverage (runs FIRST, before shortlist)
 import { leverageDatabaseFilter } from "./databaseFilter";
+// Phase 4.7 Step 4.7.2 — Variant Grouping for disambiguation
+import { groupVariants, selectMostLikelyCanonical, extractRootName } from "./variantGrouping";
 
 /**
  * Phase 4.3 Step 4.3.1 — Name-First Pipeline Result
@@ -32,18 +34,32 @@ export type NameFirstPipelineResult = {
     whatRuledOutOthers: string[];
     varianceNotes: string[];
   };
+  // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
+  closelyRelatedVariants?: Array<{
+    name: string;
+    canonicalName: string;
+    whyNotPrimary: string;
+  }>; // 2–3 variants if ambiguous (collapsed)
+  isAmbiguous?: boolean; // If multiple variants could be correct
 };
 
 /**
  * Phase 4.3 Step 4.3.1 — Name-First Pipeline
+ * Phase 4.7 Step 4.7.1 — NAME-FIRST MATCHING PIPELINE ORDER (LOCKED)
  * 
- * CHANGED FLOW TO:
- * 1. Candidate Name Resolution (TOP)
- * 2. Confidence Assignment
- * 3. Evidence & Explanation
- * 4. Deep Wiki Report (Phase 4.2)
+ * PIPELINE ORDER (LOCK THIS):
+ * 1. IMAGE → visual trait extraction ✓ (done in analyzePerImageV3)
+ * 2. VISUAL TRAITS → candidate strain shortlist (top 10–20) ✓ (buildStrainShortlist)
+ * 3. DATABASE FILTER → remove impossible matches ✓ (leverageDatabaseFilter)
+ * 4. NAME RESOLUTION → pick BEST NAME FIRST ✓ (this function)
+ * 5. THEN build:
+ *    - confidence %
+ *    - ratio
+ *    - wiki depth
+ *    - AI synthesis
  * 
  * RULE:
+ * - UI NEVER shows "analysis" without a NAME.
  * - UI MUST show a strain name immediately once resolved
  * - Everything else supports or challenges that name
  */
@@ -134,6 +150,45 @@ export function runNameFirstPipeline(
     console.log("Phase 4.4 — SHORTLIST AFTER DATABASE MERGE:", shortlist.slice(0, 5));
   }
 
+  // Phase 4.7 Step 4.7.2 — DISAMBIGUATION LOGIC: Group variants after database merge
+  // Group similar strain names (e.g., "Blue Dream", "Blue Dream #1", "Blue Dream Haze")
+  const variantGroups = groupVariants(shortlist);
+  console.log("Phase 4.7 Step 4.7.2 — Variant Groups:", variantGroups.slice(0, 5));
+  
+  // Phase 4.7 Step 4.7.2 — Select most likely canonical name from variant groups
+  const variantSelection = selectMostLikelyCanonical(variantGroups, fusedFeatures);
+  console.log("Phase 4.7 Step 4.7.2 — Variant Selection:", variantSelection);
+  
+  // Phase 4.7 Step 4.7.2 — Boost canonical name if it matches variant selection
+  if (variantSelection.canonicalName) {
+    shortlist = shortlist.map(entry => {
+      const entryRoot = extractRootName(entry.name);
+      const variantRoot = extractRootName(variantSelection.primaryName);
+      if (entryRoot.toLowerCase() === variantRoot.toLowerCase() &&
+          entry.canonicalName.toLowerCase() === variantSelection.canonicalName.toLowerCase()) {
+        // Boost canonical name by 10% (prefer canonical over variants)
+        console.log(`Phase 4.7 Step 4.7.2 — BOOSTING canonical variant "${entry.canonicalName}" (+10%)`);
+        return {
+          ...entry,
+          avgConfidence: Math.min(100, entry.avgConfidence + 10),
+          maxConfidence: Math.min(100, entry.maxConfidence + 10),
+        };
+      }
+      return entry;
+    });
+    
+    // Re-sort after boosting
+    shortlist.sort((a, b) => {
+      if (b.avgConfidence !== a.avgConfidence) {
+        return b.avgConfidence - a.avgConfidence;
+      }
+      return b.appearancesAcrossImages - a.appearancesAcrossImages;
+    });
+    
+    console.log("Phase 4.7 Step 4.7.2 — SHORTLIST AFTER VARIANT BOOST:", shortlist.slice(0, 5));
+  }
+
+  // Phase 4.7 Step 4.7.1 — STEP 4: NAME RESOLUTION (picks BEST NAME FIRST)
   // Phase 4.3 Step 4.3.3 — Disambiguation Logic (via scoring)
   const scoredResults = scoreNameCompetition(shortlist, fusedFeatures);
   console.log("Phase 4.3 Step 4.3.3 — Scored Results:", scoredResults);
@@ -141,9 +196,34 @@ export function runNameFirstPipeline(
   // Phase 4.3 Step 4.3.4 — Final Name Selection
   const selection = selectPrimaryName(scoredResults, imageCount);
   console.log("Phase 4.3 Step 4.3.4 — Selection:", selection);
+  
+  // Phase 4.7 Step 4.7.2 — If variant selection found a canonical name, prefer it if it matches
+  if (variantSelection.canonicalName && 
+      variantSelection.primaryName !== selection.primaryStrainName &&
+      shortlist.some(s => s.canonicalName.toLowerCase() === variantSelection.canonicalName.toLowerCase())) {
+    // Check if canonical variant has similar score to primary selection
+    const canonicalEntry = shortlist.find(s => s.canonicalName.toLowerCase() === variantSelection.canonicalName.toLowerCase());
+    const primaryEntry = shortlist.find(s => s.canonicalName.toLowerCase() === selection.primaryStrainName.toLowerCase());
+    
+    if (canonicalEntry && primaryEntry) {
+      const scoreDiff = Math.abs(canonicalEntry.avgConfidence - primaryEntry.avgConfidence);
+      // If canonical variant is within 5% of primary, prefer canonical
+      if (scoreDiff <= 5) {
+        console.log(`Phase 4.7 Step 4.7.2 — PREFERRING CANONICAL VARIANT "${variantSelection.primaryName}" over "${selection.primaryStrainName}" (score diff: ${scoreDiff}%)`);
+        selection.primaryStrainName = variantSelection.primaryName;
+      }
+    }
+  }
 
-  // Phase 4.3 Step 4.3.5 — Apply Confidence Cap Rules
-  // Phase 4.4 Step 4.4.6 — Failsafe: Never go below 55% if we have a match
+  // Phase 4.7 Step 4.7.3 — CONFIDENCE GOVERNOR (ANTI-BULLSH*T)
+  // Rules:
+  // - Single image → cap 82%
+  // - 2 images → cap 90%
+  // - 3+ images → cap 97–99%
+  // - NEVER show 100%
+  // If multiple strains fight for top:
+  // - Confidence drops automatically
+  // - Variance explanation REQUIRED
   let nameConfidencePercent = Math.max(55, selection.nameConfidencePercent); // Floor at 55% if match exists
   
   if (imageCount === 1) {
@@ -151,7 +231,7 @@ export function runNameFirstPipeline(
   } else if (imageCount === 2) {
     nameConfidencePercent = Math.min(90, nameConfidencePercent);
   } else if (imageCount === 3) {
-    nameConfidencePercent = Math.min(95, nameConfidencePercent);
+    nameConfidencePercent = Math.min(95, nameConfidencePercent); // Phase 4.7: Cap at 95% for 3 images (not 97%)
   } else if (imageCount >= 4) {
     nameConfidencePercent = Math.min(99, nameConfidencePercent); // Never 100%
   }
@@ -177,6 +257,23 @@ export function runNameFirstPipeline(
     nameConfidencePercent,
     nameConfidenceTier,
   }, imageCount);
+
+  // Phase 4.7 Step 4.7.3 — If multiple strains fight for top, confidence drops automatically
+  const scoreGap = scoredResults.length > 1 
+    ? scoredResults[0].totalScore - scoredResults[1].totalScore
+    : 100; // Large gap if only one candidate
+  
+  if (scoreGap < 15 && scoredResults.length > 1) {
+    // Phase 4.7 Step 4.7.3 — Multiple strains close in score, reduce confidence
+    const reduction = Math.min(10, 15 - scoreGap); // Reduce by up to 10% based on gap
+    nameConfidencePercent = Math.max(55, nameConfidencePercent - reduction);
+    console.log(`Phase 4.7 Step 4.7.3 — CONFIDENCE GOVERNOR: Multiple strains close (gap: ${scoreGap.toFixed(0)}), reducing confidence by ${reduction}%`);
+    
+    // Phase 4.7 Step 4.7.3 — Variance explanation REQUIRED
+    explanation.varianceNotes.push(
+      `Multiple similar strains were close in score (within ${scoreGap.toFixed(0)} points). Confidence reduced to reflect ambiguity.`
+    );
+  }
 
   // Phase 4.4 Step 4.4.6 — FAILSAFE: Add uncertainty explanation if confidence is low
   if (nameConfidencePercent < 70 && databaseResult.closestMatch) {

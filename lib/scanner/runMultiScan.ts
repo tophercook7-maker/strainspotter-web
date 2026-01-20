@@ -442,6 +442,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         displayText: strainRatio.displayText,
         explanation: ratioExplanation,
       },
+      // Phase 4.7 Step 4.7.2 — Include closely related variants if ambiguous
+      closelyRelatedVariants: nameFirstPipelineResult.closelyRelatedVariants,
+      isAmbiguous: nameFirstPipelineResult.isAmbiguous,
     };
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
     console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);

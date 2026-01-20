@@ -155,6 +155,13 @@ export interface ScannerViewModel {
         fullExplanation: string[]; // Bullets for expanded section
       };
     };
+    // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
+    closelyRelatedVariants?: Array<{
+      name: string;
+      canonicalName: string;
+      whyNotPrimary: string;
+    }>; // 2–3 variants if ambiguous (collapsed)
+    isAmbiguous?: boolean; // If multiple variants could be correct
   };
   
   // Phase 3.8 Part D — Why This Name (Enhanced)
