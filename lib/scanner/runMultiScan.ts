@@ -629,7 +629,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
 
                 // Phase 5.6.5 — Convert Phase 5.6 result to Phase 4.6 format for backward compatibility
                 // Use Phase 5.6 result (preferred) or fallback to Phase 5.2
-                const usePhase56ForRatio = strainRatioV56 && strainRatioV56.confidence !== "low";
+                // Note: usePhase56ForRatio is already defined earlier (line 472)
                 
                 const ratioExplanation = usePhase56ForRatio ? {
                   summary: `Ratio determined using database baseline + visual modifiers + terpene/effect cross-check + multi-image consensus (${strainRatioV56.confidence} confidence)`,
