@@ -219,6 +219,31 @@ export interface ScannerViewModel {
       explanation: string[];
       source: string;
     };
+    // Phase 7.6 — EFFECT PROFILE & USE-CASE ENGINE
+    effectProfileUseCase?: {
+      primaryEffects: Array<{
+        name: string;
+        category: "primary" | "secondary";
+        intensity: "high" | "medium" | "low";
+        reasoning: string[];
+      }>;
+      secondaryEffects: Array<{
+        name: string;
+        category: "primary" | "secondary";
+        intensity: "high" | "medium" | "low";
+        reasoning: string[];
+      }>;
+      useCases: Array<{
+        title: string;
+        description: string;
+        reasoning: string[];
+      }>;
+      varianceDisclosure: string[];
+      explanation: string[];
+      confidence: "very_high" | "high" | "medium" | "low";
+      confidenceLabel: string;
+      source: string;
+    };
     // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
     closelyRelatedVariants?: Array<{
       name: string;

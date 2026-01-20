@@ -901,6 +901,38 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       candidateStrains.length > 0 ? candidateStrains : undefined
                     );
                   })(),
+                  // Phase 7.6 — EFFECT PROFILE & USE-CASE ENGINE
+                  effectProfileUseCase: (() => {
+                    const { generateEffectProfileUseCaseV76 } = require("./effectProfileUseCaseV76");
+                    const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(a => ({
+                      name: a.name,
+                      confidence: a.score,
+                    })) || [];
+                    const terpeneProfileForEffects = terpeneExperienceResult.terpeneProfile.primaryTerpenes
+                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood for effect engine
+                    const ratioForEffects = usePhase75ForRatio ? {
+                      indicaPercent: strainRatioV75.indicaPercent,
+                      sativaPercent: strainRatioV75.sativaPercent,
+                    } : usePhase73ForRatio ? {
+                      indicaPercent: strainRatioV73.indicaPercent,
+                      sativaPercent: strainRatioV73.sativaPercent,
+                    } : usePhase71ForRatio ? {
+                      indicaPercent: strainRatioV71.indicaPercent,
+                      sativaPercent: strainRatioV71.sativaPercent,
+                    } : undefined;
+                    return generateEffectProfileUseCaseV76(
+                      nameFirstPipelineResult.primaryStrainName,
+                      dbEntry,
+                      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                      input.imageCount,
+                      fusedFeatures,
+                      terpeneProfileForEffects.length > 0 ? terpeneProfileForEffects : undefined,
+                      candidateStrains.length > 0 ? candidateStrains : undefined,
+                      ratioForEffects?.indicaPercent,
+                      ratioForEffects?.sativaPercent
+                    );
+                  })(),
                 };
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
     console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
