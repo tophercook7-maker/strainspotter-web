@@ -36,6 +36,8 @@ import { generatePerImageFindings, generateConsensusAlignment } from "./perImage
 import { assignUserImageLabels } from "./imageLabels";
 // Phase 4.2 — Extensive Wiki-Style Report
 import { generateWikiReport } from "./wikiReport";
+// Phase 4.6 — Indica/Sativa/Hybrid Ratio Engine
+import { resolveStrainRatio, generateRatioExplanation } from "./ratioEngine";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -399,7 +401,26 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // Phase 4.3 Step 4.3.6 — Add Name-First Display (TOP PRIORITY)
   // Phase 4.5 Step 4.5.1 — Include explanation for "Why this strain?" section
+  // Phase 4.6 Step 4.6.2 — Include Indica/Sativa/Hybrid Ratio (FREE TIER)
   if (nameFirstPipelineResult) {
+    // Phase 4.6 Step 4.6.2 — Resolve ratio from database
+    const strainRatio = resolveStrainRatio(
+      lockedStrainName,
+      dbEntry,
+      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+      input.imageCount
+    );
+    console.log("Phase 4.6 Step 4.6.2 — STRAIN RATIO RESOLVED:", strainRatio);
+
+    // Phase 4.6 Step 4.6.4 — Generate ratio explanation
+    // Note: wikiReport is generated later, so we pass undefined for now (will use dbEntry genetics)
+    const ratioExplanation = generateRatioExplanation(
+      strainRatio,
+      dbEntry,
+      undefined // wikiReport generated later, will be available in UI
+    );
+    console.log("Phase 4.6 Step 4.6.4 — RATIO EXPLANATION:", ratioExplanation);
+
     viewModel.nameFirstDisplay = {
       primaryStrainName: nameFirstPipelineResult.primaryStrainName,
       confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
@@ -413,9 +434,18 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         : undefined,
       // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
       explanation: nameFirstPipelineResult.explanation,
+      // Phase 4.6 Step 4.6.2 — Include ratio (FREE TIER)
+      ratio: {
+        indicaPercent: strainRatio.indicaPercent,
+        sativaPercent: strainRatio.sativaPercent,
+        dominance: strainRatio.dominance,
+        displayText: strainRatio.displayText,
+        explanation: ratioExplanation,
+      },
     };
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
     console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
+    console.log("Phase 4.6 Step 4.6.2 — RATIO INCLUDED (FREE TIER):", viewModel.nameFirstDisplay.ratio);
   }
   
   // Phase 3.4 Part C — Add multi-image info to view model

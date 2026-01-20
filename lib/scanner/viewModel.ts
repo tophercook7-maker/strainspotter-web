@@ -128,6 +128,7 @@ export interface ScannerViewModel {
   // Phase 4.3 Step 4.3.6 — Name-First Display
   // Phase 4.5 Step 4.5.1 — Name Lock Header
   // Phase 4.5 Step 4.5.3 — Why This Strain (FREE TIER)
+  // Phase 4.6 — Indica/Sativa/Hybrid Ratio Engine
   nameFirstDisplay?: {
     primaryStrainName: string;
     confidencePercent: number;
@@ -142,6 +143,17 @@ export interface ScannerViewModel {
       whyThisNameWon: string[]; // 3-5 bullets: Visual markers, database frequency, lineage, terpenes
       whatRuledOutOthers: string[]; // Why other candidates didn't win
       varianceNotes: string[]; // Phenotype variance explanation
+    };
+    // Phase 4.6 Step 4.6.2 — Indica/Sativa/Hybrid Ratio (FREE TIER)
+    ratio?: {
+      indicaPercent: number; // 0-100
+      sativaPercent: number; // 0-100
+      dominance: "Indica" | "Sativa" | "Hybrid" | "Balanced";
+      displayText: string; // "Indica 70% · Sativa 30%" or "Balanced Hybrid (50 / 50)"
+      explanation: {
+        summary: string; // Short summary for collapsed header
+        fullExplanation: string[]; // Bullets for expanded section
+      };
     };
   };
   

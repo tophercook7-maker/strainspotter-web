@@ -93,11 +93,85 @@ export default function WikiStyleResultPanel({
                 <span className="ml-2 opacity-80">({result.nameFirstDisplay.confidencePercent}%)</span>
               )}
             </span>
-            {/* Phase 4.5 Step 4.5.1 — Subtext Tagline */}
-            <p className="text-sm text-white/70 italic">
-              {result.nameFirstDisplay.tagline}
-            </p>
-          </div>
+          {/* Phase 4.5 Step 4.5.1 — Subtext Tagline */}
+          <p className="text-sm text-white/70 italic">
+            {result.nameFirstDisplay.tagline}
+          </p>
+
+          {/* Phase 4.6 Step 4.6.3 — INDICA/SATIVA/HYBRID RATIO (Directly under strain name) */}
+          {result.nameFirstDisplay.ratio && (
+            <div className="flex flex-col items-center gap-2 pt-2">
+              {/* Phase 4.6 Step 4.6.3 — Slim pill bar with two-tone gradient, centered, compact, elegant */}
+              {/* NO giant bars. NO screen-wide dividers. */}
+              <div className="relative w-full max-w-xs rounded-full overflow-hidden border border-white/10 bg-white/5">
+                {/* Two-tone gradient bar */}
+                <div className="flex h-8">
+                  {/* Indica portion (left) */}
+                  <div
+                    className="flex items-center justify-center text-xs font-semibold text-white transition-all"
+                    style={{
+                      width: `${result.nameFirstDisplay.ratio.indicaPercent}%`,
+                      background: result.nameFirstDisplay.ratio.indicaPercent > result.nameFirstDisplay.ratio.sativaPercent
+                        ? "linear-gradient(135deg, rgba(139, 92, 246, 0.6) 0%, rgba(79, 70, 229, 0.5) 100%)"
+                        : result.nameFirstDisplay.ratio.indicaPercent === 50
+                        ? "linear-gradient(135deg, rgba(139, 92, 246, 0.5) 0%, rgba(79, 70, 229, 0.4) 100%)"
+                        : "linear-gradient(135deg, rgba(139, 92, 246, 0.4) 0%, rgba(79, 70, 229, 0.3) 100%)",
+                    }}
+                  >
+                    {result.nameFirstDisplay.ratio.indicaPercent >= 30 && result.nameFirstDisplay.ratio.dominance !== "Balanced" && (
+                      <span className="px-2">Indica {result.nameFirstDisplay.ratio.indicaPercent}%</span>
+                    )}
+                    {result.nameFirstDisplay.ratio.dominance === "Balanced" && (
+                      <span className="px-2 text-white/90">50%</span>
+                    )}
+                  </div>
+                  {/* Sativa portion (right) */}
+                  <div
+                    className="flex items-center justify-center text-xs font-semibold text-white transition-all"
+                    style={{
+                      width: `${result.nameFirstDisplay.ratio.sativaPercent}%`,
+                      background: result.nameFirstDisplay.ratio.sativaPercent > result.nameFirstDisplay.ratio.indicaPercent
+                        ? "linear-gradient(135deg, rgba(34, 197, 94, 0.6) 0%, rgba(22, 163, 74, 0.5) 100%)"
+                        : result.nameFirstDisplay.ratio.sativaPercent === 50
+                        ? "linear-gradient(135deg, rgba(34, 197, 94, 0.5) 0%, rgba(22, 163, 74, 0.4) 100%)"
+                        : "linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, rgba(22, 163, 74, 0.3) 100%)",
+                    }}
+                  >
+                    {result.nameFirstDisplay.ratio.sativaPercent >= 30 && result.nameFirstDisplay.ratio.dominance !== "Balanced" && (
+                      <span className="px-2">Sativa {result.nameFirstDisplay.ratio.sativaPercent}%</span>
+                    )}
+                    {result.nameFirstDisplay.ratio.dominance === "Balanced" && (
+                      <span className="px-2 text-white/90">50%</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Phase 4.6 Step 4.6.3 — Display text (centered, compact) */}
+              <p className="text-sm text-white/90 font-medium">
+                {result.nameFirstDisplay.ratio.displayText}
+              </p>
+
+              {/* Phase 4.6 Step 4.6.4 — EXPLANATION (Optional, Collapsed) */}
+              <CollapsibleSection
+                title="How this ratio was determined"
+                defaultExpanded={false}
+                icon="📊"
+              >
+                <div className="space-y-2 pt-2">
+                  <ul className="space-y-2">
+                    {result.nameFirstDisplay.ratio.explanation.fullExplanation.map((bullet, idx) => (
+                      <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
+                        <span className="text-purple-400 mr-2">•</span>
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </CollapsibleSection>
+            </div>
+          )}
+        </div>
           
           {/* Phase 4.5 Step 4.5.2 — SECONDARY CANDIDATES (Optional, Collapsed if confidence < 92%) */}
           {result.nameFirstDisplay.alternateMatches && 
