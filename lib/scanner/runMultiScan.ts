@@ -134,6 +134,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Phase 4.3 Step 4.3.1 — Run Name-First Pipeline (Initial pass)
     // Phase 5.3 — Enhanced with terpene and ratio cross-validation
     // Phase 5.5 — Name-First Matching & Strain Disambiguation (Enhanced)
+    // Phase 5.7 — Name-First Matching & Disambiguation Engine (Latest)
     // Note: Initial pass runs without terpene/ratio for speed
     // We'll re-run with validation after terpene/ratio are generated (Phase 5.3.3)
     if (imageResultsV3.length > 0 && imageResultsV3.length >= 1) {
@@ -468,48 +469,166 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED (fallback):", strainRatioV52);
 
-                // Phase 5.3 Step 5.3.3 — DATABASE CROSS-VALIDATION
-                // Re-run name-first pipeline with terpene profile and ratio for validation
-                // This ensures consistency: Same image set = same name (LOCK CONDITION)
+                // Phase 5.7 — NAME-FIRST MATCHING & DISAMBIGUATION ENGINE (Latest)
+                // Try Phase 5.7 first, fallback to Phase 5.5, then Phase 5.3
                 if (nameFirstPipelineResult && imageResultsV3.length > 0) {
-                  const { runNameFirstPipeline } = require("./nameFirstPipeline");
+                  const { runNameFirstV57 } = require("./nameFirstV57");
                   try {
-                    // Phase 5.3.3 — Re-run pipeline with terpene profile and ratio for cross-validation
-                    const validatedPipelineResult = runNameFirstPipeline(
+                    // Phase 5.7 — Run enhanced name-first engine with terpene profile and ratio
+                    const nameFirstV57Result = runNameFirstV57(
                       imageResultsV3,
                       fusedFeatures,
                       input.imageCount,
-                      terpeneExperienceResult.terpeneProfile, // Phase 5.3.3 — Terpene profile for validation
-                      strainRatioV52 // Phase 5.3.3 — Ratio for lineage validation
+                      terpeneExperienceResult.terpeneProfile,
+                      usePhase56ForRatio ? {
+                        indicaPercent: strainRatioV56.indicaPercent,
+                        sativaPercent: strainRatioV56.sativaPercent,
+                        dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
+                          : strainRatioV56.strainType.includes("Sativa") && !strainRatioV56.strainType.includes("Hybrid") ? "Sativa" 
+                          : strainRatioV56.strainType.includes("Balanced") ? "Balanced" 
+                          : "Hybrid",
+                        displayText: `${strainRatioV56.strainType}: ${strainRatioV56.estimatedRatio}`,
+                        confidence: strainRatioV56.confidence,
+                        explanation: {
+                          geneticBaseline: strainRatioV56.why[0] || "",
+                          source: "database_baseline",
+                        },
+                      } : strainRatioV52
                     );
-                    console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT:", validatedPipelineResult);
+                    console.log("Phase 5.7 — NAME FIRST V57 RESULT:", nameFirstV57Result);
                     
-                    // Phase 5.3.3 — Only update if validation didn't change the primary name (consistency guaranteed)
-                    // If validation found significant issues, use validated result
-                    if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
-                      console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
-                      nameFirstPipelineResult = validatedPipelineResult;
+                    // Phase 5.7 — Convert V57 result to pipeline format if confidence is high enough
+                    if (nameFirstV57Result.primaryMatch.confidence >= 60) {
+                      // Use Phase 5.7 result
+                      nameFirstPipelineResult = {
+                        primaryStrainName: nameFirstV57Result.primaryMatch.name,
+                        nameConfidencePercent: nameFirstV57Result.primaryMatch.confidence,
+                        nameConfidenceTier: nameFirstV57Result.primaryMatch.confidenceTier,
+                        alternateMatches: nameFirstV57Result.alternateMatches?.map(a => ({
+                          name: a.name,
+                          score: a.confidence,
+                          whyNotPrimary: a.whyNotPrimary,
+                        })) || [],
+                        explanation: {
+                          whyThisNameWon: nameFirstV57Result.explanation.why,
+                          whatRuledOutOthers: nameFirstV57Result.alternateMatches?.map(a => a.whyNotPrimary) || [],
+                          varianceNotes: [],
+                        },
+                      };
+                      console.log("Phase 5.7 — USING V57 RESULT (confidence >= 60%)");
                     } else {
-                      // Phase 5.3.3 — Update confidence if validation applied penalties
-                      if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
-                        console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
-                        nameFirstPipelineResult = validatedPipelineResult;
-                      } else {
-                        // Keep original but use validated explanation if it's better
-                        nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
+                      // Phase 5.7 — Fallback to Phase 5.5 or Phase 5.3
+                      console.log(`Phase 5.7 — V57 confidence too low (${nameFirstV57Result.primaryMatch.confidence}%), trying Phase 5.5...`);
+                      const { runNameFirstV55 } = require("./nameFirstV55");
+                      try {
+                        const nameFirstV55Result = runNameFirstV55(
+                          imageResultsV3,
+                          fusedFeatures,
+                          input.imageCount,
+                          terpeneExperienceResult.terpeneProfile,
+                          usePhase56 ? {
+                            indicaPercent: strainRatioV56.indicaPercent,
+                            sativaPercent: strainRatioV56.sativaPercent,
+                            dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
+                              : strainRatioV56.strainType.includes("Sativa") && !strainRatioV56.strainType.includes("Hybrid") ? "Sativa" 
+                              : strainRatioV56.strainType.includes("Balanced") ? "Balanced" 
+                              : "Hybrid",
+                            displayText: `${strainRatioV56.strainType}: ${strainRatioV56.estimatedRatio}`,
+                            confidence: strainRatioV56.confidence,
+                            explanation: {
+                              geneticBaseline: strainRatioV56.why[0] || "",
+                              source: "database_baseline",
+                            },
+                          } : strainRatioV52
+                        );
+                        
+                        if (nameFirstV55Result.primaryMatch && nameFirstV55Result.primaryMatch.confidence >= 60) {
+                          // Use Phase 5.5 result
+                          nameFirstPipelineResult = {
+                            primaryStrainName: nameFirstV55Result.primaryMatch.name,
+                            nameConfidencePercent: nameFirstV55Result.primaryMatch.confidence,
+                            nameConfidenceTier: nameFirstV55Result.primaryMatch.confidence >= 93 ? "very_high" 
+                              : nameFirstV55Result.primaryMatch.confidence >= 85 ? "high"
+                              : nameFirstV55Result.primaryMatch.confidence >= 70 ? "medium"
+                              : "low",
+                            alternateMatches: nameFirstV55Result.secondaryPossibility ? [{
+                              name: nameFirstV55Result.secondaryPossibility.name,
+                              score: nameFirstV55Result.secondaryPossibility.confidence,
+                              whyNotPrimary: "Lower confidence than primary match",
+                            }] : [],
+                            explanation: {
+                              whyThisNameWon: nameFirstV55Result.explanation.whyThisName,
+                              whatRuledOutOthers: nameFirstV55Result.explanation.whatRuledOutOthers,
+                              varianceNotes: [],
+                            },
+                          };
+                          console.log("Phase 5.5 — USING V55 RESULT (confidence >= 60%)");
+                        } else {
+                          // Phase 5.3.3 — Fallback to Phase 5.3 validation pipeline
+                          const { runNameFirstPipeline } = require("./nameFirstPipeline");
+                          const validatedPipelineResult = runNameFirstPipeline(
+                            imageResultsV3,
+                            fusedFeatures,
+                            input.imageCount,
+                            terpeneExperienceResult.terpeneProfile,
+                            strainRatioV52
+                          );
+                          console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT (fallback):", validatedPipelineResult);
+                          
+                          if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
+                            console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
+                            nameFirstPipelineResult = validatedPipelineResult;
+                          } else {
+                            if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
+                              console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
+                              nameFirstPipelineResult = validatedPipelineResult;
+                            } else {
+                              nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
+                            }
+                          }
+                        }
+                      } catch (error) {
+                        console.error("Phase 5.5 — V55 engine error:", error);
+                        // Continue with original result
                       }
                     }
                   } catch (error) {
-                    console.error("Phase 5.3.3 — Validation pipeline error:", error);
-                    // Continue with original result if validation fails
+                    console.error("Phase 5.7 — V57 engine error:", error);
+                    // Phase 5.3.3 — Fallback to Phase 5.3 validation pipeline
+                    const { runNameFirstPipeline } = require("./nameFirstPipeline");
+                    try {
+                      const validatedPipelineResult = runNameFirstPipeline(
+                        imageResultsV3,
+                        fusedFeatures,
+                        input.imageCount,
+                        terpeneExperienceResult.terpeneProfile,
+                        strainRatioV52
+                      );
+                      console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT (fallback):", validatedPipelineResult);
+                      
+                      if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
+                        console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
+                        nameFirstPipelineResult = validatedPipelineResult;
+                      } else {
+                        if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
+                          console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
+                          nameFirstPipelineResult = validatedPipelineResult;
+                        } else {
+                          nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
+                        }
+                      }
+                    } catch (fallbackError) {
+                      console.error("Phase 5.3.3 — Validation pipeline error:", fallbackError);
+                      // Continue with original result if validation fails
+                    }
                   }
                 }
 
                 // Phase 5.6.5 — Convert Phase 5.6 result to Phase 4.6 format for backward compatibility
                 // Use Phase 5.6 result (preferred) or fallback to Phase 5.2
-                const usePhase56 = strainRatioV56 && strainRatioV56.confidence !== "low";
+                const usePhase56ForRatio = strainRatioV56 && strainRatioV56.confidence !== "low";
                 
-                const ratioExplanation = usePhase56 ? {
+                const ratioExplanation = usePhase56ForRatio ? {
                   summary: `Ratio determined using database baseline + visual modifiers + terpene/effect cross-check + multi-image consensus (${strainRatioV56.confidence} confidence)`,
                   fullExplanation: [
                     `Strain Type: ${strainRatioV56.strainType}`,
@@ -550,7 +669,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
                   explanation: nameFirstPipelineResult.explanation,
                   // Phase 5.6 Step 5.6.5 — Include ratio (using Phase 5.6 engine, fallback to Phase 5.2)
-                  ratio: usePhase56 ? {
+                  ratio: usePhase56ForRatio ? {
                     indicaPercent: strainRatioV56.indicaPercent,
                     sativaPercent: strainRatioV56.sativaPercent,
                     dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
