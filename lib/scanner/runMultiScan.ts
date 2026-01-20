@@ -827,6 +827,23 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   ? dbEntryForAliases.aliases.slice(0, 3) // Top 3 aliases
                   : undefined;
 
+                // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE (generate early for Phase 7.8)
+                const terpeneCannabinoidProfileEarly = (() => {
+                  const { generateTerpeneCannabinoidProfileV72 } = require("./terpeneCannabinoidProfileV72");
+                  const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(a => ({
+                    name: a.name,
+                    confidence: a.score,
+                  })) || [];
+                  return generateTerpeneCannabinoidProfileV72(
+                    nameFirstPipelineResult.primaryStrainName,
+                    dbEntry,
+                    imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                    input.imageCount,
+                    fusedFeatures,
+                    candidateStrains.length > 0 ? candidateStrains : undefined
+                  );
+                })();
+
                 viewModel.nameFirstDisplay = {
                   primaryStrainName: nameFirstPipelineResult.primaryStrainName,
                   confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
