@@ -858,8 +858,20 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     : undefined,
                   // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
                   explanation: nameFirstPipelineResult.explanation,
-                  // Phase 7.3 Step 7.3.4 — Include ratio (using Phase 7.3 engine, fallback to Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
-                  ratio: usePhase73ForRatio ? {
+                  // Phase 7.7 Step 7.7.4 — Include ratio (using Phase 7.7 engine, fallback to Phase 7.5, then Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
+                  ratio: usePhase77ForRatio ? {
+                    indicaPercent: strainRatioV77.indicaPercent,
+                    sativaPercent: strainRatioV77.sativaPercent,
+                    dominance: strainRatioV77.classification,
+                    displayText: strainRatioV77.humanReadableLabel,
+                    explanation: ratioExplanation,
+                  } : usePhase75ForRatio ? {
+                    indicaPercent: strainRatioV75.indicaPercent,
+                    sativaPercent: strainRatioV75.sativaPercent,
+                    dominance: strainRatioV75.classification,
+                    displayText: `${strainRatioV75.dominanceText}: ${strainRatioV75.displayText}`,
+                    explanation: ratioExplanation,
+                  } : usePhase73ForRatio ? {
                     indicaPercent: strainRatioV73.indicaPercent,
                     sativaPercent: strainRatioV73.sativaPercent,
                     dominance: strainRatioV73.classification,
@@ -938,7 +950,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     const terpeneProfileForEffects = terpeneExperienceResult.terpeneProfile.primaryTerpenes
                       .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
                       .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood for effect engine
-                    const ratioForEffects = usePhase75ForRatio ? {
+                    const ratioForEffects = usePhase77ForRatio ? {
+                      indicaPercent: strainRatioV77.indicaPercent,
+                      sativaPercent: strainRatioV77.sativaPercent,
+                    } : usePhase75ForRatio ? {
                       indicaPercent: strainRatioV75.indicaPercent,
                       sativaPercent: strainRatioV75.sativaPercent,
                     } : usePhase73ForRatio ? {
