@@ -529,7 +529,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                           fusedFeatures,
                           input.imageCount,
                           terpeneExperienceResult.terpeneProfile,
-                          usePhase56 ? {
+                          usePhase56ForRatio ? {
                             indicaPercent: strainRatioV56.indicaPercent,
                             sativaPercent: strainRatioV56.sativaPercent,
                             dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
