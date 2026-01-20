@@ -133,6 +133,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     
     // Phase 4.3 Step 4.3.1 — Run Name-First Pipeline (Initial pass)
     // Phase 5.3 — Enhanced with terpene and ratio cross-validation
+    // Phase 5.5 — Name-First Matching & Strain Disambiguation (Enhanced)
     // Note: Initial pass runs without terpene/ratio for speed
     // We'll re-run with validation after terpene/ratio are generated (Phase 5.3.3)
     if (imageResultsV3.length > 0 && imageResultsV3.length >= 1) {
@@ -502,11 +503,21 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   ],
                 };
 
+                // Phase 5.5 Step 5.5.5 — Get aliases from database entry
+                const dbEntryForAliases = CULTIVAR_LIBRARY.find(s => 
+                  s.name.toLowerCase() === nameFirstPipelineResult.primaryStrainName.toLowerCase() ||
+                  (s.aliases && s.aliases.some(a => a.toLowerCase() === nameFirstPipelineResult.primaryStrainName.toLowerCase()))
+                );
+                const alsoKnownAs = dbEntryForAliases?.aliases && dbEntryForAliases.aliases.length > 0
+                  ? dbEntryForAliases.aliases.slice(0, 3) // Top 3 aliases
+                  : undefined;
+
                 viewModel.nameFirstDisplay = {
                   primaryStrainName: nameFirstPipelineResult.primaryStrainName,
                   confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
                   confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
                   tagline: "Closest known match based on visual + database consensus",
+                  alsoKnownAs, // Phase 5.5.5 — Include aliases
                   alternateMatches: nameFirstPipelineResult.alternateMatches.length > 0
                     ? nameFirstPipelineResult.alternateMatches.map(a => ({
                         name: a.name,

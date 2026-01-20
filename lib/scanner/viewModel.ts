@@ -129,11 +129,13 @@ export interface ScannerViewModel {
   // Phase 4.5 Step 4.5.1 — Name Lock Header
   // Phase 4.5 Step 4.5.3 — Why This Strain (FREE TIER)
   // Phase 4.6 — Indica/Sativa/Hybrid Ratio Engine
+  // Phase 5.5 Step 5.5.5 — Enhanced with aliases
   nameFirstDisplay?: {
     primaryStrainName: string;
     confidencePercent: number;
     confidenceTier: "very_high" | "high" | "medium" | "low";
     tagline: string; // "Closest known match based on visual + database consensus"
+    alsoKnownAs?: string[]; // Phase 5.5.5 — Aliases (e.g., "GSC", "Girl Scout Cookies")
     alternateMatches?: Array<{
       name: string;
       whyNotPrimary: string;

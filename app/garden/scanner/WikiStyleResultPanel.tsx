@@ -64,9 +64,17 @@ export default function WikiStyleResultPanel({
       {result.nameFirstDisplay && (
         <div className="mb-6 space-y-4 pb-6 border-b border-white/10">
           {/* Phase 4.5 Step 4.5.1 — Large Strain Name (Primary Candidate) */}
+          {/* Phase 5.5 Step 5.5.5 — Enhanced with aliases */}
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
             {result.nameFirstDisplay.primaryStrainName}
           </h1>
+          
+          {/* Phase 5.5.5 — Also Known As */}
+          {result.nameFirstDisplay.alsoKnownAs && result.nameFirstDisplay.alsoKnownAs.length > 0 && (
+            <p className="text-sm text-white/70 italic">
+              Also Known As: {result.nameFirstDisplay.alsoKnownAs.join(" • ")}
+            </p>
+          )}
           
           {/* Phase 4.5 Step 4.5.1 — Confidence Badge Next to Name */}
           {/* Phase 4.5 Step 4.5.5 — Confidence Honesty: Show tier label, not raw % for high confidence */}
