@@ -244,6 +244,33 @@ export interface ScannerViewModel {
       confidenceLabel: string;
       source: string;
     };
+    // Phase 7.8 — EFFECTS & EXPERIENCE PREDICTION ENGINE
+    effectExperiencePrediction?: {
+      primaryEffects: Array<{
+        name: string;
+        category: "primary" | "secondary";
+        intensity: "high" | "medium" | "low";
+        reasoning: string[];
+      }>;
+      secondaryEffects: Array<{
+        name: string;
+        category: "primary" | "secondary";
+        intensity: "high" | "medium" | "low";
+        reasoning: string[];
+      }>;
+      timingCurve: {
+        onsetSpeed: "Fast" | "Moderate" | "Slow";
+        peakWindow: string;
+        durationRange: string;
+        reasoning: string[];
+      };
+      experienceSummary: string;
+      varianceNotes: string[];
+      confidence: "very_high" | "high" | "medium" | "low";
+      confidenceLabel: string;
+      explanation: string[];
+      source: string;
+    };
     // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
     closelyRelatedVariants?: Array<{
       name: string;
