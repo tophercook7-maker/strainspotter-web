@@ -445,8 +445,20 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.1 — TERPENE EXPERIENCE RESULT:", terpeneExperienceResult);
 
-                // Phase 5.6 — INDICA / SATIVA / HYBRID RATIO ENGINE (Enhanced)
-                // Use Phase 5.6 engine with terpene profile and effects from Phase 5.1
+                // Phase 5.8 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
+                // Use Phase 5.8 engine with terpene profile and effects from Phase 5.1
+                const { resolveStrainRatioV58 } = require("./ratioEngineV58");
+                const strainRatioV58 = resolveStrainRatioV58(
+                  lockedStrainName,
+                  dbEntry,
+                  imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                  input.imageCount,
+                  fusedFeatures,
+                  terpeneExperienceResult.terpeneProfile // Pass terpene profile for signals
+                );
+                console.log("Phase 5.8 — STRAIN RATIO V58 RESOLVED:", strainRatioV58);
+
+                // Phase 5.6 — Fallback to Phase 5.6 if needed (for backward compatibility)
                 const { resolveStrainRatioV56 } = require("./ratioEngineV56");
                 const strainRatioV56 = resolveStrainRatioV56(
                   lockedStrainName,
@@ -456,7 +468,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   fusedFeatures,
                   terpeneExperienceResult.terpeneProfile // Pass terpene profile for cross-check
                 );
-                console.log("Phase 5.6 — STRAIN RATIO V56 RESOLVED:", strainRatioV56);
+                console.log("Phase 5.6 — STRAIN RATIO V56 RESOLVED (fallback):", strainRatioV56);
 
                 // Phase 5.2 — Fallback to Phase 5.2 if needed (for backward compatibility)
                 const strainRatioV52 = resolveStrainRatioV52(
@@ -469,8 +481,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED (fallback):", strainRatioV52);
 
-                // Phase 5.6.5 — Determine which ratio to use (Phase 5.6 preferred, fallback to Phase 5.2)
-                const usePhase56ForRatio = strainRatioV56 && strainRatioV56.confidence !== "low";
+                // Phase 5.8.5 — Determine which ratio to use (Phase 5.8 preferred, fallback to Phase 5.6, then Phase 5.2)
+                const usePhase58ForRatio = strainRatioV58 && strainRatioV58.confidence !== "low";
+                const usePhase56ForRatio = !usePhase58ForRatio && strainRatioV56 && strainRatioV56.confidence !== "low";
 
                 // Phase 5.7 — NAME-FIRST MATCHING & DISAMBIGUATION ENGINE (Latest)
                 // Try Phase 5.7 first, fallback to Phase 5.5, then Phase 5.3
@@ -529,7 +542,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                           fusedFeatures,
                           input.imageCount,
                           terpeneExperienceResult.terpeneProfile,
-                          usePhase56ForRatio ? {
+                          usePhase58ForRatio ? {
+                            indicaPercent: strainRatioV58.indicaPercent,
+                            sativaPercent: strainRatioV58.sativaPercent,
+                            dominance: strainRatioV58.type,
+                            displayText: `${strainRatioV58.type}: ${strainRatioV58.ratio}`,
+                            confidence: strainRatioV58.confidence,
+                            explanation: {
+                              geneticBaseline: strainRatioV58.explanation[0] || "",
+                              source: "database_primary",
+                            },
+                          } : usePhase56ForRatio ? {
                             indicaPercent: strainRatioV56.indicaPercent,
                             sativaPercent: strainRatioV56.sativaPercent,
                             dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
@@ -671,8 +694,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     : undefined,
                   // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
                   explanation: nameFirstPipelineResult.explanation,
-                  // Phase 5.6 Step 5.6.5 — Include ratio (using Phase 5.6 engine, fallback to Phase 5.2)
-                  ratio: usePhase56ForRatio ? {
+                  // Phase 5.8 Step 5.8.5 — Include ratio (using Phase 5.8 engine, fallback to Phase 5.6, then Phase 5.2)
+                  ratio: usePhase58ForRatio ? {
+                    indicaPercent: strainRatioV58.indicaPercent,
+                    sativaPercent: strainRatioV58.sativaPercent,
+                    dominance: strainRatioV58.type,
+                    displayText: `${strainRatioV58.type}: ${strainRatioV58.ratio}`,
+                    explanation: ratioExplanation,
+                  } : usePhase56ForRatio ? {
                     indicaPercent: strainRatioV56.indicaPercent,
                     sativaPercent: strainRatioV56.sativaPercent,
                     dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
