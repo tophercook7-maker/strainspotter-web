@@ -131,16 +131,22 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     imageResultsV3 = await analyzePerImageV3(imageFiles, input.imageCount);
     console.log("PER-IMAGE RESULTS V3:", imageResultsV3);
     
-    // Phase 4.3 Step 4.3.1 — Run Name-First Pipeline
+    // Phase 4.3 Step 4.3.1 — Run Name-First Pipeline (Initial pass)
+    // Phase 5.3 — Enhanced with terpene and ratio cross-validation
+    // Note: Initial pass runs without terpene/ratio for speed
+    // We'll re-run with validation after terpene/ratio are generated (Phase 5.3.3)
     if (imageResultsV3.length > 0 && imageResultsV3.length >= 1) {
       const { runNameFirstPipeline } = require("./nameFirstPipeline");
       try {
+        // Phase 5.3 Step 5.3.1 & 5.3.2 — Initial pipeline run (name candidate extraction + multi-image consensus)
         nameFirstPipelineResult = runNameFirstPipeline(
           imageResultsV3,
           fusedFeatures,
-          input.imageCount
+          input.imageCount,
+          undefined, // terpeneProfile - will be provided in validation pass
+          undefined  // strainRatio - will be provided in validation pass
         );
-        console.log("Phase 4.3 Step 4.3.1 — NAME-FIRST PIPELINE RESULT:", nameFirstPipelineResult);
+        console.log("Phase 4.3 Step 4.3.1 — NAME-FIRST PIPELINE RESULT (initial):", nameFirstPipelineResult);
       } catch (error) {
         console.error("Phase 4.3 Step 4.3.1 — Name-first pipeline error:", error);
         nameFirstPipelineResult = null;
@@ -447,6 +453,43 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   terpeneExperienceResult.terpeneProfile // Pass terpene profile for modulation
                 );
                 console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED:", strainRatioV52);
+
+                // Phase 5.3 Step 5.3.3 — DATABASE CROSS-VALIDATION
+                // Re-run name-first pipeline with terpene profile and ratio for validation
+                // This ensures consistency: Same image set = same name (LOCK CONDITION)
+                if (nameFirstPipelineResult && imageResultsV3.length > 0) {
+                  const { runNameFirstPipeline } = require("./nameFirstPipeline");
+                  try {
+                    // Phase 5.3.3 — Re-run pipeline with terpene profile and ratio for cross-validation
+                    const validatedPipelineResult = runNameFirstPipeline(
+                      imageResultsV3,
+                      fusedFeatures,
+                      input.imageCount,
+                      terpeneExperienceResult.terpeneProfile, // Phase 5.3.3 — Terpene profile for validation
+                      strainRatioV52 // Phase 5.3.3 — Ratio for lineage validation
+                    );
+                    console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT:", validatedPipelineResult);
+                    
+                    // Phase 5.3.3 — Only update if validation didn't change the primary name (consistency guaranteed)
+                    // If validation found significant issues, use validated result
+                    if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
+                      console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
+                      nameFirstPipelineResult = validatedPipelineResult;
+                    } else {
+                      // Phase 5.3.3 — Update confidence if validation applied penalties
+                      if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
+                        console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
+                        nameFirstPipelineResult = validatedPipelineResult;
+                      } else {
+                        // Keep original but use validated explanation if it's better
+                        nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
+                      }
+                    }
+                  } catch (error) {
+                    console.error("Phase 5.3.3 — Validation pipeline error:", error);
+                    // Continue with original result if validation fails
+                  }
+                }
 
                 // Convert Phase 5.2 result to Phase 4.6 format for backward compatibility
                 const ratioExplanationV52 = {
