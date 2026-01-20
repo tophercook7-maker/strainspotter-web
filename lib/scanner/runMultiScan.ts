@@ -469,6 +469,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED (fallback):", strainRatioV52);
 
+                // Phase 5.6.5 — Determine which ratio to use (Phase 5.6 preferred, fallback to Phase 5.2)
+                const usePhase56ForRatio = strainRatioV56 && strainRatioV56.confidence !== "low";
+
                 // Phase 5.7 — NAME-FIRST MATCHING & DISAMBIGUATION ENGINE (Latest)
                 // Try Phase 5.7 first, fallback to Phase 5.5, then Phase 5.3
                 if (nameFirstPipelineResult && imageResultsV3.length > 0) {
