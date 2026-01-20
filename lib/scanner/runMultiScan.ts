@@ -975,6 +975,45 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       ratioForEffects?.sativaPercent
                     );
                   })(),
+                  // Phase 7.8 — EFFECTS & EXPERIENCE PREDICTION ENGINE
+                  effectExperiencePrediction: (() => {
+                    const { generateEffectExperiencePredictionV78 } = require("./effectExperiencePredictionV78");
+                    const terpeneProfileForPrediction = terpeneExperienceResult.terpeneProfile.primaryTerpenes
+                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
+                    const cannabinoidRanges = terpeneCannabinoidProfileEarly.cannabinoids?.map(c => ({
+                      compound: c.compound,
+                      min: c.min,
+                      max: c.max,
+                    })) || undefined;
+                    const ratioForPrediction = usePhase77ForRatio ? {
+                      indicaPercent: strainRatioV77.indicaPercent,
+                      sativaPercent: strainRatioV77.sativaPercent,
+                      confidence: strainRatioV77.confidence,
+                    } : usePhase75ForRatio ? {
+                      indicaPercent: strainRatioV75.indicaPercent,
+                      sativaPercent: strainRatioV75.sativaPercent,
+                      confidence: strainRatioV75.confidence,
+                    } : usePhase73ForRatio ? {
+                      indicaPercent: strainRatioV73.indicaPercent,
+                      sativaPercent: strainRatioV73.sativaPercent,
+                      confidence: strainRatioV73.confidence,
+                    } : usePhase71ForRatio ? {
+                      indicaPercent: strainRatioV71.indicaPercent,
+                      sativaPercent: strainRatioV71.sativaPercent,
+                      confidence: strainRatioV71.confidence,
+                    } : undefined;
+                    return generateEffectExperiencePredictionV78(
+                      nameFirstPipelineResult.primaryStrainName,
+                      dbEntry,
+                      ratioForPrediction?.indicaPercent,
+                      ratioForPrediction?.sativaPercent,
+                      terpeneProfileForPrediction.length > 0 ? terpeneProfileForPrediction : undefined,
+                      cannabinoidRanges,
+                      ratioForPrediction?.confidence || nameFirstPipelineResult.nameConfidenceTier,
+                      fusedFeatures
+                    );
+                  })(),
                 };
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
     console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
