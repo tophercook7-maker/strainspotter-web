@@ -2,10 +2,12 @@
 // Phase 4.6 — Indica / Sativa / Hybrid Ratio Engine
 // Phase 4.8 — Enhanced Multi-Source Weighted Ratio Engine
 // Phase 5.0 — Enhanced with Range Display & Explicit Phenotype Detection
+// Phase 5.2 — Genetics + Terpene Weighting + Phenotype Signals Engine
 
 import type { CultivarReference } from "./cultivarLibrary";
 import type { ImageResult } from "./consensusEngine";
 import type { FusedFeatures } from "./multiImageFusion";
+import type { NormalizedTerpeneProfile } from "./terpeneExperienceEngine";
 import { CULTIVAR_LIBRARY } from "./cultivarLibrary";
 
 /**
@@ -33,47 +35,61 @@ export type StrainRatio = {
 };
 
 /**
- * Phase 4.8 Step 4.8.1 — CANONICAL RATIO SOURCE (DB FIRST)
+ * Phase 5.2 Step 5.2.1 — GENETIC BASELINE
  * 
- * PRIMARY SOURCE:
- * - Use strain database (35,000 strains) as the source of truth
- * - Pull indicaPercentage, sativaPercentage if known
- * - If ratio exists in DB → Use it as BASELINE (weight = 60%)
+ * From the 35,000-strain database:
+ * - Pull recorded lineage
+ * - Map parents → indica/sativa bias
+ * - Normalize to a baseline ratio
  * 
- * IF ratio exists in DB:
- * → Use it as BASELINE (weight = 60%)
+ * Example:
+ * OG Kush lineage → 70% Indica / 30% Sativa
  */
-function resolveDatabaseBaseline(
+function resolveGeneticBaseline(
   strainName: string,
   dbEntry?: CultivarReference
-): { indicaPercent: number; sativaPercent: number; source: "database_explicit" | "database_dominance" | null } | null {
+): { indicaPercent: number; sativaPercent: number; source: "database_explicit" | "database_dominance" | "lineage_inferred" | null; reasoning: string } | null {
   if (!dbEntry) {
     return null; // Cannot resolve without database entry
   }
 
-  // Phase 4.8 Step 4.8.1 — Check for explicit percentages in database (future enhancement)
-  // For now, database doesn't have explicit percentages, so we derive from dominance type
-  // TODO: If database adds explicit indicaPercent/sativaPercent fields, use them here
+  // Phase 5.2 Step 5.2.1 — Check for explicit percentages in database (future enhancement)
+  // For now, database doesn't have explicit percentages, so we derive from dominance type or lineage
 
+  // Phase 5.2 Step 5.2.1 — First try to infer from lineage (parents → indica/sativa bias)
+  const lineageInference = inferRatioFromLineage(dbEntry);
+  if (lineageInference) {
+    return {
+      indicaPercent: lineageInference.indicaPercent,
+      sativaPercent: lineageInference.sativaPercent,
+      source: "lineage_inferred",
+      reasoning: lineageInference.inference,
+    };
+  }
+
+  // Phase 5.2 Step 5.2.1 — Fallback to dominance type
   const type = dbEntry.type || dbEntry.dominantType;
   
-  // Phase 4.8 Step 4.8.1 — Derive from dominance type (baseline, will be weighted 60%)
   let indicaPercent: number;
   let sativaPercent: number;
   let source: "database_explicit" | "database_dominance" | null;
+  let reasoning: string;
 
   if (type === "Indica") {
     indicaPercent = 70; // Indica-dominant baseline
     sativaPercent = 30;
     source = "database_dominance";
+    reasoning = `Genetic baseline derived from database classification: ${strainName} is Indica-dominant`;
   } else if (type === "Sativa") {
     indicaPercent = 30;
     sativaPercent = 70; // Sativa-dominant baseline
     source = "database_dominance";
+    reasoning = `Genetic baseline derived from database classification: ${strainName} is Sativa-dominant`;
   } else if (type === "Hybrid") {
     indicaPercent = 50;
     sativaPercent = 50; // Balanced hybrid baseline
     source = "database_dominance";
+    reasoning = `Genetic baseline derived from database classification: ${strainName} is a Hybrid`;
   } else {
     return null; // Unknown type
   }
@@ -82,6 +98,7 @@ function resolveDatabaseBaseline(
     indicaPercent,
     sativaPercent,
     source,
+    reasoning,
   };
 }
 
@@ -133,8 +150,8 @@ function inferRatioFromLineage(
   }
 
   // Phase 4.8 Step 4.8.2 — Resolve parent ratios from database
-  const parent1Ratio = resolveDatabaseBaseline(parent1.name, parent1);
-  const parent2Ratio = resolveDatabaseBaseline(parent2.name, parent2);
+  const parent1Ratio = resolveGeneticBaseline(parent1.name, parent1);
+  const parent2Ratio = resolveGeneticBaseline(parent2.name, parent2);
 
   if (!parent1Ratio || !parent2Ratio) {
     return null; // Cannot resolve parent ratios
@@ -254,7 +271,7 @@ export function resolveStrainRatio(
   fusedFeatures?: FusedFeatures // Phase 4.8 — Added for morphology adjustment
 ): StrainRatio {
   // Phase 4.8 Step 4.8.1 — DATABASE BASELINE (weight 60%)
-  const databaseBaseline = resolveDatabaseBaseline(strainName, dbEntry);
+  const databaseBaseline = resolveGeneticBaseline(strainName, dbEntry);
   
   if (!databaseBaseline) {
     // Phase 4.8 Step 4.8.4 — Failsafe: Return balanced hybrid if no database entry
@@ -272,6 +289,9 @@ export function resolveStrainRatio(
     };
   }
 
+  // Extract the ratio from databaseBaseline (it now includes reasoning)
+  const { indicaPercent: dbIndica, sativaPercent: dbSativa, source: dbSource } = databaseBaseline;
+
   // Phase 4.8 Step 4.8.2 — LINEAGE INFERENCE (weight 25%)
   const lineageInference = inferRatioFromLineage(dbEntry);
 
@@ -285,11 +305,11 @@ export function resolveStrainRatio(
 
   if (lineageInference) {
     // Phase 4.8 Step 4.8.4 — Use weighted combination: DB (60%) + Lineage (25%) + Image (15%)
-    const dbWeightedIndica = databaseBaseline.indicaPercent * 0.60;
+    const dbWeightedIndica = dbIndica * 0.60;
     const lineageWeightedIndica = lineageInference.indicaPercent * 0.25;
     
     // Phase 4.8 Step 4.8.3 — Apply morphology adjustment (±15% max, weighted 15%)
-    const baseIndicaForMorphology = (databaseBaseline.indicaPercent * 0.60) + (lineageInference.indicaPercent * 0.25);
+    const baseIndicaForMorphology = (dbIndica * 0.60) + (lineageInference.indicaPercent * 0.25);
     const morphologyAdjustedIndica = morphologyAdjustment
       ? baseIndicaForMorphology + (morphologyAdjustment.adjustment * 0.15)
       : baseIndicaForMorphology;
@@ -302,11 +322,11 @@ export function resolveStrainRatio(
     finalIndicaPercent = Math.round(dbWeightedIndica + lineageWeightedIndica + morphologyAdjustedIndica + imageWeightedIndica);
   } else {
     // Phase 4.8 Step 4.8.4 — No lineage inference, use DB (75%) + Image (15%) or DB (100%) if no morphology
-    const dbWeightedIndica = databaseBaseline.indicaPercent * (morphologyAdjustment ? 0.85 : 1.0);
+    const dbWeightedIndica = dbIndica * (morphologyAdjustment ? 0.85 : 1.0);
     
     const morphologyAdjustedIndica = morphologyAdjustment
-      ? (databaseBaseline.indicaPercent * 0.85) + (morphologyAdjustment.adjustment * 0.15)
-      : databaseBaseline.indicaPercent;
+      ? (dbIndica * 0.85) + (morphologyAdjustment.adjustment * 0.15)
+      : dbIndica;
 
     finalIndicaPercent = Math.round(morphologyAdjustedIndica);
   }
@@ -396,7 +416,7 @@ export function resolveStrainRatio(
   // Phase 4.8 Step 4.8.4 — Build confidence notes
   const confidenceNotes: string[] = [];
   
-  if (databaseBaseline.source === "database_dominance") {
+  if (dbSource === "database_dominance") {
     confidenceNotes.push(`Ratio derived from database classification: ${dbEntry?.type || dbEntry?.dominantType || "Unknown"}-dominant`);
   }
   

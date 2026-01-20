@@ -40,6 +40,8 @@ import { generateWikiReport } from "./wikiReport";
 import { resolveStrainRatio, generateRatioExplanation } from "./ratioEngine";
 // Phase 5.1 — Terpene-Weighted Experience Engine
 import { generateTerpeneExperience } from "./terpeneExperienceEngine";
+// Phase 5.2 — Genetics + Terpene Weighting + Phenotype Signals Ratio Engine
+import { resolveStrainRatioV52 } from "./ratioEngineV52";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -434,6 +436,29 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.1 — TERPENE EXPERIENCE RESULT:", terpeneExperienceResult);
 
+                // Phase 5.2 — INDICA / SATIVA / HYBRID RATIO ENGINE (Genetics + Terpene + Phenotype)
+                // Use Phase 5.2 engine with terpene profile from Phase 5.1
+                const strainRatioV52 = resolveStrainRatioV52(
+                  lockedStrainName,
+                  dbEntry,
+                  imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                  input.imageCount,
+                  fusedFeatures,
+                  terpeneExperienceResult.terpeneProfile // Pass terpene profile for modulation
+                );
+                console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED:", strainRatioV52);
+
+                // Convert Phase 5.2 result to Phase 4.6 format for backward compatibility
+                const ratioExplanationV52 = {
+                  summary: `Ratio determined using genetics + terpenes + phenotype signals (${strainRatioV52.confidence} confidence)`,
+                  fullExplanation: [
+                    strainRatioV52.explanation.geneticBaseline,
+                    ...(strainRatioV52.explanation.terpeneModulation ? [strainRatioV52.explanation.terpeneModulation] : []),
+                    ...(strainRatioV52.explanation.phenotypeSignals ? [strainRatioV52.explanation.phenotypeSignals] : []),
+                    ...(strainRatioV52.explanation.multiImageConsensus ? [strainRatioV52.explanation.multiImageConsensus] : []),
+                  ],
+                };
+
                 viewModel.nameFirstDisplay = {
                   primaryStrainName: nameFirstPipelineResult.primaryStrainName,
                   confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
@@ -447,13 +472,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     : undefined,
                   // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
                   explanation: nameFirstPipelineResult.explanation,
-                  // Phase 4.6 Step 4.6.2 — Include ratio (FREE TIER)
+                  // Phase 5.2 Step 5.2.5 — Include ratio (using Phase 5.2 engine)
                   ratio: {
-                    indicaPercent: strainRatio.indicaPercent,
-                    sativaPercent: strainRatio.sativaPercent,
-                    dominance: strainRatio.dominance,
-                    displayText: strainRatio.displayText,
-                    explanation: ratioExplanation,
+                    indicaPercent: strainRatioV52.indicaPercent,
+                    sativaPercent: strainRatioV52.sativaPercent,
+                    dominance: strainRatioV52.dominance,
+                    displayText: strainRatioV52.displayText,
+                    explanation: ratioExplanationV52,
                   },
                   // Phase 4.7 Step 4.7.2 — Include closely related variants if ambiguous
                   closelyRelatedVariants: nameFirstPipelineResult.closelyRelatedVariants,
