@@ -425,14 +425,15 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     );
     console.log("Phase 4.6 Step 4.6.2 — STRAIN RATIO RESOLVED:", strainRatio);
 
-    // Phase 4.6 Step 4.6.4 — Generate ratio explanation
-    // Note: wikiReport is generated later, so we pass undefined for now (will use dbEntry genetics)
-    const ratioExplanation = generateRatioExplanation(
-      strainRatio,
-      dbEntry,
-      undefined // wikiReport generated later, will be available in UI
-    );
-                console.log("Phase 4.6 Step 4.6.4 — RATIO EXPLANATION:", ratioExplanation);
+                // Phase 4.6 Step 4.6.4 — Generate ratio explanation (legacy, will be replaced by Phase 5.6)
+                // Note: wikiReport is generated later, so we pass undefined for now (will use dbEntry genetics)
+                // This is a placeholder - Phase 5.6 will generate the final explanation
+                const legacyRatioExplanation = generateRatioExplanation(
+                  strainRatio,
+                  dbEntry,
+                  undefined // wikiReport generated later, will be available in UI
+                );
+                console.log("Phase 4.6 Step 4.6.4 — LEGACY RATIO EXPLANATION:", legacyRatioExplanation);
 
                 // Phase 5.1 — TERPENE-WEIGHTED EXPERIENCE ENGINE
                 const terpeneExperienceResult = generateTerpeneExperience(
