@@ -188,13 +188,43 @@ export function runNameFirstPipeline(
     console.log("Phase 4.7 Step 4.7.2 — SHORTLIST AFTER VARIANT BOOST:", shortlist.slice(0, 5));
   }
 
+  // Phase 4.9 Step 4.9.1 — NAME CANDIDATE GENERATION
+  // From each image analysis, we've extracted top 5 strain name candidates
+  // Include: exact name matches, known aliases, parent strain names, phenotype variants
+  // This is already done in buildStrainShortlist (processes top 5 per image)
+  // Store per image: strainName, confidence, reason (visual/genetic/terpene) ✓
+
+  // Phase 4.9 Step 4.9.2 — CROSS-IMAGE NAME CONSENSUS
+  // Across 2–5 images:
+  // - Count frequency of each strain name ✓ (done in buildStrainShortlist)
+  // - Apply boosts: +20% for ≥2 images, +35% for ≥3 images ✓ (done in buildStrainShortlist)
+  // - Penalize: −15% for single-image-only ✓ (done in buildStrainShortlist)
+  // Result: Top 3 ranked strain names with scores ✓
+
   // Phase 4.7 Step 4.7.1 — STEP 4: NAME RESOLUTION (picks BEST NAME FIRST)
   // Phase 4.3 Step 4.3.3 — Disambiguation Logic (via scoring)
   const scoredResults = scoreNameCompetition(shortlist, fusedFeatures);
   console.log("Phase 4.3 Step 4.3.3 — Scored Results:", scoredResults);
 
+  // Phase 4.9 Step 4.9.3 — DISAMBIGUATION ENGINE (runs before final selection)
+  // If top 2 names are close (<7% apart), use disambiguation engine
+  if (scoredResults.length >= 2) {
+    const scoreGap = scoredResults[0].totalScore - scoredResults[1].totalScore;
+    if (scoreGap < 7) {
+      console.log(`Phase 4.9 Step 4.9.3 — Top 2 names are close (gap: ${scoreGap.toFixed(1)}%, threshold: 7%), running disambiguation engine`);
+      const { disambiguateCloseNames } = require("./nameDisambiguationV4");
+      const disambiguation = disambiguateCloseNames(scoredResults[0], scoredResults[1], fusedFeatures);
+      
+      if (disambiguation) {
+        console.log("Phase 4.9 Step 4.9.3 — DISAMBIGUATION RESULT:", disambiguation);
+        // Disambiguation reasoning will be included in explanation
+      }
+    }
+  }
+
   // Phase 4.3 Step 4.3.4 — Final Name Selection
-  const selection = selectPrimaryName(scoredResults, imageCount);
+  // Phase 4.9 Step 4.9.3 — Pass fusedFeatures for disambiguation engine
+  const selection = selectPrimaryName(scoredResults, imageCount, fusedFeatures);
   console.log("Phase 4.3 Step 4.3.4 — Selection:", selection);
   
   // Phase 4.7 Step 4.7.2 — If variant selection found a canonical name, prefer it if it matches

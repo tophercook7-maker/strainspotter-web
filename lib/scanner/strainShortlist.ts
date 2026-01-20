@@ -117,21 +117,38 @@ export function buildStrainShortlist(
   });
 
   // Phase 4.1 Step 4.1.1 — Convert to array and calculate avgConfidence
+  // Phase 4.9 Step 4.9.2 — CROSS-IMAGE NAME CONSENSUS
+  // Apply explicit boosts and penalties based on appearance count
   const shortlist: StrainShortlist[] = Array.from(strainMap.values()).map(entry => {
     const avgConfidence = entry.totalConfidence / entry.appearancesAcrossImages;
     const { totalConfidence: _totalConfidence, ...rest } = entry;
+    
+    // Phase 4.9 Step 4.9.2 — Apply boosts and penalties:
+    // + Appears in ≥2 images → +20%
+    // + Appears in ≥3 images → +35%
+    // − Appears only once → −15%
+    let boostedConfidence = avgConfidence;
+    
+    if (entry.appearancesAcrossImages >= 3) {
+      boostedConfidence = Math.min(100, avgConfidence + 35);
+    } else if (entry.appearancesAcrossImages >= 2) {
+      boostedConfidence = Math.min(100, avgConfidence + 20);
+    } else if (entry.appearancesAcrossImages === 1) {
+      boostedConfidence = Math.max(0, avgConfidence - 15);
+    }
+    
     return {
       ...rest,
-      avgConfidence,
+      avgConfidence: boostedConfidence,
     };
   });
 
-  // Phase 4.1 Step 4.1.1 — Sort by appearances (desc) then avgConfidence (desc)
+  // Phase 4.1 Step 4.1.1 — Sort by boosted confidence (desc) then appearances (desc)
   shortlist.sort((a, b) => {
-    if (b.appearancesAcrossImages !== a.appearancesAcrossImages) {
-      return b.appearancesAcrossImages - a.appearancesAcrossImages;
+    if (b.avgConfidence !== a.avgConfidence) {
+      return b.avgConfidence - a.avgConfidence;
     }
-    return b.avgConfidence - a.avgConfidence;
+    return b.appearancesAcrossImages - a.appearancesAcrossImages;
   });
 
   // Phase 4.1 Step 4.1.1 — Return max ~10 strains

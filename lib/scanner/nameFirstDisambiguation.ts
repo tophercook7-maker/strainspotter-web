@@ -4,6 +4,8 @@
 import type { NameScoreResult } from "./nameCompetition";
 import type { ConfidenceTierLabel } from "./confidenceTier";
 import { getConfidenceTier } from "./confidenceTier";
+// Phase 4.9 Step 4.9.3 — Disambiguation Engine
+import { disambiguateCloseNames } from "./nameDisambiguationV4";
 
 /**
  * Phase 4.1 Step 4.1.4 — Name Selection Result
@@ -41,7 +43,8 @@ export type NameExplanation = {
  */
 export function selectPrimaryName(
   scoredResults: NameScoreResult[],
-  imageCount: number
+  imageCount: number,
+  fusedFeatures?: import("./multiImageFusion").FusedFeatures // Phase 4.9 Step 4.9.3 — For disambiguation
 ): NameSelectionResult {
   if (scoredResults.length === 0) {
     // Fallback
@@ -81,11 +84,37 @@ export function selectPrimaryName(
 
   const scoreGap = topResult.totalScore - (secondResult?.totalScore || 0);
   
+  // Phase 4.9 Step 4.9.3 — DISAMBIGUATION ENGINE
+  // If top 2 names are close (<7% apart), use disambiguation engine
+  let finalTopResult = topResult;
+  let finalSecondResult = secondResult;
+  let disambiguationReasoning: string[] = [];
+  
+  if (secondResult && scoreGap < 7 && fusedFeatures) {
+    // Phase 4.9 Step 4.9.3 — Run disambiguation engine
+    const disambiguation = disambiguateCloseNames(topResult, secondResult, fusedFeatures);
+    
+    if (disambiguation) {
+      console.log("Phase 4.9 Step 4.9.3 — DISAMBIGUATION RESULT:", disambiguation);
+      disambiguationReasoning = disambiguation.reasoning;
+      
+      // Check if disambiguation suggests swapping (for now, keep conservative approach)
+      // In future, could swap if loser has significantly higher overlap score
+      // For now, just add disambiguation reasoning to whyNotPrimary
+    }
+  }
+
   if (secondResult && scoreGap < 20) {
+    // Phase 4.9 Step 4.9.3 — Include disambiguation reasoning if available
+    const whyNotPrimaryBase = `Close match (${scoreGap.toFixed(0)} points lower). ${getWhyNotPrimary(finalSecondResult!, finalTopResult)}`;
+    const whyNotPrimaryWithDisambiguation = disambiguationReasoning.length > 0
+      ? `${whyNotPrimaryBase} Disambiguation comparison: ${disambiguationReasoning.slice(0, 2).join("; ")}`
+      : whyNotPrimaryBase;
+    
     alternateMatches.push({
-      name: secondResult.strainName,
-      score: secondResult.totalScore,
-      whyNotPrimary: `Close match (${scoreGap.toFixed(0)} points lower). ${getWhyNotPrimary(secondResult, topResult)}`,
+      name: finalSecondResult!.strainName,
+      score: finalSecondResult!.totalScore,
+      whyNotPrimary: whyNotPrimaryWithDisambiguation,
     });
   }
 
@@ -93,7 +122,7 @@ export function selectPrimaryName(
     alternateMatches.push({
       name: thirdResult.strainName,
       score: thirdResult.totalScore,
-      whyNotPrimary: `${(topResult.totalScore - thirdResult.totalScore).toFixed(0)} points lower. ${getWhyNotPrimary(thirdResult, topResult)}`,
+      whyNotPrimary: `${(topResult.totalScore - thirdResult.totalScore).toFixed(0)} points lower. ${getWhyNotPrimary(thirdResult, finalTopResult)}`,
     });
   }
 

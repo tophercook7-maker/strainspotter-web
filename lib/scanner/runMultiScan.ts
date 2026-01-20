@@ -404,11 +404,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 4.6 Step 4.6.2 — Include Indica/Sativa/Hybrid Ratio (FREE TIER)
   if (nameFirstPipelineResult) {
     // Phase 4.6 Step 4.6.2 — Resolve ratio from database
+    // Phase 4.8 Step 4.8.4 — Enhanced with multi-source weighted calculation
     const strainRatio = resolveStrainRatio(
       lockedStrainName,
       dbEntry,
       imageResultsV3.length > 0 ? imageResultsV3 : undefined,
-      input.imageCount
+      input.imageCount,
+      fusedFeatures // Phase 4.8 — Pass fused features for morphology adjustment
     );
     console.log("Phase 4.6 Step 4.6.2 — STRAIN RATIO RESOLVED:", strainRatio);
 
@@ -516,6 +518,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
   
   // Phase 4.2 Step 4.2.1 — Generate Extensive Wiki-Style Report (Locked Order)
+  // Phase 4.8 Step 4.8.4 — Resolve ratio early for wiki report (if not already resolved)
+  let strainRatioForWiki: ReturnType<typeof import("./ratioEngine").resolveStrainRatio> | undefined;
+  if (!viewModel.nameFirstDisplay?.ratio && lockedStrainName) {
+    const { resolveStrainRatio } = require("./ratioEngine");
+    strainRatioForWiki = resolveStrainRatio(
+      lockedStrainName,
+      dbEntry,
+      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+      input.imageCount,
+      fusedFeatures
+    );
+  }
+
   const wikiReport = generateWikiReport(
     nameFirstResult.primaryMatch.name,
     nameFirstPipelineResult?.nameConfidencePercent || nameFirstResult.confidence || 75,
