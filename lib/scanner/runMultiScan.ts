@@ -445,6 +445,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
 
                 // Phase 5.6 — INDICA / SATIVA / HYBRID RATIO ENGINE (Enhanced)
                 // Use Phase 5.6 engine with terpene profile and effects from Phase 5.1
+                const { resolveStrainRatioV56 } = require("./ratioEngineV56");
                 const strainRatioV56 = resolveStrainRatioV56(
                   lockedStrainName,
                   dbEntry,
