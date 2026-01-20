@@ -805,7 +805,26 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   terpeneExperience: {
                     dominantTerpenes: terpeneExperienceResult.terpeneProfile.primaryTerpenes.map(t => t.name),
                     secondaryTerpenes: terpeneExperienceResult.terpeneProfile.secondaryTerpenes.map(t => t.name),
+                    experience: terpeneExperienceResult.experience,
+                    visualBoosts: terpeneExperienceResult.visualBoosts,
+                    consensusNotes: terpeneExperienceResult.consensusNotes,
                   },
+                  // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE
+                  terpeneCannabinoidProfile: (() => {
+                    const { generateTerpeneCannabinoidProfileV72 } = require("./terpeneCannabinoidProfileV72");
+                    const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(a => ({
+                      name: a.name,
+                      confidence: a.score,
+                    })) || [];
+                    return generateTerpeneCannabinoidProfileV72(
+                      nameFirstPipelineResult.primaryStrainName,
+                      dbEntry,
+                      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                      input.imageCount,
+                      fusedFeatures,
+                      candidateStrains.length > 0 ? candidateStrains : undefined
+                    );
+                  })(),
                   // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE
                   terpeneCannabinoidProfile: (() => {
                     const { generateTerpeneCannabinoidProfileV72 } = require("./terpeneCannabinoidProfileV72");

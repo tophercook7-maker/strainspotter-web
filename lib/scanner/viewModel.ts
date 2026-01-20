@@ -175,6 +175,27 @@ export interface ScannerViewModel {
       visualBoosts?: Array<{ name: string; boost: number; reasoning: string }>;
       consensusNotes?: string[];
     };
+    // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE
+    terpeneCannabinoidProfile?: {
+      terpenes: Array<{
+        name: string;
+        likelihood: "High" | "Medium–High" | "Medium" | "Low–Medium" | "Low";
+        confidence: number;
+        reasoning: string[];
+      }>;
+      cannabinoids: Array<{
+        compound: string;
+        range: string;
+        min: number;
+        max: number;
+        isFlagged?: boolean;
+      }>;
+      confidence: "very_high" | "high" | "medium" | "low";
+      confidenceLabel: string;
+      disclaimer: string;
+      explanation: string[];
+      source: string;
+    };
     // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
     closelyRelatedVariants?: Array<{
       name: string;
