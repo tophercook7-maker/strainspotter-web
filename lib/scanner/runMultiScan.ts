@@ -504,8 +504,18 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   }
                 }
 
-                // Convert Phase 5.2 result to Phase 4.6 format for backward compatibility
-                const ratioExplanationV52 = {
+                // Phase 5.6.5 — Convert Phase 5.6 result to Phase 4.6 format for backward compatibility
+                // Use Phase 5.6 result (preferred) or fallback to Phase 5.2
+                const usePhase56 = strainRatioV56 && strainRatioV56.confidence !== "low";
+                
+                const ratioExplanation = usePhase56 ? {
+                  summary: `Ratio determined using database baseline + visual modifiers + terpene/effect cross-check + multi-image consensus (${strainRatioV56.confidence} confidence)`,
+                  fullExplanation: [
+                    `Strain Type: ${strainRatioV56.strainType}`,
+                    `Estimated Ratio: ${strainRatioV56.estimatedRatio}`,
+                    ...strainRatioV56.why,
+                  ],
+                } : {
                   summary: `Ratio determined using genetics + terpenes + phenotype signals (${strainRatioV52.confidence} confidence)`,
                   fullExplanation: [
                     strainRatioV52.explanation.geneticBaseline,
