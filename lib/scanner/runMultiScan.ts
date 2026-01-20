@@ -538,16 +538,22 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     : undefined,
                   // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
                   explanation: nameFirstPipelineResult.explanation,
-                  // Phase 5.6 Step 5.6.5 — Include ratio (using Phase 5.6 engine)
-                  ratio: {
+                  // Phase 5.6 Step 5.6.5 — Include ratio (using Phase 5.6 engine, fallback to Phase 5.2)
+                  ratio: usePhase56 ? {
                     indicaPercent: strainRatioV56.indicaPercent,
                     sativaPercent: strainRatioV56.sativaPercent,
-                    dominance: strainRatioV56.strainType.includes("Indica") ? "Indica" 
-                      : strainRatioV56.strainType.includes("Sativa") ? "Sativa" 
+                    dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
+                      : strainRatioV56.strainType.includes("Sativa") && !strainRatioV56.strainType.includes("Hybrid") ? "Sativa" 
                       : strainRatioV56.strainType.includes("Balanced") ? "Balanced" 
                       : "Hybrid",
                     displayText: `${strainRatioV56.strainType}: ${strainRatioV56.estimatedRatio}`,
-                    explanation: ratioExplanationV56,
+                    explanation: ratioExplanation,
+                  } : {
+                    indicaPercent: strainRatioV52.indicaPercent,
+                    sativaPercent: strainRatioV52.sativaPercent,
+                    dominance: strainRatioV52.dominance,
+                    displayText: strainRatioV52.displayText,
+                    explanation: ratioExplanation,
                   },
                   // Phase 4.7 Step 4.7.2 — Include closely related variants if ambiguous
                   closelyRelatedVariants: nameFirstPipelineResult.closelyRelatedVariants,
