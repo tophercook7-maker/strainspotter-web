@@ -143,6 +143,15 @@ export default function WikiReportPanel({
                       </li>
                     ))}
                   </ul>
+                  
+                  {/* Phase 4.6 Step 4.6.4 — Enhance explanation with wiki report genetics if available */}
+                  {wikiReport?.geneticsLineage?.dominanceExplanation && (
+                    <div className="pt-2 mt-2 border-t border-white/10">
+                      <p className="text-xs text-white/70 leading-relaxed italic">
+                        {wikiReport.geneticsLineage.dominanceExplanation}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CollapsibleSection>
             </div>
