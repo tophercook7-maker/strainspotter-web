@@ -546,9 +546,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       };
                       console.log("Phase 5.7 — USING V57 RESULT (confidence >= 60%)");
                     } else {
-                      // Phase 5.7 — Fallback to Phase 5.5 or Phase 5.3
-                      console.log(`Phase 5.7 — V57 confidence too low (${nameFirstV57Result.primaryMatch.confidence}%), trying Phase 5.5...`);
-                      const { runNameFirstV55 } = require("./nameFirstV55");
+                        // Phase 5.7 — Fallback to Phase 5.5 or Phase 5.3
+                        console.log(`Phase 5.7 — V57 confidence too low (${nameFirstV57Result.primaryMatch.confidence}%), trying Phase 5.5...`);
+                        const { runNameFirstV55 } = require("./nameFirstV55");
                       try {
                         const nameFirstV55Result = runNameFirstV55(
                           imageResultsV3,
