@@ -168,12 +168,146 @@ export default function WikiStyleResultPanel({
                     ))}
                   </ul>
                 </div>
-              </CollapsibleSection>
-            </div>
-          )}
-        </div>
-          
-          {/* Phase 4.7 Step 4.7.2 — CLOSELY RELATED VARIANTS (if ambiguous, collapsed) */}
+                          </CollapsibleSection>
+                        </div>
+                      )}
+
+                      {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
+                      {result.nameFirstDisplay.terpeneExperience && (
+                        <div className="space-y-4 pt-4 border-t border-white/10">
+                          {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
+                          {result.nameFirstDisplay.terpeneExperience.dominantTerpenes.length > 0 && (
+                            <div className="space-y-2">
+                              <h3 className="text-sm font-semibold text-white/90">Dominant Terpenes</h3>
+                              <div className="flex flex-wrap gap-2">
+                                {result.nameFirstDisplay.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30"
+                                  >
+                                    {terpene}
+                                  </span>
+                                ))}
+                                {result.nameFirstDisplay.terpeneExperience.secondaryTerpenes.length > 0 && (
+                                  <>
+                                    {result.nameFirstDisplay.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
+                                      <span
+                                        key={`sec-${idx}`}
+                                        className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                                      >
+                                        {terpene}
+                                      </span>
+                                    ))}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Phase 5.1 Step 5.1.5 — EXPERIENCE PROFILE */}
+                          <div className="space-y-3">
+                            <h3 className="text-sm font-semibold text-white/90">Experience Profile</h3>
+                            <div className="space-y-2.5">
+                              {/* Body Relaxation */}
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs font-medium text-white/80">Body Relaxation</span>
+                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                                  <div
+                                    className="h-full bg-purple-500/60 rounded-full transition-all"
+                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Mental Stimulation */}
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs font-medium text-white/80">Mental Stimulation</span>
+                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                                  <div
+                                    className="h-full bg-green-500/60 rounded-full transition-all"
+                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Mood Elevation */}
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs font-medium text-white/80">Mood Elevation</span>
+                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.moodElevation}%</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                                  <div
+                                    className="h-full bg-yellow-500/60 rounded-full transition-all"
+                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.moodElevation}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Sedation */}
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs font-medium text-white/80">Sedation</span>
+                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.sedation}%</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                                  <div
+                                    className="h-full bg-blue-500/60 rounded-full transition-all"
+                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.sedation}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Focus / Clarity */}
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs font-medium text-white/80">Focus / Clarity</span>
+                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.focusClarity}%</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                                  <div
+                                    className="h-full bg-cyan-500/60 rounded-full transition-all"
+                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.focusClarity}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Appetite Stimulation */}
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs font-medium text-white/80">Appetite Stimulation</span>
+                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%</span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                                  <div
+                                    className="h-full bg-orange-500/60 rounded-full transition-all"
+                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Phase 5.1 Step 5.1.5 — Consensus Notes (if available) */}
+                            {result.nameFirstDisplay.terpeneExperience.consensusNotes && 
+                             result.nameFirstDisplay.terpeneExperience.consensusNotes.length > 0 && (
+                              <div className="pt-2 mt-2 border-t border-white/10">
+                                <p className="text-xs text-white/60 italic leading-relaxed">
+                                  {result.nameFirstDisplay.terpeneExperience.consensusNotes.join(" ")}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                      {/* Phase 4.7 Step 4.7.2 — CLOSELY RELATED VARIANTS (if ambiguous, collapsed) */}
           {result.nameFirstDisplay.closelyRelatedVariants && 
            result.nameFirstDisplay.closelyRelatedVariants.length > 0 && 
            result.nameFirstDisplay.isAmbiguous && (

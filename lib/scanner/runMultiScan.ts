@@ -38,6 +38,8 @@ import { assignUserImageLabels } from "./imageLabels";
 import { generateWikiReport } from "./wikiReport";
 // Phase 4.6 — Indica/Sativa/Hybrid Ratio Engine
 import { resolveStrainRatio, generateRatioExplanation } from "./ratioEngine";
+// Phase 5.1 — Terpene-Weighted Experience Engine
+import { generateTerpeneExperience } from "./terpeneExperienceEngine";
 import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
@@ -421,33 +423,50 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       dbEntry,
       undefined // wikiReport generated later, will be available in UI
     );
-    console.log("Phase 4.6 Step 4.6.4 — RATIO EXPLANATION:", ratioExplanation);
+                console.log("Phase 4.6 Step 4.6.4 — RATIO EXPLANATION:", ratioExplanation);
 
-    viewModel.nameFirstDisplay = {
-      primaryStrainName: nameFirstPipelineResult.primaryStrainName,
-      confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
-      confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
-      tagline: "Closest known match based on visual + database consensus",
-      alternateMatches: nameFirstPipelineResult.alternateMatches.length > 0
-        ? nameFirstPipelineResult.alternateMatches.map(a => ({
-            name: a.name,
-            whyNotPrimary: a.whyNotPrimary,
-          }))
-        : undefined,
-      // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
-      explanation: nameFirstPipelineResult.explanation,
-      // Phase 4.6 Step 4.6.2 — Include ratio (FREE TIER)
-      ratio: {
-        indicaPercent: strainRatio.indicaPercent,
-        sativaPercent: strainRatio.sativaPercent,
-        dominance: strainRatio.dominance,
-        displayText: strainRatio.displayText,
-        explanation: ratioExplanation,
-      },
-      // Phase 4.7 Step 4.7.2 — Include closely related variants if ambiguous
-      closelyRelatedVariants: nameFirstPipelineResult.closelyRelatedVariants,
-      isAmbiguous: nameFirstPipelineResult.isAmbiguous,
-    };
+                // Phase 5.1 — TERPENE-WEIGHTED EXPERIENCE ENGINE
+                const terpeneExperienceResult = generateTerpeneExperience(
+                  lockedStrainName,
+                  dbEntry,
+                  fusedFeatures,
+                  imageResultsV3.length > 0 ? imageResultsV3 : undefined
+                );
+                console.log("Phase 5.1 — TERPENE EXPERIENCE RESULT:", terpeneExperienceResult);
+
+                viewModel.nameFirstDisplay = {
+                  primaryStrainName: nameFirstPipelineResult.primaryStrainName,
+                  confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
+                  confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
+                  tagline: "Closest known match based on visual + database consensus",
+                  alternateMatches: nameFirstPipelineResult.alternateMatches.length > 0
+                    ? nameFirstPipelineResult.alternateMatches.map(a => ({
+                        name: a.name,
+                        whyNotPrimary: a.whyNotPrimary,
+                      }))
+                    : undefined,
+                  // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
+                  explanation: nameFirstPipelineResult.explanation,
+                  // Phase 4.6 Step 4.6.2 — Include ratio (FREE TIER)
+                  ratio: {
+                    indicaPercent: strainRatio.indicaPercent,
+                    sativaPercent: strainRatio.sativaPercent,
+                    dominance: strainRatio.dominance,
+                    displayText: strainRatio.displayText,
+                    explanation: ratioExplanation,
+                  },
+                  // Phase 4.7 Step 4.7.2 — Include closely related variants if ambiguous
+                  closelyRelatedVariants: nameFirstPipelineResult.closelyRelatedVariants,
+                  isAmbiguous: nameFirstPipelineResult.isAmbiguous,
+                  // Phase 5.1 — Include terpene experience (FREE TIER)
+                  terpeneExperience: {
+                    dominantTerpenes: terpeneExperienceResult.terpeneProfile.primaryTerpenes.map(t => t.name),
+                    secondaryTerpenes: terpeneExperienceResult.terpeneProfile.secondaryTerpenes.map(t => t.name),
+                    experience: terpeneExperienceResult.experience,
+                    visualBoosts: terpeneExperienceResult.visualBoosts.length > 0 ? terpeneExperienceResult.visualBoosts : undefined,
+                    consensusNotes: terpeneExperienceResult.consensusNotes,
+                  },
+                };
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
     console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
     console.log("Phase 4.6 Step 4.6.2 — RATIO INCLUDED (FREE TIER):", viewModel.nameFirstDisplay.ratio);

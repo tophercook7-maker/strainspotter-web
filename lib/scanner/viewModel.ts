@@ -145,15 +145,33 @@ export interface ScannerViewModel {
       varianceNotes: string[]; // Phenotype variance explanation
     };
     // Phase 4.6 Step 4.6.2 — Indica/Sativa/Hybrid Ratio (FREE TIER)
+    // Phase 5.0 Step 5.0.4 — Enhanced with range display
     ratio?: {
       indicaPercent: number; // 0-100
       sativaPercent: number; // 0-100
+      indicaRange?: { min: number; max: number }; // Phase 5.0 — Range if variance exists
+      sativaRange?: { min: number; max: number }; // Phase 5.0 — Range if variance exists
       dominance: "Indica" | "Sativa" | "Hybrid" | "Balanced";
-      displayText: string; // "Indica 70% · Sativa 30%" or "Balanced Hybrid (50 / 50)"
+      displayText: string; // "Indica 70% · Sativa 30%" or "Indica-leaning Hybrid (60–70% Indica)"
       explanation: {
         summary: string; // Short summary for collapsed header
         fullExplanation: string[]; // Bullets for expanded section
       };
+    };
+    // Phase 5.1 — Terpene-Weighted Experience Engine (FREE TIER)
+    terpeneExperience?: {
+      dominantTerpenes: string[]; // Top 3 primary terpenes
+      secondaryTerpenes: string[]; // Next 2 secondary terpenes
+      experience: {
+        bodyRelaxation: number; // 0-100
+        mentalStimulation: number; // 0-100
+        moodElevation: number; // 0-100
+        sedation: number; // 0-100
+        focusClarity: number; // 0-100
+        appetiteStimulation: number; // 0-100
+      };
+      visualBoosts?: Array<{ name: string; boost: number; reasoning: string }>;
+      consensusNotes?: string[];
     };
     // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
     closelyRelatedVariants?: Array<{

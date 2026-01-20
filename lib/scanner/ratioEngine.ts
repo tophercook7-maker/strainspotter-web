@@ -1,6 +1,7 @@
 // lib/scanner/ratioEngine.ts
 // Phase 4.6 — Indica / Sativa / Hybrid Ratio Engine
 // Phase 4.8 — Enhanced Multi-Source Weighted Ratio Engine
+// Phase 5.0 — Enhanced with Range Display & Explicit Phenotype Detection
 
 import type { CultivarReference } from "./cultivarLibrary";
 import type { ImageResult } from "./consensusEngine";
@@ -10,12 +11,15 @@ import { CULTIVAR_LIBRARY } from "./cultivarLibrary";
 /**
  * Phase 4.6 Step 4.6.1 — Ratio Result
  * Phase 4.8 — Enhanced with confidence-aware display
+ * Phase 5.0 Step 5.0.4 — Enhanced with range display
  */
 export type StrainRatio = {
   indicaPercent: number; // 0-100
   sativaPercent: number; // 0-100
+  indicaRange?: { min: number; max: number }; // Phase 5.0 — Range if variance exists
+  sativaRange?: { min: number; max: number }; // Phase 5.0 — Range if variance exists
   dominance: "Indica" | "Sativa" | "Hybrid" | "Balanced";
-  displayText: string; // "Indica 70% · Sativa 30%" or "Balanced Hybrid (50 / 50)"
+  displayText: string; // "Indica 70% · Sativa 30%" or "Indica-leaning Hybrid (60–70% Indica)"
   explanation: {
     source: "database_explicit" | "database_dominance" | "lineage_inferred" | "morphology_adjusted" | "consensus_weighted" | "default";
     databaseStrain?: string; // Strain name from database
@@ -24,6 +28,7 @@ export type StrainRatio = {
     lineageInference?: string; // Parent strain inference
     morphologyAdjustment?: string; // Visual trait adjustment
     confidenceLevel?: "high" | "medium" | "low"; // Confidence in ratio
+    varianceRange?: string; // Phase 5.0 — Range explanation if variance exists
   };
 };
 
@@ -270,8 +275,9 @@ export function resolveStrainRatio(
   // Phase 4.8 Step 4.8.2 — LINEAGE INFERENCE (weight 25%)
   const lineageInference = inferRatioFromLineage(dbEntry);
 
-  // Phase 4.8 Step 4.8.3 — MORPHOLOGY ADJUSTMENT (weight 15%)
-  const morphologyAdjustment = calculateMorphologyAdjustment(fusedFeatures);
+  // Phase 5.0 Step 5.0.2 — IMAGE-BASED PHENOTYPE ADJUSTMENT (weight 15%, cap ±12%)
+  // Phase 5.0 Step 5.0.3 — MULTI-IMAGE CONSENSUS: Pass imageResults for outlier discarding and close-up weighting
+  const morphologyAdjustment = calculateMorphologyAdjustment(fusedFeatures, imageResults);
 
   // Phase 4.8 Step 4.8.4 — FINAL RATIO CALCULATION (Weighted combination)
   // Formula: (DB × 0.60) + (Lineage × 0.25) + (Image × 0.15)
@@ -410,6 +416,9 @@ export function resolveStrainRatio(
   return {
     indicaPercent: finalIndicaPercent,
     sativaPercent: finalSativaPercent,
+    // Phase 5.0 Step 5.0.4 — Include range if variance exists
+    indicaRange: indicaRange && indicaRange.max - indicaRange.min > 3 ? indicaRange : undefined,
+    sativaRange: sativaRange && sativaRange.max - sativaRange.min > 3 ? sativaRange : undefined,
     dominance,
     displayText,
     explanation: {
@@ -418,8 +427,10 @@ export function resolveStrainRatio(
       confidenceNotes: confidenceNotes.join(" "),
       imageAlignment,
       lineageInference: lineageInference?.inference,
-      morphologyAdjustment: morphologyAdjustment ? `${morphologyAdjustment.reasoning} (±${Math.abs(morphologyAdjustment.adjustment)}%)` : undefined,
+      morphologyAdjustment: morphologyAdjustment ? `${morphologyAdjustment.reasoning} (±${Math.abs(morphologyAdjustment.adjustment).toFixed(1)}%)` : undefined,
       confidenceLevel,
+      // Phase 5.0 Step 5.0.4 — Include variance range explanation
+      varianceRange,
     },
   };
 }
