@@ -505,10 +505,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED (fallback):", strainRatioV52);
 
-                // Phase 6.0.5 — Determine which ratio to use (Phase 6.0 preferred, fallback to Phase 5.8, then Phase 5.6, then Phase 5.2)
-                const usePhase60ForRatio = strainRatioV60 && strainRatioV60.confidence !== "low";
-                const usePhase58ForRatio = !usePhase60ForRatio && strainRatioV58 && strainRatioV58.confidence !== "low";
-                const usePhase56ForRatio = !usePhase60ForRatio && !usePhase58ForRatio && strainRatioV56 && strainRatioV56.confidence !== "low";
+                // Phase 7.1.5 — Determine which ratio to use (Phase 7.1 preferred, fallback to Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
+                const usePhase71ForRatio = strainRatioV71 && strainRatioV71.confidence !== "low";
+                const usePhase60ForRatio = !usePhase71ForRatio && strainRatioV60 && strainRatioV60.confidence !== "low";
+                const usePhase58ForRatio = !usePhase71ForRatio && !usePhase60ForRatio && strainRatioV58 && strainRatioV58.confidence !== "low";
+                const usePhase56ForRatio = !usePhase71ForRatio && !usePhase60ForRatio && !usePhase58ForRatio && strainRatioV56 && strainRatioV56.confidence !== "low";
 
                 // Phase 5.7 — NAME-FIRST MATCHING & DISAMBIGUATION ENGINE (Latest)
                 // Try Phase 5.7 first, fallback to Phase 5.5, then Phase 5.3
@@ -695,11 +696,34 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   }
                 }
 
-                // Phase 5.6.5 — Convert Phase 5.6 result to Phase 4.6 format for backward compatibility
-                // Use Phase 5.6 result (preferred) or fallback to Phase 5.2
-                // Note: usePhase56ForRatio is already defined earlier (line 472)
+                // Phase 7.1.5 — Convert Phase 7.1 result to Phase 4.6 format for backward compatibility
+                // Use Phase 7.1 result (preferred) or fallback to Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2
+                // Note: usePhase71ForRatio, usePhase60ForRatio, usePhase58ForRatio, usePhase56ForRatio are already defined earlier
                 
-                const ratioExplanation = usePhase56ForRatio ? {
+                const ratioExplanation = usePhase71ForRatio ? {
+                  summary: `Ratio determined using base ratio sources (database genetics/lineage) + visual modulation + multi-image consensus (${strainRatioV71.confidence} confidence)`,
+                  fullExplanation: [
+                    `Classification: ${strainRatioV71.classification}${strainRatioV71.dominanceLabel ? ` (${strainRatioV71.dominanceLabel})` : ""}`,
+                    `Ratio: ${strainRatioV71.ratio}`,
+                    `Confidence: ${strainRatioV71.confidenceLabel}`,
+                    ...strainRatioV71.explanation,
+                  ],
+                } : usePhase60ForRatio ? {
+                  summary: `Ratio determined using ratio source model (database/lineage) + visual trait correlation + multi-image consensus (${strainRatioV60.confidence} confidence)`,
+                  fullExplanation: [
+                    `Type: ${strainRatioV60.typeLabel}`,
+                    `Ratio: ${strainRatioV60.ratio}`,
+                    `Confidence: ${strainRatioV60.confidenceLabel}`,
+                    ...strainRatioV60.explanation,
+                  ],
+                } : usePhase58ForRatio ? {
+                  summary: `Ratio determined using database signals (highest weight) + image phenotype + terpene/effect signals + multi-image consensus (${strainRatioV58.confidence} confidence)`,
+                  fullExplanation: [
+                    `Type: ${strainRatioV58.type}`,
+                    `Ratio: ${strainRatioV58.ratio}`,
+                    ...strainRatioV58.explanation,
+                  ],
+                } : usePhase56ForRatio ? {
                   summary: `Ratio determined using database baseline + visual modifiers + terpene/effect cross-check + multi-image consensus (${strainRatioV56.confidence} confidence)`,
                   fullExplanation: [
                     `Strain Type: ${strainRatioV56.strainType}`,
