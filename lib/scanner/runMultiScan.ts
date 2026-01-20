@@ -445,13 +445,29 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.1 — TERPENE EXPERIENCE RESULT:", terpeneExperienceResult);
 
-                // Phase 7.3 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
-                // Use Phase 7.3 engine with genetic baseline, phenotype modulation, multi-image consensus, and user interpretation
-                const { resolveStrainRatioV73 } = require("./ratioEngineV73");
+                // Phase 7.5 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
+                // Use Phase 7.5 engine with genetic baseline, morphology adjustments, terpene support signals, multi-image consensus
+                const { resolveStrainRatioV75 } = require("./ratioEngineV75");
                 const nameFirstCandidateStrains = nameFirstPipelineResult.alternateMatches?.map(a => ({
                   name: a.name,
                   confidence: a.score,
                 })) || [];
+                const terpeneProfileForRatio = terpeneExperienceResult.terpeneProfile.primaryTerpenes
+                  .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+                  .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood for ratio engine
+                const strainRatioV75 = resolveStrainRatioV75(
+                  lockedStrainName,
+                  dbEntry,
+                  imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                  input.imageCount,
+                  fusedFeatures,
+                  terpeneProfileForRatio.length > 0 ? terpeneProfileForRatio : undefined,
+                  nameFirstCandidateStrains.length > 0 ? nameFirstCandidateStrains : undefined
+                );
+                console.log("Phase 7.5 — STRAIN RATIO V75 RESOLVED:", strainRatioV75);
+
+                // Phase 7.3 — Fallback to Phase 7.3 if needed (for backward compatibility)
+                const { resolveStrainRatioV73 } = require("./ratioEngineV73");
                 const strainRatioV73 = resolveStrainRatioV73(
                   lockedStrainName,
                   dbEntry,
@@ -460,7 +476,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   fusedFeatures,
                   nameFirstCandidateStrains.length > 0 ? nameFirstCandidateStrains : undefined
                 );
-                console.log("Phase 7.3 — STRAIN RATIO V73 RESOLVED:", strainRatioV73);
+                console.log("Phase 7.3 — STRAIN RATIO V73 RESOLVED (fallback):", strainRatioV73);
 
                 // Phase 7.1 — Fallback to Phase 7.1 if needed (for backward compatibility)
                 const { resolveStrainRatioV71 } = require("./ratioEngineV71");
@@ -521,12 +537,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED (fallback):", strainRatioV52);
 
-                // Phase 7.3.5 — Determine which ratio to use (Phase 7.3 preferred, fallback to Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
-                const usePhase73ForRatio = strainRatioV73 && strainRatioV73.confidence !== "low";
-                const usePhase71ForRatio = !usePhase73ForRatio && strainRatioV71 && strainRatioV71.confidence !== "low";
-                const usePhase60ForRatio = !usePhase73ForRatio && !usePhase71ForRatio && strainRatioV60 && strainRatioV60.confidence !== "low";
-                const usePhase58ForRatio = !usePhase73ForRatio && !usePhase71ForRatio && !usePhase60ForRatio && strainRatioV58 && strainRatioV58.confidence !== "low";
-                const usePhase56ForRatio = !usePhase73ForRatio && !usePhase71ForRatio && !usePhase60ForRatio && !usePhase58ForRatio && strainRatioV56 && strainRatioV56.confidence !== "low";
+                // Phase 7.5.6 — Determine which ratio to use (Phase 7.5 preferred, fallback to Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
+                const usePhase75ForRatio = strainRatioV75 && strainRatioV75.confidence !== "low";
+                const usePhase73ForRatio = !usePhase75ForRatio && strainRatioV73 && strainRatioV73.confidence !== "low";
+                const usePhase71ForRatio = !usePhase75ForRatio && !usePhase73ForRatio && strainRatioV71 && strainRatioV71.confidence !== "low";
+                const usePhase60ForRatio = !usePhase75ForRatio && !usePhase73ForRatio && !usePhase71ForRatio && strainRatioV60 && strainRatioV60.confidence !== "low";
+                const usePhase58ForRatio = !usePhase75ForRatio && !usePhase73ForRatio && !usePhase71ForRatio && !usePhase60ForRatio && strainRatioV58 && strainRatioV58.confidence !== "low";
+                const usePhase56ForRatio = !usePhase75ForRatio && !usePhase73ForRatio && !usePhase71ForRatio && !usePhase60ForRatio && !usePhase58ForRatio && strainRatioV56 && strainRatioV56.confidence !== "low";
 
                 // Phase 5.7 — NAME-FIRST MATCHING & DISAMBIGUATION ENGINE (Latest)
                 // Try Phase 5.7 first, fallback to Phase 5.5, then Phase 5.3
@@ -585,7 +602,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                           fusedFeatures,
                           input.imageCount,
                       terpeneExperienceResult.terpeneProfile,
-                      usePhase73ForRatio ? {
+                      usePhase75ForRatio ? {
+                        indicaPercent: strainRatioV75.indicaPercent,
+                        sativaPercent: strainRatioV75.sativaPercent,
+                        dominance: strainRatioV75.classification,
+                        displayText: `${strainRatioV75.dominanceText}: ${strainRatioV75.displayText}`,
+                        confidence: strainRatioV75.confidence,
+                        explanation: {
+                          geneticBaseline: strainRatioV75.explanation[0] || "",
+                          source: "database_primary",
+                        },
+                      } : usePhase73ForRatio ? {
                         indicaPercent: strainRatioV73.indicaPercent,
                         sativaPercent: strainRatioV73.sativaPercent,
                         dominance: strainRatioV73.classification,
