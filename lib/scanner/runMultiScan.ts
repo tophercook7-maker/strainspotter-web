@@ -443,17 +443,28 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.1 — TERPENE EXPERIENCE RESULT:", terpeneExperienceResult);
 
-                // Phase 5.2 — INDICA / SATIVA / HYBRID RATIO ENGINE (Genetics + Terpene + Phenotype)
-                // Use Phase 5.2 engine with terpene profile from Phase 5.1
+                // Phase 5.6 — INDICA / SATIVA / HYBRID RATIO ENGINE (Enhanced)
+                // Use Phase 5.6 engine with terpene profile and effects from Phase 5.1
+                const strainRatioV56 = resolveStrainRatioV56(
+                  lockedStrainName,
+                  dbEntry,
+                  imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                  input.imageCount,
+                  fusedFeatures,
+                  terpeneExperienceResult.terpeneProfile // Pass terpene profile for cross-check
+                );
+                console.log("Phase 5.6 — STRAIN RATIO V56 RESOLVED:", strainRatioV56);
+
+                // Phase 5.2 — Fallback to Phase 5.2 if needed (for backward compatibility)
                 const strainRatioV52 = resolveStrainRatioV52(
                   lockedStrainName,
                   dbEntry,
                   imageResultsV3.length > 0 ? imageResultsV3 : undefined,
                   input.imageCount,
                   fusedFeatures,
-                  terpeneExperienceResult.terpeneProfile // Pass terpene profile for modulation
+                  terpeneExperienceResult.terpeneProfile
                 );
-                console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED:", strainRatioV52);
+                console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED (fallback):", strainRatioV52);
 
                 // Phase 5.3 Step 5.3.3 — DATABASE CROSS-VALIDATION
                 // Re-run name-first pipeline with terpene profile and ratio for validation
@@ -526,13 +537,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     : undefined,
                   // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
                   explanation: nameFirstPipelineResult.explanation,
-                  // Phase 5.2 Step 5.2.5 — Include ratio (using Phase 5.2 engine)
+                  // Phase 5.6 Step 5.6.5 — Include ratio (using Phase 5.6 engine)
                   ratio: {
-                    indicaPercent: strainRatioV52.indicaPercent,
-                    sativaPercent: strainRatioV52.sativaPercent,
-                    dominance: strainRatioV52.dominance,
-                    displayText: strainRatioV52.displayText,
-                    explanation: ratioExplanationV52,
+                    indicaPercent: strainRatioV56.indicaPercent,
+                    sativaPercent: strainRatioV56.sativaPercent,
+                    dominance: strainRatioV56.strainType.includes("Indica") ? "Indica" 
+                      : strainRatioV56.strainType.includes("Sativa") ? "Sativa" 
+                      : strainRatioV56.strainType.includes("Balanced") ? "Balanced" 
+                      : "Hybrid",
+                    displayText: `${strainRatioV56.strainType}: ${strainRatioV56.estimatedRatio}`,
+                    explanation: ratioExplanationV56,
                   },
                   // Phase 4.7 Step 4.7.2 — Include closely related variants if ambiguous
                   closelyRelatedVariants: nameFirstPipelineResult.closelyRelatedVariants,
