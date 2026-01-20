@@ -830,35 +830,39 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                         // Continue with original result
                       }
                     }
-                  } catch (error) {
-                    console.error("Phase 5.7 — V57 engine error:", error);
-                    // Phase 5.3.3 — Fallback to Phase 5.3 validation pipeline
-                    const { runNameFirstPipeline } = require("./nameFirstPipeline");
-                    try {
-                      const validatedPipelineResult = runNameFirstPipeline(
-                        imageResultsV3,
-                        fusedFeatures,
-                        input.imageCount,
-                        terpeneExperienceResult.terpeneProfile,
-                        strainRatioV52
-                      );
-                      console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT (fallback):", validatedPipelineResult);
-                      
-                      if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
-                        console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
-                        nameFirstPipelineResult = validatedPipelineResult;
-                      } else {
-                        if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
-                          console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
-                          nameFirstPipelineResult = validatedPipelineResult;
-                        } else {
-                          nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
+                      } catch (error) {
+                        console.error("Phase 5.7 — V57 engine error:", error);
+                        // Phase 5.3.3 — Fallback to Phase 5.3 validation pipeline
+                        const { runNameFirstPipeline } = require("./nameFirstPipeline");
+                        try {
+                          const validatedPipelineResult = runNameFirstPipeline(
+                            imageResultsV3,
+                            fusedFeatures,
+                            input.imageCount,
+                            terpeneExperienceResult.terpeneProfile,
+                            strainRatioV52
+                          );
+                          console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT (fallback):", validatedPipelineResult);
+                          
+                          if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
+                            console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
+                            nameFirstPipelineResult = validatedPipelineResult;
+                          } else {
+                            if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
+                              console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
+                              nameFirstPipelineResult = validatedPipelineResult;
+                            } else {
+                              nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
+                            }
+                          }
+                        } catch (fallbackError) {
+                          console.error("Phase 5.3.3 — Validation pipeline error:", fallbackError);
+                          // Continue with original result if validation fails
                         }
                       }
-                    } catch (fallbackError) {
-                      console.error("Phase 5.3.3 — Validation pipeline error:", fallbackError);
-                      // Continue with original result if validation fails
-                    }
+                  } catch (error) {
+                    console.error("Phase 8.0 — V80 engine error:", error);
+                    // Continue with original result if Phase 8.0 fails
                   }
                 }
 
