@@ -126,6 +126,8 @@ export interface ScannerViewModel {
   };
   
   // Phase 4.3 Step 4.3.6 — Name-First Display
+  // Phase 4.5 Step 4.5.1 — Name Lock Header
+  // Phase 4.5 Step 4.5.3 — Why This Strain (FREE TIER)
   nameFirstDisplay?: {
     primaryStrainName: string;
     confidencePercent: number;
@@ -134,7 +136,13 @@ export interface ScannerViewModel {
     alternateMatches?: Array<{
       name: string;
       whyNotPrimary: string;
-    }>; // "Often confused with: X, Y"
+    }>; // "Often confused with: X, Y" (Phase 4.5 Step 4.5.2 — Collapsed if confidence < 92%)
+    // Phase 4.5 Step 4.5.3 — Explanation for "Why this strain?" section (FREE TIER)
+    explanation?: {
+      whyThisNameWon: string[]; // 3-5 bullets: Visual markers, database frequency, lineage, terpenes
+      whatRuledOutOthers: string[]; // Why other candidates didn't win
+      varianceNotes: string[]; // Phenotype variance explanation
+    };
   };
   
   // Phase 3.8 Part D — Why This Name (Enhanced)

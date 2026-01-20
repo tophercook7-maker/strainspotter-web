@@ -60,15 +60,16 @@ export default function WikiStyleResultPanel({
 
   return (
     <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-6 max-h-[85vh] overflow-y-auto max-w-4xl mx-auto">
-      {/* Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY (TOP PRIORITY) */}
+      {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
       {result.nameFirstDisplay && (
         <div className="mb-6 space-y-4 pb-6 border-b border-white/10">
-          {/* Strain Name (H1) */}
-          <h1 className="text-4xl md:text-5xl font-bold text-white">
+          {/* Phase 4.5 Step 4.5.1 — Large Strain Name (Primary Candidate) */}
+          <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
             {result.nameFirstDisplay.primaryStrainName}
           </h1>
           
-          {/* Confidence Badge & Tagline */}
+          {/* Phase 4.5 Step 4.5.1 — Confidence Badge Next to Name */}
+          {/* Phase 4.5 Step 4.5.5 — Confidence Honesty: Show tier label, not raw % for high confidence */}
           <div className="flex flex-wrap items-center gap-3">
             <span
               className={`text-sm font-semibold px-4 py-2 rounded-full ${
@@ -81,26 +82,102 @@ export default function WikiStyleResultPanel({
                   : "bg-orange-500/20 text-orange-300"
               }`}
             >
-              {result.nameFirstDisplay.confidencePercent}% Confidence
+              {result.nameFirstDisplay.confidenceTier === "very_high"
+                ? "Very High Confidence"
+                : result.nameFirstDisplay.confidenceTier === "high"
+                ? "High Confidence"
+                : result.nameFirstDisplay.confidenceTier === "medium"
+                ? "Medium Confidence"
+                : "Low Confidence"}
+              {result.nameFirstDisplay.confidencePercent < 70 && (
+                <span className="ml-2 opacity-80">({result.nameFirstDisplay.confidencePercent}%)</span>
+              )}
             </span>
+            {/* Phase 4.5 Step 4.5.1 — Subtext Tagline */}
             <p className="text-sm text-white/70 italic">
               {result.nameFirstDisplay.tagline}
             </p>
           </div>
           
-          {/* Alternate Matches (Phase 4.3 Step 4.3.4) */}
-          {result.nameFirstDisplay.alternateMatches && result.nameFirstDisplay.alternateMatches.length > 0 && (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-              <p className="text-sm text-white/80 mb-2">
-                <strong>Often confused with:</strong>{" "}
+          {/* Phase 4.5 Step 4.5.2 — SECONDARY CANDIDATES (Optional, Collapsed if confidence < 92%) */}
+          {result.nameFirstDisplay.alternateMatches && 
+           result.nameFirstDisplay.alternateMatches.length > 0 && 
+           result.nameFirstDisplay.confidencePercent < 92 && (
+            <CollapsibleSection
+              title={`Also similar to (${result.nameFirstDisplay.alternateMatches.length} ${result.nameFirstDisplay.alternateMatches.length === 1 ? 'strain' : 'strains'})`}
+              defaultExpanded={false}
+              icon="🔍"
+            >
+              <div className="space-y-2 pt-2">
                 {result.nameFirstDisplay.alternateMatches.map((alt, idx) => (
-                  <span key={idx}>
-                    {idx > 0 && ", "}
-                    <span className="font-medium text-white/90">{alt.name}</span>
-                  </span>
+                  <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                    <p className="text-sm text-white/90 font-medium mb-1">
+                      {alt.name}
+                    </p>
+                    {alt.whyNotPrimary && (
+                      <p className="text-xs text-white/70 leading-relaxed">
+                        {alt.whyNotPrimary}
+                      </p>
+                    )}
+                  </div>
                 ))}
-              </p>
-            </div>
+                <p className="text-xs text-white/60 mt-3 italic">
+                  These strains share similar visual characteristics. The primary match above has the strongest alignment across all images.
+                </p>
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {/* Phase 4.5 Step 4.5.3 — WHY THIS STRAIN (Human Logic) - FREE TIER */}
+          {result.nameFirstDisplay.explanation && (
+            <CollapsibleSection
+              title="Why this strain?"
+              defaultExpanded={true}
+              icon="💡"
+            >
+              <div className="space-y-3 pt-2">
+                {/* Phase 4.5 Step 4.5.3 — Auto-generate 3-5 bullets from explanation */}
+                {result.nameFirstDisplay.explanation.whyThisNameWon && result.nameFirstDisplay.explanation.whyThisNameWon.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-white/90 mb-2">Match Evidence:</h4>
+                    <ul className="space-y-2">
+                      {result.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 5).map((reason, idx) => (
+                        <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
+                          <span className="text-green-400 mr-2">•</span>
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Phase 4.5 Step 4.5.3 — What Ruled Out Others (if available) */}
+                {result.nameFirstDisplay.explanation.whatRuledOutOthers && 
+                 result.nameFirstDisplay.explanation.whatRuledOutOthers.length > 0 && (
+                  <div className="pt-2 border-t border-white/10">
+                    <h4 className="text-sm font-semibold text-white/90 mb-2">Why not other strains?</h4>
+                    <ul className="space-y-2">
+                      {result.nameFirstDisplay.explanation.whatRuledOutOthers.slice(0, 3).map((reason, idx) => (
+                        <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
+                          <span className="text-yellow-400 mr-2">•</span>
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Phase 4.5 Step 4.5.3 — Variance Notes (if available) */}
+                {result.nameFirstDisplay.explanation.varianceNotes && 
+                 result.nameFirstDisplay.explanation.varianceNotes.length > 0 && (
+                  <div className="pt-2 border-t border-white/10">
+                    <p className="text-xs text-white/70 leading-relaxed italic">
+                      {result.nameFirstDisplay.explanation.varianceNotes.join(" ")}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CollapsibleSection>
           )}
         </div>
       )}

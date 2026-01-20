@@ -398,6 +398,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
   
   // Phase 4.3 Step 4.3.6 — Add Name-First Display (TOP PRIORITY)
+  // Phase 4.5 Step 4.5.1 — Include explanation for "Why this strain?" section
   if (nameFirstPipelineResult) {
     viewModel.nameFirstDisplay = {
       primaryStrainName: nameFirstPipelineResult.primaryStrainName,
@@ -410,8 +411,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
             whyNotPrimary: a.whyNotPrimary,
           }))
         : undefined,
+      // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
+      explanation: nameFirstPipelineResult.explanation,
     };
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
+    console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
   }
   
   // Phase 3.4 Part C — Add multi-image info to view model
