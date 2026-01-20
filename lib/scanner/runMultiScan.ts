@@ -445,8 +445,20 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.1 — TERPENE EXPERIENCE RESULT:", terpeneExperienceResult);
 
-                // Phase 6.0 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
-                // Use Phase 6.0 engine with terpene profile and effects from Phase 5.1
+                // Phase 7.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
+                // Use Phase 7.1 engine with terpene profile and effects from Phase 5.1
+                const { resolveStrainRatioV71 } = require("./ratioEngineV71");
+                const strainRatioV71 = resolveStrainRatioV71(
+                  lockedStrainName,
+                  dbEntry,
+                  imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                  input.imageCount,
+                  fusedFeatures,
+                  terpeneExperienceResult.terpeneProfile // Pass terpene profile for signals
+                );
+                console.log("Phase 7.1 — STRAIN RATIO V71 RESOLVED:", strainRatioV71);
+
+                // Phase 6.0 — Fallback to Phase 6.0 if needed (for backward compatibility)
                 const { resolveStrainRatioV60 } = require("./ratioEngineV60");
                 const strainRatioV60 = resolveStrainRatioV60(
                   lockedStrainName,
@@ -456,7 +468,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   fusedFeatures,
                   terpeneExperienceResult.terpeneProfile // Pass terpene profile for signals
                 );
-                console.log("Phase 6.0 — STRAIN RATIO V60 RESOLVED:", strainRatioV60);
+                console.log("Phase 6.0 — STRAIN RATIO V60 RESOLVED (fallback):", strainRatioV60);
 
                 // Phase 5.8 — Fallback to Phase 5.8 if needed (for backward compatibility)
                 const { resolveStrainRatioV58 } = require("./ratioEngineV58");
@@ -554,18 +566,28 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                           imageResultsV3,
                           fusedFeatures,
                           input.imageCount,
-                          terpeneExperienceResult.terpeneProfile,
-                          usePhase60ForRatio ? {
-                            indicaPercent: strainRatioV60.indicaPercent,
-                            sativaPercent: strainRatioV60.sativaPercent,
-                            dominance: strainRatioV60.type,
-                            displayText: `${strainRatioV60.typeLabel}: ${strainRatioV60.ratio}`,
-                            confidence: strainRatioV60.confidence,
-                            explanation: {
-                              geneticBaseline: strainRatioV60.explanation[0] || "",
-                              source: "database_exact",
-                            },
-                          } : usePhase58ForRatio ? {
+                      terpeneExperienceResult.terpeneProfile,
+                      usePhase71ForRatio ? {
+                        indicaPercent: strainRatioV71.indicaPercent,
+                        sativaPercent: strainRatioV71.sativaPercent,
+                        dominance: strainRatioV71.classification,
+                        displayText: `${strainRatioV71.classification}${strainRatioV71.dominanceLabel ? ` (${strainRatioV71.dominanceLabel})` : ""}: ${strainRatioV71.ratio}`,
+                        confidence: strainRatioV71.confidence,
+                        explanation: {
+                          geneticBaseline: strainRatioV71.explanation[0] || "",
+                          source: "database_canonical",
+                        },
+                      } : usePhase60ForRatio ? {
+                        indicaPercent: strainRatioV60.indicaPercent,
+                        sativaPercent: strainRatioV60.sativaPercent,
+                        dominance: strainRatioV60.type,
+                        displayText: `${strainRatioV60.typeLabel}: ${strainRatioV60.ratio}`,
+                        confidence: strainRatioV60.confidence,
+                        explanation: {
+                          geneticBaseline: strainRatioV60.explanation[0] || "",
+                          source: "database_exact",
+                        },
+                      } : usePhase58ForRatio ? {
                             indicaPercent: strainRatioV58.indicaPercent,
                             sativaPercent: strainRatioV58.sativaPercent,
                             dominance: strainRatioV58.type,
@@ -717,8 +739,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     : undefined,
                   // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
                   explanation: nameFirstPipelineResult.explanation,
-                  // Phase 6.0 Step 6.0.4 — Include ratio (using Phase 6.0 engine, fallback to Phase 5.8, then Phase 5.6, then Phase 5.2)
-                  ratio: usePhase60ForRatio ? {
+                  // Phase 7.1 Step 7.1.4 — Include ratio (using Phase 7.1 engine, fallback to Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
+                  ratio: usePhase71ForRatio ? {
+                    indicaPercent: strainRatioV71.indicaPercent,
+                    sativaPercent: strainRatioV71.sativaPercent,
+                    dominance: strainRatioV71.classification,
+                    displayText: `${strainRatioV71.classification}${strainRatioV71.dominanceLabel ? ` (${strainRatioV71.dominanceLabel})` : ""}: ${strainRatioV71.ratio}`,
+                    explanation: ratioExplanation,
+                  } : usePhase60ForRatio ? {
                     indicaPercent: strainRatioV60.indicaPercent,
                     sativaPercent: strainRatioV60.sativaPercent,
                     dominance: strainRatioV60.type,
