@@ -196,6 +196,29 @@ export interface ScannerViewModel {
       explanation: string[];
       source: string;
     };
+    // Phase 7.4 — TERPENE PROFILE CONSENSUS ENGINE
+    terpeneProfileConsensus?: {
+      dominantTerpenes: Array<{
+        name: string;
+        likelihood: "High" | "Medium" | "Medium-Low" | "Low" | "Possible";
+        confidence: number;
+        interpretation: string;
+        reasoning: string[];
+        isTrace?: boolean;
+      }>;
+      traceTerpenes?: Array<{
+        name: string;
+        likelihood: "High" | "Medium" | "Medium-Low" | "Low" | "Possible";
+        confidence: number;
+        interpretation: string;
+        reasoning: string[];
+        isTrace?: boolean;
+      }>;
+      confidence: "very_high" | "high" | "medium" | "low";
+      confidenceLabel: string;
+      explanation: string[];
+      source: string;
+    };
     // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
     closelyRelatedVariants?: Array<{
       name: string;

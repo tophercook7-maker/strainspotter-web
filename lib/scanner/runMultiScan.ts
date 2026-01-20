@@ -858,6 +858,22 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       candidateStrains.length > 0 ? candidateStrains : undefined
                     );
                   })(),
+                  // Phase 7.4 — TERPENE PROFILE CONSENSUS ENGINE
+                  terpeneProfileConsensus: (() => {
+                    const { generateTerpeneProfileConsensusV74 } = require("./terpeneProfileConsensusV74");
+                    const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(a => ({
+                      name: a.name,
+                      confidence: a.score,
+                    })) || [];
+                    return generateTerpeneProfileConsensusV74(
+                      nameFirstPipelineResult.primaryStrainName,
+                      dbEntry,
+                      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                      input.imageCount,
+                      fusedFeatures,
+                      candidateStrains.length > 0 ? candidateStrains : undefined
+                    );
+                  })(),
                 };
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
     console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
