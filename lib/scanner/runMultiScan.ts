@@ -811,11 +811,6 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED (fallback):", strainRatioV52);
 
-                // Phase 8.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
-                // 4-Source Weighted System: Database + Visual + Terpene + Name Consensus
-                let nameFirstV80ResultForRatio: NameFirstResultV80 | undefined = undefined;
-                let strainRatioV81: any = undefined;
-                
                 // Phase 7.9.6 — Determine which ratio to use (Phase 7.9 preferred, fallback to Phase 7.7, then Phase 7.5, then Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
                 // Note: Phase 8.1 check will be added after Phase 8.1 completes
                 const usePhase79ForRatio = strainRatioV79 && strainRatioV79.confidence !== "low";
@@ -1120,39 +1115,6 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   } catch (error) {
                     console.error("Phase 8.0 — V80 engine error:", error);
                     // Continue with original result if Phase 8.0 fails
-                  }
-                }
-
-                // Phase 8.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
-                // 4-Source Weighted System: Database + Visual + Terpene + Name Consensus
-                if (nameFirstPipelineResult && imageResultsV3.length > 0) {
-                  const { resolveStrainRatioV81 } = require("./ratioEngineV81");
-                  try {
-                    // Phase 8.1 — Run ratio engine with Phase 8.0 name result
-                    const terpeneProfileForRatioV81 = terpeneExperienceResult.terpeneProfile.primaryTerpenes
-                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
-                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
-                    
-                    // Get updated dbEntry based on Phase 8.0 primary match
-                    const updatedStrainName = nameFirstPipelineResult.primaryStrainName;
-                    const updatedDbEntry = CULTIVAR_LIBRARY.find(
-                      c => c.name.toLowerCase() === updatedStrainName.toLowerCase() ||
-                          c.aliases.some(a => a.toLowerCase() === updatedStrainName.toLowerCase())
-                    ) || dbEntry;
-                    
-                    strainRatioV81 = resolveStrainRatioV81(
-                      updatedStrainName,
-                      updatedDbEntry,
-                      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
-                      input.imageCount,
-                      fusedFeatures,
-                      terpeneProfileForRatioV81.length > 0 ? terpeneProfileForRatioV81 : undefined,
-                      nameFirstV80ResultForRatio
-                    );
-                    console.log("Phase 8.1 — STRAIN RATIO V81 RESOLVED:", strainRatioV81);
-                  } catch (error) {
-                    console.error("Phase 8.1 — ratio engine error:", error);
-                    // Continue with fallback ratio engines if Phase 8.1 fails
                   }
                 }
 
@@ -1771,6 +1733,42 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
             }))
           : [],
       };
+    }
+  }
+
+  // Phase 8.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
+  // 4-Source Weighted System: Database + Visual + Terpene + Name Consensus
+  let nameFirstV80ResultForRatio: any = undefined;
+  let strainRatioV81: any = undefined;
+  
+  if (nameFirstPipelineResult && imageResultsV3.length > 0) {
+    const { resolveStrainRatioV81 } = require("./ratioEngineV81");
+    try {
+      // Phase 8.1 — Run ratio engine with Phase 8.0 name result
+      const terpeneProfileForRatioV81 = terpeneExperienceResult.terpeneProfile.primaryTerpenes
+        .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+        .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
+      
+      // Get updated dbEntry based on Phase 8.0 primary match
+      const updatedStrainName = nameFirstPipelineResult.primaryStrainName;
+      const updatedDbEntry = CULTIVAR_LIBRARY.find(
+        c => c.name.toLowerCase() === updatedStrainName.toLowerCase() ||
+            c.aliases.some(a => a.toLowerCase() === updatedStrainName.toLowerCase())
+      ) || dbEntry;
+      
+      strainRatioV81 = resolveStrainRatioV81(
+        updatedStrainName,
+        updatedDbEntry,
+        imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+        input.imageCount,
+        fusedFeatures,
+        terpeneProfileForRatioV81.length > 0 ? terpeneProfileForRatioV81 : undefined,
+        nameFirstV80ResultForRatio
+      );
+      console.log("Phase 8.1 — STRAIN RATIO V81 RESOLVED:", strainRatioV81);
+    } catch (error) {
+      console.error("Phase 8.1 — ratio engine error:", error);
+      // Continue with fallback ratio engines if Phase 8.1 fails
     }
   }
   
