@@ -1157,25 +1157,151 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 const confidenceTierLabel = (nameFirstPipelineResult as any)?.confidenceTierLabel;
                 const displayTagline = strainTitle || confidenceTierLabel || "Closest known match based on visual + database consensus";
                 
-                viewModel.nameFirstDisplay = {
-                  primaryStrainName: nameFirstPipelineResult.primaryStrainName,
-                  confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
-                  confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
-                  tagline: displayTagline, // Phase 5.7.3 — Use confidence tier label if available
-                  alsoKnownAs, // Phase 5.5.5 — Include aliases
-                  alternateMatches: nameFirstPipelineResult.alternateMatches.length > 0
-                    ? nameFirstPipelineResult.alternateMatches.map(a => ({
-                        name: a.name,
-                        confidence: a.score, // Phase 5.7.4 — Include confidence
-                        whyNotPrimary: a.whyNotPrimary,
-                      }))
-                    : undefined,
-                  // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
-                  explanation: nameFirstPipelineResult.explanation,
-                  // Phase 8.1 Step 8.1.6 — Include ratio (using Phase 8.1 engine, fallback to Phase 7.9, then Phase 7.7, then Phase 7.5, then Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
-                  // Phase 5.0.3.4 — Use base ratioEngine result (with consensus merge) as PRIMARY
-                  // Phase 5.0.3 — Database + Consensus ratio (preferred over versioned engines)
-                  ratio: strainRatio ? {
+                // Phase 5.1 — Compute terpene experience (FREE TIER)
+                // --- PRECOMPUTED TERPENE EXPERIENCE (SAFE) ---
+                let computedTerpeneExperience = undefined;
+
+                if (terpeneExperienceResult && terpeneExperienceResult.terpeneProfile) {
+                  const primary = Array.isArray(terpeneExperienceResult.terpeneProfile.primaryTerpenes)
+                    ? terpeneExperienceResult.terpeneProfile.primaryTerpenes
+                    : [];
+
+                  const secondary = Array.isArray(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+                    ? terpeneExperienceResult.terpeneProfile.secondaryTerpenes
+                    : [];
+
+                  computedTerpeneExperience = {
+                    dominantTerpenes: primary.map(function (t) {
+                      return t.name;
+                    }),
+                    secondaryTerpenes: secondary.map(function (t) {
+                      return t.name;
+                    }),
+                    experience: terpeneExperienceResult.experience || [],
+                    visualBoosts: terpeneExperienceResult.visualBoosts || [],
+                  };
+                }
+                
+                // Phase 7.4 — Compute terpene profile consensus
+                let computedTerpeneProfileConsensus = undefined;
+                if (nameFirstPipelineResult) {
+                  const terpeneProfileConsensusV74Module = require("./terpeneProfileConsensusV74");
+                  const generateTerpeneProfileConsensusV74 = terpeneProfileConsensusV74Module.generateTerpeneProfileConsensusV74;
+                  const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(function(a) {
+                    return {
+                      name: a.name,
+                      confidence: a.score,
+                    };
+                  }) || [];
+                  computedTerpeneProfileConsensus = generateTerpeneProfileConsensusV74(
+                    nameFirstPipelineResult.primaryStrainName,
+                    dbEntry,
+                    imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                    input.imageCount,
+                    fusedFeatures,
+                    candidateStrains.length > 0 ? candidateStrains : undefined
+                  );
+                }
+                
+                // Phase 7.6 — Compute effect profile use case
+                let computedEffectProfileUseCase = undefined;
+                if (nameFirstPipelineResult && terpeneExperienceResult) {
+                  const effectProfileUseCaseV76Module = require("./effectProfileUseCaseV76");
+                  const generateEffectProfileUseCaseV76 = effectProfileUseCaseV76Module.generateEffectProfileUseCaseV76;
+                  const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(function(a) {
+                    return {
+                      name: a.name,
+                      confidence: a.score,
+                    };
+                  }) || [];
+                  const terpeneProfileForEffects = terpeneExperienceResult.terpeneProfile.primaryTerpenes
+                    .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+                    .map(function(t) {
+                      return { name: t.name, likelihood: "High" };
+                    });
+                  const ratioForEffects = usePhase79ForRatio ? {
+                    indicaPercent: strainRatioV79.indicaPercent,
+                    sativaPercent: strainRatioV79.sativaPercent,
+                  } : usePhase77ForRatio ? {
+                    indicaPercent: strainRatioV77.indicaPercent,
+                    sativaPercent: strainRatioV77.sativaPercent,
+                  } : usePhase75ForRatio ? {
+                    indicaPercent: strainRatioV75.indicaPercent,
+                    sativaPercent: strainRatioV75.sativaPercent,
+                  } : usePhase73ForRatio ? {
+                    indicaPercent: strainRatioV73.indicaPercent,
+                    sativaPercent: strainRatioV73.sativaPercent,
+                  } : usePhase71ForRatio ? {
+                    indicaPercent: strainRatioV71.indicaPercent,
+                    sativaPercent: strainRatioV71.sativaPercent,
+                  } : undefined;
+                  computedEffectProfileUseCase = generateEffectProfileUseCaseV76(
+                    nameFirstPipelineResult.primaryStrainName,
+                    dbEntry,
+                    imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                    input.imageCount,
+                    fusedFeatures,
+                    terpeneProfileForEffects.length > 0 ? terpeneProfileForEffects : undefined,
+                    candidateStrains.length > 0 ? candidateStrains : undefined,
+                    ratioForEffects?.indicaPercent,
+                    ratioForEffects?.sativaPercent
+                  );
+                }
+                
+                // Phase 7.8 — Compute effect experience prediction
+                let computedEffectExperiencePrediction = undefined;
+                if (nameFirstPipelineResult && terpeneExperienceResult && terpeneCannabinoidProfileEarly) {
+                  const effectExperiencePredictionV78Module = require("./effectExperiencePredictionV78");
+                  const generateEffectExperiencePredictionV78 = effectExperiencePredictionV78Module.generateEffectExperiencePredictionV78;
+                  const terpeneProfileForPrediction = terpeneExperienceResult.terpeneProfile.primaryTerpenes
+                    .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+                    .map(function(t) {
+                      return { name: t.name, likelihood: "High" };
+                    });
+                  const cannabinoidRanges = terpeneCannabinoidProfileEarly.cannabinoids?.map(function(c) {
+                    return {
+                      compound: c.compound,
+                      min: c.min,
+                      max: c.max,
+                    };
+                  }) || undefined;
+                  const ratioForPrediction = usePhase79ForRatio ? {
+                    indicaPercent: strainRatioV79.indicaPercent,
+                    sativaPercent: strainRatioV79.sativaPercent,
+                    confidence: strainRatioV79.confidence,
+                  } : usePhase77ForRatio ? {
+                    indicaPercent: strainRatioV77.indicaPercent,
+                    sativaPercent: strainRatioV77.sativaPercent,
+                    confidence: strainRatioV77.confidence,
+                  } : usePhase75ForRatio ? {
+                    indicaPercent: strainRatioV75.indicaPercent,
+                    sativaPercent: strainRatioV75.sativaPercent,
+                    confidence: strainRatioV75.confidence,
+                  } : usePhase73ForRatio ? {
+                    indicaPercent: strainRatioV73.indicaPercent,
+                    sativaPercent: strainRatioV73.sativaPercent,
+                    confidence: strainRatioV73.confidence,
+                  } : usePhase71ForRatio ? {
+                    indicaPercent: strainRatioV71.indicaPercent,
+                    sativaPercent: strainRatioV71.sativaPercent,
+                    confidence: strainRatioV71.confidence,
+                  } : undefined;
+                  computedEffectExperiencePrediction = generateEffectExperiencePredictionV78(
+                    nameFirstPipelineResult.primaryStrainName,
+                    dbEntry,
+                    ratioForPrediction?.indicaPercent,
+                    ratioForPrediction?.sativaPercent,
+                    terpeneProfileForPrediction.length > 0 ? terpeneProfileForPrediction : undefined,
+                    cannabinoidRanges,
+                    ratioForPrediction?.confidence || nameFirstPipelineResult.nameConfidenceTier,
+                    fusedFeatures
+                  );
+                }
+                
+                // --- PRECOMPUTED RATIO (SAFE) ---
+                let computedRatio = undefined;
+                if (strainRatio) {
+                  computedRatio = {
                     indicaPercent: strainRatio.indicaPercent,
                     sativaPercent: strainRatio.sativaPercent,
                     dominance: strainRatio.dominance,
@@ -1188,7 +1314,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     ),
                     displayText: strainRatio.displayText,
                     explanation: legacyRatioExplanation,
-                  } : (usePhase81ForRatio ? {
+                  };
+                } else if (usePhase81ForRatio) {
+                  computedRatio = {
                     indicaPercent: strainRatioV81.indicaPercent,
                     sativaPercent: strainRatioV81.sativaPercent,
                     dominance: strainRatioV81.classification,
@@ -1199,7 +1327,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: `${strainRatioV81.classificationLabel}: ${strainRatioV81.ratio}`,
                     explanation: ratioExplanation,
-                  } : usePhase79ForRatio ? {
+                  };
+                } else if (usePhase79ForRatio) {
+                  computedRatio = {
                     indicaPercent: strainRatioV79.indicaPercent,
                     sativaPercent: strainRatioV79.sativaPercent,
                     dominance: strainRatioV79.classification,
@@ -1210,7 +1340,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: `${strainRatioV79.dominanceLabel}: ${strainRatioV79.displayText}`,
                     explanation: ratioExplanation,
-                  } : usePhase77ForRatioAfter81 ? {
+                  };
+                } else if (usePhase77ForRatioAfter81) {
+                  computedRatio = {
                     indicaPercent: strainRatioV77.indicaPercent,
                     sativaPercent: strainRatioV77.sativaPercent,
                     dominance: strainRatioV77.classification,
@@ -1219,7 +1351,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: strainRatioV77.humanReadableLabel,
                     explanation: ratioExplanation,
-                  } : usePhase75ForRatio ? {
+                  };
+                } else if (usePhase75ForRatio) {
+                  computedRatio = {
                     indicaPercent: strainRatioV75.indicaPercent,
                     sativaPercent: strainRatioV75.sativaPercent,
                     dominance: strainRatioV75.classification,
@@ -1228,7 +1362,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: `${strainRatioV75.dominanceText}: ${strainRatioV75.displayText}`,
                     explanation: ratioExplanation,
-                  } : usePhase73ForRatio ? {
+                  };
+                } else if (usePhase73ForRatio) {
+                  computedRatio = {
                     indicaPercent: strainRatioV73.indicaPercent,
                     sativaPercent: strainRatioV73.sativaPercent,
                     dominance: strainRatioV73.classification,
@@ -1237,7 +1373,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: `${strainRatioV73.classificationText}: ${strainRatioV73.displayText}`,
                     explanation: ratioExplanation,
-                  } : usePhase71ForRatioAfter81 ? {
+                  };
+                } else if (usePhase71ForRatioAfter81) {
+                  computedRatio = {
                     indicaPercent: strainRatioV71.indicaPercent,
                     sativaPercent: strainRatioV71.sativaPercent,
                     dominance: strainRatioV71.classification,
@@ -1246,7 +1384,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: `${strainRatioV71.classification}${strainRatioV71.dominanceLabel ? ` (${strainRatioV71.dominanceLabel})` : ""}: ${strainRatioV71.ratio}`,
                     explanation: ratioExplanation,
-                  } : usePhase60ForRatio ? {
+                  };
+                } else if (usePhase60ForRatio) {
+                  computedRatio = {
                     indicaPercent: strainRatioV60.indicaPercent,
                     sativaPercent: strainRatioV60.sativaPercent,
                     dominance: strainRatioV60.type,
@@ -1255,7 +1395,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: `${strainRatioV60.typeLabel}: ${strainRatioV60.ratio}`,
                     explanation: ratioExplanation,
-                  } : usePhase58ForRatio ? {
+                  };
+                } else if (usePhase58ForRatio) {
+                  computedRatio = {
                     indicaPercent: strainRatioV58.indicaPercent,
                     sativaPercent: strainRatioV58.sativaPercent,
                     dominance: strainRatioV58.type,
@@ -1264,7 +1406,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: `${strainRatioV58.type}: ${strainRatioV58.ratio}`,
                     explanation: ratioExplanation,
-                  } : usePhase56ForRatioAfter81 ? {
+                  };
+                } else if (usePhase56ForRatioAfter81) {
+                  computedRatio = {
                     indicaPercent: strainRatioV56.indicaPercent,
                     sativaPercent: strainRatioV56.sativaPercent,
                     dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
@@ -1277,7 +1421,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: `${strainRatioV56.strainType}: ${strainRatioV56.estimatedRatio}`,
                     explanation: ratioExplanation,
-                  } : {
+                  };
+                } else {
+                  computedRatio = {
                     indicaPercent: strainRatioV52.indicaPercent,
                     sativaPercent: strainRatioV52.sativaPercent,
                     dominance: strainRatioV52.dominance,
@@ -1287,159 +1433,82 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       : "Hybrid",
                     displayText: strainRatioV52.displayText,
                     explanation: ratioExplanation,
-                  },
+                  };
+                }
+                
+                // --- PRECOMPUTED ALTERNATE MATCHES (SAFE) ---
+                let computedAlternateMatches = undefined;
+                if (nameFirstPipelineResult.alternateMatches.length > 0) {
+                  computedAlternateMatches = nameFirstPipelineResult.alternateMatches.map(function(a) {
+                    return {
+                      name: a.name,
+                      confidence: a.score,
+                      whyNotPrimary: a.whyNotPrimary,
+                    };
+                  });
+                }
+                
+                viewModel.nameFirstDisplay = {
+                  primaryStrainName: nameFirstPipelineResult.primaryStrainName,
+                  confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
+                  confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
+                  tagline: displayTagline,
+                  alsoKnownAs,
+                  alternateMatches: computedAlternateMatches,
+                  explanation: nameFirstPipelineResult.explanation,
+                  ratio: computedRatio,
                   // Phase 4.7 Step 4.7.2 — Include closely related variants if ambiguous
                   closelyRelatedVariants: nameFirstPipelineResult.closelyRelatedVariants,
                   isAmbiguous: nameFirstPipelineResult.isAmbiguous,
                   // Phase 5.1 — Include terpene experience (FREE TIER)
-                  terpeneExperience: terpeneExperienceResult
-                    ? {
-                        dominantTerpenes: Array.isArray(
-                          terpeneExperienceResult?.terpeneProfile?.primaryTerpenes
-                        )
-                          ? terpeneExperienceResult.terpeneProfile.primaryTerpenes.map(function (t) {
-                              return t.name;
-                            })
-                          : [],
-
-                        secondaryTerpenes: Array.isArray(
-                          terpeneExperienceResult?.terpeneProfile?.secondaryTerpenes
-                        )
-                          ? terpeneExperienceResult.terpeneProfile.secondaryTerpenes.map(function (t) {
-                              return t.name;
-                            })
-                          : [],
-
-                        experience: terpeneExperienceResult.experience || [],
-                        visualBoosts: terpeneExperienceResult.visualBoosts || [],
-                      }
-                    : undefined,
+                  terpeneExperience: computedTerpeneExperience,
                   // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE
                   terpeneCannabinoidProfile: terpeneCannabinoidProfileEarly,
                   // Phase 7.4 — TERPENE PROFILE CONSENSUS ENGINE
-                  terpeneProfileConsensus: (() => {
-                    const { generateTerpeneProfileConsensusV74 } = require("./terpeneProfileConsensusV74");
-                    const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(a => ({
-                      name: a.name,
-                      confidence: a.score,
-                    })) || [];
-                    return generateTerpeneProfileConsensusV74(
-                      nameFirstPipelineResult.primaryStrainName,
-                      dbEntry,
-                      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
-                      input.imageCount,
-                      fusedFeatures,
-                      candidateStrains.length > 0 ? candidateStrains : undefined
-                    );
-                  })(),
+                  terpeneProfileConsensus: computedTerpeneProfileConsensus,
                   // Phase 7.6 — EFFECT PROFILE & USE-CASE ENGINE
-                  effectProfileUseCase: (() => {
-                    const { generateEffectProfileUseCaseV76 } = require("./effectProfileUseCaseV76");
-                    const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(a => ({
-                      name: a.name,
-                      confidence: a.score,
-                    })) || [];
-                    const terpeneProfileForEffects = terpeneExperienceResult.terpeneProfile.primaryTerpenes
-                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
-                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood for effect engine
-                    const ratioForEffects = usePhase79ForRatio ? {
-                      indicaPercent: strainRatioV79.indicaPercent,
-                      sativaPercent: strainRatioV79.sativaPercent,
-                    } : usePhase77ForRatio ? {
-                      indicaPercent: strainRatioV77.indicaPercent,
-                      sativaPercent: strainRatioV77.sativaPercent,
-                    } : usePhase75ForRatio ? {
-                      indicaPercent: strainRatioV75.indicaPercent,
-                      sativaPercent: strainRatioV75.sativaPercent,
-                    } : usePhase73ForRatio ? {
-                      indicaPercent: strainRatioV73.indicaPercent,
-                      sativaPercent: strainRatioV73.sativaPercent,
-                    } : usePhase71ForRatio ? {
-                      indicaPercent: strainRatioV71.indicaPercent,
-                      sativaPercent: strainRatioV71.sativaPercent,
-                    } : undefined;
-                    return generateEffectProfileUseCaseV76(
-                      nameFirstPipelineResult.primaryStrainName,
-                      dbEntry,
-                      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
-                      input.imageCount,
-                      fusedFeatures,
-                      terpeneProfileForEffects.length > 0 ? terpeneProfileForEffects : undefined,
-                      candidateStrains.length > 0 ? candidateStrains : undefined,
-                      ratioForEffects?.indicaPercent,
-                      ratioForEffects?.sativaPercent
-                    );
-                  })(),
+                  effectProfileUseCase: computedEffectProfileUseCase,
                   // Phase 7.8 — EFFECTS & EXPERIENCE PREDICTION ENGINE
-                  effectExperiencePrediction: (() => {
-                    const { generateEffectExperiencePredictionV78 } = require("./effectExperiencePredictionV78");
-                    const terpeneProfileForPrediction = terpeneExperienceResult.terpeneProfile.primaryTerpenes
-                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
-                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
-                    const cannabinoidRanges = terpeneCannabinoidProfileEarly.cannabinoids?.map(c => ({
-                      compound: c.compound,
-                      min: c.min,
-                      max: c.max,
-                    })) || undefined;
-                    const ratioForPrediction = usePhase79ForRatio ? {
-                      indicaPercent: strainRatioV79.indicaPercent,
-                      sativaPercent: strainRatioV79.sativaPercent,
-                      confidence: strainRatioV79.confidence,
-                    } : usePhase77ForRatio ? {
-                      indicaPercent: strainRatioV77.indicaPercent,
-                      sativaPercent: strainRatioV77.sativaPercent,
-                      confidence: strainRatioV77.confidence,
-                    } : usePhase75ForRatio ? {
-                      indicaPercent: strainRatioV75.indicaPercent,
-                      sativaPercent: strainRatioV75.sativaPercent,
-                      confidence: strainRatioV75.confidence,
-                    } : usePhase73ForRatio ? {
-                      indicaPercent: strainRatioV73.indicaPercent,
-                      sativaPercent: strainRatioV73.sativaPercent,
-                      confidence: strainRatioV73.confidence,
-                    } : usePhase71ForRatio ? {
-                      indicaPercent: strainRatioV71.indicaPercent,
-                      sativaPercent: strainRatioV71.sativaPercent,
-                      confidence: strainRatioV71.confidence,
-                    } : undefined;
-                    return generateEffectExperiencePredictionV78(
-                      nameFirstPipelineResult.primaryStrainName,
-                      dbEntry,
-                      ratioForPrediction?.indicaPercent,
-                      ratioForPrediction?.sativaPercent,
-                      terpeneProfileForPrediction.length > 0 ? terpeneProfileForPrediction : undefined,
-                      cannabinoidRanges,
-                      ratioForPrediction?.confidence || nameFirstPipelineResult.nameConfidenceTier,
-                      fusedFeatures
-                    );
-                  })(),
+                  effectExperiencePrediction: computedEffectExperiencePrediction,
                 };
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
     console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
     console.log("Phase 4.6 Step 4.6.2 — RATIO INCLUDED (FREE TIER):", viewModel.nameFirstDisplay.ratio);
     
     // Phase 5.3.5 — VIEWMODEL OUTPUT: Populate strainIdentity
+    let computedStrainIdentityAlternates = [];
+    if (nameFirstPipelineResult && Array.isArray(nameFirstPipelineResult.alternateMatches)) {
+      computedStrainIdentityAlternates = nameFirstPipelineResult.alternateMatches.map(function(a) {
+        return a.name || "Unknown";
+      }).filter(function(n) {
+        return n !== "Unknown";
+      });
+    }
+    
     if (nameFirstPipelineResult) {
       viewModel.strainIdentity = {
         name: nameFirstPipelineResult.primaryStrainName,
         confidence: nameFirstPipelineResult.nameConfidencePercent,
-        alternates: Array.isArray(nameFirstPipelineResult.alternateMatches)
-          ? nameFirstPipelineResult.alternateMatches.map(a => a.name || "Unknown").filter(n => n !== "Unknown")
-          : [],
+        alternates: computedStrainIdentityAlternates,
       };
     }
     
     // Phase 5.5.4 — VIEWMODEL OUTPUT: Populate identification (if not already populated from nameMatchResult)
+    let computedIdentificationAlternates = [];
+    if (nameFirstPipelineResult && Array.isArray(nameFirstPipelineResult.alternateMatches)) {
+      computedIdentificationAlternates = nameFirstPipelineResult.alternateMatches.slice(0, 4).map(function(a) {
+        return {
+          name: a.name || "Unknown",
+          reason: a.whyNotPrimary || "Lower confidence score",
+        };
+      });
+    }
+    
     if (!viewModel.identification && nameFirstPipelineResult) {
       viewModel.identification = {
         primaryName: nameFirstPipelineResult.primaryStrainName,
         confidence: nameFirstPipelineResult.nameConfidencePercent,
-        alternates: Array.isArray(nameFirstPipelineResult.alternateMatches)
-          ? nameFirstPipelineResult.alternateMatches.slice(0, 4).map(a => ({
-              name: a.name || "Unknown",
-              reason: a.whyNotPrimary || "Lower confidence score",
-            }))
-          : [],
+        alternates: computedIdentificationAlternates,
       };
     }
   }
