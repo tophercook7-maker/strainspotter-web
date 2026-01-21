@@ -241,13 +241,19 @@ export function wikiToViewModel(
     extendedProfile,
     
     // Map dominance from consensus result
-    dominance: dominance
+    dominance: (wiki as any).dominance
+      ? {
+          indica: (wiki as any).dominance.indica,
+          sativa: (wiki as any).dominance.sativa,
+          hybrid: (wiki as any).dominance.hybrid,
+          classification: (wiki as any).dominance.classification,
+        }
+      : dominance
       ? {
           indica: dominance.indica,
           sativa: dominance.sativa,
           hybrid: dominance.hybrid,
           classification: dominance.classification,
-          label: dominance.classification, // Derive label from classification
         }
       : undefined,
   };

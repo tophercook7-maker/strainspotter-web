@@ -250,10 +250,15 @@ export interface ScannerViewModel {
     sativa: number;
     hybrid: number; // Phase 8.6.5 — Hybrid percentage
     classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid"; // Classification field
-    label: string; // "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid"
+    label?: string; // "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid" (optional for backward compat)
     type?: "Indica" | "Sativa" | "Hybrid"; // Phase 8.2.4 — Type field
     confidence?: "Low" | "Medium" | "High" | "Very High" | number; // Phase 8.0.4 — Confidence tier, Phase 8.6.5 — Numeric confidence
   };
+  
+  // Additional fields for simplified view model access
+  highlights?: string[];
+  geneticsSummary?: string;
+  terpeneSummary?: string;
   
   // Phase 7.0.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with chemistry
   chemistry?: {
