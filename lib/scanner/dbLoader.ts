@@ -168,7 +168,7 @@ function normalizeStrainData(rawData: any[]): CultivarReference[] {
         ? [String(item.sources).trim()].filter(Boolean)
         : ["Database"];
       
-      return {
+      const normalized: CultivarReference = {
         name,
         aliases,
         genetics,
@@ -179,9 +179,15 @@ function normalizeStrainData(rawData: any[]): CultivarReference[] {
         terpeneProfile,
         commonTerpenes: terpeneProfile, // Backward compat
         effects,
-        wikiSummary: item.wikiSummary || item.summary || item.description || undefined,
         sources,
       };
+      
+      // Add optional wikiSummary only if it exists
+      if (item.wikiSummary || item.summary || item.description) {
+        normalized.wikiSummary = item.wikiSummary || item.summary || item.description || undefined;
+      }
+      
+      return normalized;
     })
     .filter((item): item is CultivarReference => item !== null);
 }

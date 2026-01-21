@@ -241,7 +241,7 @@ function resolveGeneticBaseline(
   
   if (historicalPhenotype && dbEntry.morphology) {
     // Use morphology data as historical phenotype indicator
-    const morphologyType = dbEntry.morphology.plantType || dbEntry.type;
+    const morphologyType = dbEntry.type;
     if (morphologyType === "Indica" || morphologyType === "Sativa" || morphologyType === "Hybrid") {
       // This will be handled by the type check below, but we mark it as historical
       // For now, continue to type-based classification
@@ -1549,7 +1549,7 @@ export function resolveStrainRatio(
   }
   
   // Phase 5.8.2 — Log ratio label
-  console.log("RATIO LABEL:", ratioLabel);
+  console.log("RATIO LABEL:", ratioLabelEarly);
   
   // Phase 5.0.9.4 — FINAL RATIO OUTPUT: Classification rules (legacy compatibility)
   // Rule: ≥70% → Dominant (changed from ≥90% for pure)
@@ -1663,13 +1663,13 @@ export function resolveStrainRatio(
   let hybridLabel: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid" | "Indica-leaning Hybrid" | "Sativa-leaning Hybrid";
   let classification: "Indica" | "Sativa" | "Hybrid"; // Phase 5.0.9.4 — Simplified classification
 
-  if (isPureIndica) {
+  if (isPureIndicaLegacy) {
     // Phase 5.0.9.4 — Pure Indica (≥90%)
     dominance = "Indica";
     hybridLabel = "Indica-dominant";
     classification = "Indica"; // Phase 5.0.9.4
     displayText = `Indica ${finalIndicaPercent}% · Sativa ${finalSativaPercent}%`;
-  } else if (isPureSativa) {
+  } else if (isPureSativaLegacy) {
     // Phase 5.0.9.4 — Pure Sativa (≥90%)
     dominance = "Sativa";
     hybridLabel = "Sativa-dominant";
@@ -2149,7 +2149,7 @@ export function resolveStrainRatio(
   const dominanceResult = {
     indicaPercent: finalIndicaPercent,
     sativaPercent: finalSativaPercent,
-    hybridLabel: ratioLabel,
+    hybridLabel: ratioLabelEarly,
     confidence: dominanceConfidence,
   };
   

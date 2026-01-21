@@ -28,6 +28,7 @@ export type NameFirstPipelineResult = {
   primaryStrainName: string;
   nameConfidencePercent: number;
   nameConfidenceTier: "very_high" | "high" | "medium" | "low";
+  confidenceTierLabel?: string; // Optional confidence tier label for display
   alternateMatches: Array<{
     name: string;
     score: number;

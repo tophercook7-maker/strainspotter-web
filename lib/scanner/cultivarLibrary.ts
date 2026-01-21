@@ -31,6 +31,9 @@ export type CultivarReference = {
   effects: string[];
   wikiSummary?: string;
   sources: string[];
+  breederNotes?: string; // Optional breeder classification notes
+  notes?: string; // Optional general notes
+  breeder?: string; // Optional breeder name
 };
 
 /**

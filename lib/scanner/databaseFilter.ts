@@ -29,6 +29,7 @@ export type FinalShortlistCandidate = {
   aliases: string[];
   parentStrains: string[];
   knownCuts?: string[];
+  dbEntry?: CultivarReference; // Optional database entry for additional data access
 };
 
 /**
@@ -377,6 +378,7 @@ function finalShortlist(
       matchedTraits: candidate.matchedTraits,
       aliases: strain.aliases || [],
       parentStrains,
+      dbEntry: strain, // Include full database entry for additional data access
     };
   });
 }

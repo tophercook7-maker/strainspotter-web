@@ -193,12 +193,7 @@ export interface ScannerViewModel {
     }>;
   };
   
-  // Phase 5.7.4 — VIEWMODEL UPDATE: Extend ScannerViewModel with primaryStrainName and alternateMatches
-  primaryStrainName?: string; // Phase 5.7.4
-  alternateMatches?: Array<{ // Phase 5.7.4
-    name: string;
-    confidence: number;
-  }>;
+  // Phase 5.7.4 — VIEWMODEL UPDATE: alternateMatches is in nameFirstDisplay, removed duplicate
   
   // Phase 5.9.5 — VIEWMODEL UPDATE: Extend ScannerViewModel with strainName, matchType, matchConfidence, alternateMatches
   strainName?: string; // Phase 5.9.5
@@ -209,15 +204,12 @@ export interface ScannerViewModel {
   // Phase 8.3.5 — VIEWMODEL LOCK: Extend ScannerViewModel with strainName, nameConfidence, alternateMatches
   nameConfidence?: number; // Phase 8.3.5 — Name confidence (separate from matchConfidence for clarity)
   
-  // Phase 8.5.5 — VIEWMODEL UPDATE: Extend ScannerViewModel with primaryMatch and alternateMatches
+  // Phase 8.5.5 — VIEWMODEL UPDATE: Extend ScannerViewModel with primaryMatch
   primaryMatch?: {
     name: string;
     confidence: number;
   };
-  alternateMatches?: Array<{
-    name: string;
-    confidence: number;
-  }>;
+  // Note: alternateMatches is in nameFirstDisplay, removed duplicate
   
   // Phase 8.1.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with identity
   identity?: {
@@ -233,13 +225,8 @@ export interface ScannerViewModel {
     type: "Indica" | "Sativa" | "Hybrid";
   };
   
-  // Phase 5.8.4 — VIEWMODEL ADDITION: Extend ScannerViewModel with ratio (indica, sativa, hybrid)
-  ratio?: {
-    indica: number;
-    sativa: number;
-    hybrid: number;
-    ratioLabel: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid";
-  };
+  // Phase 5.8.4 — Ratio data belongs in analysis layer, not ViewModel (architectural fix)
+  // Removed duplicate ratio field - use result.analysis.dominance in FullScanResult
   
   // Additional fields for simplified view model access
   highlights?: string[];

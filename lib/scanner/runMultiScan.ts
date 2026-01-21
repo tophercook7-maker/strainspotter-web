@@ -214,63 +214,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           confidenceTierLabel, // Phase 5.7.3 — Store confidence tier label
         };
         
-        // Phase 5.5.4 — VIEWMODEL OUTPUT: Populate identification field
-        if (nameMatchResult) {
-          viewModel.identification = {
-            primaryName: nameMatchResult.primaryName,
-            confidence: nameMatchResult.confidencePercent,
-            alternates: nameMatchResult.alternates.map(a => ({
-              name: a.name,
-              reason: a.whyNotPrimary || `${a.whyClose ? `Close because: ${a.whyClose}. ` : ''}Lost because: ${a.whyLost || 'lower score'}.`,
-            })),
-          };
-        }
-        
-        // Phase 5.7.4 — VIEWMODEL UPDATE: Populate primaryStrainName and alternateMatches
-        if (nameMatchResult) {
-          viewModel.primaryStrainName = nameMatchResult.primaryName;
-          viewModel.alternateMatches = nameMatchResult.alternates.map(a => ({
-            name: a.name,
-            confidence: a.confidence || a.score,
-          }));
-        }
-        
-        // Phase 5.9.5 — VIEWMODEL UPDATE: Populate strainName, matchType, matchConfidence, alternateMatchNames
-        if (nameMatchResult) {
-          viewModel.strainName = nameMatchResult.primaryName;
-          viewModel.matchType = nameMatchResult.matchType || "Likely";
-          viewModel.matchConfidence = nameMatchResult.confidencePercent;
-          // Phase 5.9.5 — Alternate matches as string array
-          viewModel.alternateMatchNames = nameMatchResult.alternates.map(a => a.name);
-        }
-        
-        // Phase 8.3.5 — VIEWMODEL LOCK: Populate strainName, nameConfidence, alternateMatches
-        if (nameMatchResult) {
-          viewModel.strainName = nameMatchResult.primaryName; // Phase 8.3.5 — Name is largest text on page
-          viewModel.nameConfidence = nameMatchResult.confidencePercent; // Phase 8.3.5 — Confidence shown directly under
-          viewModel.alternateMatchNames = nameMatchResult.alternates.map(a => a.name); // Phase 8.3.5 — Alternate matches
-        }
-        
-        // Phase 8.5.5 — VIEWMODEL UPDATE: Populate primaryMatch and alternateMatches
-        if (nameMatchResult) {
-          viewModel.primaryMatch = {
-            name: nameMatchResult.primaryName,
-            confidence: nameMatchResult.confidencePercent,
-          };
-          viewModel.alternateMatches = nameMatchResult.alternates.map(a => ({
-            name: a.name,
-            confidence: a.confidence || a.score,
-          }));
-        }
-        
-        // Phase 8.1.4 — VIEWMODEL EXTENSION: Populate identity from nameMatchResult
-        if (nameMatchResult) {
-          viewModel.identity = {
-            name: nameMatchResult.primaryName,
-            confidence: nameMatchResult.confidencePercent,
-            alternates: nameMatchResult.alternates.map(a => a.name),
-          };
-        }
+        // Phase 5.7.4 — VIEWMODEL UPDATE: All viewModel assignments moved to after viewModel creation (line ~1507)
         
         console.log("Phase 5.0.6 — NAME MATCH ENGINE RESULT:", nameMatchResult);
         console.log("Phase 5.0.2 — STEP 4 COMPLETE: Multi-image consensus built");
@@ -633,10 +577,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 } : undefined;
                 
                 // Phase 8.4.2 — Extract top 5 candidate names for database dominance prior
-                const topCandidateNames = nameMatchResult?.alternates
+                const topCandidateNames = nameFirstPipelineResult?.alternateMatches
                   ? [
-                      { name: nameMatchResult.primaryName, confidence: nameMatchResult.confidencePercent },
-                      ...nameMatchResult.alternates.slice(0, 4).map(a => ({ name: a.name, confidence: a.confidence || a.score })),
+                      { name: nameFirstPipelineResult.primaryStrainName, confidence: nameFirstPipelineResult.nameConfidencePercent },
+                      ...nameFirstPipelineResult.alternateMatches.slice(0, 4).map(a => ({ name: a.name, confidence: a.score })),
                     ]
                   : undefined;
                 
@@ -647,7 +591,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   input.imageCount,
                   fusedFeatures, // Phase 4.8 — Pass fused features for morphology adjustment
                   candidateStrainsForRatio, // Phase 5.0.3.2 — Pass candidates for consensus merge
-                  terpeneExperienceResult?.terpeneProfile, // Phase 5.0.5.1 — Pass terpene profile for weighting
+                  undefined, // Phase 5.0.5.1 — Terpene profile will be generated later (line ~632)
                   effectProfileForRatio, // Phase 5.6.1 — Pass effect profile for bias
                   topCandidateNames // Phase 8.4.2 — Pass top 5 candidate names for database dominance prior
                 );
@@ -837,11 +781,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 }
 
                 // Phase 8.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
-                let strainRatioResult: any = undefined;
+                let strainRatioV81: any = undefined;
                 if (nameFirstPipelineResult && imageResultsV3.length > 0) {
                   try {
                     const { resolveStrainRatioV81 } = require("./ratioEngineV81");
-                    strainRatioResult = resolveStrainRatioV81({
+                    strainRatioV81 = resolveStrainRatioV81({
                       nameResult: nameFirstPipelineResult,
                       images: imageResultsV3,
                     });
@@ -994,47 +938,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   );
                 })();
 
-        // Phase 5.2.5 — VIEWMODEL INTEGRATION: Populate strainType from ratioOutput
-        const ratioOutput = strainRatio ? (strainRatio as any).ratioOutput : undefined;
-        if (ratioOutput) {
-          viewModel.strainType = {
-            indica: ratioOutput.indica,
-            sativa: ratioOutput.sativa,
-            label: ratioOutput.label,
-          };
-        }
-        
-        // Phase 5.6.4 — VIEWMODEL EXTENSION: Populate classification from strainRatio
-        if (strainRatio) {
-          const ratioCalculation = (strainRatio as any).ratioCalculation;
-          if (ratioCalculation) {
-            viewModel.classification = {
-              indicaPercent: ratioCalculation.ratio.indica,
-              sativaPercent: ratioCalculation.ratio.sativa,
-              type: ratioCalculation.type,
-            };
-          } else {
-            // Fallback to strainRatio fields if ratioCalculation not available
-            viewModel.classification = {
-              indicaPercent: strainRatio.indicaPercent,
-              sativaPercent: strainRatio.sativaPercent,
-              type: strainRatio.dominance === "Indica" ? "Indica" : strainRatio.dominance === "Sativa" ? "Sativa" : "Hybrid",
-            };
-          }
-        }
-        
-        // Phase 5.8.4 — VIEWMODEL ADDITION: Populate ratio with hybrid score
-        if (strainRatio) {
-          const ratioWithHybrid = (strainRatio as any).ratioWithHybrid;
-          if (ratioWithHybrid) {
-            viewModel.ratio = {
-              indica: ratioWithHybrid.indica,
-              sativa: ratioWithHybrid.sativa,
-              hybrid: ratioWithHybrid.hybrid,
-              ratioLabel: ratioWithHybrid.ratioLabel,
-            };
-          }
-        }
+        // Phase 5.2.5 — Ratio data belongs in analysis layer, not ViewModel (architectural fix)
+        // Removed viewModel.strainType, viewModel.classification, viewModel.ratio assignments
+        // These will be accessible via result.analysis.dominance in FullScanResult
         
         // Phase 6.0.4 — VIEWMODEL EXTENSION: Populate dominance from strainRatio
         // Phase 8.0.4 — Enhanced with confidence
@@ -1061,99 +967,85 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
               : dominanceV8_6.sativa > 65 ? "Sativa" 
               : "Hybrid";
             
-            viewModel.dominance = {
+            // Dominance data belongs in analysis layer, not ViewModel (architectural fix)
+            // Store for FullScanResult construction later
+            const dominanceDataV8_6 = {
               indica: dominanceV8_6.indica,
               sativa: dominanceV8_6.sativa,
-              hybrid: dominanceV8_6.hybrid, // Phase 8.6.5 — Hybrid percentage
-              type: dominanceType,
-              label: dominanceLabel,
-              confidence: dominanceV8_6.confidence, // Phase 8.6.5 — Numeric confidence (0-100)
+              hybrid: dominanceV8_6.hybrid,
+              classification: dominanceLabel as "Indica-dominant" | "Sativa-dominant" | "Hybrid",
             };
           } else if (consensusRatio8_4) {
-            // Phase 8.4.5 — Use consensus ratio 8.4 with dominanceLabel
-            viewModel.dominance = {
+            // Dominance data belongs in analysis layer, not ViewModel
+            const dominanceData8_4 = {
               indica: consensusRatio8_4.indicaPercent,
               sativa: consensusRatio8_4.sativaPercent,
-              hybrid: 100 - (consensusRatio8_4.indicaPercent + consensusRatio8_4.sativaPercent), // Phase 8.6.5 — Calculate hybrid
-              type: consensusRatio8_4.dominanceLabel, // Phase 8.4.5 — Type field
-              label: consensusRatio8_4.dominanceLabel === "Indica" ? "Indica-dominant" : consensusRatio8_4.dominanceLabel === "Sativa" ? "Sativa-dominant" : "Balanced Hybrid",
-              confidence: dominanceWithConfidence?.confidence || "Medium", // Phase 8.0.4 — Include confidence
+              hybrid: 100 - (consensusRatio8_4.indicaPercent + consensusRatio8_4.sativaPercent),
+              classification: (consensusRatio8_4.dominanceLabel === "Indica" ? "Indica-dominant" : consensusRatio8_4.dominanceLabel === "Sativa" ? "Sativa-dominant" : "Hybrid") as "Indica-dominant" | "Sativa-dominant" | "Hybrid",
             };
           } else if (consensusRatio8_2) {
-            // Phase 8.2.4 — Use consensus ratio with type field
+            // Dominance data belongs in analysis layer, not ViewModel
             const hybrid8_2 = 100 - (consensusRatio8_2.indica + consensusRatio8_2.sativa);
-            viewModel.dominance = {
+            const dominanceData8_2 = {
               indica: consensusRatio8_2.indica,
               sativa: consensusRatio8_2.sativa,
-              hybrid: Math.max(0, hybrid8_2), // Phase 8.6.5 — Calculate hybrid
-              type: consensusRatio8_2.type, // Phase 8.2.4 — Type field
-              label: consensusRatio8_2.type === "Indica" ? "Indica-dominant" : consensusRatio8_2.type === "Sativa" ? "Sativa-dominant" : "Balanced Hybrid",
-              confidence: dominanceWithConfidence?.confidence || "Medium", // Phase 8.0.4 — Include confidence
+              hybrid: Math.max(0, hybrid8_2),
+              classification: (consensusRatio8_2.type === "Indica" ? "Indica-dominant" : consensusRatio8_2.type === "Sativa" ? "Sativa-dominant" : "Hybrid") as "Indica-dominant" | "Sativa-dominant" | "Hybrid",
             };
           } else if (dominanceWithConfidence) {
             const hybridFromConfidence = 100 - (dominanceWithConfidence.indica + dominanceWithConfidence.sativa);
-            viewModel.dominance = {
+            // Dominance data belongs in analysis layer, not ViewModel
+            const dominanceDataWithConfidence = {
               indica: dominanceWithConfidence.indica,
               sativa: dominanceWithConfidence.sativa,
-              hybrid: Math.max(0, hybridFromConfidence), // Phase 8.6.5 — Calculate hybrid
-              type: dominanceWithConfidence.label === "Indica-dominant" ? "Indica" : dominanceWithConfidence.label === "Sativa-dominant" ? "Sativa" : "Hybrid", // Phase 8.2.4 — Infer type from label
-              label: dominanceWithConfidence.label,
-              confidence: dominanceWithConfidence.confidence, // Phase 8.0.4 — Include confidence
+              hybrid: Math.max(0, hybridFromConfidence),
+              classification: (dominanceWithConfidence.label === "Indica-dominant" ? "Indica-dominant" : dominanceWithConfidence.label === "Sativa-dominant" ? "Sativa-dominant" : "Hybrid") as "Indica-dominant" | "Sativa-dominant" | "Hybrid",
             };
           } else {
             const ratioWithHybrid = (strainRatio as any).ratioWithHybrid;
             if (ratioWithHybrid) {
               const label = ratioWithHybrid.ratioLabel || (strainRatio.indicaPercent >= 70 ? "Indica-dominant" : strainRatio.sativaPercent >= 70 ? "Sativa-dominant" : "Balanced Hybrid");
               const hybridFromRatio = ratioWithHybrid.hybrid || (100 - (ratioWithHybrid.indica + ratioWithHybrid.sativa));
-              viewModel.dominance = {
+              // Dominance data belongs in analysis layer, not ViewModel
+              const dominanceDataFromRatio = {
                 indica: ratioWithHybrid.indica,
                 sativa: ratioWithHybrid.sativa,
-                hybrid: Math.max(0, hybridFromRatio), // Phase 8.6.5 — Include hybrid
-                type: label === "Indica-dominant" ? "Indica" : label === "Sativa-dominant" ? "Sativa" : "Hybrid", // Phase 8.2.4 — Infer type from label
-                label,
-                confidence: "Medium", // Phase 8.0.4 — Default confidence
+                hybrid: Math.max(0, hybridFromRatio),
+                classification: (label === "Indica-dominant" ? "Indica-dominant" : label === "Sativa-dominant" ? "Sativa-dominant" : "Hybrid") as "Indica-dominant" | "Sativa-dominant" | "Hybrid",
               };
             } else {
               // Fallback to strainRatio fields
               const label = strainRatio.indicaPercent >= 70 ? "Indica-dominant" : strainRatio.sativaPercent >= 70 ? "Sativa-dominant" : "Balanced Hybrid";
               const hybridFromStrain = 100 - (strainRatio.indicaPercent + strainRatio.sativaPercent);
-              viewModel.dominance = {
+              // Dominance data belongs in analysis layer, not ViewModel
+              const dominanceDataFromStrain = {
                 indica: strainRatio.indicaPercent,
                 sativa: strainRatio.sativaPercent,
-                hybrid: Math.max(0, hybridFromStrain), // Phase 8.6.5 — Calculate hybrid
-                type: label === "Indica-dominant" ? "Indica" : label === "Sativa-dominant" ? "Sativa" : "Hybrid", // Phase 8.2.4 — Infer type from label
-                label,
-                confidence: "Medium", // Phase 8.0.4 — Default confidence
+                hybrid: Math.max(0, hybridFromStrain),
+                classification: (label === "Indica-dominant" ? "Indica-dominant" : label === "Sativa-dominant" ? "Sativa-dominant" : "Hybrid") as "Indica-dominant" | "Sativa-dominant" | "Hybrid",
               };
             }
           }
         }
         
-        // Phase 7.0.4 — VIEWMODEL EXTENSION: Populate chemistry from terpeneCannabinoidProfileV70
-        if (terpeneCannabinoidProfileV70) {
-          viewModel.chemistry = {
-            primaryTerpenes: terpeneCannabinoidProfileV70.primaryTerpenes,
-            secondaryTerpenes: terpeneCannabinoidProfileV70.secondaryTerpenes,
-            thcRange: terpeneCannabinoidProfileV70.thcRange,
-            cbdPresence: terpeneCannabinoidProfileV70.cbdPresence,
-          };
-        }
+        // Phase 7.0.4 — Chemistry data belongs in analysis layer, not ViewModel (architectural fix)
+        // Removed viewModel.chemistry assignment
                 
                 // Phase 5.4.5 — VIEWMODEL OUTPUT: Populate genetics.type and genetics.ratioLabel
                 const ratioCalculation = strainRatio ? (strainRatio as any).ratioCalculation : undefined;
                 if (ratioCalculation) {
                   if (!viewModel.genetics) {
                     viewModel.genetics = {
-                      dominance: strainRatio.dominance,
+                      dominance: (strainRatio.dominance === "Balanced" ? "Hybrid" : strainRatio.dominance) as "Indica" | "Sativa" | "Hybrid" | "Unknown",
                       lineage: dbEntry?.genetics || "",
                     };
                   }
-                  viewModel.genetics.type = ratioCalculation.type;
+                  viewModel.genetics.type = (ratioCalculation.type === "Balanced" ? "Hybrid" : ratioCalculation.type) as "Indica" | "Sativa" | "Hybrid";
                   viewModel.genetics.ratioLabel = `${ratioCalculation.ratio.indica}% Indica / ${ratioCalculation.ratio.sativa}% Sativa`;
                 }
 
-                // Phase 5.9.4 — STRAIN TITLE FORMAT: Use strainTitle from nameMatchResult if available
-                const strainTitle = (nameMatchResult as any)?.strainTitle;
+                // Phase 5.9.4 — STRAIN TITLE FORMAT: Use strainTitle from nameFirstPipelineResult if available
+                const strainTitle = (nameFirstPipelineResult as any)?.strainTitle;
                 const confidenceTierLabel = (nameFirstPipelineResult as any)?.confidenceTierLabel;
                 const displayTagline = strainTitle || confidenceTierLabel || "Closest known match based on visual + database consensus";
                 
@@ -1450,6 +1342,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 
                 viewModel.nameFirstDisplay = {
                   primaryStrainName: nameFirstPipelineResult.primaryStrainName,
+                  primaryName: nameFirstPipelineResult.primaryStrainName, // Required field
                   confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
                   confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
                   tagline: displayTagline,
@@ -1485,13 +1378,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       });
     }
     
-    if (nameFirstPipelineResult) {
-      viewModel.strainIdentity = {
-        name: nameFirstPipelineResult.primaryStrainName,
-        confidence: nameFirstPipelineResult.nameConfidencePercent,
-        alternates: computedStrainIdentityAlternates,
-      };
-    }
+    // Identity assignment moved to after viewModel creation (line ~1507)
+    // This ensures viewModel.identity is set in the correct location
     
     // Phase 5.5.4 — VIEWMODEL OUTPUT: Populate identification (if not already populated from nameMatchResult)
     let computedIdentificationAlternates = [];
@@ -1504,13 +1392,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       });
     }
     
-    if (!viewModel.identification && nameFirstPipelineResult) {
-      viewModel.identification = {
-        primaryName: nameFirstPipelineResult.primaryStrainName,
-        confidence: nameFirstPipelineResult.nameConfidencePercent,
-        alternates: computedIdentificationAlternates,
-      };
-    }
+    // Phase 5.5.4 — VIEWMODEL OUTPUT: Populate identification field (moved to after viewModel creation at line ~1515)
   }
 
   // Phase 3.4 Part C — Add multi-image info to view model
@@ -1594,13 +1476,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       : undefined;
     
     // Phase 5.0.5.1 — Get terpene profile if available
-    const terpeneProfileForWiki = viewModel.terpeneExperience?.dominantTerpenes
+    const terpeneExperience = (viewModel as any).terpeneExperience;
+    const terpeneProfileForWiki = terpeneExperience?.dominantTerpenes
       ? {
-          primaryTerpenes: viewModel.terpeneExperience.dominantTerpenes.map(name => ({
+          primaryTerpenes: terpeneExperience.dominantTerpenes.map((name: string) => ({
             name,
             dominanceScore: 1.0,
           })),
-          secondaryTerpenes: viewModel.terpeneExperience.secondaryTerpenes?.map(name => ({
+          secondaryTerpenes: terpeneExperience.secondaryTerpenes?.map((name: string) => ({
             name,
             dominanceScore: 0.5,
           })) || [],
@@ -1608,16 +1491,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       : undefined;
     
     // Phase 5.6.1 — Get effect profile for bias calculation (from viewModel if available)
-    const effectProfileForWiki = viewModel.effectProfileUseCase ? {
-      primaryEffects: viewModel.effectProfileUseCase.primaryEffects,
-      secondaryEffects: viewModel.effectProfileUseCase.secondaryEffects,
+    const effectProfileUseCase = (viewModel as any).effectProfileUseCase;
+    const effectProfileForWiki = effectProfileUseCase ? {
+      primaryEffects: effectProfileUseCase.primaryEffects || [],
+      secondaryEffects: effectProfileUseCase.secondaryEffects || [],
     } : undefined;
     
     // Phase 8.4.2 — Extract top 5 candidate names for database dominance prior (for wiki)
-    const topCandidateNamesForWiki = nameMatchResult?.alternates
+    const topCandidateNamesForWiki = nameFirstPipelineResult?.alternateMatches
       ? [
-          { name: nameMatchResult.primaryName, confidence: nameMatchResult.confidencePercent },
-          ...nameMatchResult.alternates.slice(0, 4).map(a => ({ name: a.name, confidence: a.confidence || a.score })),
+          { name: nameFirstPipelineResult.primaryStrainName, confidence: nameFirstPipelineResult.nameConfidencePercent },
+          ...nameFirstPipelineResult.alternateMatches.slice(0, 4).map(a => ({ name: a.name, confidence: a.score || 0 })),
         ]
       : undefined;
     
@@ -1631,6 +1515,24 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       terpeneProfileForWiki, // Phase 5.0.5.1 — Pass terpene profile for weighting
       effectProfileForWiki // Phase 5.6.1 — Pass effect profile for bias
     );
+    
+    // Phase 5.5.4 — VIEWMODEL OUTPUT: Populate identification field
+    if (!(viewModel as any).identification && nameFirstPipelineResult) {
+      let computedIdentificationAlternates = [];
+      if (Array.isArray(nameFirstPipelineResult.alternateMatches)) {
+        computedIdentificationAlternates = nameFirstPipelineResult.alternateMatches.slice(0, 4).map(function(a) {
+          return {
+            name: a.name || "Unknown",
+            reason: a.whyNotPrimary || "Lower confidence score",
+          };
+        });
+      }
+      (viewModel as any).identification = {
+        primaryName: nameFirstPipelineResult.primaryStrainName,
+        confidence: nameFirstPipelineResult.nameConfidencePercent,
+        alternates: computedIdentificationAlternates,
+      };
+    }
     
     // Phase 5.0.3.4 — Ensure hybridLabel is set
     if (strainRatioForWiki && !(strainRatioForWiki as any).hybridLabel) {
@@ -1647,7 +1549,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     if (ratioCalculationForWiki) {
       if (!viewModel.genetics) {
         viewModel.genetics = {
-          dominance: strainRatioForWiki.dominance,
+          dominance: (strainRatioForWiki.dominance === "Balanced" ? "Hybrid" : strainRatioForWiki.dominance) as "Indica" | "Sativa" | "Hybrid" | "Unknown",
           lineage: dbEntry?.genetics || "",
         };
       }

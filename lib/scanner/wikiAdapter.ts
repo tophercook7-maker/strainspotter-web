@@ -240,22 +240,8 @@ export function wikiToViewModel(
     // Phase 3.3 Part A — Ensure all required sections present
     extendedProfile,
     
-    // Map dominance from consensus result
-    dominance: (wiki as any).dominance
-      ? {
-          indica: (wiki as any).dominance.indica,
-          sativa: (wiki as any).dominance.sativa,
-          hybrid: (wiki as any).dominance.hybrid,
-          classification: (wiki as any).dominance.classification,
-        }
-      : dominance
-      ? {
-          indica: dominance.indica,
-          sativa: dominance.sativa,
-          hybrid: dominance.hybrid,
-          classification: dominance.classification,
-        }
-      : undefined,
+    // Dominance data belongs in analysis layer, not ViewModel (architectural fix)
+    // Removed dominance assignment - will be accessible via result.analysis.dominance in FullScanResult
   };
 
   // Phase 3.3 Part A — Verify free tier depth requirements
