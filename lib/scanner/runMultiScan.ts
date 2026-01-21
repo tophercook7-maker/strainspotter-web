@@ -825,350 +825,43 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 // Phase 8.0 — NAME-FIRST MATCHING & STRAIN DISAMBIGUATION ENGINE (Latest)
                 // Names are the anchor — try Phase 8.0 first, fallback to Phase 5.7, then Phase 5.5, then Phase 5.3
                 if (nameFirstPipelineResult && imageResultsV3.length > 0) {
-                  const { runNameFirstV80 } = require("./nameFirstV80");
                   try {
-                    // Phase 8.0 — Run name-first engine (names are the anchor)
-                    const terpeneProfileForName = terpeneExperienceResult.terpeneProfile.primaryTerpenes
-                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
-                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
-                    const ratioForName = usePhase79ForRatio ? {
-                      indicaPercent: strainRatioV79.indicaPercent,
-                      sativaPercent: strainRatioV79.sativaPercent,
-                    } : usePhase77ForRatio ? {
-                      indicaPercent: strainRatioV77.indicaPercent,
-                      sativaPercent: strainRatioV77.sativaPercent,
-                    } : usePhase75ForRatio ? {
-                      indicaPercent: strainRatioV75.indicaPercent,
-                      sativaPercent: strainRatioV75.sativaPercent,
-                    } : usePhase73ForRatio ? {
-                      indicaPercent: strainRatioV73.indicaPercent,
-                      sativaPercent: strainRatioV73.sativaPercent,
-                    } : usePhase71ForRatio ? {
-                      indicaPercent: strainRatioV71.indicaPercent,
-                      sativaPercent: strainRatioV71.sativaPercent,
-                    } : usePhase60ForRatio ? {
-                      indicaPercent: strainRatioV60.indicaPercent,
-                      sativaPercent: strainRatioV60.sativaPercent,
-                    } : usePhase58ForRatio ? {
-                      indicaPercent: strainRatioV58.indicaPercent,
-                      sativaPercent: strainRatioV58.sativaPercent,
-                    } : usePhase56ForRatio ? {
-                      indicaPercent: strainRatioV56.indicaPercent,
-                      sativaPercent: strainRatioV56.sativaPercent,
-                    } : undefined;
-                    const nameFirstV80Result = runNameFirstV80(
+                    const { runNamePipelineV80 } = require("./namePipelineV80");
+                    nameFirstPipelineResult = runNamePipelineV80({
+                      nameFirstPipelineResult,
                       imageResultsV3,
-                      fusedFeatures,
-                      input.imageCount,
-                      terpeneProfileForName.length > 0 ? terpeneProfileForName : undefined,
-                      ratioForName
-                    );
-                    console.log("Phase 8.0 — NAME FIRST V80 RESULT:", nameFirstV80Result);
-                    
-                    // Phase 8.1 — Store V80 result for ratio engine
-                    nameFirstV80ResultForRatio = nameFirstV80Result;
-                    
-                    // Phase 8.0 — Use V80 result if confidence is acceptable
-                    if (nameFirstV80Result.primaryMatch.confidence >= 55) {
-                      // Use Phase 8.0 result (names are the anchor)
-                      nameFirstPipelineResult = {
-                        primaryStrainName: nameFirstV80Result.primaryMatch.name,
-                        nameConfidencePercent: nameFirstV80Result.primaryMatch.confidence,
-                        nameConfidenceTier: nameFirstV80Result.confidenceTier,
-                        alternateMatches: nameFirstV80Result.alternateMatches.map(a => ({
-                          name: a.name,
-                          score: a.confidence,
-                          whyNotPrimary: a.whySimilar,
-                        })),
-                        explanation: {
-                          whyThisNameWon: [nameFirstV80Result.explanation],
-                          whatRuledOutOthers: nameFirstV80Result.alternateMatches.map(a => a.whySimilar),
-                          varianceNotes: nameFirstV80Result.isCloselyRelated ? ["Closely related cultivar"] : [],
-                        },
-                        closelyRelatedVariants: nameFirstV80Result.isCloselyRelated ? nameFirstV80Result.alternateMatches.slice(0, 2).map(a => a.name) : undefined,
-                        isAmbiguous: nameFirstV80Result.isCloselyRelated,
-                      };
-                      console.log("Phase 8.0 — USING V80 RESULT (names are the anchor, confidence >= 55%)");
-                    } else {
-                      // Phase 8.0 — Fallback to Phase 5.7 if V80 confidence too low
-                      console.log(`Phase 8.0 — V80 confidence too low (${nameFirstV80Result.primaryMatch.confidence}%), trying Phase 5.7...`);
-                      const { runNameFirstV57 } = require("./nameFirstV57");
-                      try {
-                        // Phase 5.7 — Run enhanced name-first engine with terpene profile and ratio
-                        const nameFirstV57Result = runNameFirstV57(
-                          imageResultsV3,
-                          fusedFeatures,
-                          input.imageCount,
-                          terpeneExperienceResult.terpeneProfile,
-                          usePhase56ForRatio ? {
-                        indicaPercent: strainRatioV56.indicaPercent,
-                        sativaPercent: strainRatioV56.sativaPercent,
-                        dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
-                          : strainRatioV56.strainType.includes("Sativa") && !strainRatioV56.strainType.includes("Hybrid") ? "Sativa" 
-                          : strainRatioV56.strainType.includes("Balanced") ? "Balanced" 
-                          : "Hybrid",
-                        displayText: `${strainRatioV56.strainType}: ${strainRatioV56.estimatedRatio}`,
-                        confidence: strainRatioV56.confidence,
-                        explanation: {
-                          geneticBaseline: strainRatioV56.why[0] || "",
-                          source: "database_baseline",
-                        },
-                      } : strainRatioV52
-                    );
-                    console.log("Phase 5.7 — NAME FIRST V57 RESULT:", nameFirstV57Result);
-                    
-                    // Phase 5.7 — Convert V57 result to pipeline format if confidence is high enough
-                    if (nameFirstV57Result.primaryMatch.confidence >= 60) {
-                      // Use Phase 5.7 result
-                      nameFirstPipelineResult = {
-                        primaryStrainName: nameFirstV57Result.primaryMatch.name,
-                        nameConfidencePercent: nameFirstV57Result.primaryMatch.confidence,
-                        nameConfidenceTier: nameFirstV57Result.primaryMatch.confidenceTier,
-                        alternateMatches: nameFirstV57Result.alternateMatches?.map(a => ({
-                          name: a.name,
-                          score: a.confidence,
-                          whyNotPrimary: a.whyNotPrimary,
-                        })) || [],
-                        explanation: {
-                          whyThisNameWon: nameFirstV57Result.explanation.why,
-                          whatRuledOutOthers: nameFirstV57Result.alternateMatches?.map(a => a.whyNotPrimary) || [],
-                          varianceNotes: [],
-                        },
-                      };
-                      console.log("Phase 5.7 — USING V57 RESULT (confidence >= 60%)");
-                    } else {
-                        // Phase 5.7 — Fallback to Phase 5.5 or Phase 5.3
-                        console.log(`Phase 5.7 — V57 confidence too low (${nameFirstV57Result.primaryMatch.confidence}%), trying Phase 5.5...`);
-                        const { runNameFirstV55 } = require("./nameFirstV55");
-                      try {
-                        const nameFirstV55Result = runNameFirstV55(
-                          imageResultsV3,
-                          fusedFeatures,
-                          input.imageCount,
-                      terpeneExperienceResult.terpeneProfile,
-                      usePhase79ForRatio ? {
-                        indicaPercent: strainRatioV79.indicaPercent,
-                        sativaPercent: strainRatioV79.sativaPercent,
-                        dominance: strainRatioV79.classification,
-                        displayText: strainRatioV79.displayText,
-                        confidence: strainRatioV79.confidence,
-                        explanation: {
-                          geneticBaseline: strainRatioV79.explanation,
-                          source: "database_primary",
-                        },
-                      } : usePhase77ForRatio ? {
-                        indicaPercent: strainRatioV77.indicaPercent,
-                        sativaPercent: strainRatioV77.sativaPercent,
-                        dominance: strainRatioV77.classification,
-                        displayText: strainRatioV77.humanReadableLabel,
-                        confidence: strainRatioV77.confidence,
-                        explanation: {
-                          geneticBaseline: strainRatioV77.explanation[0] || "",
-                          source: "database_primary",
-                        },
-                      } : usePhase75ForRatio ? {
-                        indicaPercent: strainRatioV75.indicaPercent,
-                        sativaPercent: strainRatioV75.sativaPercent,
-                        dominance: strainRatioV75.classification,
-                        displayText: `${strainRatioV75.dominanceText}: ${strainRatioV75.displayText}`,
-                        confidence: strainRatioV75.confidence,
-                        explanation: {
-                          geneticBaseline: strainRatioV75.explanation[0] || "",
-                          source: "database_primary",
-                        },
-                      } : usePhase73ForRatio ? {
-                        indicaPercent: strainRatioV73.indicaPercent,
-                        sativaPercent: strainRatioV73.sativaPercent,
-                        dominance: strainRatioV73.classification,
-                        displayText: `${strainRatioV73.classificationText}: ${strainRatioV73.displayText}`,
-                        confidence: strainRatioV73.confidence,
-                        explanation: {
-                          geneticBaseline: strainRatioV73.explanation[0] || "",
-                          source: "database_primary",
-                        },
-                      } : usePhase71ForRatio ? {
-                        indicaPercent: strainRatioV71.indicaPercent,
-                        sativaPercent: strainRatioV71.sativaPercent,
-                        dominance: strainRatioV71.classification,
-                        displayText: `${strainRatioV71.classification}${strainRatioV71.dominanceLabel ? ` (${strainRatioV71.dominanceLabel})` : ""}: ${strainRatioV71.ratio}`,
-                        confidence: strainRatioV71.confidence,
-                        explanation: {
-                          geneticBaseline: strainRatioV71.explanation[0] || "",
-                          source: "database_canonical",
-                        },
-                      } : usePhase60ForRatio ? {
-                        indicaPercent: strainRatioV60.indicaPercent,
-                        sativaPercent: strainRatioV60.sativaPercent,
-                        dominance: strainRatioV60.type,
-                        displayText: `${strainRatioV60.typeLabel}: ${strainRatioV60.ratio}`,
-                        confidence: strainRatioV60.confidence,
-                        explanation: {
-                          geneticBaseline: strainRatioV60.explanation[0] || "",
-                          source: "database_exact",
-                        },
-                      } : usePhase58ForRatio ? {
-                            indicaPercent: strainRatioV58.indicaPercent,
-                            sativaPercent: strainRatioV58.sativaPercent,
-                            dominance: strainRatioV58.type,
-                            displayText: `${strainRatioV58.type}: ${strainRatioV58.ratio}`,
-                            confidence: strainRatioV58.confidence,
-                            explanation: {
-                              geneticBaseline: strainRatioV58.explanation[0] || "",
-                              source: "database_primary",
-                            },
-                          } : usePhase56ForRatio ? {
-                            indicaPercent: strainRatioV56.indicaPercent,
-                            sativaPercent: strainRatioV56.sativaPercent,
-                            dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
-                              : strainRatioV56.strainType.includes("Sativa") && !strainRatioV56.strainType.includes("Hybrid") ? "Sativa" 
-                              : strainRatioV56.strainType.includes("Balanced") ? "Balanced" 
-                              : "Hybrid",
-                            displayText: `${strainRatioV56.strainType}: ${strainRatioV56.estimatedRatio}`,
-                            confidence: strainRatioV56.confidence,
-                            explanation: {
-                              geneticBaseline: strainRatioV56.why[0] || "",
-                              source: "database_baseline",
-                            },
-                          } : strainRatioV52
-                        );
-                        
-                        if (nameFirstV55Result.primaryMatch && nameFirstV55Result.primaryMatch.confidence >= 60) {
-                          // Use Phase 5.5 result
-                          nameFirstPipelineResult = {
-                            primaryStrainName: nameFirstV55Result.primaryMatch.name,
-                            nameConfidencePercent: nameFirstV55Result.primaryMatch.confidence,
-                            nameConfidenceTier: nameFirstV55Result.primaryMatch.confidence >= 93 ? "very_high" 
-                              : nameFirstV55Result.primaryMatch.confidence >= 85 ? "high"
-                              : nameFirstV55Result.primaryMatch.confidence >= 70 ? "medium"
-                              : "low",
-                            alternateMatches: nameFirstV55Result.secondaryPossibility ? [{
-                              name: nameFirstV55Result.secondaryPossibility.name,
-                              score: nameFirstV55Result.secondaryPossibility.confidence,
-                              whyNotPrimary: "Lower confidence than primary match",
-                            }] : [],
-                            explanation: {
-                              whyThisNameWon: nameFirstV55Result.explanation.whyThisName,
-                              whatRuledOutOthers: nameFirstV55Result.explanation.whatRuledOutOthers,
-                              varianceNotes: [],
-                            },
-                          };
-                          console.log("Phase 5.5 — USING V55 RESULT (confidence >= 60%)");
-                        } else {
-                          // Phase 5.3.3 — Fallback to Phase 5.3 validation pipeline
-                          const { runNameFirstPipeline } = require("./nameFirstPipeline");
-                          const validatedPipelineResult = runNameFirstPipeline(
-                            imageResultsV3,
-                            fusedFeatures,
-                            input.imageCount,
-                            terpeneExperienceResult.terpeneProfile,
-                            strainRatioV52
-                          );
-                          console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT (fallback):", validatedPipelineResult);
-                          
-                          if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
-                            console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
-                            nameFirstPipelineResult = validatedPipelineResult;
-                          } else {
-                            if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
-                              console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
-                              nameFirstPipelineResult = validatedPipelineResult;
-                            } else {
-                              nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
-                            }
-                          }
-                        }
-                      } catch (error) {
-                        console.error("Phase 5.5 — V55 engine error:", error);
-                        // Continue with original result
-                      }
-                    }
-                    } catch (error) {
-                      console.error("Phase 5.7 — V57 engine error:", error);
-                      // Phase 5.3.3 — Fallback to Phase 5.3 validation pipeline
-                      const { runNameFirstPipeline } = require("./nameFirstPipeline");
-                      try {
-                        const validatedPipelineResult = runNameFirstPipeline(
-                          imageResultsV3,
-                          fusedFeatures,
-                          input.imageCount,
-                          terpeneExperienceResult.terpeneProfile,
-                          strainRatioV52
-                        );
-                        console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT (fallback):", validatedPipelineResult);
-                        
-                        if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
-                          console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
-                          nameFirstPipelineResult = validatedPipelineResult;
-                        } else {
-                          if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
-                            console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
-                            nameFirstPipelineResult = validatedPipelineResult;
-                          } else {
-                            nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
-                          }
-                        }
-                      } catch (fallbackError) {
-                        console.error("Phase 5.3.3 — Validation pipeline error:", fallbackError);
-                        // Continue with original result if validation fails
-                      }
-                    }
+                    });
                   } catch (error) {
                     console.error("Phase 8.0 — V80 engine error:", error);
-                    // Continue with original result if Phase 8.0 fails
+                  }
+                }
+
+                // Phase 8.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
+                let strainRatioResult: any = undefined;
+                if (nameFirstPipelineResult && imageResultsV3.length > 0) {
+                  try {
+                    const { resolveStrainRatioV81 } = require("./ratioEngineV81");
+                    strainRatioResult = resolveStrainRatioV81({
+                      nameResult: nameFirstPipelineResult,
+                      images: imageResultsV3,
+                    });
+                  } catch (error) {
+                    console.error("Phase 8.1 — ratio engine error:", error);
                   }
                 }
 
                 // Phase 8.2 — STRAIN NAME CONFIDENCE & DISAMBIGUATION ENGINE (Latest)
-                // Enhanced confidence scoring and disambiguation
-                let nameConfidenceV82Result: any = undefined;
-                
+                let nameConfidenceV82Result: any = null;
+
                 if (nameFirstPipelineResult && imageResultsV3.length > 0) {
-                  const { runNameConfidenceV82 } = require("./nameConfidenceV82");
                   try {
-                    // Phase 8.2 — Run confidence and disambiguation engine
-                    const terpeneProfileForNameV82 = terpeneExperienceResult.terpeneProfile.primaryTerpenes
-                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
-                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
-                    
-                    nameConfidenceV82Result = runNameConfidenceV82(
-                      imageResultsV3,
-                      fusedFeatures,
-                      input.imageCount,
-                      terpeneProfileForNameV82.length > 0 ? terpeneProfileForNameV82 : undefined,
-                      nameFirstV80ResultForRatio,
-                      strainRatioV81
-                    );
-                    console.log("Phase 8.2 — NAME CONFIDENCE V82 RESULT:", nameConfidenceV82Result);
-                    
-                    // Phase 8.2 — Use V82 result if confidence is acceptable (>= 55%)
-                    if (nameConfidenceV82Result.primaryName.confidence >= 55) {
-                      // Update nameFirstPipelineResult with Phase 8.2 enhanced results
-                      nameFirstPipelineResult = {
-                        primaryStrainName: nameConfidenceV82Result.primaryName.name,
-                        nameConfidencePercent: nameConfidenceV82Result.primaryName.confidence,
-                        nameConfidenceTier: nameConfidenceV82Result.primaryName.confidenceTier,
-                        alternateMatches: nameConfidenceV82Result.alternateMatches.map(a => ({
-                          name: a.name,
-                          score: a.confidence,
-                          whyNotPrimary: a.whyNotPrimary,
-                        })),
-                        explanation: {
-                          whyThisNameWon: [nameConfidenceV82Result.explanation],
-                          whatRuledOutOthers: nameConfidenceV82Result.alternateMatches.map(a => a.difference),
-                          varianceNotes: nameConfidenceV82Result.isAmbiguous ? ["Multiple close matches identified"] : [],
-                        },
-                        closelyRelatedVariants: nameConfidenceV82Result.isAmbiguous
-                          ? nameConfidenceV82Result.alternateMatches.slice(0, 2).map(a => a.name)
-                          : undefined,
-                        isAmbiguous: nameConfidenceV82Result.isAmbiguous,
-                      };
-                      console.log("Phase 8.2 — USING V82 RESULT (enhanced confidence and disambiguation)");
-                    } else {
-                      console.log(`Phase 8.2 — V82 confidence too low (${nameConfidenceV82Result.primaryName.confidence}%), keeping Phase 8.0 result`);
-                    }
+                    const { runNameConfidenceV82 } = require("./nameConfidenceV82");
+                    nameConfidenceV82Result = runNameConfidenceV82({
+                      nameResult: nameFirstPipelineResult,
+                      images: imageResultsV3,
+                    });
                   } catch (error) {
-                    console.error("Phase 8.2 — V82 engine error:", error);
-                    // Continue with Phase 8.0 result if Phase 8.2 fails
+                    console.error("Phase 8.2 — name confidence error:", error);
                   }
                 }
 
@@ -1736,42 +1429,6 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
   }
 
-  // Phase 8.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
-  // 4-Source Weighted System: Database + Visual + Terpene + Name Consensus
-  let nameFirstV80ResultForRatio: any = undefined;
-  let strainRatioV81: any = undefined;
-  
-  if (nameFirstPipelineResult && imageResultsV3.length > 0) {
-    const { resolveStrainRatioV81 } = require("./ratioEngineV81");
-    try {
-      // Phase 8.1 — Run ratio engine with Phase 8.0 name result
-      const terpeneProfileForRatioV81 = terpeneExperienceResult.terpeneProfile.primaryTerpenes
-        .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
-        .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
-      
-      // Get updated dbEntry based on Phase 8.0 primary match
-      const updatedStrainName = nameFirstPipelineResult.primaryStrainName;
-      const updatedDbEntry = CULTIVAR_LIBRARY.find(
-        c => c.name.toLowerCase() === updatedStrainName.toLowerCase() ||
-            c.aliases.some(a => a.toLowerCase() === updatedStrainName.toLowerCase())
-      ) || dbEntry;
-      
-      strainRatioV81 = resolveStrainRatioV81(
-        updatedStrainName,
-        updatedDbEntry,
-        imageResultsV3.length > 0 ? imageResultsV3 : undefined,
-        input.imageCount,
-        fusedFeatures,
-        terpeneProfileForRatioV81.length > 0 ? terpeneProfileForRatioV81 : undefined,
-        nameFirstV80ResultForRatio
-      );
-      console.log("Phase 8.1 — STRAIN RATIO V81 RESOLVED:", strainRatioV81);
-    } catch (error) {
-      console.error("Phase 8.1 — ratio engine error:", error);
-      // Continue with fallback ratio engines if Phase 8.1 fails
-    }
-  }
-  
   // Phase 3.4 Part C — Add multi-image info to view model
   viewModel.multiImageInfo = multiImageInfo;
   
