@@ -49,6 +49,7 @@ import { synthesizeWikiInsights } from "./wikiSynthesis";
 import { CULTIVAR_LIBRARY } from "./cultivarLibrary";
 import type { ScannerViewModel } from "./viewModel";
 import type { WikiSynthesis, ScanContext } from "./types";
+import type { NameFirstResultV80 } from "./nameFirstV80";
 
 export type ScanResult = {
   result: ScannerViewModel;
@@ -81,6 +82,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     throw new Error("Multi-image scan requires at least 2 images");
   }
 
+  // Phase 5.0.2 — Pipeline Order:
+  // 1. Images → wiki results → fused features (needed for database query)
+  // 2. nameFirstPipeline → leverageDatabaseFilter (DATABASE NAME MATCH - runs FIRST in pipeline)
+  // 3. Image trait filtering (narrows database candidates)
+  // 4. Multi-image consensus
+  // 5. Confidence calculation
+  
   console.log("runScanPipeline: processing wiki results");
   // Loop through all images and process each
   const wikiResults = await Promise.all(
@@ -104,6 +112,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 2.2 Part C — Fuse features across ALL images
   const fusedFeatures = fuseMultiImageFeatures(wikiResults);
   console.log("FUSED FEATURES:", fusedFeatures);
+  
+  // Phase 5.0.2 — Fused features ready for database query
+  // Database name matching happens in nameFirstPipeline (leverageDatabaseFilter)
 
   // Phase 3.4 Part A — Image Intake Rules
   // Assign internal labels (Image A/B/C) without exposing to user
@@ -125,33 +136,179 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   let primaryStrainNameFromPipeline: string | null = null; // Phase 4.3 Step 4.3.1 — Lock name early
   let lockedStrainName: string | null = null; // Phase 4.3 Step 4.3.1 — Final locked name for all processing
   
+  // Phase 5.0.2 — STEP 3: IMAGE TRAIT FILTERING (narrows name candidates)
   // Phase 4.0 Part B — Per-Image Analysis (supports 1-5 images)
   if (imageFiles && imageFiles.length >= 1 && imageFiles.length <= 5) {
-    // Phase 3.0 Part B — Use enhanced analysis for all images (1-3)
+    // Phase 5.0.2 — Image analysis extracts traits that will narrow database candidates
+    // The nameFirstPipeline will use these image results to refine the database filter results
+    console.log("Phase 5.0.2 — STEP 3: IMAGE TRAIT FILTERING (extracting traits from", imageFiles.length, "images)");
+    
+    // Phase 3.0 Part B — Use enhanced analysis for all images (1-5)
     imageResultsV3 = await analyzePerImageV3(imageFiles, input.imageCount);
+    console.log("Phase 5.0.2 — STEP 3 COMPLETE: Image traits extracted");
     console.log("PER-IMAGE RESULTS V3:", imageResultsV3);
+    
+    // Phase 5.0.2 — Log per-image candidate counts
+    imageResultsV3.forEach((result, idx) => {
+      const candidateNames = Array.isArray(result.candidateStrains)
+        ? result.candidateStrains.map(c => c.name || "Unknown")
+        : [];
+      console.log(`Phase 5.0.2 — Image ${idx + 1} candidates:`, candidateNames.length, "strains");
+      console.log(`Phase 5.0.2 — Image ${idx + 1} top candidates:`, candidateNames.slice(0, 3));
+    });
     
     // Phase 4.3 Step 4.3.1 — Run Name-First Pipeline (Initial pass)
     // Phase 5.3 — Enhanced with terpene and ratio cross-validation
     // Phase 5.5 — Name-First Matching & Strain Disambiguation (Enhanced)
     // Phase 5.7 — Name-First Matching & Disambiguation Engine (Latest)
+    // Phase 5.0.6 — NEW: Name Match Engine (alternative implementation)
     // Note: Initial pass runs without terpene/ratio for speed
     // We'll re-run with validation after terpene/ratio are generated (Phase 5.3.3)
     if (imageResultsV3.length > 0 && imageResultsV3.length >= 1) {
+      // Phase 5.0.6 — Try new name match engine first, fallback to pipeline
+      const { runNameMatchEngine } = require("./nameMatchEngine");
       const { runNameFirstPipeline } = require("./nameFirstPipeline");
+      
       try {
-        // Phase 5.3 Step 5.3.1 & 5.3.2 — Initial pipeline run (name candidate extraction + multi-image consensus)
-        nameFirstPipelineResult = runNameFirstPipeline(
+        // Phase 5.0.6 — Use new name match engine
+        // Phase 5.3 — Enhanced with Wiki cross-check and multi-image consensus
+        console.log("Phase 5.0.6 — Running name match engine");
+        const nameMatchResult = runNameMatchEngine(
           imageResultsV3,
           fusedFeatures,
           input.imageCount,
-          undefined, // terpeneProfile - will be provided in validation pass
-          undefined  // strainRatio - will be provided in validation pass
+          undefined // terpeneProfile - will be provided in validation pass
         );
+        
+        // Phase 5.7.3 — Store confidence tier label for later use
+        const confidenceTierLabel = nameMatchResult.confidenceTierLabel;
+        
+        // Phase 5.0.6 — Convert to nameFirstPipelineResult format for compatibility
+        nameFirstPipelineResult = {
+          primaryStrainName: nameMatchResult.primaryName,
+          nameConfidencePercent: nameMatchResult.confidencePercent,
+          nameConfidenceTier: nameMatchResult.confidencePercent >= 90 ? "very_high"
+            : nameMatchResult.confidencePercent >= 75 ? "high"
+            : nameMatchResult.confidencePercent >= 60 ? "medium"
+            : "low",
+          alternateMatches: nameMatchResult.alternateMatches.map(a => ({
+            name: a.name,
+            score: a.score,
+            whyNotPrimary: a.whyNotPrimary,
+          })),
+          explanation: {
+            whyThisNameWon: nameMatchResult.explanation.whyThisNameWon,
+            whatRuledOutOthers: nameMatchResult.explanation.whyOthersLost,
+            varianceNotes: nameMatchResult.isCloselyRelated
+              ? [`Closely related to ${nameMatchResult.closelyRelatedName} (within 5% score difference)`]
+              : [],
+          },
+          isAmbiguous: nameMatchResult.isCloselyRelated,
+          closelyRelatedVariants: nameMatchResult.isCloselyRelated && nameMatchResult.closelyRelatedName
+            ? [{
+                name: nameMatchResult.closelyRelatedName,
+                canonicalName: nameMatchResult.closelyRelatedName,
+                whyNotPrimary: `Within 5% score difference of primary match`,
+              }]
+            : undefined,
+          confidenceTierLabel, // Phase 5.7.3 — Store confidence tier label
+        };
+        
+        // Phase 5.5.4 — VIEWMODEL OUTPUT: Populate identification field
+        if (nameMatchResult) {
+          viewModel.identification = {
+            primaryName: nameMatchResult.primaryName,
+            confidence: nameMatchResult.confidencePercent,
+            alternates: nameMatchResult.alternates.map(a => ({
+              name: a.name,
+              reason: a.whyNotPrimary || `${a.whyClose ? `Close because: ${a.whyClose}. ` : ''}Lost because: ${a.whyLost || 'lower score'}.`,
+            })),
+          };
+        }
+        
+        // Phase 5.7.4 — VIEWMODEL UPDATE: Populate primaryStrainName and alternateMatches
+        if (nameMatchResult) {
+          viewModel.primaryStrainName = nameMatchResult.primaryName;
+          viewModel.alternateMatches = nameMatchResult.alternates.map(a => ({
+            name: a.name,
+            confidence: a.confidence || a.score,
+          }));
+        }
+        
+        // Phase 5.9.5 — VIEWMODEL UPDATE: Populate strainName, matchType, matchConfidence, alternateMatchNames
+        if (nameMatchResult) {
+          viewModel.strainName = nameMatchResult.primaryName;
+          viewModel.matchType = nameMatchResult.matchType || "Likely";
+          viewModel.matchConfidence = nameMatchResult.confidencePercent;
+          // Phase 5.9.5 — Alternate matches as string array
+          viewModel.alternateMatchNames = nameMatchResult.alternates.map(a => a.name);
+        }
+        
+        // Phase 8.3.5 — VIEWMODEL LOCK: Populate strainName, nameConfidence, alternateMatches
+        if (nameMatchResult) {
+          viewModel.strainName = nameMatchResult.primaryName; // Phase 8.3.5 — Name is largest text on page
+          viewModel.nameConfidence = nameMatchResult.confidencePercent; // Phase 8.3.5 — Confidence shown directly under
+          viewModel.alternateMatchNames = nameMatchResult.alternates.map(a => a.name); // Phase 8.3.5 — Alternate matches
+        }
+        
+        // Phase 8.5.5 — VIEWMODEL UPDATE: Populate primaryMatch and alternateMatches
+        if (nameMatchResult) {
+          viewModel.primaryMatch = {
+            name: nameMatchResult.primaryName,
+            confidence: nameMatchResult.confidencePercent,
+          };
+          viewModel.alternateMatches = nameMatchResult.alternates.map(a => ({
+            name: a.name,
+            confidence: a.confidence || a.score,
+          }));
+        }
+        
+        // Phase 8.1.4 — VIEWMODEL EXTENSION: Populate identity from nameMatchResult
+        if (nameMatchResult) {
+          viewModel.identity = {
+            name: nameMatchResult.primaryName,
+            confidence: nameMatchResult.confidencePercent,
+            alternates: nameMatchResult.alternates.map(a => a.name),
+          };
+        }
+        
+        console.log("Phase 5.0.6 — NAME MATCH ENGINE RESULT:", nameMatchResult);
+        console.log("Phase 5.0.2 — STEP 4 COMPLETE: Multi-image consensus built");
         console.log("Phase 4.3 Step 4.3.1 — NAME-FIRST PIPELINE RESULT (initial):", nameFirstPipelineResult);
+        
+        // Phase 5.0.2 — MANDATORY LOGS (from pipeline result)
+        console.log("TOP NAME MATCH:", nameFirstPipelineResult.primaryStrainName);
+        const alternateNames = Array.isArray(nameFirstPipelineResult.alternateMatches)
+          ? nameFirstPipelineResult.alternateMatches.map(a => a.name || "Unknown")
+          : [];
+        console.log("ALTERNATES:", alternateNames);
       } catch (error) {
-        console.error("Phase 4.3 Step 4.3.1 — Name-first pipeline error:", error);
-        nameFirstPipelineResult = null;
+        console.warn("Phase 5.0.6 — Name match engine failed, falling back to pipeline:", error);
+        // Fallback to original pipeline
+        try {
+          // Phase 5.0.2 — STEP 4: MULTI-IMAGE CONSENSUS (after image narrowing)
+          // Phase 5.3 Step 5.3.1 & 5.3.2 — Initial pipeline run (name candidate extraction + multi-image consensus)
+          console.log("Phase 5.0.2 — STEP 4: MULTI-IMAGE CONSENSUS (building from", imageResultsV3.length, "images)");
+          nameFirstPipelineResult = runNameFirstPipeline(
+            imageResultsV3,
+            fusedFeatures,
+            input.imageCount,
+            undefined, // terpeneProfile - will be provided in validation pass
+            undefined  // strainRatio - will be provided in validation pass
+          );
+          console.log("Phase 5.0.2 — STEP 4 COMPLETE: Multi-image consensus built");
+          console.log("Phase 4.3 Step 4.3.1 — NAME-FIRST PIPELINE RESULT (initial):", nameFirstPipelineResult);
+          
+          // Phase 5.0.2 — MANDATORY LOGS (from pipeline result)
+          console.log("TOP NAME MATCH:", nameFirstPipelineResult.primaryStrainName);
+          const alternateNames = Array.isArray(nameFirstPipelineResult.alternateMatches)
+            ? nameFirstPipelineResult.alternateMatches.map(a => a.name || "Unknown")
+            : [];
+          console.log("ALTERNATES:", alternateNames);
+        } catch (fallbackError) {
+          console.error("Phase 4.3 Step 4.3.1 — Name-first pipeline error:", fallbackError);
+          nameFirstPipelineResult = null;
+        }
       }
     }
     
@@ -179,29 +336,40 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   const namingResult = determineStrainName(fusedFeatures, input.imageCount, existingCandidates);
   console.log("NAMING RESULT:", namingResult);
   
+  // Phase 5.0.2 — STEP 5: CONFIDENCE CALCULATION (LAST)
   // Phase 4.3 Step 4.3.1 — Name-First Result (PRIORITY: Use pipeline result if available)
   // RULE: UI MUST show a strain name immediately once resolved
   // Everything else supports or challenges that name
+  console.log("Phase 5.0.2 — STEP 5: CONFIDENCE CALCULATION (final step)");
+  
   const nameFirstResult = nameFirstPipelineResult
     ? {
         primaryMatch: {
           name: nameFirstPipelineResult.primaryStrainName, // Phase 4.3 Step 4.3.1 — Use pipeline name (locked)
           score: nameFirstPipelineResult.nameConfidencePercent,
           confidence: nameFirstPipelineResult.nameConfidencePercent,
-          whyThisMatch: nameFirstPipelineResult.explanation.whyThisNameWon.join(". "),
+          whyThisMatch: Array.isArray(nameFirstPipelineResult.explanation.whyThisNameWon) 
+            ? nameFirstPipelineResult.explanation.whyThisNameWon.join(". ")
+            : String(nameFirstPipelineResult.explanation.whyThisNameWon || ""),
           matchedTraits: [],
         },
-        alsoSimilar: nameFirstPipelineResult.alternateMatches.map(a => ({
-          name: a.name,
-          whyNotPrimary: a.whyNotPrimary,
-        })),
+        alsoSimilar: Array.isArray(nameFirstPipelineResult.alternateMatches)
+          ? nameFirstPipelineResult.alternateMatches.map(a => ({
+              name: a.name || "Unknown",
+              whyNotPrimary: a.whyNotPrimary || "Lower confidence",
+            }))
+          : [],
         confidence: nameFirstPipelineResult.nameConfidencePercent,
         confidenceRange: {
           min: Math.max(60, nameFirstPipelineResult.nameConfidencePercent - 4),
           max: Math.min(99, nameFirstPipelineResult.nameConfidencePercent + 4),
-          explanation: nameFirstPipelineResult.explanation.whyThisNameWon[0] || "",
+          explanation: Array.isArray(nameFirstPipelineResult.explanation.whyThisNameWon) 
+            ? (nameFirstPipelineResult.explanation.whyThisNameWon[0] || "")
+            : String(nameFirstPipelineResult.explanation.whyThisNameWon || ""),
         },
-        whyThisMatch: nameFirstPipelineResult.explanation.whyThisNameWon.join(". "),
+        whyThisMatch: Array.isArray(nameFirstPipelineResult.explanation.whyThisNameWon)
+          ? nameFirstPipelineResult.explanation.whyThisNameWon.join(". ")
+          : String(nameFirstPipelineResult.explanation.whyThisNameWon || ""),
         lowConfidence: nameFirstPipelineResult.nameConfidencePercent < 75,
         imageCountBonus: input.imageCount * 3,
         variancePenalty: 0,
@@ -219,14 +387,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           matchedTraits: [],
         },
         alsoSimilar: [
-          ...consensusResult.alternates.slice(0, 2).map(a => ({
-            name: a.name,
-            whyNotPrimary: `Confidence: ${a.confidence}% (lower than primary match)`,
-          })),
-          ...namingResult.alternateMatches.slice(0, 1).map(a => ({
-            name: a.name,
-            whyNotPrimary: a.whyNotPrimary,
-          })),
+          ...(Array.isArray(consensusResult.alternates) ? consensusResult.alternates.slice(0, 2).map(a => ({
+            name: a.name || "Unknown",
+            whyNotPrimary: `Confidence: ${a.confidence || 0}% (lower than primary match)`,
+          })) : []),
+          ...(Array.isArray(namingResult.alternateMatches) ? namingResult.alternateMatches.slice(0, 1).map(a => ({
+            name: a.name || "Unknown",
+            whyNotPrimary: a.whyNotPrimary || "Lower confidence",
+          })) : []),
         ].slice(0, 3), // Max 3 alternates
         confidence: consensusResult.primaryMatch.confidence, // Phase 3.0 Part D — Never 100%
         confidenceRange: namingResult.confidenceRange || consensusResult.confidenceRange, // Use naming hierarchy range
@@ -241,17 +409,44 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           whyThisMatch: namingResult.rationale,
           matchedTraits: [],
         },
-        alsoSimilar: namingResult.alternateMatches.map(a => ({
-          name: a.name,
-          whyNotPrimary: a.whyNotPrimary,
-        })),
+        alsoSimilar: Array.isArray(namingResult.alternateMatches)
+          ? namingResult.alternateMatches.map(a => ({
+              name: a.name || "Unknown",
+              whyNotPrimary: a.whyNotPrimary || "Lower confidence",
+            }))
+          : [],
         confidence: Math.round((namingResult.confidenceRange.min + namingResult.confidenceRange.max) / 2),
         confidenceRange: namingResult.confidenceRange,
         imageCountBonus: input.imageCount * 3,
         variancePenalty: 0,
       });
+  console.log("Phase 5.0.2 — STEP 5 COMPLETE: Confidence calculated");
   console.log("NAME-FIRST RESULT:", nameFirstResult);
   console.log("CONSENSUS AGREEMENT SCORE:", consensusResult?.agreementScore || "N/A");
+  
+  // Phase 5.0.2 — FINAL MANDATORY LOGS
+  console.log("TOP NAME MATCH:", nameFirstResult.primaryMatch.name);
+  const alternateNames = Array.isArray(nameFirstResult.alsoSimilar)
+    ? nameFirstResult.alsoSimilar.map(a => a.name || "Unknown")
+    : [];
+  console.log("ALTERNATES:", alternateNames);
+  
+  // Phase 5.0.2 — FAIL HARD if no primary name or if name is "Unknown"
+  const primaryName = nameFirstResult.primaryMatch.name;
+  if (!primaryName || primaryName.trim() === "" || primaryName === "Unknown" || primaryName === "Unidentified") {
+    const error = new Error(
+      `Phase 5.0.2 — CRITICAL: Invalid primary strain name resolved: "${primaryName}". ` +
+      "Name-first matching must always return a valid name from database. " +
+      "If database is loaded, this should never happen."
+    );
+    console.error(error.message);
+    console.error("Phase 5.0.2 — Debug info:", {
+      nameFirstPipelineResult: nameFirstPipelineResult?.primaryStrainName,
+      consensusResult: consensusResult?.primaryMatch?.name,
+      namingResult: namingResult?.name,
+    });
+    throw error;
+  }
 
   // Phase 4.3 Step 4.3.1 — Wiki Lookup (Name Locked from Pipeline - TOP PRIORITY)
   // RULE: UI MUST show a strain name immediately once resolved
@@ -400,7 +595,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         : []),
       // Add trait information
       ...(candidatePool[0]?.matchedTraits.length > 0
-        ? [`Matched visual traits: ${candidatePool[0].matchedTraits.slice(0, 4).join(", ")}`]
+        ? [`Matched visual traits: ${Array.isArray(candidatePool[0].matchedTraits) ? candidatePool[0].matchedTraits.slice(0, 4).join(", ") : "—"}`]
         : []),
       // Add cultivar behavior note
       ...(candidatePool[0]?.strainFamily
@@ -415,17 +610,70 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 4.5 Step 4.5.1 — Include explanation for "Why this strain?" section
   // Phase 4.6 Step 4.6.2 — Include Indica/Sativa/Hybrid Ratio (FREE TIER)
   if (nameFirstPipelineResult) {
-    // Phase 4.6 Step 4.6.2 — Resolve ratio from database
-    // Phase 4.8 Step 4.8.4 — Enhanced with multi-source weighted calculation
-    const strainRatio = resolveStrainRatio(
-      lockedStrainName,
-      dbEntry,
-      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
-      input.imageCount,
-      fusedFeatures // Phase 4.8 — Pass fused features for morphology adjustment
-    );
-    console.log("Phase 4.6 Step 4.6.2 — STRAIN RATIO RESOLVED:", strainRatio);
+                // Phase 5.0.3 — Resolve ratio from database + consensus
+                // Phase 4.6 Step 4.6.2 — Resolve ratio from database
+                // Phase 4.8 Step 4.8.4 — Enhanced with multi-source weighted calculation
+                console.log("Phase 5.0.3 — Resolving strain ratio for", lockedStrainName);
+                
+                // Phase 5.0.3.2 — Get candidate strains for consensus merge
+                const candidateStrainsForRatio = nameFirstPipelineResult?.alternateMatches
+                  ? [
+                      { name: nameFirstPipelineResult.primaryStrainName, confidence: nameFirstPipelineResult.nameConfidencePercent },
+                      ...nameFirstPipelineResult.alternateMatches.map(a => ({ name: a.name, confidence: a.score })),
+                    ]
+                  : imageResultsV3.length > 0
+                  ? imageResultsV3.flatMap(r => r.candidateStrains.map(c => ({ name: c.name, confidence: c.confidence })))
+                  : undefined;
+                
+                // Phase 5.6.1 — Get effect profile for bias calculation
+                // Use dbEntry.effects if available (will be used in calculateEffectProfileBias)
+                const effectProfileForRatio = dbEntry?.effects && dbEntry.effects.length > 0 ? {
+                  primaryEffects: dbEntry.effects.slice(0, 3).map(e => ({ name: e })),
+                  secondaryEffects: dbEntry.effects.slice(3, 5).map(e => ({ name: e })),
+                } : undefined;
+                
+                // Phase 8.4.2 — Extract top 5 candidate names for database dominance prior
+                const topCandidateNames = nameMatchResult?.alternates
+                  ? [
+                      { name: nameMatchResult.primaryName, confidence: nameMatchResult.confidencePercent },
+                      ...nameMatchResult.alternates.slice(0, 4).map(a => ({ name: a.name, confidence: a.confidence || a.score })),
+                    ]
+                  : undefined;
+                
+                const strainRatio = resolveStrainRatio(
+                  lockedStrainName,
+                  dbEntry,
+                  imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                  input.imageCount,
+                  fusedFeatures, // Phase 4.8 — Pass fused features for morphology adjustment
+                  candidateStrainsForRatio, // Phase 5.0.3.2 — Pass candidates for consensus merge
+                  terpeneExperienceResult?.terpeneProfile, // Phase 5.0.5.1 — Pass terpene profile for weighting
+                  effectProfileForRatio, // Phase 5.6.1 — Pass effect profile for bias
+                  topCandidateNames // Phase 8.4.2 — Pass top 5 candidate names for database dominance prior
+                );
+                console.log("Phase 5.0.3 — STRAIN RATIO RESOLVED:", strainRatio);
+                
+                // Phase 5.0.3.4 — Ensure hybridLabel is set
+                if (!(strainRatio as any).hybridLabel) {
+                  // Generate hybridLabel from dominance
+                  const hybridLabel = strainRatio.dominance === "Indica" ? "Indica-dominant"
+                    : strainRatio.dominance === "Sativa" ? "Sativa-dominant"
+                    : strainRatio.dominance === "Balanced" ? "Balanced Hybrid"
+                    : strainRatio.indicaPercent > strainRatio.sativaPercent ? "Indica-leaning Hybrid"
+                    : "Sativa-leaning Hybrid";
+                  (strainRatio as any).hybridLabel = hybridLabel;
+                }
 
+                // Phase 5.0.3.4 — Ensure hybridLabel is set before generating explanation
+                if (!(strainRatio as any).hybridLabel) {
+                  const hybridLabel = strainRatio.dominance === "Indica" ? "Indica-dominant"
+                    : strainRatio.dominance === "Sativa" ? "Sativa-dominant"
+                    : strainRatio.dominance === "Balanced" ? "Balanced Hybrid"
+                    : strainRatio.indicaPercent > strainRatio.sativaPercent ? "Indica-leaning Hybrid"
+                    : "Sativa-leaning Hybrid";
+                  (strainRatio as any).hybridLabel = hybridLabel;
+                }
+                
                 // Phase 4.6 Step 4.6.4 — Generate ratio explanation (legacy, will be replaced by Phase 5.6)
                 // Note: wikiReport is generated later, so we pass undefined for now (will use dbEntry genetics)
                 // This is a placeholder - Phase 5.6 will generate the final explanation
@@ -563,7 +811,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 );
                 console.log("Phase 5.2 — STRAIN RATIO V52 RESOLVED (fallback):", strainRatioV52);
 
+                // Phase 8.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
+                // 4-Source Weighted System: Database + Visual + Terpene + Name Consensus
+                let nameFirstV80ResultForRatio: NameFirstResultV80 | undefined = undefined;
+                let strainRatioV81: any = undefined;
+                
                 // Phase 7.9.6 — Determine which ratio to use (Phase 7.9 preferred, fallback to Phase 7.7, then Phase 7.5, then Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
+                // Note: Phase 8.1 check will be added after Phase 8.1 completes
                 const usePhase79ForRatio = strainRatioV79 && strainRatioV79.confidence !== "low";
                 const usePhase77ForRatio = !usePhase79ForRatio && strainRatioV77 && strainRatioV77.confidence !== "low";
                 const usePhase75ForRatio = !usePhase79ForRatio && !usePhase77ForRatio && strainRatioV75 && strainRatioV75.confidence !== "low";
@@ -615,6 +869,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                       ratioForName
                     );
                     console.log("Phase 8.0 — NAME FIRST V80 RESULT:", nameFirstV80Result);
+                    
+                    // Phase 8.1 — Store V80 result for ratio engine
+                    nameFirstV80ResultForRatio = nameFirstV80Result;
                     
                     // Phase 8.0 — Use V80 result if confidence is acceptable
                     if (nameFirstV80Result.primaryMatch.confidence >= 55) {
@@ -830,55 +1087,191 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                         // Continue with original result
                       }
                     }
-                      } catch (error) {
-                        console.error("Phase 5.7 — V57 engine error:", error);
-                        // Phase 5.3.3 — Fallback to Phase 5.3 validation pipeline
-                        const { runNameFirstPipeline } = require("./nameFirstPipeline");
-                        try {
-                          const validatedPipelineResult = runNameFirstPipeline(
-                            imageResultsV3,
-                            fusedFeatures,
-                            input.imageCount,
-                            terpeneExperienceResult.terpeneProfile,
-                            strainRatioV52
-                          );
-                          console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT (fallback):", validatedPipelineResult);
-                          
-                          if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
-                            console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
+                    } catch (error) {
+                      console.error("Phase 5.7 — V57 engine error:", error);
+                      // Phase 5.3.3 — Fallback to Phase 5.3 validation pipeline
+                      const { runNameFirstPipeline } = require("./nameFirstPipeline");
+                      try {
+                        const validatedPipelineResult = runNameFirstPipeline(
+                          imageResultsV3,
+                          fusedFeatures,
+                          input.imageCount,
+                          terpeneExperienceResult.terpeneProfile,
+                          strainRatioV52
+                        );
+                        console.log("Phase 5.3 Step 5.3.3 — VALIDATED PIPELINE RESULT (fallback):", validatedPipelineResult);
+                        
+                        if (validatedPipelineResult.primaryStrainName !== nameFirstPipelineResult.primaryStrainName) {
+                          console.log(`Phase 5.3.3 — VALIDATION CHANGED PRIMARY NAME: "${nameFirstPipelineResult.primaryStrainName}" → "${validatedPipelineResult.primaryStrainName}"`);
+                          nameFirstPipelineResult = validatedPipelineResult;
+                        } else {
+                          if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
+                            console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
                             nameFirstPipelineResult = validatedPipelineResult;
                           } else {
-                            if (validatedPipelineResult.nameConfidencePercent < nameFirstPipelineResult.nameConfidencePercent) {
-                              console.log(`Phase 5.3.3 — VALIDATION REDUCED CONFIDENCE: ${nameFirstPipelineResult.nameConfidencePercent}% → ${validatedPipelineResult.nameConfidencePercent}%`);
-                              nameFirstPipelineResult = validatedPipelineResult;
-                            } else {
-                              nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
-                            }
+                            nameFirstPipelineResult.explanation = validatedPipelineResult.explanation;
                           }
-                        } catch (fallbackError) {
-                          console.error("Phase 5.3.3 — Validation pipeline error:", fallbackError);
-                          // Continue with original result if validation fails
                         }
+                      } catch (fallbackError) {
+                        console.error("Phase 5.3.3 — Validation pipeline error:", fallbackError);
+                        // Continue with original result if validation fails
                       }
+                    }
                   } catch (error) {
                     console.error("Phase 8.0 — V80 engine error:", error);
                     // Continue with original result if Phase 8.0 fails
                   }
                 }
 
-                // Phase 7.1.5 — Convert Phase 7.1 result to Phase 4.6 format for backward compatibility
-                // Use Phase 7.1 result (preferred) or fallback to Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2
-                // Note: usePhase71ForRatio, usePhase60ForRatio, usePhase58ForRatio, usePhase56ForRatio are already defined earlier
+                // Phase 8.1 — INDICA / SATIVA / HYBRID RATIO ENGINE (Latest)
+                // 4-Source Weighted System: Database + Visual + Terpene + Name Consensus
+                if (nameFirstPipelineResult && imageResultsV3.length > 0) {
+                  const { resolveStrainRatioV81 } = require("./ratioEngineV81");
+                  try {
+                    // Phase 8.1 — Run ratio engine with Phase 8.0 name result
+                    const terpeneProfileForRatioV81 = terpeneExperienceResult.terpeneProfile.primaryTerpenes
+                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
+                    
+                    // Get updated dbEntry based on Phase 8.0 primary match
+                    const updatedStrainName = nameFirstPipelineResult.primaryStrainName;
+                    const updatedDbEntry = CULTIVAR_LIBRARY.find(
+                      c => c.name.toLowerCase() === updatedStrainName.toLowerCase() ||
+                          c.aliases.some(a => a.toLowerCase() === updatedStrainName.toLowerCase())
+                    ) || dbEntry;
+                    
+                    strainRatioV81 = resolveStrainRatioV81(
+                      updatedStrainName,
+                      updatedDbEntry,
+                      imageResultsV3.length > 0 ? imageResultsV3 : undefined,
+                      input.imageCount,
+                      fusedFeatures,
+                      terpeneProfileForRatioV81.length > 0 ? terpeneProfileForRatioV81 : undefined,
+                      nameFirstV80ResultForRatio
+                    );
+                    console.log("Phase 8.1 — STRAIN RATIO V81 RESOLVED:", strainRatioV81);
+                  } catch (error) {
+                    console.error("Phase 8.1 — V81 engine error:", error);
+                    // Continue with fallback ratio engines if Phase 8.1 fails
+                  }
+                }
+
+                // Phase 8.2 — STRAIN NAME CONFIDENCE & DISAMBIGUATION ENGINE (Latest)
+                // Enhanced confidence scoring and disambiguation
+                let nameConfidenceV82Result: any = undefined;
                 
-                const ratioExplanation = usePhase71ForRatio ? {
+                if (nameFirstPipelineResult && imageResultsV3.length > 0) {
+                  const { runNameConfidenceV82 } = require("./nameConfidenceV82");
+                  try {
+                    // Phase 8.2 — Run confidence and disambiguation engine
+                    const terpeneProfileForNameV82 = terpeneExperienceResult.terpeneProfile.primaryTerpenes
+                      .concat(terpeneExperienceResult.terpeneProfile.secondaryTerpenes)
+                      .map(t => ({ name: t.name, likelihood: "High" })); // Simplified likelihood
+                    
+                    nameConfidenceV82Result = runNameConfidenceV82(
+                      imageResultsV3,
+                      fusedFeatures,
+                      input.imageCount,
+                      terpeneProfileForNameV82.length > 0 ? terpeneProfileForNameV82 : undefined,
+                      nameFirstV80ResultForRatio,
+                      strainRatioV81
+                    );
+                    console.log("Phase 8.2 — NAME CONFIDENCE V82 RESULT:", nameConfidenceV82Result);
+                    
+                    // Phase 8.2 — Use V82 result if confidence is acceptable (>= 55%)
+                    if (nameConfidenceV82Result.primaryName.confidence >= 55) {
+                      // Update nameFirstPipelineResult with Phase 8.2 enhanced results
+                      nameFirstPipelineResult = {
+                        primaryStrainName: nameConfidenceV82Result.primaryName.name,
+                        nameConfidencePercent: nameConfidenceV82Result.primaryName.confidence,
+                        nameConfidenceTier: nameConfidenceV82Result.primaryName.confidenceTier,
+                        alternateMatches: nameConfidenceV82Result.alternateMatches.map(a => ({
+                          name: a.name,
+                          score: a.confidence,
+                          whyNotPrimary: a.whyNotPrimary,
+                        })),
+                        explanation: {
+                          whyThisNameWon: [nameConfidenceV82Result.explanation],
+                          whatRuledOutOthers: nameConfidenceV82Result.alternateMatches.map(a => a.difference),
+                          varianceNotes: nameConfidenceV82Result.isAmbiguous ? ["Multiple close matches identified"] : [],
+                        },
+                        closelyRelatedVariants: nameConfidenceV82Result.isAmbiguous
+                          ? nameConfidenceV82Result.alternateMatches.slice(0, 2).map(a => a.name)
+                          : undefined,
+                        isAmbiguous: nameConfidenceV82Result.isAmbiguous,
+                      };
+                      console.log("Phase 8.2 — USING V82 RESULT (enhanced confidence and disambiguation)");
+                    } else {
+                      console.log(`Phase 8.2 — V82 confidence too low (${nameConfidenceV82Result.primaryName.confidence}%), keeping Phase 8.0 result`);
+                    }
+                  } catch (error) {
+                    console.error("Phase 8.2 — V82 engine error:", error);
+                    // Continue with Phase 8.0 result if Phase 8.2 fails
+                  }
+                }
+
+                // Phase 8.1.6 — Determine which ratio to use (Phase 8.1 preferred, then Phase 7.9, fallback to Phase 7.7, then Phase 7.5, then Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
+                const usePhase81ForRatio = strainRatioV81 && strainRatioV81.confidence !== "low";
+                const usePhase79ForRatioAfter81 = !usePhase81ForRatio && strainRatioV79 && strainRatioV79.confidence !== "low";
+                const usePhase77ForRatioAfter81 = !usePhase81ForRatio && !usePhase79ForRatioAfter81 && strainRatioV77 && strainRatioV77.confidence !== "low";
+                const usePhase75ForRatioAfter81 = !usePhase81ForRatio && !usePhase79ForRatioAfter81 && !usePhase77ForRatioAfter81 && strainRatioV75 && strainRatioV75.confidence !== "low";
+                const usePhase73ForRatioAfter81 = !usePhase81ForRatio && !usePhase79ForRatioAfter81 && !usePhase77ForRatioAfter81 && !usePhase75ForRatioAfter81 && strainRatioV73 && strainRatioV73.confidence !== "low";
+                const usePhase71ForRatioAfter81 = !usePhase81ForRatio && !usePhase79ForRatioAfter81 && !usePhase77ForRatioAfter81 && !usePhase75ForRatioAfter81 && !usePhase73ForRatioAfter81 && strainRatioV71 && strainRatioV71.confidence !== "low";
+                const usePhase60ForRatioAfter81 = !usePhase81ForRatio && !usePhase79ForRatioAfter81 && !usePhase77ForRatioAfter81 && !usePhase75ForRatioAfter81 && !usePhase73ForRatioAfter81 && !usePhase71ForRatioAfter81 && strainRatioV60 && strainRatioV60.confidence !== "low";
+                const usePhase58ForRatioAfter81 = !usePhase81ForRatio && !usePhase79ForRatioAfter81 && !usePhase77ForRatioAfter81 && !usePhase75ForRatioAfter81 && !usePhase73ForRatioAfter81 && !usePhase71ForRatioAfter81 && !usePhase60ForRatioAfter81 && strainRatioV58 && strainRatioV58.confidence !== "low";
+                const usePhase56ForRatioAfter81 = !usePhase81ForRatio && !usePhase79ForRatioAfter81 && !usePhase77ForRatioAfter81 && !usePhase75ForRatioAfter81 && !usePhase73ForRatioAfter81 && !usePhase71ForRatioAfter81 && !usePhase60ForRatioAfter81 && !usePhase58ForRatioAfter81 && strainRatioV56 && strainRatioV56.confidence !== "low";
+
+                // Phase 7.1.5 — Convert Phase 7.1 result to Phase 4.6 format for backward compatibility
+                // Use Phase 8.1 result (preferred), then Phase 7.9, then Phase 7.7, then Phase 7.5, then Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2
+                // Note: usePhase81ForRatio, usePhase79ForRatio, usePhase71ForRatio, usePhase60ForRatio, usePhase58ForRatio, usePhase56ForRatio are already defined earlier
+                
+                const ratioExplanation = usePhase81ForRatio ? {
+                  summary: `Ratio determined using 4-source weighted system: database baseline (45%) + visual morphology (27%) + terpene signals (23%) + name consensus (8%) (${strainRatioV81.confidence} confidence)`,
+                  fullExplanation: [
+                    `Classification: ${strainRatioV81.classificationLabel}`,
+                    `Ratio: ${strainRatioV81.ratio}`,
+                    `Confidence: ${strainRatioV81.confidence}`,
+                    strainRatioV81.explanation,
+                  ],
+                } : usePhase79ForRatioAfter81 ? {
+                  summary: `Ratio determined using base ratio sources + visual modifiers + terpene signals + consensus (${strainRatioV79.confidence} confidence)`,
+                  fullExplanation: [
+                    `Classification: ${strainRatioV79.classification} (${strainRatioV79.dominanceLabel})`,
+                    `Ratio: ${strainRatioV79.displayText}`,
+                    `Confidence: ${strainRatioV79.confidenceLabel}`,
+                    strainRatioV79.explanation,
+                  ],
+                } : usePhase77ForRatioAfter81 ? {
+                  summary: `Ratio determined using database signals + visual morphology + terpene profile (${strainRatioV77.confidence} confidence)`,
+                  fullExplanation: [
+                    `Classification: ${strainRatioV77.classification}`,
+                    `Ratio: ${strainRatioV77.humanReadableLabel}`,
+                    `Confidence: ${strainRatioV77.confidenceLabel}`,
+                    ...strainRatioV77.explanation,
+                  ],
+                } : usePhase75ForRatioAfter81 ? {
+                  summary: `Ratio determined using database baseline + visual modifiers + terpene signals (${strainRatioV75.confidence} confidence)`,
+                  fullExplanation: [
+                    `Classification: ${strainRatioV75.classification} (${strainRatioV75.dominanceText})`,
+                    `Ratio: ${strainRatioV75.displayText}`,
+                    `Confidence: ${strainRatioV75.confidenceLabel}`,
+                    ...strainRatioV75.explanation,
+                  ],
+                } : usePhase73ForRatioAfter81 ? {
+                  summary: `Ratio determined using genetic baseline + visual morphology + consensus (${strainRatioV73.confidence} confidence)`,
+                  fullExplanation: [
+                    `Classification: ${strainRatioV73.classificationText}`,
+                    `Ratio: ${strainRatioV73.displayText}`,
+                    `Confidence: ${strainRatioV73.confidenceLabel}`,
+                    ...strainRatioV73.explanation,
+                  ],
+                } : usePhase71ForRatio ? {
                   summary: `Ratio determined using base ratio sources (database genetics/lineage) + visual modulation + multi-image consensus (${strainRatioV71.confidence} confidence)`,
                   fullExplanation: [
                     `Classification: ${strainRatioV71.classification}${strainRatioV71.dominanceLabel ? ` (${strainRatioV71.dominanceLabel})` : ""}`,
-                    `Ratio: ${strainRatioV71.ratio}`,
-                    `Confidence: ${strainRatioV71.confidenceLabel}`,
-                    ...strainRatioV71.explanation,
+                    ...(strainRatioV71.explanation ?? []),
                   ],
-                } : usePhase60ForRatio ? {
+                } : usePhase60ForRatioAfter81 ? {
                   summary: `Ratio determined using ratio source model (database/lineage) + visual trait correlation + multi-image consensus (${strainRatioV60.confidence} confidence)`,
                   fullExplanation: [
                     `Type: ${strainRatioV60.typeLabel}`,
@@ -886,14 +1279,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     `Confidence: ${strainRatioV60.confidenceLabel}`,
                     ...strainRatioV60.explanation,
                   ],
-                } : usePhase58ForRatio ? {
+                } : usePhase58ForRatioAfter81 ? {
                   summary: `Ratio determined using database signals (highest weight) + image phenotype + terpene/effect signals + multi-image consensus (${strainRatioV58.confidence} confidence)`,
                   fullExplanation: [
                     `Type: ${strainRatioV58.type}`,
                     `Ratio: ${strainRatioV58.ratio}`,
                     ...strainRatioV58.explanation,
                   ],
-                } : usePhase56ForRatio ? {
+                } : usePhase56ForRatioAfter81 ? {
                   summary: `Ratio determined using database baseline + visual modifiers + terpene/effect cross-check + multi-image consensus (${strainRatioV56.confidence} confidence)`,
                   fullExplanation: [
                     `Strain Type: ${strainRatioV56.strainType}`,
@@ -919,7 +1312,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   ? dbEntryForAliases.aliases.slice(0, 3) // Top 3 aliases
                   : undefined;
 
-                // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE (generate early for Phase 7.8)
+        // Phase 7.0 — TERPENE & CANNABINOID PROFILE ENGINE (NEW)
+        const terpeneCannabinoidProfileV70 = (() => {
+          const { generateTerpeneCannabinoidProfileV70 } = require("./terpeneCannabinoidProfileV70");
+          return generateTerpeneCannabinoidProfileV70(
+            imageResultsV3.length > 0 ? imageResultsV3 : [],
+            fusedFeatures,
+            dbEntry
+          );
+        })();
+        
+        // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE (generate early for Phase 7.8)
                 const terpeneCannabinoidProfileEarly = (() => {
                   const { generateTerpeneCannabinoidProfileV72 } = require("./terpeneCannabinoidProfileV72");
                   const candidateStrains = nameFirstPipelineResult.alternateMatches?.map(a => ({
@@ -936,63 +1339,286 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   );
                 })();
 
+        // Phase 5.2.5 — VIEWMODEL INTEGRATION: Populate strainType from ratioOutput
+        const ratioOutput = strainRatio ? (strainRatio as any).ratioOutput : undefined;
+        if (ratioOutput) {
+          viewModel.strainType = {
+            indica: ratioOutput.indica,
+            sativa: ratioOutput.sativa,
+            label: ratioOutput.label,
+          };
+        }
+        
+        // Phase 5.6.4 — VIEWMODEL EXTENSION: Populate classification from strainRatio
+        if (strainRatio) {
+          const ratioCalculation = (strainRatio as any).ratioCalculation;
+          if (ratioCalculation) {
+            viewModel.classification = {
+              indicaPercent: ratioCalculation.ratio.indica,
+              sativaPercent: ratioCalculation.ratio.sativa,
+              type: ratioCalculation.type,
+            };
+          } else {
+            // Fallback to strainRatio fields if ratioCalculation not available
+            viewModel.classification = {
+              indicaPercent: strainRatio.indicaPercent,
+              sativaPercent: strainRatio.sativaPercent,
+              type: strainRatio.dominance === "Indica" ? "Indica" : strainRatio.dominance === "Sativa" ? "Sativa" : "Hybrid",
+            };
+          }
+        }
+        
+        // Phase 5.8.4 — VIEWMODEL ADDITION: Populate ratio with hybrid score
+        if (strainRatio) {
+          const ratioWithHybrid = (strainRatio as any).ratioWithHybrid;
+          if (ratioWithHybrid) {
+            viewModel.ratio = {
+              indica: ratioWithHybrid.indica,
+              sativa: ratioWithHybrid.sativa,
+              hybrid: ratioWithHybrid.hybrid,
+              ratioLabel: ratioWithHybrid.ratioLabel,
+            };
+          }
+        }
+        
+        // Phase 6.0.4 — VIEWMODEL EXTENSION: Populate dominance from strainRatio
+        // Phase 8.0.4 — Enhanced with confidence
+        // Phase 8.4.5 — Enhanced with consensusRatio8_4
+        // Phase 8.6.5 — Enhanced with dominanceV8_6 (hybrid + numeric confidence)
+        if (strainRatio) {
+          const dominanceWithConfidence = (strainRatio as any).dominanceWithConfidence;
+          
+          // Phase 8.6.4 — Check for final dominance with confidence (60% database + 40% visual) - preferred
+          const dominanceV8_6 = (strainRatio as any).dominanceV8_6;
+          
+          // Phase 8.4.3 — Check for consensus ratio (60% database + 40% visual) - legacy
+          const consensusRatio8_4 = (strainRatio as any).consensusRatio8_4;
+          
+          // Phase 8.2.3 — Check for consensus ratio (60% visual + 40% database) - legacy
+          const consensusRatio8_2 = (strainRatio as any).consensusRatio8_2;
+          
+          if (dominanceV8_6) {
+            // Phase 8.6.5 — Use dominanceV8_6 with hybrid field and numeric confidence
+            const dominanceLabel = dominanceV8_6.indica > 65 ? "Indica-dominant" 
+              : dominanceV8_6.sativa > 65 ? "Sativa-dominant" 
+              : "Balanced Hybrid";
+            const dominanceType = dominanceV8_6.indica > 65 ? "Indica" 
+              : dominanceV8_6.sativa > 65 ? "Sativa" 
+              : "Hybrid";
+            
+            viewModel.dominance = {
+              indica: dominanceV8_6.indica,
+              sativa: dominanceV8_6.sativa,
+              hybrid: dominanceV8_6.hybrid, // Phase 8.6.5 — Hybrid percentage
+              type: dominanceType,
+              label: dominanceLabel,
+              confidence: dominanceV8_6.confidence, // Phase 8.6.5 — Numeric confidence (0-100)
+            };
+          } else if (consensusRatio8_4) {
+            // Phase 8.4.5 — Use consensus ratio 8.4 with dominanceLabel
+            viewModel.dominance = {
+              indica: consensusRatio8_4.indicaPercent,
+              sativa: consensusRatio8_4.sativaPercent,
+              hybrid: 100 - (consensusRatio8_4.indicaPercent + consensusRatio8_4.sativaPercent), // Phase 8.6.5 — Calculate hybrid
+              type: consensusRatio8_4.dominanceLabel, // Phase 8.4.5 — Type field
+              label: consensusRatio8_4.dominanceLabel === "Indica" ? "Indica-dominant" : consensusRatio8_4.dominanceLabel === "Sativa" ? "Sativa-dominant" : "Balanced Hybrid",
+              confidence: dominanceWithConfidence?.confidence || "Medium", // Phase 8.0.4 — Include confidence
+            };
+          } else if (consensusRatio8_2) {
+            // Phase 8.2.4 — Use consensus ratio with type field
+            const hybrid8_2 = 100 - (consensusRatio8_2.indica + consensusRatio8_2.sativa);
+            viewModel.dominance = {
+              indica: consensusRatio8_2.indica,
+              sativa: consensusRatio8_2.sativa,
+              hybrid: Math.max(0, hybrid8_2), // Phase 8.6.5 — Calculate hybrid
+              type: consensusRatio8_2.type, // Phase 8.2.4 — Type field
+              label: consensusRatio8_2.type === "Indica" ? "Indica-dominant" : consensusRatio8_2.type === "Sativa" ? "Sativa-dominant" : "Balanced Hybrid",
+              confidence: dominanceWithConfidence?.confidence || "Medium", // Phase 8.0.4 — Include confidence
+            };
+          } else if (dominanceWithConfidence) {
+            const hybridFromConfidence = 100 - (dominanceWithConfidence.indica + dominanceWithConfidence.sativa);
+            viewModel.dominance = {
+              indica: dominanceWithConfidence.indica,
+              sativa: dominanceWithConfidence.sativa,
+              hybrid: Math.max(0, hybridFromConfidence), // Phase 8.6.5 — Calculate hybrid
+              type: dominanceWithConfidence.label === "Indica-dominant" ? "Indica" : dominanceWithConfidence.label === "Sativa-dominant" ? "Sativa" : "Hybrid", // Phase 8.2.4 — Infer type from label
+              label: dominanceWithConfidence.label,
+              confidence: dominanceWithConfidence.confidence, // Phase 8.0.4 — Include confidence
+            };
+          } else {
+            const ratioWithHybrid = (strainRatio as any).ratioWithHybrid;
+            if (ratioWithHybrid) {
+              const label = ratioWithHybrid.ratioLabel || (strainRatio.indicaPercent >= 70 ? "Indica-dominant" : strainRatio.sativaPercent >= 70 ? "Sativa-dominant" : "Balanced Hybrid");
+              const hybridFromRatio = ratioWithHybrid.hybrid || (100 - (ratioWithHybrid.indica + ratioWithHybrid.sativa));
+              viewModel.dominance = {
+                indica: ratioWithHybrid.indica,
+                sativa: ratioWithHybrid.sativa,
+                hybrid: Math.max(0, hybridFromRatio), // Phase 8.6.5 — Include hybrid
+                type: label === "Indica-dominant" ? "Indica" : label === "Sativa-dominant" ? "Sativa" : "Hybrid", // Phase 8.2.4 — Infer type from label
+                label,
+                confidence: "Medium", // Phase 8.0.4 — Default confidence
+              };
+            } else {
+              // Fallback to strainRatio fields
+              const label = strainRatio.indicaPercent >= 70 ? "Indica-dominant" : strainRatio.sativaPercent >= 70 ? "Sativa-dominant" : "Balanced Hybrid";
+              const hybridFromStrain = 100 - (strainRatio.indicaPercent + strainRatio.sativaPercent);
+              viewModel.dominance = {
+                indica: strainRatio.indicaPercent,
+                sativa: strainRatio.sativaPercent,
+                hybrid: Math.max(0, hybridFromStrain), // Phase 8.6.5 — Calculate hybrid
+                type: label === "Indica-dominant" ? "Indica" : label === "Sativa-dominant" ? "Sativa" : "Hybrid", // Phase 8.2.4 — Infer type from label
+                label,
+                confidence: "Medium", // Phase 8.0.4 — Default confidence
+              };
+            }
+          }
+        }
+        
+        // Phase 7.0.4 — VIEWMODEL EXTENSION: Populate chemistry from terpeneCannabinoidProfileV70
+        if (terpeneCannabinoidProfileV70) {
+          viewModel.chemistry = {
+            primaryTerpenes: terpeneCannabinoidProfileV70.primaryTerpenes,
+            secondaryTerpenes: terpeneCannabinoidProfileV70.secondaryTerpenes,
+            thcRange: terpeneCannabinoidProfileV70.thcRange,
+            cbdPresence: terpeneCannabinoidProfileV70.cbdPresence,
+          };
+        }
+                
+                // Phase 5.4.5 — VIEWMODEL OUTPUT: Populate genetics.type and genetics.ratioLabel
+                const ratioCalculation = strainRatio ? (strainRatio as any).ratioCalculation : undefined;
+                if (ratioCalculation) {
+                  if (!viewModel.genetics) {
+                    viewModel.genetics = {
+                      dominance: strainRatio.dominance,
+                      lineage: dbEntry?.genetics || "",
+                    };
+                  }
+                  viewModel.genetics.type = ratioCalculation.type;
+                  viewModel.genetics.ratioLabel = `${ratioCalculation.ratio.indica}% Indica / ${ratioCalculation.ratio.sativa}% Sativa`;
+                }
+
+                // Phase 5.9.4 — STRAIN TITLE FORMAT: Use strainTitle from nameMatchResult if available
+                const strainTitle = (nameMatchResult as any)?.strainTitle;
+                const confidenceTierLabel = (nameFirstPipelineResult as any)?.confidenceTierLabel;
+                const displayTagline = strainTitle || confidenceTierLabel || "Closest known match based on visual + database consensus";
+                
                 viewModel.nameFirstDisplay = {
                   primaryStrainName: nameFirstPipelineResult.primaryStrainName,
                   confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
                   confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
-                  tagline: "Closest known match based on visual + database consensus",
+                  tagline: displayTagline, // Phase 5.7.3 — Use confidence tier label if available
                   alsoKnownAs, // Phase 5.5.5 — Include aliases
                   alternateMatches: nameFirstPipelineResult.alternateMatches.length > 0
                     ? nameFirstPipelineResult.alternateMatches.map(a => ({
                         name: a.name,
+                        confidence: a.score, // Phase 5.7.4 — Include confidence
                         whyNotPrimary: a.whyNotPrimary,
                       }))
                     : undefined,
                   // Phase 4.5 Step 4.5.3 — Include explanation for "Why this strain?" section (FREE TIER)
                   explanation: nameFirstPipelineResult.explanation,
-                  // Phase 7.7 Step 7.7.4 — Include ratio (using Phase 7.7 engine, fallback to Phase 7.5, then Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
-                  ratio: usePhase77ForRatio ? {
+                  // Phase 8.1 Step 8.1.6 — Include ratio (using Phase 8.1 engine, fallback to Phase 7.9, then Phase 7.7, then Phase 7.5, then Phase 7.3, then Phase 7.1, then Phase 6.0, then Phase 5.8, then Phase 5.6, then Phase 5.2)
+                  // Phase 5.0.3.4 — Use base ratioEngine result (with consensus merge) as PRIMARY
+                  // Phase 5.0.3 — Database + Consensus ratio (preferred over versioned engines)
+                  ratio: strainRatio ? {
+                    indicaPercent: strainRatio.indicaPercent,
+                    sativaPercent: strainRatio.sativaPercent,
+                    dominance: strainRatio.dominance,
+                    hybridLabel: (strainRatio as any).hybridLabel || (
+                      strainRatio.dominance === "Indica" ? "Indica-dominant"
+                      : strainRatio.dominance === "Sativa" ? "Sativa-dominant"
+                      : strainRatio.dominance === "Balanced" ? "Balanced Hybrid"
+                      : strainRatio.indicaPercent > strainRatio.sativaPercent ? "Indica-leaning Hybrid"
+                      : "Sativa-leaning Hybrid"
+                    ),
+                    displayText: strainRatio.displayText,
+                    explanation: legacyRatioExplanation,
+                  } : (usePhase81ForRatio ? {
+                    indicaPercent: strainRatioV81.indicaPercent,
+                    sativaPercent: strainRatioV81.sativaPercent,
+                    dominance: strainRatioV81.classification,
+                    hybridLabel: strainRatioV81.classificationLabel.includes("Indica") ? "Indica-dominant" 
+                      : strainRatioV81.classificationLabel.includes("Sativa") ? "Sativa-dominant"
+                      : strainRatioV81.classificationLabel.includes("Balanced") ? "Balanced Hybrid"
+                      : strainRatioV81.classificationLabel.includes("leaning") ? strainRatioV81.classificationLabel as any
+                      : "Hybrid",
+                    displayText: `${strainRatioV81.classificationLabel}: ${strainRatioV81.ratio}`,
+                    explanation: ratioExplanation,
+                  } : usePhase79ForRatio ? {
+                    indicaPercent: strainRatioV79.indicaPercent,
+                    sativaPercent: strainRatioV79.sativaPercent,
+                    dominance: strainRatioV79.classification,
+                    hybridLabel: strainRatioV79.dominanceLabel.includes("Indica") ? "Indica-dominant"
+                      : strainRatioV79.dominanceLabel.includes("Sativa") ? "Sativa-dominant"
+                      : strainRatioV79.dominanceLabel.includes("Balanced") ? "Balanced Hybrid"
+                      : strainRatioV79.dominanceLabel.includes("leaning") ? strainRatioV79.dominanceLabel as any
+                      : "Hybrid",
+                    displayText: `${strainRatioV79.dominanceLabel}: ${strainRatioV79.displayText}`,
+                    explanation: ratioExplanation,
+                  } : usePhase77ForRatioAfter81 ? {
                     indicaPercent: strainRatioV77.indicaPercent,
                     sativaPercent: strainRatioV77.sativaPercent,
                     dominance: strainRatioV77.classification,
+                    hybridLabel: strainRatioV77.classification.includes("Indica") ? "Indica-dominant"
+                      : strainRatioV77.classification.includes("Sativa") ? "Sativa-dominant"
+                      : "Hybrid",
                     displayText: strainRatioV77.humanReadableLabel,
                     explanation: ratioExplanation,
                   } : usePhase75ForRatio ? {
                     indicaPercent: strainRatioV75.indicaPercent,
                     sativaPercent: strainRatioV75.sativaPercent,
                     dominance: strainRatioV75.classification,
+                    hybridLabel: strainRatioV75.dominanceText.includes("Indica") ? "Indica-dominant"
+                      : strainRatioV75.dominanceText.includes("Sativa") ? "Sativa-dominant"
+                      : "Hybrid",
                     displayText: `${strainRatioV75.dominanceText}: ${strainRatioV75.displayText}`,
                     explanation: ratioExplanation,
                   } : usePhase73ForRatio ? {
                     indicaPercent: strainRatioV73.indicaPercent,
                     sativaPercent: strainRatioV73.sativaPercent,
                     dominance: strainRatioV73.classification,
+                    hybridLabel: strainRatioV73.classificationText.includes("Indica") ? "Indica-dominant"
+                      : strainRatioV73.classificationText.includes("Sativa") ? "Sativa-dominant"
+                      : "Hybrid",
                     displayText: `${strainRatioV73.classificationText}: ${strainRatioV73.displayText}`,
                     explanation: ratioExplanation,
-                  } : usePhase71ForRatio ? {
+                  } : usePhase71ForRatioAfter81 ? {
                     indicaPercent: strainRatioV71.indicaPercent,
                     sativaPercent: strainRatioV71.sativaPercent,
                     dominance: strainRatioV71.classification,
+                    hybridLabel: (strainRatioV71.dominanceLabel || strainRatioV71.classification).includes("Indica") ? "Indica-dominant"
+                      : (strainRatioV71.dominanceLabel || strainRatioV71.classification).includes("Sativa") ? "Sativa-dominant"
+                      : "Hybrid",
                     displayText: `${strainRatioV71.classification}${strainRatioV71.dominanceLabel ? ` (${strainRatioV71.dominanceLabel})` : ""}: ${strainRatioV71.ratio}`,
                     explanation: ratioExplanation,
                   } : usePhase60ForRatio ? {
                     indicaPercent: strainRatioV60.indicaPercent,
                     sativaPercent: strainRatioV60.sativaPercent,
                     dominance: strainRatioV60.type,
+                    hybridLabel: strainRatioV60.typeLabel.includes("Indica") ? "Indica-dominant"
+                      : strainRatioV60.typeLabel.includes("Sativa") ? "Sativa-dominant"
+                      : "Hybrid",
                     displayText: `${strainRatioV60.typeLabel}: ${strainRatioV60.ratio}`,
                     explanation: ratioExplanation,
                   } : usePhase58ForRatio ? {
                     indicaPercent: strainRatioV58.indicaPercent,
                     sativaPercent: strainRatioV58.sativaPercent,
                     dominance: strainRatioV58.type,
+                    hybridLabel: strainRatioV58.type.includes("Indica") ? "Indica-dominant"
+                      : strainRatioV58.type.includes("Sativa") ? "Sativa-dominant"
+                      : "Hybrid",
                     displayText: `${strainRatioV58.type}: ${strainRatioV58.ratio}`,
                     explanation: ratioExplanation,
-                  } : usePhase56ForRatio ? {
+                  } : usePhase56ForRatioAfter81 ? {
                     indicaPercent: strainRatioV56.indicaPercent,
                     sativaPercent: strainRatioV56.sativaPercent,
                     dominance: strainRatioV56.strainType.includes("Indica") && !strainRatioV56.strainType.includes("Hybrid") ? "Indica" 
                       : strainRatioV56.strainType.includes("Sativa") && !strainRatioV56.strainType.includes("Hybrid") ? "Sativa" 
                       : strainRatioV56.strainType.includes("Balanced") ? "Balanced" 
+                      : "Hybrid",
+                    hybridLabel: strainRatioV56.strainType.includes("Balanced") ? "Balanced Hybrid"
+                      : strainRatioV56.strainType.includes("Indica") ? "Indica-dominant"
+                      : strainRatioV56.strainType.includes("Sativa") ? "Sativa-dominant"
                       : "Hybrid",
                     displayText: `${strainRatioV56.strainType}: ${strainRatioV56.estimatedRatio}`,
                     explanation: ratioExplanation,
@@ -1000,6 +1626,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     indicaPercent: strainRatioV52.indicaPercent,
                     sativaPercent: strainRatioV52.sativaPercent,
                     dominance: strainRatioV52.dominance,
+                    hybridLabel: strainRatioV52.dominance === "Indica" ? "Indica-dominant"
+                      : strainRatioV52.dominance === "Sativa" ? "Sativa-dominant"
+                      : strainRatioV52.dominance === "Balanced" ? "Balanced Hybrid"
+                      : "Hybrid",
                     displayText: strainRatioV52.displayText,
                     explanation: ratioExplanation,
                   },
@@ -1117,6 +1747,31 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
     console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
     console.log("Phase 4.6 Step 4.6.2 — RATIO INCLUDED (FREE TIER):", viewModel.nameFirstDisplay.ratio);
+    
+    // Phase 5.3.5 — VIEWMODEL OUTPUT: Populate strainIdentity
+    if (nameFirstPipelineResult) {
+      viewModel.strainIdentity = {
+        name: nameFirstPipelineResult.primaryStrainName,
+        confidence: nameFirstPipelineResult.nameConfidencePercent,
+        alternates: Array.isArray(nameFirstPipelineResult.alternateMatches)
+          ? nameFirstPipelineResult.alternateMatches.map(a => a.name || "Unknown").filter(n => n !== "Unknown")
+          : [],
+      };
+    }
+    
+    // Phase 5.5.4 — VIEWMODEL OUTPUT: Populate identification (if not already populated from nameMatchResult)
+    if (!viewModel.identification && nameFirstPipelineResult) {
+      viewModel.identification = {
+        primaryName: nameFirstPipelineResult.primaryStrainName,
+        confidence: nameFirstPipelineResult.nameConfidencePercent,
+        alternates: Array.isArray(nameFirstPipelineResult.alternateMatches)
+          ? nameFirstPipelineResult.alternateMatches.slice(0, 4).map(a => ({
+              name: a.name || "Unknown",
+              reason: a.whyNotPrimary || "Lower confidence score",
+            }))
+          : [],
+      };
+    }
   }
   
   // Phase 3.4 Part C — Add multi-image info to view model
@@ -1185,16 +1840,81 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // Phase 4.2 Step 4.2.1 — Generate Extensive Wiki-Style Report (Locked Order)
   // Phase 4.8 Step 4.8.4 — Resolve ratio early for wiki report (if not already resolved)
+  // Phase 5.0.3 — Use consensus merge if candidates available
   let strainRatioForWiki: ReturnType<typeof import("./ratioEngine").resolveStrainRatio> | undefined;
   if (!viewModel.nameFirstDisplay?.ratio && lockedStrainName) {
     const { resolveStrainRatio } = require("./ratioEngine");
+    // Phase 5.0.3.2 — Get candidates for consensus merge
+    const candidatesForWiki = nameFirstPipelineResult?.alternateMatches
+      ? [
+          { name: nameFirstPipelineResult.primaryStrainName, confidence: nameFirstPipelineResult.nameConfidencePercent },
+          ...nameFirstPipelineResult.alternateMatches.map(a => ({ name: a.name, confidence: a.score })),
+        ]
+      : imageResultsV3.length > 0
+      ? imageResultsV3.flatMap(r => r.candidateStrains.map(c => ({ name: c.name, confidence: c.confidence })))
+      : undefined;
+    
+    // Phase 5.0.5.1 — Get terpene profile if available
+    const terpeneProfileForWiki = viewModel.terpeneExperience?.dominantTerpenes
+      ? {
+          primaryTerpenes: viewModel.terpeneExperience.dominantTerpenes.map(name => ({
+            name,
+            dominanceScore: 1.0,
+          })),
+          secondaryTerpenes: viewModel.terpeneExperience.secondaryTerpenes?.map(name => ({
+            name,
+            dominanceScore: 0.5,
+          })) || [],
+        }
+      : undefined;
+    
+    // Phase 5.6.1 — Get effect profile for bias calculation (from viewModel if available)
+    const effectProfileForWiki = viewModel.effectProfileUseCase ? {
+      primaryEffects: viewModel.effectProfileUseCase.primaryEffects,
+      secondaryEffects: viewModel.effectProfileUseCase.secondaryEffects,
+    } : undefined;
+    
+    // Phase 8.4.2 — Extract top 5 candidate names for database dominance prior (for wiki)
+    const topCandidateNamesForWiki = nameMatchResult?.alternates
+      ? [
+          { name: nameMatchResult.primaryName, confidence: nameMatchResult.confidencePercent },
+          ...nameMatchResult.alternates.slice(0, 4).map(a => ({ name: a.name, confidence: a.confidence || a.score })),
+        ]
+      : undefined;
+    
     strainRatioForWiki = resolveStrainRatio(
       lockedStrainName,
       dbEntry,
       imageResultsV3.length > 0 ? imageResultsV3 : undefined,
       input.imageCount,
-      fusedFeatures
+      fusedFeatures,
+      candidatesForWiki, // Phase 5.0.3.2 — Pass candidates for consensus merge
+      terpeneProfileForWiki, // Phase 5.0.5.1 — Pass terpene profile for weighting
+      effectProfileForWiki // Phase 5.6.1 — Pass effect profile for bias
     );
+    
+    // Phase 5.0.3.4 — Ensure hybridLabel is set
+    if (strainRatioForWiki && !(strainRatioForWiki as any).hybridLabel) {
+      const hybridLabel = strainRatioForWiki.dominance === "Indica" ? "Indica-dominant"
+        : strainRatioForWiki.dominance === "Sativa" ? "Sativa-dominant"
+        : strainRatioForWiki.dominance === "Balanced" ? "Balanced Hybrid"
+        : strainRatioForWiki.indicaPercent > strainRatioForWiki.sativaPercent ? "Indica-leaning Hybrid"
+        : "Sativa-leaning Hybrid";
+      (strainRatioForWiki as any).hybridLabel = hybridLabel;
+    }
+    
+    // Phase 5.4.5 — VIEWMODEL OUTPUT: Populate genetics.type and genetics.ratioLabel from strainRatioForWiki
+    const ratioCalculationForWiki = strainRatioForWiki ? (strainRatioForWiki as any).ratioCalculation : undefined;
+    if (ratioCalculationForWiki) {
+      if (!viewModel.genetics) {
+        viewModel.genetics = {
+          dominance: strainRatioForWiki.dominance,
+          lineage: dbEntry?.genetics || "",
+        };
+      }
+      viewModel.genetics.type = ratioCalculationForWiki.type;
+      viewModel.genetics.ratioLabel = `${ratioCalculationForWiki.ratio.indica}% Indica / ${ratioCalculationForWiki.ratio.sativa}% Sativa`;
+    }
   }
 
   const wikiReport = generateWikiReport(

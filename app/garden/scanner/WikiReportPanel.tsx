@@ -167,174 +167,55 @@ export default function WikiReportPanel({
           
           {/* Phase 4.6 Step 4.6.3 — Legacy ratio display text (if nameFirstDisplay.ratio exists) */}
           {result.nameFirstDisplay?.ratio && (
-            <p className="text-sm text-white/90 font-medium">
-              {result.nameFirstDisplay.ratio.displayText}
-            </p>
+            <>
+              <p className="text-sm text-white/90 font-medium">
+                {result.nameFirstDisplay.ratio.displayText}
+              </p>
+              
+              {/* Phase 4.6 Step 4.6.4 — EXPLANATION (Optional, Collapsed) */}
+              {result.nameFirstDisplay.ratio.explanation && (
+                <CollapsibleSection
+                  title="How this ratio was determined"
+                  defaultExpanded={false}
+                  icon="📊"
+                >
+                  <div className="space-y-2 pt-2">
+                    <ul className="space-y-2">
+                      {result.nameFirstDisplay.ratio.explanation.fullExplanation.map((bullet, idx) => (
+                        <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
+                          <span className="text-purple-400 mr-2">•</span>
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    {/* Phase 4.6 Step 4.6.4 — Enhance explanation with wiki report genetics if available */}
+                    {wikiReport?.geneticsLineage?.dominanceExplanation && (
+                      <div className="pt-2 mt-2">
+                        <p className="text-xs text-white/70 leading-relaxed italic">
+                          {wikiReport.geneticsLineage.dominanceExplanation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleSection>
+              )}
+            </>
           )}
 
-              {/* Phase 4.6 Step 4.6.4 — EXPLANATION (Optional, Collapsed) */}
-              <CollapsibleSection
-                title="How this ratio was determined"
-                defaultExpanded={false}
-                icon="📊"
-              >
-                <div className="space-y-2 pt-2">
-                  <ul className="space-y-2">
-                    {result.nameFirstDisplay.ratio.explanation.fullExplanation.map((bullet, idx) => (
-                      <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
-                        <span className="text-purple-400 mr-2">•</span>
-                        <span>{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  {/* Phase 4.6 Step 4.6.4 — Enhance explanation with wiki report genetics if available */}
-                  {wikiReport?.geneticsLineage?.dominanceExplanation && (
-                    <div className="pt-2 mt-2">
-                      <p className="text-xs text-white/70 leading-relaxed italic">
-                        {wikiReport.geneticsLineage.dominanceExplanation}
-                      </p>
-                    </div>
-                  )}
+          {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
+          {result?.nameFirstDisplay?.terpeneExperience && (
+            <div className="mt-6 max-w-xl mx-auto">
+              <CollapsibleSection title="Terpenes & Experience">
+                <div className="space-y-2 text-sm text-white/80">
+                  {(result.nameFirstDisplay.terpeneExperience.dominantTerpenes ?? []).map((terpene, idx) => (
+                    <div key={idx}>{terpene}</div>
+                  ))}
                 </div>
-                          </CollapsibleSection>
-                        </div>
-                      )}
-
-                      {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
-                      {result.nameFirstDisplay.terpeneExperience && (
-                        <div className="space-y-4 pt-4">
-                          {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
-                          {result.nameFirstDisplay.terpeneExperience.dominantTerpenes.length > 0 && (
-                            <div className="space-y-2">
-                              <h3 className="text-sm font-semibold text-white/90">Dominant Terpenes</h3>
-                              <div className="flex flex-wrap gap-2">
-                                {result.nameFirstDisplay.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30"
-                                  >
-                                    {terpene}
-                                  </span>
-                                ))}
-                                {result.nameFirstDisplay.terpeneExperience.secondaryTerpenes.length > 0 && (
-                                  <>
-                                    {result.nameFirstDisplay.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
-                                      <span
-                                        key={`sec-${idx}`}
-                                        className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20"
-                                      >
-                                        {terpene}
-                                      </span>
-                                    ))}
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Phase 5.1 Step 5.1.5 — EXPERIENCE PROFILE */}
-                          <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-white/90">Experience Profile</h3>
-                            <div className="space-y-2.5">
-                              {/* Body Relaxation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Body Relaxation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-purple-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%` }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Mental Stimulation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Mental Stimulation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-green-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%` }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Mood Elevation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Mood Elevation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.moodElevation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-yellow-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.moodElevation}%` }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Sedation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Sedation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.sedation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-blue-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.sedation}%` }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Focus / Clarity */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Focus / Clarity</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.focusClarity}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-cyan-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.focusClarity}%` }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Appetite Stimulation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Appetite Stimulation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-orange-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Phase 5.1 Step 5.1.5 — Consensus Notes (if available) */}
-                            {result.nameFirstDisplay.terpeneExperience.consensusNotes && 
-                             result.nameFirstDisplay.terpeneExperience.consensusNotes.length > 0 && (
-                              <div className="pt-2 mt-2">
-                                <p className="text-xs text-white/60 italic leading-relaxed">
-                                  {result.nameFirstDisplay.terpeneExperience.consensusNotes.join(" ")}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+              </CollapsibleSection>
+            </div>
+          )}
+          
                   
           {/* Phase 4.7 Step 4.7.2 — CLOSELY RELATED VARIANTS (if ambiguous, collapsed) */}
           {result.nameFirstDisplay.closelyRelatedVariants && 
@@ -491,7 +372,7 @@ export default function WikiReportPanel({
             <div>
               <h3 className="text-sm font-semibold text-white/70 mb-2">Also Known As:</h3>
               <p className="text-sm text-white/80">
-                {wikiReport.identityOverview.aliases.join(", ")}
+                {(wikiReport.identityOverview.aliases ?? []).join(", ")}
               </p>
             </div>
           )}
@@ -650,7 +531,7 @@ export default function WikiReportPanel({
               <p><strong className="text-white/90">THC:</strong> {wikiReport.chemistry.cannabinoidRange.thc}</p>
               <p><strong className="text-white/90">CBD:</strong> {wikiReport.chemistry.cannabinoidRange.cbd}</p>
               {wikiReport.chemistry.cannabinoidRange.minors.length > 0 && (
-                <p><strong className="text-white/90">Minor Cannabinoids:</strong> {wikiReport.chemistry.cannabinoidRange.minors.join(", ")}</p>
+                <p><strong className="text-white/90">Minor Cannabinoids:</strong> {(wikiReport.chemistry.cannabinoidRange.minors ?? []).join(", ")}</p>
               )}
             </div>
           </div>

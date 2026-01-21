@@ -368,9 +368,9 @@ function applyDisambiguationLogicV80(
 
   const scoredCandidates = allCandidates.map((candidate, index) => {
     const dbEntry = dbEntries[index];
-    if (!dbEntry) return { candidate, coherenceScore: candidate.consensusScore };
+    if (!dbEntry) return { candidate, coherenceScore: candidate.consensusScore || candidate.matchScore || 0 };
 
-    let coherenceScore = baseScore;
+    let coherenceScore = candidate.consensusScore || candidate.matchScore || 0;
 
     // Phase 8.0.4 — Indica/Sativa ratio alignment
     if (strainRatio) {

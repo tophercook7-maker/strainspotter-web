@@ -1,6 +1,9 @@
 // lib/scanner/cultivarLibrary.ts
 // Phase 2.3 Part F — Real Strain Database
+// Phase 5.0.1 — UPDATED: Now loads from external database via dbLoader
 // Canonical strain data model
+
+import { getStrainDatabase, getStrainDatabaseSync } from "./dbLoader";
 
 export type VisualProfile = {
   trichomeDensity: "low" | "medium" | "high";
@@ -30,7 +33,14 @@ export type CultivarReference = {
   sources: string[];
 };
 
-export const CULTIVAR_LIBRARY: CultivarReference[] = [
+/**
+ * Phase 5.0.1 — FALLBACK: Legacy hardcoded strains
+ * Only used if database loader fails (for development/testing)
+ * 
+ * WARNING: This is NOT the production database.
+ * Production must load 35,000+ strains from lib/data/strains.json
+ */
+const LEGACY_FALLBACK_STRAINS: CultivarReference[] = [
   {
     name: "Northern Lights",
     aliases: ["NL", "Northern Light"],
@@ -407,3 +417,117 @@ export const CULTIVAR_LIBRARY: CultivarReference[] = [
     sources: ["Leafly", "AllBud"],
   },
 ];
+
+/**
+ * Phase 5.0.1 — CULTIVAR_LIBRARY: Now loads from external database
+ * 
+ * REQUIREMENTS:
+ * - Must have 10,000+ strains (hard fail if < 10,000)
+ * - Logs size on boot: "STRAIN DB SIZE: <count>"
+ * - Normalizes: name, aliases, lineage, ratio, terpenes
+ */
+let cachedLibrary: CultivarReference[] | null = null;
+let libraryLoadPromise: Promise<CultivarReference[]> | null = null;
+let isInitialized = false;
+
+/**
+ * Phase 5.0.1 — Initialize database (call at app startup)
+ * This should be called early in the application lifecycle
+ */
+export async function initializeCultivarLibrary(): Promise<void> {
+  if (isInitialized && cachedLibrary) {
+    return;
+  }
+  
+  if (libraryLoadPromise) {
+    await libraryLoadPromise;
+    return;
+  }
+  
+  libraryLoadPromise = (async () => {
+    try {
+      // Phase 5.0.1 — Try to load from external database
+      const db = await getStrainDatabase();
+      cachedLibrary = db;
+      // Phase 5.0.1 — Update the exported CULTIVAR_LIBRARY array
+      updateCultivarLibrary(db);
+      isInitialized = true;
+      console.log(`Phase 5.0.1 — ✓ Cultivar library initialized: ${db.length} strains`);
+      return db;
+    } catch (error) {
+      // Phase 5.0.1 — If database load fails, use fallback (will fail validation)
+      console.error("Phase 5.0.1 — Database load failed, using fallback (will fail validation):", error);
+      cachedLibrary = LEGACY_FALLBACK_STRAINS;
+      // Keep fallback in CULTIVAR_LIBRARY (already there)
+      isInitialized = true;
+      // Re-throw to trigger validation failure
+      throw error;
+    }
+  })();
+  
+  await libraryLoadPromise;
+}
+
+/**
+ * Phase 5.0.1 — Synchronous getter (for backward compat)
+ * Returns cached library or fallback if not loaded yet
+ * 
+ * WARNING: For production, ensure initializeCultivarLibrary() is called at app startup
+ */
+export function getCultivarLibrarySync(): CultivarReference[] {
+  if (cachedLibrary) {
+    return cachedLibrary;
+  }
+  
+  try {
+    const db = getStrainDatabaseSync();
+    cachedLibrary = db;
+    // Update the exported array
+    updateCultivarLibrary(db);
+    return db;
+  } catch (error) {
+    // If sync get fails, return fallback (but log warning)
+    console.warn("Phase 5.0.1 — Database not loaded yet, using fallback. Call initializeCultivarLibrary() at app startup.");
+    return LEGACY_FALLBACK_STRAINS;
+  }
+}
+
+/**
+ * Phase 5.0.1 — Backward compat: CULTIVAR_LIBRARY
+ * 
+ * OLD CODE: CULTIVAR_LIBRARY.find(...)
+ * NEW CODE: Still works! Returns cached library or fallback
+ * 
+ * For production: Ensure initializeCultivarLibrary() is called at app startup
+ * to load the full 35K database.
+ * 
+ * This array is populated after initialization.
+ * Initially contains fallback strains, then gets replaced with full database.
+ */
+export const CULTIVAR_LIBRARY: CultivarReference[] = LEGACY_FALLBACK_STRAINS;
+
+/**
+ * Phase 5.0.1 — Update CULTIVAR_LIBRARY with loaded database
+ * Called automatically after successful database load
+ */
+function updateCultivarLibrary(newLibrary: CultivarReference[]): void {
+  // Clear existing array
+  CULTIVAR_LIBRARY.length = 0;
+  // Push all new entries
+  CULTIVAR_LIBRARY.push(...newLibrary);
+}
+
+/**
+ * Phase 5.0.1 — Async getter for when you need to ensure database is loaded
+ */
+export async function getCultivarLibrary(): Promise<CultivarReference[]> {
+  if (cachedLibrary) {
+    return cachedLibrary;
+  }
+  
+  if (libraryLoadPromise) {
+    return libraryLoadPromise;
+  }
+  
+  return initializeCultivarLibrary().then(() => cachedLibrary!);
+}

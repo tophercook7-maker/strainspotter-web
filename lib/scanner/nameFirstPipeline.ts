@@ -203,10 +203,23 @@ export function runNameFirstPipeline(
   terpeneProfile?: NormalizedTerpeneProfile, // Phase 5.3.3 — For database cross-validation
   strainRatio?: StrainRatio // Phase 5.3.3 — For database cross-validation
 ): NameFirstPipelineResult {
+  // Phase 5.0.2 — Validate database is loaded
+  if (CULTIVAR_LIBRARY.length < 10000) {
+    const error = new Error(
+      `Phase 5.0.2 — CRITICAL: Database has only ${CULTIVAR_LIBRARY.length} strains. ` +
+      `Minimum required: 10,000. Name-first pipeline requires full database.`
+    );
+    console.error(error.message);
+    throw error;
+  }
+  
+  // Phase 5.0.2 — STEP 1: DATABASE NAME MATCH (runs FIRST)
   // Phase 4.4 Step 4.4.1 — DATABASE-FIRST FILTER (runs BEFORE consensus scoring)
   // Query 35K database using visual phenotype vectors, return Top 50 candidates
   // Then: Hard elimination → Similarity scoring → Alias expansion → Final shortlist (Top 3)
+  console.log("Phase 5.0.2 — STEP 1: DATABASE NAME MATCH (querying", CULTIVAR_LIBRARY.length, "strains)");
   const databaseResult = leverageDatabaseFilter(fusedFeatures, imageResults, imageCount);
+  console.log("Phase 5.0.2 — STEP 1 COMPLETE: Database filter found", databaseResult.finalShortlist.length, "candidates");
   console.log("Phase 4.4 — DATABASE FILTER RESULT:", databaseResult);
 
   // Phase 4.4 Step 4.4.6 — FAILSAFE RULE: If no valid match, still proceed with closest guess
@@ -215,15 +228,31 @@ export function runNameFirstPipeline(
     // Continue with closest match but will mark as low confidence
   }
 
+  // Phase 5.0.2 — STEP 2: ALIAS / SLANG MATCH (after database filter)
   // Phase 4.3 Step 4.3.2 — Build Candidate Name Pool (now uses database-filtered results)
   // Convert database-filtered shortlist to ImageResult format for compatibility
   // If database filter found candidates, prioritize them; otherwise fall back to per-image analysis
+  console.log("Phase 5.0.2 — STEP 2: ALIAS / SLANG MATCH (building shortlist)");
   let shortlist = buildStrainShortlist(imageResults);
+  console.log("Phase 5.0.2 — STEP 2 COMPLETE: Shortlist has", shortlist.length, "candidates");
   console.log("Phase 4.3 Step 4.3.2 — Shortlist (before database merge):", shortlist);
 
+  // Phase 5.0.4.2 — DATABASE DISAMBIGUATION: Merge aliases, penalize generic names, boost well-documented strains
   // Phase 4.4 Step 4.4.5 — Merge database-filtered candidates into shortlist
   // Boost candidates that appear in both database filter AND per-image analysis
+  console.log("Phase 5.0.4.2 — DATABASE DISAMBIGUATION: Merging aliases and applying boosts/penalties");
+  
   if (databaseResult.finalShortlist.length > 0) {
+    // Phase 5.0.4.2 — Create alias map for disambiguation
+    const aliasMap = new Map<string, string>(); // alias → canonical name
+    databaseResult.finalShortlist.forEach(c => {
+      c.aliases.forEach(alias => {
+        aliasMap.set(alias.toLowerCase(), c.canonicalName);
+      });
+      aliasMap.set(c.strainName.toLowerCase(), c.canonicalName);
+    });
+    console.log("Phase 5.0.4.2 — Alias map created:", Array.from(aliasMap.entries()).slice(0, 5));
+
     // Create a map of database-filtered candidates
     const dbCandidatesMap = new Map<string, typeof databaseResult.finalShortlist[0]>();
     databaseResult.finalShortlist.forEach(c => {
@@ -234,14 +263,68 @@ export function runNameFirstPipeline(
       });
     });
 
+    // Phase 5.0.4.2 — Penalize generic names unless supported by multiple signals
+    const genericNames = ["Hybrid", "Indica", "Sativa", "Kush", "Haze", "Diesel"];
+    const isGeneric = (name: string): boolean => {
+      const nameLower = name.toLowerCase();
+      return genericNames.some(g => nameLower.includes(g.toLowerCase())) && 
+             !nameLower.includes(" ") && // Single word generic
+             nameLower.length < 10; // Short generic name
+    };
+
     // Boost shortlist entries that match database-filtered candidates
     shortlist = shortlist.map(entry => {
       const canonicalLower = entry.canonicalName.toLowerCase();
       const dbCandidate = dbCandidatesMap.get(canonicalLower);
       
       if (dbCandidate) {
-        // Phase 4.4 — Boost score for database-filtered match
-        // Average the per-image score with database similarity score
+        // Phase 5.0.4.2 — Check if generic name
+        const isGenericName = isGeneric(entry.name);
+        if (isGenericName && entry.appearancesAcrossImages < 2) {
+          // Phase 5.0.4.2 — Penalize generic names without multi-image support
+          const penalizedScore = Math.max(50, entry.avgConfidence - 15);
+          console.log(`Phase 5.0.4.2 — PENALIZING generic name "${entry.name}": ${entry.avgConfidence}% → ${penalizedScore}% (single image, generic)`);
+          return {
+            ...entry,
+            avgConfidence: penalizedScore,
+            maxConfidence: Math.max(entry.maxConfidence - 10, 50),
+          };
+        }
+        
+        // Phase 5.0.4.2 — Boost strains with full lineage
+        const hasFullLineage = dbCandidate.dbEntry?.genetics && dbCandidate.dbEntry.genetics.includes("×");
+        // Phase 5.0.4.2 — Boost strains with terpene agreement (if terpene profile available)
+        const hasTerpeneData = dbCandidate.dbEntry?.terpeneProfile && dbCandidate.dbEntry.terpeneProfile.length > 0;
+        // Phase 5.0.4.2 — Boost multi-image confirmation
+        const hasMultiImageConfirmation = entry.appearancesAcrossImages >= 2;
+        
+        let boostAmount = 0;
+        const boostReasons: string[] = [];
+        
+        if (hasFullLineage) {
+          boostAmount += 5;
+          boostReasons.push("full lineage");
+        }
+        if (hasTerpeneData) {
+          boostAmount += 5;
+          boostReasons.push("terpene data");
+        }
+        if (hasMultiImageConfirmation) {
+          boostAmount += 10;
+          boostReasons.push("multi-image confirmation");
+        }
+        
+        if (boostAmount > 0) {
+          const boostedScore = Math.min(100, entry.avgConfidence + boostAmount);
+          console.log(`Phase 5.0.4.2 — BOOSTING "${entry.name}": ${entry.avgConfidence}% → ${boostedScore}% (${boostReasons.join(", ")})`);
+          return {
+            ...entry,
+            avgConfidence: boostedScore,
+            maxConfidence: Math.min(100, entry.maxConfidence + boostAmount),
+          };
+        }
+        
+        // Phase 4.4 — Boost score for database-filtered match (default boost)
         const boostedScore = Math.round((entry.avgConfidence + dbCandidate.similarityPercent) / 2);
         console.log(`Phase 4.4 — BOOSTING "${entry.name}": ${entry.avgConfidence}% → ${boostedScore}% (database match)`);
         return {
@@ -283,6 +366,7 @@ export function runNameFirstPipeline(
     });
 
     console.log("Phase 4.4 — SHORTLIST AFTER DATABASE MERGE:", shortlist.slice(0, 5));
+    console.log("Phase 5.0.4.2 — DATABASE DISAMBIGUATION COMPLETE: Applied boosts/penalties to", shortlist.length, "candidates");
   }
 
   // Phase 4.7 Step 4.7.2 — DISAMBIGUATION LOGIC: Group variants after database merge
@@ -350,10 +434,33 @@ export function runNameFirstPipeline(
   // - Penalize one-off names ✓ (already done in buildStrainShortlist: -15% for single-image-only)
   // Scoring factors: Frequency, Confidence average, Image quality weight ✓ (all handled in buildStrainShortlist)
 
+  // Phase 5.0.4.1 — CANDIDATE NAME POOL: Collect top 5 from each image
+  // This is already done in buildStrainShortlist (processes top 5 per image)
+  // Log candidate pool for verification
+  console.log("Phase 5.0.4.1 — CANDIDATE NAME POOL: Collected", shortlist.length, "unique candidates from", imageCount, "images");
+  shortlist.slice(0, 10).forEach((candidate, idx) => {
+    console.log(`Phase 5.0.4.1 — Candidate ${idx + 1}: "${candidate.name}" (${candidate.avgConfidence}% avg, appears in ${candidate.appearancesAcrossImages} images)`);
+  });
+
+  // Phase 5.0.2 — STEP 4: MULTI-IMAGE CONSENSUS (after image narrowing)
   // Phase 4.7 Step 4.7.1 — STEP 4: NAME RESOLUTION (picks BEST NAME FIRST)
   // Phase 4.3 Step 4.3.3 — Disambiguation Logic (via scoring)
+  console.log("Phase 5.0.2 — STEP 4: MULTI-IMAGE CONSENSUS (scoring", shortlist.length, "candidates)");
   const scoredResults = scoreNameCompetition(shortlist, fusedFeatures);
+  console.log("Phase 5.0.2 — STEP 4 COMPLETE: Scored", scoredResults.length, "candidates");
   console.log("Phase 4.3 Step 4.3.3 — Scored Results:", scoredResults);
+  
+  // Phase 5.0.4.1 — Log all candidates with visual markers
+  console.log("NAME CANDIDATES:", scoredResults.length);
+  scoredResults.slice(0, 5).forEach((candidate, idx) => {
+    const dbEntry = CULTIVAR_LIBRARY.find(s => 
+      s.name === candidate.strainName || s.aliases?.includes(candidate.strainName)
+    );
+    const visualMarkers = dbEntry?.visualProfile 
+      ? `Color: ${dbEntry.visualProfile.colorProfile || "N/A"}, Structure: ${dbEntry.visualProfile.budStructure || "N/A"}, Trichomes: ${dbEntry.visualProfile.trichomeDensity || "N/A"}`
+      : "Visual markers not available";
+    console.log(`Phase 5.0.4.1 — Candidate ${idx + 1}: "${candidate.strainName}" (${candidate.totalScore}% score, ${visualMarkers})`);
+  });
 
   // Phase 5.3 Step 5.3.4 — DISAMBIGUATION RULES (Enhanced)
   // Prefer better-documented strain, prefer modern stabilized cultivar, prefer tighter phenotype match
@@ -376,11 +483,80 @@ export function runNameFirstPipeline(
     }
   }
 
+  // Phase 5.0.4.3 — CONSENSUS DECISION: Apply rules before selection
+  // Rules:
+  // - Name must appear in ≥2 images OR
+  // - Appear once with ≥93% confidence AND no strong competitors (within 10 points)
+  console.log("Phase 5.0.4.3 — CONSENSUS DECISION: Applying selection rules");
+  
+  // Phase 5.0.4.3 — Filter candidates based on consensus rules
+  const filteredCandidates = enhancedScoredResults.filter(candidate => {
+    // Find candidate in shortlist to check appearance count
+    const shortlistEntry = shortlist.find(s => 
+      s.name === candidate.strainName || s.canonicalName === candidate.strainName
+    );
+    
+    if (!shortlistEntry) return false;
+    
+    const appearances = shortlistEntry.appearancesAcrossImages;
+    const score = candidate.totalScore;
+    const secondScore = enhancedScoredResults[1]?.totalScore || 0;
+    const scoreGap = score - secondScore;
+    
+    // Rule 1: Appears in ≥2 images
+    if (appearances >= 2) {
+      console.log(`Phase 5.0.4.3 — "${candidate.strainName}" qualifies: appears in ${appearances} images`);
+      return true;
+    }
+    
+    // Rule 2: Appears once with ≥93% confidence AND no strong competitors (gap ≥10)
+    if (appearances === 1 && score >= 93 && scoreGap >= 10) {
+      console.log(`Phase 5.0.4.3 — "${candidate.strainName}" qualifies: single image but ${score}% confidence with ${scoreGap} point gap`);
+      return true;
+    }
+    
+    // Rule 3: If no candidates meet rules, allow top candidate anyway (failsafe)
+    if (enhancedScoredResults.indexOf(candidate) === 0 && enhancedScoredResults.length > 0) {
+      console.log(`Phase 5.0.4.3 — "${candidate.strainName}" qualifies: top candidate (failsafe)`);
+      return true;
+    }
+    
+    console.log(`Phase 5.0.4.3 — "${candidate.strainName}" filtered out: ${appearances} image(s), ${score}% score, ${scoreGap} point gap`);
+    return false;
+  });
+  
+  // Phase 5.0.4.3 — Use filtered candidates or fall back to all if none qualify
+  const candidatesForSelection = filteredCandidates.length > 0 ? filteredCandidates : enhancedScoredResults;
+  console.log("Phase 5.0.4.3 — CONSENSUS DECISION: Using", candidatesForSelection.length, "qualified candidates");
+
+  // Phase 5.0.2 — STEP 5: CONFIDENCE CALCULATION (LAST)
   // Phase 4.3 Step 4.3.4 — Final Name Selection
   // Phase 4.9 Step 4.9.3 — Pass fusedFeatures for disambiguation engine
   // Phase 5.3 — Use enhanced scored results (after disambiguation rules)
-  const selection = selectPrimaryName(enhancedScoredResults, imageCount, fusedFeatures);
+  // Phase 5.0.4.3 — Use consensus-filtered candidates
+  console.log("Phase 5.0.2 — STEP 5: CONFIDENCE CALCULATION (selecting primary name)");
+  const selection = selectPrimaryName(candidatesForSelection, imageCount, fusedFeatures);
+  console.log("Phase 5.0.2 — STEP 5 COMPLETE: Primary name selected:", selection.primaryStrainName);
   console.log("Phase 4.3 Step 4.3.4 — Selection:", selection);
+  
+  // Phase 5.0.4.3 — MANDATORY LOGS
+  console.log("NAME CANDIDATES:", candidatesForSelection.length);
+  console.log("NAME DECISION:", selection.primaryStrainName);
+  const whyThisNameWon = Array.isArray(selection.alternateMatches) && selection.alternateMatches.length > 0
+    ? [
+        `Selected as primary match with ${selection.nameConfidencePercent}% confidence`,
+        `Appeared in ${shortlist.find(s => s.name === selection.primaryStrainName)?.appearancesAcrossImages || 1} image(s)`,
+        ...(selection.alternateMatches.length > 0 ? [`Outscored ${selection.alternateMatches.length} alternate candidate(s)`] : []),
+      ]
+    : [`Selected as primary match with ${selection.nameConfidencePercent}% confidence`];
+  console.log("WHY:", whyThisNameWon);
+  
+  // Phase 5.0.2 — MANDATORY LOGS (legacy)
+  console.log("TOP NAME MATCH:", selection.primaryStrainName);
+  const alternateNames = Array.isArray(selection.alternateMatches)
+    ? selection.alternateMatches.map(a => a.name || "Unknown")
+    : [];
+  console.log("ALTERNATES:", alternateNames);
 
   // Phase 5.3 Step 5.3.3 — DATABASE CROSS-VALIDATION
   // Against 35,000-strain dataset: Verify lineage, compare terpenes, reject impossible matches
@@ -453,7 +629,8 @@ export function runNameFirstPipeline(
 
   // Phase 4.3 Step 4.3.1 — Generate Explanation
   // Phase 5.3.3 — Include validation notes in explanation
-  const explanation = generateNameExplanation(enhancedScoredResults, {
+  // Phase 5.0.4.3 — Include consensus decision reasoning
+  const explanation = generateNameExplanation(candidatesForSelection, {
     ...selection,
     nameConfidencePercent,
     nameConfidenceTier,
@@ -462,6 +639,17 @@ export function runNameFirstPipeline(
   // Phase 5.3.3 — Add validation notes to explanation
   if (validation.validationNotes.length > 0) {
     explanation.whyThisNameWon.push(...validation.validationNotes);
+  }
+  
+  // Phase 5.0.4.3 — Add consensus decision reasoning to explanation
+  const shortlistEntry = shortlist.find(s => s.name === selection.primaryStrainName);
+  if (shortlistEntry) {
+    const appearances = shortlistEntry.appearancesAcrossImages;
+    if (appearances >= 2) {
+      explanation.whyThisNameWon.unshift(`Appeared in ${appearances} images (multi-image consensus)`);
+    } else if (selection.nameConfidencePercent >= 93) {
+      explanation.whyThisNameWon.unshift(`High confidence (${selection.nameConfidencePercent}%) with no strong competitors`);
+    }
   }
 
   // Phase 4.7 Step 4.7.3 — If multiple strains fight for top, confidence drops automatically
@@ -486,18 +674,32 @@ export function runNameFirstPipeline(
   // - Primary Match: Strain Name, Confidence %, Indica/Sativa/Hybrid ratio (added in runMultiScan)
   // - Alternate Matches: Ranked list (2–4), Short reason for each
   // The ratio is added in runMultiScan after ratio calculation
-  // Phase 5.3.5 — Ensure we always return a name (LOCK CONDITION: Always return a name)
+  // Phase 5.0.2 — Ensure we always return a name (LOCK CONDITION: Never "Unknown" if DB loaded)
   if (!selection.primaryStrainName || selection.primaryStrainName.trim() === "") {
-    // Failsafe: Use closest match from database
+    // Phase 5.0.2 — Failsafe: Use closest match from database
     if (databaseResult.closestMatch) {
       selection.primaryStrainName = databaseResult.closestMatch.strainName;
-      console.log(`Phase 5.3.5 — FAILSAFE: Using database closest match "${selection.primaryStrainName}"`);
+      console.log(`Phase 5.0.2 — FAILSAFE: Using database closest match "${selection.primaryStrainName}"`);
     } else if (shortlist.length > 0) {
       selection.primaryStrainName = shortlist[0].name;
-      console.log(`Phase 5.3.5 — FAILSAFE: Using top shortlist entry "${selection.primaryStrainName}"`);
+      console.log(`Phase 5.0.2 — FAILSAFE: Using top shortlist entry "${selection.primaryStrainName}"`);
+    } else if (CULTIVAR_LIBRARY.length >= 10000) {
+      // Phase 5.0.2 — If database is loaded, use fallback from database (never "Unknown")
+      const fallbackStrain = CULTIVAR_LIBRARY[0];
+      if (fallbackStrain) {
+        selection.primaryStrainName = fallbackStrain.name;
+        console.warn(`Phase 5.0.2 — FAILSAFE: Using database fallback "${selection.primaryStrainName}" (database has ${CULTIVAR_LIBRARY.length} strains)`);
+      } else {
+        const error = new Error(
+          "Phase 5.0.2 — CRITICAL: Database loaded but empty. Cannot resolve strain name."
+        );
+        console.error(error.message);
+        throw error;
+      }
     } else {
-      selection.primaryStrainName = "Unknown Strain";
-      console.warn(`Phase 5.3.5 — FAILSAFE: No valid name found, using "Unknown Strain"`);
+      // Phase 5.0.2 — Only allow "Unknown" if database is not loaded (< 10K strains)
+      selection.primaryStrainName = "Hybrid Cultivar"; // Use generic name instead of "Unknown"
+      console.warn(`Phase 5.0.2 — FAILSAFE: Database not loaded (${CULTIVAR_LIBRARY.length} strains), using generic fallback`);
     }
   }
 
@@ -513,24 +715,25 @@ export function runNameFirstPipeline(
     }
   }
 
-  // Phase 4.4 Step 4.4.6 — Ensure we never return empty result
-  if (!selection.primaryStrainName || selection.primaryStrainName === "Unknown") {
+  // Phase 5.0.2 — Ensure we never return "Unknown" if database is loaded
+  if (!selection.primaryStrainName || selection.primaryStrainName === "Unknown" || selection.primaryStrainName === "Unidentified") {
     if (databaseResult.closestMatch) {
-      console.log("Phase 4.4 Step 4.4.6 — FAILSAFE: Primary name was Unknown, using database closest match");
+      console.log("Phase 5.0.2 — FAILSAFE: Primary name was invalid, using database closest match");
       return {
         primaryStrainName: databaseResult.closestMatch.strainName,
         nameConfidencePercent: Math.max(55, databaseResult.closestMatch.similarityPercent),
         nameConfidenceTier: databaseResult.closestMatch.confidenceTier,
-        alternateMatches: databaseResult.finalShortlist.slice(1, 3).map(c => ({
-          name: c.strainName,
-          score: c.similarityPercent,
-          whyNotPrimary: `Similarity: ${c.similarityPercent}% (below primary match)`,
-        })),
+        alternateMatches: Array.isArray(databaseResult.finalShortlist)
+          ? databaseResult.finalShortlist.slice(1, 3).map(c => ({
+              name: c.strainName || "Unknown",
+              score: c.similarityPercent || 0,
+              whyNotPrimary: `Similarity: ${c.similarityPercent || 0}% (below primary match)`,
+            }))
+          : [],
         explanation: {
-          whyThisNameWon: [
-            databaseResult.closestMatch.reasonForInclusion,
-            `Closest known match from 35K-strain database`,
-          ],
+          whyThisNameWon: Array.isArray(databaseResult.closestMatch.reasonForInclusion)
+            ? databaseResult.closestMatch.reasonForInclusion
+            : [String(databaseResult.closestMatch.reasonForInclusion || "Closest known match from database")],
           whatRuledOutOthers: [
             `Other candidates had lower similarity scores or conflicting visual traits`,
           ],
@@ -539,6 +742,23 @@ export function runNameFirstPipeline(
           ],
         },
       };
+    } else if (CULTIVAR_LIBRARY.length >= 10000) {
+      // Phase 5.0.2 — If database loaded, use first strain as fallback (never "Unknown")
+      const fallbackStrain = CULTIVAR_LIBRARY[0];
+      if (fallbackStrain) {
+        console.warn(`Phase 5.0.2 — FAILSAFE: Using database fallback "${fallbackStrain.name}"`);
+        return {
+          primaryStrainName: fallbackStrain.name,
+          nameConfidencePercent: 55, // Minimum confidence
+          nameConfidenceTier: "low",
+          alternateMatches: [],
+          explanation: {
+            whyThisNameWon: [`Fallback match from ${CULTIVAR_LIBRARY.length}-strain database`],
+            whatRuledOutOthers: [],
+            varianceNotes: [`Low confidence fallback - visual analysis inconclusive`],
+          },
+        };
+      }
     }
   }
 

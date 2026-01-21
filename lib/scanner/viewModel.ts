@@ -76,6 +76,8 @@ export interface ScannerViewModel {
   genetics: {
     dominance: "Indica" | "Sativa" | "Hybrid" | "Unknown";
     lineage: string;
+    type?: "Indica" | "Sativa" | "Hybrid"; // Phase 5.4.5 — Type from ratio calculation
+    ratioLabel?: string; // Phase 5.4.5 — e.g. "70% Indica / 30% Sativa"
   };
   experience: {
     effects: string[];
@@ -130,36 +132,135 @@ export interface ScannerViewModel {
   // Phase 4.5 Step 4.5.3 — Why This Strain (FREE TIER)
   // Phase 4.6 — Indica/Sativa/Hybrid Ratio Engine
   // Phase 5.5 Step 5.5.5 — Enhanced with aliases
+  // Phase 5.1.5 — VIEWMODEL UPDATE: ScannerViewModel must include primaryName, confidencePercent, alternateMatches, whyThisNameWon
   nameFirstDisplay?: {
     primaryStrainName: string;
+    primaryName: string; // Phase 5.1.5 — Alias for primaryStrainName
     confidencePercent: number;
     confidenceTier: "very_high" | "high" | "medium" | "low";
     tagline: string; // "Closest known match based on visual + database consensus"
     alsoKnownAs?: string[]; // Phase 5.5.5 — Aliases (e.g., "GSC", "Girl Scout Cookies")
     alternateMatches?: Array<{
       name: string;
+      confidence?: number; // Phase 5.1.5
       whyNotPrimary: string;
     }>; // "Often confused with: X, Y" (Phase 4.5 Step 4.5.2 — Collapsed if confidence < 92%)
     // Phase 4.5 Step 4.5.3 — Explanation for "Why this strain?" section (FREE TIER)
+    // Phase 5.1.5 — whyThisNameWon is required
     explanation?: {
-      whyThisNameWon: string[]; // 3-5 bullets: Visual markers, database frequency, lineage, terpenes
+      whyThisNameWon: string[]; // 3-5 bullets: Visual markers, database frequency, lineage, terpenes (Phase 5.1.4)
       whatRuledOutOthers: string[]; // Why other candidates didn't win
       varianceNotes: string[]; // Phenotype variance explanation
     };
-    // Phase 4.6 Step 4.6.2 — Indica/Sativa/Hybrid Ratio (FREE TIER)
-    // Phase 5.0 Step 5.0.4 — Enhanced with range display
-    ratio?: {
-      indicaPercent: number; // 0-100
-      sativaPercent: number; // 0-100
-      indicaRange?: { min: number; max: number }; // Phase 5.0 — Range if variance exists
-      sativaRange?: { min: number; max: number }; // Phase 5.0 — Range if variance exists
-      dominance: "Indica" | "Sativa" | "Hybrid" | "Balanced";
-      displayText: string; // "Indica 70% · Sativa 30%" or "Indica-leaning Hybrid (60–70% Indica)"
-      explanation: {
-        summary: string; // Short summary for collapsed header
-        fullExplanation: string[]; // Bullets for expanded section
-      };
+  // Phase 4.6 Step 4.6.2 — Indica/Sativa/Hybrid Ratio (FREE TIER)
+  // Phase 5.0 Step 5.0.4 — Enhanced with range display
+  // Phase 5.2.5 — VIEWMODEL INTEGRATION: Extend ScannerViewModel with strainType
+  ratio?: {
+    indicaPercent: number; // 0-100
+    sativaPercent: number; // 0-100
+    indicaRange?: { min: number; max: number }; // Phase 5.0 — Range if variance exists
+    sativaRange?: { min: number; max: number }; // Phase 5.0 — Range if variance exists
+    dominance: "Indica" | "Sativa" | "Hybrid" | "Balanced";
+    hybridLabel: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid" | "Indica-leaning Hybrid" | "Sativa-leaning Hybrid"; // Phase 5.0.3.4
+    displayText: string; // "Indica 70% · Sativa 30%" or "Indica-leaning Hybrid (60–70% Indica)"
+    explanation: {
+      summary: string; // Short summary for collapsed header
+      fullExplanation: string[]; // Bullets for expanded section
     };
+  };
+  
+  // Phase 5.2.5 — VIEWMODEL INTEGRATION: strainType field
+  strainType?: {
+    indica: number; // e.g. 65
+    sativa: number; // e.g. 35
+    label: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid"; // Phase 5.2.4
+  };
+  
+  // Phase 5.3.5 — VIEWMODEL OUTPUT: Extend ScannerViewModel with strainIdentity
+  strainIdentity?: {
+    name: string;
+    confidence: number;
+    alternates: string[]; // Phase 5.3.5
+  };
+  
+  // Phase 5.5.4 — VIEWMODEL OUTPUT: Extend ScannerViewModel with identification
+  identification?: {
+    primaryName: string;
+    confidence: number;
+    alternates: Array<{
+      name: string;
+      reason: string; // Phase 5.5.4 — Why it was close and why it lost
+    }>;
+  };
+  
+  // Phase 5.7.4 — VIEWMODEL UPDATE: Extend ScannerViewModel with primaryStrainName and alternateMatches
+  primaryStrainName?: string; // Phase 5.7.4
+  alternateMatches?: Array<{ // Phase 5.7.4
+    name: string;
+    confidence: number;
+  }>;
+  
+  // Phase 5.9.5 — VIEWMODEL UPDATE: Extend ScannerViewModel with strainName, matchType, matchConfidence, alternateMatches
+  strainName?: string; // Phase 5.9.5
+  matchType?: "Exact" | "Likely" | "Approximate"; // Phase 5.9.5
+  matchConfidence?: number; // Phase 5.9.5
+  alternateMatchNames?: string[]; // Phase 5.9.5 — Array of alternate match names (string[]) - renamed to avoid conflict
+  
+  // Phase 8.3.5 — VIEWMODEL LOCK: Extend ScannerViewModel with strainName, nameConfidence, alternateMatches
+  nameConfidence?: number; // Phase 8.3.5 — Name confidence (separate from matchConfidence for clarity)
+  
+  // Phase 8.5.5 — VIEWMODEL UPDATE: Extend ScannerViewModel with primaryMatch and alternateMatches
+  primaryMatch?: {
+    name: string;
+    confidence: number;
+  };
+  alternateMatches?: Array<{
+    name: string;
+    confidence: number;
+  }>;
+  
+  // Phase 8.1.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with identity
+  identity?: {
+    name: string;
+    confidence: number;
+    alternates: string[];
+  };
+  
+  // Phase 5.6.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with classification
+  classification?: {
+    indicaPercent: number;
+    sativaPercent: number;
+    type: "Indica" | "Sativa" | "Hybrid";
+  };
+  
+  // Phase 5.8.4 — VIEWMODEL ADDITION: Extend ScannerViewModel with ratio (indica, sativa, hybrid)
+  ratio?: {
+    indica: number;
+    sativa: number;
+    hybrid: number;
+    ratioLabel: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid";
+  };
+  
+  // Phase 6.0.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with dominance
+  // Phase 8.0.4 — Enhanced with confidence
+  // Phase 8.2.4 — Enhanced with type field
+  // Phase 8.6.5 — Enhanced with hybrid field and numeric confidence
+  dominance?: {
+    indica: number;
+    sativa: number;
+    hybrid?: number; // Phase 8.6.5 — Hybrid percentage
+    label: string; // "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid"
+    type?: "Indica" | "Sativa" | "Hybrid"; // Phase 8.2.4 — Type field
+    confidence?: "Low" | "Medium" | "High" | "Very High" | number; // Phase 8.0.4 — Confidence tier, Phase 8.6.5 — Numeric confidence
+  };
+  
+  // Phase 7.0.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with chemistry
+  chemistry?: {
+    primaryTerpenes: string[];
+    secondaryTerpenes: string[];
+    thcRange: string;
+    cbdPresence: string;
+  };
     // Phase 5.1 — Terpene-Weighted Experience Engine (FREE TIER)
     terpeneExperience?: {
       dominantTerpenes: string[]; // Top 3 primary terpenes

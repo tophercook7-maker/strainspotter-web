@@ -188,7 +188,7 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
       {safeTerpeneGuess.length > 0 && (
         <div>
           <h3 className="text-xl font-semibold text-white mb-2">Terpene Likelihood</h3>
-          <p className="text-white/90">{safeTerpeneGuess.join(", ")}</p>
+          <p className="text-white/90">{(safeTerpeneGuess ?? []).join(", ")}</p>
         </div>
       )}
 
