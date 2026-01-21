@@ -1537,15 +1537,15 @@ export function resolveStrainRatio(
   console.log("RAW RATIOS:", rawRatios.map(r => `${r.source}: I:${r.indica.toFixed(1)}% S:${r.sativa.toFixed(1)}% H:${r.hybrid.toFixed(1)}% (${(r.weight * 100).toFixed(0)}%)`).join(", "));
 
   // Phase 5.8.2 — Determine ratio label based on scores
-  let ratioLabel: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid";
+  let ratioLabelEarly: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid";
   if (scoreDiff <= 8) {
-    ratioLabel = "Balanced Hybrid";
+    ratioLabelEarly = "Balanced Hybrid";
   } else if (finalIndicaPercent > finalSativaPercent) {
-    ratioLabel = "Indica-dominant";
+    ratioLabelEarly = "Indica-dominant";
   } else if (finalSativaPercent > finalIndicaPercent) {
-    ratioLabel = "Sativa-dominant";
+    ratioLabelEarly = "Sativa-dominant";
   } else {
-    ratioLabel = "Balanced Hybrid";
+    ratioLabelEarly = "Balanced Hybrid";
   }
   
   // Phase 5.8.2 — Log ratio label
@@ -1557,8 +1557,8 @@ export function resolveStrainRatio(
   // Never return 50/50 unless truly balanced
   const isDominantIndica = finalIndicaPercent >= 70;
   const isDominantSativa = finalSativaPercent >= 70;
-  const isPureIndica = finalIndicaPercent >= 90; // Keep for legacy compatibility
-  const isPureSativa = finalSativaPercent >= 90; // Keep for legacy compatibility
+  const isPureIndicaLegacy = finalIndicaPercent >= 90; // Keep for legacy compatibility
+  const isPureSativaLegacy = finalSativaPercent >= 90; // Keep for legacy compatibility
   
   // Phase 5.8.2 — Ensure sum = 100% (normalize three scores)
   const totalThreeScores = finalIndicaPercent + finalSativaPercent + finalHybridPercent;
