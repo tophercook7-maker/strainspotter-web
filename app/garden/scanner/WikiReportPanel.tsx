@@ -33,22 +33,51 @@ export default function WikiReportPanel({
   }
   
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 md:p-8 space-y-8 max-h-[85vh] overflow-y-auto max-w-4xl mx-auto">
+    <section className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 space-y-8 max-h-[85vh] overflow-y-auto">
       {/* Phase 4.2 Step 4.2.1 — REPORT SECTIONS (LOCKED ORDER) */}
       
       {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
+      {/* Phase 15.5.5 — Make strain name + confidence feel real */}
       {result.nameFirstDisplay && (
-        <div className="mb-8 space-y-4 pb-6 border-b border-white/10">
-          {/* Phase 4.5 Step 4.5.1 — Large Strain Name (Primary Candidate) */}
-          {/* Phase 5.5 Step 5.5.5 — Enhanced with aliases */}
-          <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
-            {result.nameFirstDisplay.primaryStrainName}
-          </h1>
+        <div className="mb-8 space-y-4 pb-6">
+          {/* Phase 15.5.5 — Large Strain Name */}
+          <div className="mb-4">
+            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              {result.nameFirstDisplay.primaryStrainName || result.strainName || "Unknown Cultivar"}
+            </div>
+            
+            {/* Phase 15.5.5 — Confidence badge */}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-white/10 border border-white/15 px-3 py-1 text-sm text-white/90">
+                Confidence · {result.nameFirstDisplay.confidencePercent ?? result.nameConfidence ?? result.matchConfidence ?? "--"}%
+              </span>
+              
+              {result.nameFirstDisplay.confidenceTier && (
+                <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm ${
+                  result.nameFirstDisplay.confidenceTier === "very_high"
+                    ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
+                    : result.nameFirstDisplay.confidenceTier === "high"
+                    ? "bg-green-500/10 border-green-400/20 text-green-200"
+                    : result.nameFirstDisplay.confidenceTier === "medium"
+                    ? "bg-yellow-500/10 border-yellow-400/20 text-yellow-200"
+                    : "bg-orange-500/10 border-orange-400/20 text-orange-200"
+                }`}>
+                  {result.nameFirstDisplay.confidenceTier === "very_high"
+                    ? "Very High Confidence"
+                    : result.nameFirstDisplay.confidenceTier === "high"
+                    ? "High Confidence"
+                    : result.nameFirstDisplay.confidenceTier === "medium"
+                    ? "Medium Confidence"
+                    : "Low Confidence"}
+                </span>
+              )}
+            </div>
+          </div>
           
           {/* Phase 5.5.5 — Also Known As */}
           {result.nameFirstDisplay.alsoKnownAs && result.nameFirstDisplay.alsoKnownAs.length > 0 && (
             <p className="text-sm text-white/70 italic">
-              Also Known As: {result.nameFirstDisplay.alsoKnownAs.join(" • ")}
+              Also Known As: {(result.nameFirstDisplay.alsoKnownAs ?? []).join(" • ")}
             </p>
           )}
           
@@ -82,59 +111,66 @@ export default function WikiReportPanel({
             {result.nameFirstDisplay.tagline}
           </p>
 
-          {/* Phase 4.6 Step 4.6.3 — INDICA/SATIVA/HYBRID RATIO (Directly under strain name) */}
-          {result.nameFirstDisplay.ratio && (
-            <div className="flex flex-col items-center gap-2 pt-2">
-              {/* Phase 4.6 Step 4.6.3 — Slim pill bar with two-tone gradient, centered, compact, elegant */}
-              {/* NO giant bars. NO screen-wide dividers. */}
-              <div className="relative w-full max-w-xs rounded-full overflow-hidden border border-white/10 bg-white/5">
-                {/* Two-tone gradient bar */}
-                <div className="flex h-8">
-                  {/* Indica portion (left) */}
-                  <div
-                    className="flex items-center justify-center text-xs font-semibold text-white transition-all"
-                    style={{
-                      width: `${result.nameFirstDisplay.ratio.indicaPercent}%`,
-                      background: result.nameFirstDisplay.ratio.indicaPercent > result.nameFirstDisplay.ratio.sativaPercent
-                        ? "linear-gradient(135deg, rgba(139, 92, 246, 0.6) 0%, rgba(79, 70, 229, 0.5) 100%)"
-                        : result.nameFirstDisplay.ratio.indicaPercent === 50
-                        ? "linear-gradient(135deg, rgba(139, 92, 246, 0.5) 0%, rgba(79, 70, 229, 0.4) 100%)"
-                        : "linear-gradient(135deg, rgba(139, 92, 246, 0.4) 0%, rgba(79, 70, 229, 0.3) 100%)",
-                    }}
-                  >
-                    {result.nameFirstDisplay.ratio.indicaPercent >= 30 && result.nameFirstDisplay.ratio.dominance !== "Balanced" && (
-                      <span className="px-2">Indica {result.nameFirstDisplay.ratio.indicaPercent}%</span>
-                    )}
-                    {result.nameFirstDisplay.ratio.dominance === "Balanced" && (
-                      <span className="px-2 text-white/90">50%</span>
-                    )}
-                  </div>
-                  {/* Sativa portion (right) */}
-                  <div
-                    className="flex items-center justify-center text-xs font-semibold text-white transition-all"
-                    style={{
-                      width: `${result.nameFirstDisplay.ratio.sativaPercent}%`,
-                      background: result.nameFirstDisplay.ratio.sativaPercent > result.nameFirstDisplay.ratio.indicaPercent
-                        ? "linear-gradient(135deg, rgba(34, 197, 94, 0.6) 0%, rgba(22, 163, 74, 0.5) 100%)"
-                        : result.nameFirstDisplay.ratio.sativaPercent === 50
-                        ? "linear-gradient(135deg, rgba(34, 197, 94, 0.5) 0%, rgba(22, 163, 74, 0.4) 100%)"
-                        : "linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, rgba(22, 163, 74, 0.3) 100%)",
-                    }}
-                  >
-                    {result.nameFirstDisplay.ratio.sativaPercent >= 30 && result.nameFirstDisplay.ratio.dominance !== "Balanced" && (
-                      <span className="px-2">Sativa {result.nameFirstDisplay.ratio.sativaPercent}%</span>
-                    )}
-                    {result.nameFirstDisplay.ratio.dominance === "Balanced" && (
-                      <span className="px-2 text-white/90">50%</span>
-                    )}
-                  </div>
+          {/* Phase 15.5.6 — Add Indica/Sativa/Hybrid ratio display */}
+          {(() => {
+            function clampPct(n: number) {
+              return Math.max(0, Math.min(100, n));
+            }
+            
+            function deriveRatio(dominance?: string) {
+              const d = (dominance ?? "").toLowerCase();
+              if (d.includes("indica")) return { indica: 70, sativa: 15, hybrid: 15 };
+              if (d.includes("sativa")) return { indica: 15, sativa: 70, hybrid: 15 };
+              if (d.includes("hybrid")) return { indica: 40, sativa: 40, hybrid: 20 };
+              return { indica: 34, sativa: 33, hybrid: 33 };
+            }
+            
+            // Phase 15.5.6 — Get ratio from result
+            const ratio = result.dominance 
+              ? { 
+                  indica: result.dominance.indica ?? 0, 
+                  sativa: result.dominance.sativa ?? 0, 
+                  hybrid: result.dominance.hybrid ?? (100 - ((result.dominance.indica ?? 0) + (result.dominance.sativa ?? 0)))
+                }
+              : result.nameFirstDisplay?.ratio
+              ? {
+                  indica: result.nameFirstDisplay.ratio.indicaPercent,
+                  sativa: result.nameFirstDisplay.ratio.sativaPercent,
+                  hybrid: 100 - (result.nameFirstDisplay.ratio.indicaPercent + result.nameFirstDisplay.ratio.sativaPercent)
+                }
+              : deriveRatio(result.genetics?.dominance);
+            
+            return (
+              <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 sm:p-6">
+                <div className="text-lg font-semibold mb-3">Dominance</div>
+                <div className="space-y-3">
+                  {[
+                    ["Indica", ratio.indica],
+                    ["Sativa", ratio.sativa],
+                    ["Hybrid", ratio.hybrid],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex items-center gap-3">
+                      <div className="w-16 text-sm text-white/70">{label}</div>
+                      <div className="flex-1 h-3 rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-3 rounded-full bg-white/60"
+                          style={{ width: `${clampPct(Number(value))}%` }}
+                        />
+                      </div>
+                      <div className="w-12 text-right text-sm text-white/70">{clampPct(Number(value))}%</div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              
-              {/* Phase 4.6 Step 4.6.3 — Display text (centered, compact) */}
-              <p className="text-sm text-white/90 font-medium">
-                {result.nameFirstDisplay.ratio.displayText}
-              </p>
+            );
+          })()}
+          
+          {/* Phase 4.6 Step 4.6.3 — Legacy ratio display text (if nameFirstDisplay.ratio exists) */}
+          {result.nameFirstDisplay?.ratio && (
+            <p className="text-sm text-white/90 font-medium">
+              {result.nameFirstDisplay.ratio.displayText}
+            </p>
+          )}
 
               {/* Phase 4.6 Step 4.6.4 — EXPLANATION (Optional, Collapsed) */}
               <CollapsibleSection
@@ -154,7 +190,7 @@ export default function WikiReportPanel({
                   
                   {/* Phase 4.6 Step 4.6.4 — Enhance explanation with wiki report genetics if available */}
                   {wikiReport?.geneticsLineage?.dominanceExplanation && (
-                    <div className="pt-2 mt-2 border-t border-white/10">
+                    <div className="pt-2 mt-2">
                       <p className="text-xs text-white/70 leading-relaxed italic">
                         {wikiReport.geneticsLineage.dominanceExplanation}
                       </p>
@@ -167,7 +203,7 @@ export default function WikiReportPanel({
 
                       {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
                       {result.nameFirstDisplay.terpeneExperience && (
-                        <div className="space-y-4 pt-4 border-t border-white/10">
+                        <div className="space-y-4 pt-4">
                           {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
                           {result.nameFirstDisplay.terpeneExperience.dominantTerpenes.length > 0 && (
                             <div className="space-y-2">
@@ -289,7 +325,7 @@ export default function WikiReportPanel({
                             {/* Phase 5.1 Step 5.1.5 — Consensus Notes (if available) */}
                             {result.nameFirstDisplay.terpeneExperience.consensusNotes && 
                              result.nameFirstDisplay.terpeneExperience.consensusNotes.length > 0 && (
-                              <div className="pt-2 mt-2 border-t border-white/10">
+                              <div className="pt-2 mt-2">
                                 <p className="text-xs text-white/60 italic leading-relaxed">
                                   {result.nameFirstDisplay.terpeneExperience.consensusNotes.join(" ")}
                                 </p>
@@ -384,7 +420,7 @@ export default function WikiReportPanel({
                 {/* Phase 4.5 Step 4.5.3 — What Ruled Out Others (if available) */}
                 {result.nameFirstDisplay.explanation.whatRuledOutOthers && 
                  result.nameFirstDisplay.explanation.whatRuledOutOthers.length > 0 && (
-                  <div className="pt-2 border-t border-white/10">
+                  <div className="pt-2">
                     <h4 className="text-sm font-semibold text-white/90 mb-2">Why not other strains?</h4>
                     <ul className="space-y-2">
                       {result.nameFirstDisplay.explanation.whatRuledOutOthers.slice(0, 3).map((reason, idx) => (
@@ -400,9 +436,9 @@ export default function WikiReportPanel({
                 {/* Phase 4.5 Step 4.5.3 — Variance Notes (if available) */}
                 {result.nameFirstDisplay.explanation.varianceNotes && 
                  result.nameFirstDisplay.explanation.varianceNotes.length > 0 && (
-                  <div className="pt-2 border-t border-white/10">
+                  <div className="pt-2">
                     <p className="text-xs text-white/70 leading-relaxed italic">
-                      {result.nameFirstDisplay.explanation.varianceNotes.join(" ")}
+                      {(result.nameFirstDisplay.explanation.varianceNotes ?? []).join(" ")}
                     </p>
                   </div>
                 )}
@@ -535,7 +571,7 @@ export default function WikiReportPanel({
                 Parent Strains
               </h3>
               <p className="text-white/80 leading-relaxed">
-                {wikiReport.geneticsLineage.parentStrains.join(" × ")}
+                {(wikiReport.geneticsLineage.parentStrains ?? []).join(" × ")}
               </p>
             </div>
           )}

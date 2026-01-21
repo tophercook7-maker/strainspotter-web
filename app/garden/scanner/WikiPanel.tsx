@@ -28,16 +28,16 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 overflow-hidden">
-      {/* Header - clickable to toggle */}
+    <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 overflow-hidden">
+      {/* Phase 15.5.7 — WikiPanel toggle: make it not huge + fix giant opener */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full text-left text-base md:text-lg font-semibold py-2"
+        className="w-full flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-left"
         aria-expanded={isOpen}
       >
-        <span>Analysis Insights</span>
-        <span className="text-sm opacity-70">
-          {isOpen ? "▲" : "▼"}
+        <span className="text-base sm:text-lg font-semibold">Analysis Insights</span>
+        <span className="text-white/70 text-base">
+          {isOpen ? "▾" : "▸"}
         </span>
       </button>
 
@@ -54,7 +54,7 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
                   {synthesis.summary.map((paragraph, index) => (
                     <p 
                       key={index} 
-                      className="text-base md:text-lg leading-relaxed text-white/90"
+                      className="text-base sm:text-lg leading-relaxed text-white/90"
                     >
                       {paragraph}
                     </p>
@@ -87,7 +87,7 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
                 <h4 className="text-lg md:text-xl font-semibold mb-2">Uncertainty & Confidence</h4>
                 <div className="space-y-2.5">
                   {synthesis.uncertaintyExplanation.map((paragraph, index) => (
-                    <p key={index} className="text-base md:text-lg leading-relaxed text-white/90">{paragraph}</p>
+                    <p key={index} className="text-base sm:text-lg leading-relaxed text-white/90">{paragraph}</p>
                   ))}
                 </div>
               </div>
@@ -105,7 +105,7 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
                     {synthesis.signalsConsidered.map((signal, index) => (
                       <li key={index} className="flex items-start">
                         <span className="text-white/40 mr-2.5 mt-0.5 leading-none">•</span>
-                        <span className="flex-1 text-base md:text-lg leading-relaxed text-white/90">{signal}</span>
+                        <span className="flex-1 text-sm sm:text-base leading-relaxed text-white/90">{signal}</span>
                       </li>
                     ))}
                   </ul>

@@ -149,10 +149,11 @@ export default function ScannerPage() {
     <>
       <TopNav title="Scanner" showBack />
       
-      {/* Phase 2.6 Part M Step 1 — Container Lock */}
-      <main className="max-w-xl md:max-w-2xl mx-auto px-4 space-y-6">
+      {/* Phase 15.5.1 — Content Well Wrapper */}
+      <main className="min-h-screen bg-black text-white">
+        <div className="mx-auto w-full max-w-[780px] px-4 pb-16 space-y-6">
         {/* A) Upload + Preview Card */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 space-y-4">
+        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 space-y-4">
               {/* FILE PICKER */}
               <input
                 type="file"
@@ -194,21 +195,24 @@ export default function ScannerPage() {
                               alt={`scan-${idx + 1}`}
                               className="w-full h-full object-contain max-h-64 rounded-xl"
                             />
-                            {/* Phase 4.0 Part A — Image Label Overlay */}
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm rounded-b-xl px-2 py-1.5">
-                              <p className="text-xs text-white font-medium text-center">
-                                {label}
-                              </p>
+                            {/* Phase 15.5.3 — Image label and controls */}
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
+                                  {idx + 1}
+                                </span>
+                                <span className="text-xs text-white/70 font-medium">
+                                  {label}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => removeImage(idx)}
+                                className="bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded transition-opacity"
+                                aria-label={`Remove image ${idx + 1}`}
+                              >
+                                ×
+                              </button>
                             </div>
-                            <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
-                              {idx + 1}
-                            </div>
-                            <button
-                              onClick={() => removeImage(idx)}
-                              className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              ×
-                            </button>
                           </div>
                         );
                       })}
@@ -227,8 +231,8 @@ export default function ScannerPage() {
         </div>
 
         {/* B) Big Scan Button Card */}
-        {/* Phase 2.4 Part J — Analyze Plant Button Fix */}
-        <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 md:p-6 flex flex-col items-center">
+        {/* Phase 15.5.2 — Fix the Analyze/Run Scan button (big + forgiving + not finicky) */}
+        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 flex flex-col items-center">
           {/* Phase 4.0 Part A — Multi-image validation warning */}
           {images.length > 0 && images.length < 2 && !singleImageConfirmed && (
             <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md">
@@ -241,29 +245,16 @@ export default function ScannerPage() {
             </div>
           )}
           
-          {/* Phase 2.6 Part M Step 4 — Run Scan Button Fix */}
+          {/* Phase 15.5.2 — Run Scan Button Fix */}
           <button
             type="button"
             disabled={images.length === 0 || isScanning}
             onClick={handleAnalyzePlant}
             onKeyDown={handleKeyDown}
-            className="relative z-50 
-                       flex items-center justify-center gap-2
-                       w-full
-                       px-6 py-4
-                       min-h-[56px]
-                       rounded-xl
-                       bg-white text-black font-semibold text-base
-                       pointer-events-auto
-                       transition-all duration-200
-                       hover:bg-white/90 active:bg-white/80 active:scale-[0.98]
-                       disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100
-                       focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent
-                       cursor-pointer"
+            className="w-full rounded-2xl bg-white text-black font-semibold text-base py-4 shadow-lg shadow-white/10 active:scale-[0.99] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 min-h-[56px] flex items-center justify-center gap-2"
             aria-label={isScanning ? "Analyzing plant" : "Analyze plant"}
             aria-busy={isScanning}
           >
-            {/* Phase 2.4 Part J Step 3 — Disable state feedback with spinner */}
             {isScanning ? (
               <>
                 <svg
@@ -305,6 +296,7 @@ export default function ScannerPage() {
             <WikiStyleResultPanel result={result} imageCount={images.length} />
           )}
         </section>
+        </div>
       </main>
     </>
   );

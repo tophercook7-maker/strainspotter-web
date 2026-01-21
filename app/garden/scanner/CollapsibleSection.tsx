@@ -21,7 +21,7 @@ export default function CollapsibleSection({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
+    <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 overflow-hidden">
       {/* Header - clickable to toggle */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -43,7 +43,7 @@ export default function CollapsibleSection({
 
       {/* Content - collapsible */}
       {isExpanded && (
-        <div className="px-4 md:px-6 pb-4 md:pb-6 pt-2 space-y-4 border-t border-white/10">
+        <div className="px-4 md:px-6 pb-4 md:pb-6 pt-2 space-y-4">
           {children}
         </div>
       )}
