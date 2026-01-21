@@ -1292,13 +1292,28 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   closelyRelatedVariants: nameFirstPipelineResult.closelyRelatedVariants,
                   isAmbiguous: nameFirstPipelineResult.isAmbiguous,
                   // Phase 5.1 — Include terpene experience (FREE TIER)
-                  terpeneExperience: {
-                    dominantTerpenes: terpeneExperienceResult.terpeneProfile.primaryTerpenes.map(t => t.name),
-                    secondaryTerpenes: terpeneExperienceResult.terpeneProfile.secondaryTerpenes.map(t => t.name),
-                    experience: terpeneExperienceResult.experience,
-                    visualBoosts: terpeneExperienceResult.visualBoosts,
-                    consensusNotes: terpeneExperienceResult.consensusNotes,
-                  },
+                  terpeneExperience: terpeneExperienceResult
+                    ? {
+                        dominantTerpenes: Array.isArray(
+                          terpeneExperienceResult?.terpeneProfile?.primaryTerpenes
+                        )
+                          ? terpeneExperienceResult.terpeneProfile.primaryTerpenes.map(function (t) {
+                              return t.name;
+                            })
+                          : [],
+
+                        secondaryTerpenes: Array.isArray(
+                          terpeneExperienceResult?.terpeneProfile?.secondaryTerpenes
+                        )
+                          ? terpeneExperienceResult.terpeneProfile.secondaryTerpenes.map(function (t) {
+                              return t.name;
+                            })
+                          : [],
+
+                        experience: terpeneExperienceResult.experience || [],
+                        visualBoosts: terpeneExperienceResult.visualBoosts || [],
+                      }
+                    : undefined,
                   // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE
                   terpeneCannabinoidProfile: terpeneCannabinoidProfileEarly,
                   // Phase 7.4 — TERPENE PROFILE CONSENSUS ENGINE
