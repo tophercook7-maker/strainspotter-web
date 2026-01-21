@@ -182,3 +182,6 @@ export interface WikiSynthesis {
     whyExactIDIsHard: string
   }
 }
+
+// Re-export ScannerViewModel from the canonical source
+export type { ScannerViewModel } from "./viewModel";
