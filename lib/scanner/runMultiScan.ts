@@ -1151,7 +1151,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     );
                     console.log("Phase 8.1 — STRAIN RATIO V81 RESOLVED:", strainRatioV81);
                   } catch (error) {
-                    console.error("Phase 8.1 — V81 engine error:", error);
+                    console.error("Phase 8.1 — ratio engine error:", error);
                     // Continue with fallback ratio engines if Phase 8.1 fails
                   }
                 }

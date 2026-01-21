@@ -327,7 +327,6 @@ export default function WikiReportPanel({
             </CollapsibleSection>
           )}
         </div>
-      )}
       
       {/* 1. IDENTITY OVERVIEW (Phase 4.2 Step 4.2.2) */}
       <CollapsibleSection
