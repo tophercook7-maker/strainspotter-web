@@ -183,5 +183,18 @@ export interface WikiSynthesis {
   }
 }
 
+// Full scan result with analysis layer (includes dominance/ratio data)
+export interface FullScanResult {
+  result: import("./viewModel").ScannerViewModel;
+  analysis?: {
+    dominance?: {
+      indica: number;
+      sativa: number;
+      hybrid: number;
+      classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid";
+    };
+  };
+}
+
 // Re-export ScannerViewModel from the canonical source
 export type { ScannerViewModel } from "./viewModel";

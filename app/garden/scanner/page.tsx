@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { scanImages } from "@/lib/scanner/runMultiScan";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
-import type { WikiSynthesis } from "@/lib/scanner/types";
+import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
 import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
 
 type ScanTier = "basic" | "pro" | "expert";
@@ -20,14 +20,7 @@ export default function ScannerPage() {
   const [images, setImages] = useState<File[]>([]);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
-  const [analysis, setAnalysis] = useState<{
-    dominance?: {
-      indica: number;
-      sativa: number;
-      hybrid: number;
-      classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid";
-    };
-  } | null>(null);
+  const [analysis, setAnalysis] = useState<FullScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [singleImageConfirmed, setSingleImageConfirmed] = useState(false); // Phase 4.0 Part A — Single-image confirmation
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
@@ -130,23 +123,27 @@ export default function ScannerPage() {
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
       
-      // Extract dominance from analysis layer (not ViewModel)
-      // TODO: This should come from scanResult.analysis, not viewModel
-      // For now, extract from viewModel.dominance if it exists (temporary until architecture is fixed)
+      // Create FullScanResult with analysis layer (dominance from analysis, not ViewModel)
       const dominanceData = (scanResult.result as any).dominance;
       if (dominanceData) {
         setAnalysis({
-          dominance: {
-            indica: dominanceData.indica ?? 0,
-            sativa: dominanceData.sativa ?? 0,
-            hybrid: dominanceData.hybrid ?? (100 - ((dominanceData.indica ?? 0) + (dominanceData.sativa ?? 0))),
-            classification: dominanceData.label === "Indica-dominant" ? "Indica-dominant" 
-              : dominanceData.label === "Sativa-dominant" ? "Sativa-dominant" 
-              : "Hybrid" as const,
+          result: scanResult.result, // ViewModel
+          analysis: {
+            dominance: {
+              indica: dominanceData.indica ?? 0,
+              sativa: dominanceData.sativa ?? 0,
+              hybrid: dominanceData.hybrid ?? (100 - ((dominanceData.indica ?? 0) + (dominanceData.sativa ?? 0))),
+              classification: dominanceData.label === "Indica-dominant" ? "Indica-dominant" 
+                : dominanceData.label === "Sativa-dominant" ? "Sativa-dominant" 
+                : "Hybrid" as const,
+            },
           },
         });
       } else {
-        setAnalysis(null);
+        // Still create FullScanResult even without dominance
+        setAnalysis({
+          result: scanResult.result,
+        });
       }
       
       console.log("STEP 5: STATE UPDATED");
@@ -318,7 +315,8 @@ export default function ScannerPage() {
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
         <section className="space-y-6">
           {result && <ResultPanel result={result} />}
-          {analysis && <WikiReportPanel analysis={analysis} />}
+          {analysis && <WikiReportPanel analysis={analysis.analysis} />}
+          {analysis && <WikiStyleResultPanel result={analysis} />}
         </section>
         </div>
       </main>

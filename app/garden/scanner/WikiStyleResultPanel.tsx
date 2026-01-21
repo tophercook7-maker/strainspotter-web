@@ -3,42 +3,46 @@
 
 "use client";
 
-import type { ScannerViewModel } from "@/lib/scanner/viewModel";
+import type { FullScanResult } from "@/lib/scanner/types";
 import CollapsibleSection from "./CollapsibleSection";
-
-interface WikiStyleResultPanelProps {
-  result: ScannerViewModel;
-  imageCount: number;
-}
 
 export default function WikiStyleResultPanel({
   result,
-  imageCount,
-}: WikiStyleResultPanelProps) {
+}: {
+  result: FullScanResult;
+}) {
+  // Extract ViewModel from FullScanResult (architecture: analysis layer separate from ViewModel)
+  const viewModel = result.result;
+  // Note: result.analysis contains dominance data (not in ViewModel) - access via result.analysis.dominance
+  
+  // Derive image count from multiImageInfo if available
+  const imageCount = viewModel.multiImageInfo?.imageCountText 
+    ? parseInt(viewModel.multiImageInfo.imageCountText.match(/\d+/)?.[0] || "1")
+    : 1;
   // Phase 3.6 Part A — Result Structure (Order Locked)
   // 1. STRAIN IDENTITY (ABOVE THE FOLD - Always visible)
   // 2-7: Collapsible sections, top 2 expanded by default
 
-  const safeSecondaryMatches = Array.isArray(result.secondaryMatches)
-    ? result.secondaryMatches
+  const safeSecondaryMatches = Array.isArray(viewModel.secondaryMatches)
+    ? viewModel.secondaryMatches
     : [];
-  const safeReferenceStrains = Array.isArray(result.referenceStrains)
-    ? result.referenceStrains
+  const safeReferenceStrains = Array.isArray(viewModel.referenceStrains)
+    ? viewModel.referenceStrains
     : [];
-  const safeTerpeneGuess = Array.isArray(result.terpeneGuess)
-    ? result.terpeneGuess
+  const safeTerpeneGuess = Array.isArray(viewModel.terpeneGuess)
+    ? viewModel.terpeneGuess
     : [];
-  const safeEffectsLong = Array.isArray(result.effectsLong)
-    ? result.effectsLong
+  const safeEffectsLong = Array.isArray(viewModel.effectsLong)
+    ? viewModel.effectsLong
     : [];
-  const safeGrowthTraits = Array.isArray(result.growthTraits)
-    ? result.growthTraits
+  const safeGrowthTraits = Array.isArray(viewModel.growthTraits)
+    ? viewModel.growthTraits
     : [];
-  const extendedProfile = result.extendedProfile;
+  const extendedProfile = viewModel.extendedProfile;
 
   // Phase 3.6 Part B — Determine strain family from name or lineage
   const getStrainFamily = (): string | null => {
-    const name = result.name || "";
+    const name = viewModel.name || "";
     if (name.toLowerCase().includes("kush")) return "Kush";
     if (name.toLowerCase().includes("cookies")) return "Cookies";
     if (name.toLowerCase().includes("haze")) return "Haze";
@@ -48,7 +52,7 @@ export default function WikiStyleResultPanel({
     if (name.toLowerCase().includes("og")) return "OG";
     
     // Check lineage
-    const lineage = result.genetics?.lineage || "";
+    const lineage = viewModel.genetics?.lineage || "";
     if (lineage.toLowerCase().includes("kush")) return "Kush";
     if (lineage.toLowerCase().includes("haze")) return "Haze";
     if (lineage.toLowerCase().includes("cookies")) return "Cookies";
@@ -62,35 +66,38 @@ export default function WikiStyleResultPanel({
     <section className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 space-y-6 max-h-[85vh] overflow-y-auto">
       {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
       {/* Phase 15.5.5 — Make strain name + confidence feel real */}
-      {result.nameFirstDisplay && (
+      {viewModel.nameFirstDisplay && (
         <div className="mb-6 space-y-4 pb-6">
           {/* Phase 15.5.5 — Large Strain Name */}
           <div className="mb-4">
             <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              {result.nameFirstDisplay.primaryStrainName || result.strainName || "Unknown Cultivar"}
+              {viewModel.nameFirstDisplay?.primaryStrainName ||
+                viewModel.name ||
+                viewModel.title ||
+                "Unknown Cultivar"}
             </div>
             
             {/* Phase 15.5.5 — Confidence badge */}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-white/10 border border-white/15 px-3 py-1 text-sm text-white/90">
-                Confidence · {result.nameFirstDisplay.confidencePercent ?? result.nameConfidence ?? result.matchConfidence ?? "--"}%
+                Confidence · {viewModel.nameFirstDisplay?.confidencePercent ?? viewModel.confidence ?? "--"}%
               </span>
               
-              {result.nameFirstDisplay.confidenceTier && (
+              {viewModel.nameFirstDisplay.confidenceTier && (
                 <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm ${
-                  result.nameFirstDisplay.confidenceTier === "very_high"
+                  viewModel.nameFirstDisplay.confidenceTier === "very_high"
                     ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                    : result.nameFirstDisplay.confidenceTier === "high"
+                    : viewModel.nameFirstDisplay.confidenceTier === "high"
                     ? "bg-green-500/10 border-green-400/20 text-green-200"
-                    : result.nameFirstDisplay.confidenceTier === "medium"
+                    : viewModel.nameFirstDisplay.confidenceTier === "medium"
                     ? "bg-yellow-500/10 border-yellow-400/20 text-yellow-200"
                     : "bg-orange-500/10 border-orange-400/20 text-orange-200"
                 }`}>
-                  {result.nameFirstDisplay.confidenceTier === "very_high"
+                  {viewModel.nameFirstDisplay.confidenceTier === "very_high"
                     ? "Very High Confidence"
-                    : result.nameFirstDisplay.confidenceTier === "high"
+                    : viewModel.nameFirstDisplay.confidenceTier === "high"
                     ? "High Confidence"
-                    : result.nameFirstDisplay.confidenceTier === "medium"
+                    : viewModel.nameFirstDisplay.confidenceTier === "medium"
                     ? "Medium Confidence"
                     : "Low Confidence"}
                 </span>
@@ -99,9 +106,9 @@ export default function WikiStyleResultPanel({
           </div>
           
           {/* Phase 5.5.5 — Also Known As */}
-          {result.nameFirstDisplay.alsoKnownAs && result.nameFirstDisplay.alsoKnownAs.length > 0 && (
+          {viewModel.nameFirstDisplay.alsoKnownAs && viewModel.nameFirstDisplay.alsoKnownAs.length > 0 && (
             <p className="text-sm text-white/70 italic">
-              Also Known As: {(result.nameFirstDisplay.alsoKnownAs ?? []).join(" • ")}
+              Also Known As: {(viewModel.nameFirstDisplay.alsoKnownAs ?? []).join(" • ")}
             </p>
           )}
           
@@ -110,96 +117,44 @@ export default function WikiStyleResultPanel({
           <div className="flex flex-wrap items-center gap-3">
             <span
               className={`text-sm font-semibold px-4 py-2 rounded-full ${
-                result.nameFirstDisplay.confidenceTier === "very_high"
+                viewModel.nameFirstDisplay.confidenceTier === "very_high"
                   ? "bg-green-500/30 text-green-200"
-                  : result.nameFirstDisplay.confidenceTier === "high"
+                  : viewModel.nameFirstDisplay.confidenceTier === "high"
                   ? "bg-green-500/20 text-green-300"
-                  : result.nameFirstDisplay.confidenceTier === "medium"
+                  : viewModel.nameFirstDisplay.confidenceTier === "medium"
                   ? "bg-yellow-500/20 text-yellow-300"
                   : "bg-orange-500/20 text-orange-300"
               }`}
             >
-              {result.nameFirstDisplay.confidenceTier === "very_high"
+              {viewModel.nameFirstDisplay.confidenceTier === "very_high"
                 ? "Very High Confidence"
-                : result.nameFirstDisplay.confidenceTier === "high"
+                : viewModel.nameFirstDisplay.confidenceTier === "high"
                 ? "High Confidence"
-                : result.nameFirstDisplay.confidenceTier === "medium"
+                : viewModel.nameFirstDisplay.confidenceTier === "medium"
                 ? "Medium Confidence"
                 : "Low Confidence"}
-              {result.nameFirstDisplay.confidencePercent < 70 && (
-                <span className="ml-2 opacity-80">({result.nameFirstDisplay.confidencePercent}%)</span>
+              {viewModel.nameFirstDisplay.confidencePercent < 70 && (
+                <span className="ml-2 opacity-80">({viewModel.nameFirstDisplay.confidencePercent}%)</span>
               )}
             </span>
           {/* Phase 4.5 Step 4.5.1 — Subtext Tagline */}
           <p className="text-sm text-white/70 italic">
-            {result.nameFirstDisplay.tagline}
+            {viewModel.nameFirstDisplay.tagline}
           </p>
 
-          {/* Phase 15.5.6 — Add Indica/Sativa/Hybrid ratio display */}
-          {/* Helper functions */}
-          {(() => {
-            function clampPct(n: number) {
-              return Math.max(0, Math.min(100, n));
-            }
-            
-            function deriveRatio(dominance?: string) {
-              const d = (dominance ?? "").toLowerCase();
-              if (d.includes("indica")) return { indica: 70, sativa: 15, hybrid: 15 };
-              if (d.includes("sativa")) return { indica: 15, sativa: 70, hybrid: 15 };
-              if (d.includes("hybrid")) return { indica: 40, sativa: 40, hybrid: 20 };
-              return { indica: 34, sativa: 33, hybrid: 33 };
-            }
-            
-            // Phase 15.5.6 — Get ratio from result
-            const ratio = result.dominance 
-              ? { 
-                  indica: result.dominance.indica ?? 0, 
-                  sativa: result.dominance.sativa ?? 0, 
-                  hybrid: result.dominance.hybrid ?? (100 - ((result.dominance.indica ?? 0) + (result.dominance.sativa ?? 0)))
-                }
-              : result.nameFirstDisplay?.ratio
-              ? {
-                  indica: result.nameFirstDisplay.ratio.indicaPercent,
-                  sativa: result.nameFirstDisplay.ratio.sativaPercent,
-                  hybrid: 100 - (result.nameFirstDisplay.ratio.indicaPercent + result.nameFirstDisplay.ratio.sativaPercent)
-                }
-              : deriveRatio(result.genetics?.dominance);
-            
-            return (
-              <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 sm:p-6">
-                <div className="text-lg font-semibold mb-3">Dominance</div>
-                <div className="space-y-3">
-                  {[
-                    ["Indica", ratio.indica],
-                    ["Sativa", ratio.sativa],
-                    ["Hybrid", ratio.hybrid],
-                  ].map(([label, value]) => (
-                    <div key={label} className="flex items-center gap-3">
-                      <div className="w-16 text-sm text-white/70">{label}</div>
-                      <div className="flex-1 h-3 rounded-full bg-white/10 overflow-hidden">
-                        <div
-                          className="h-3 rounded-full bg-white/60"
-                          style={{ width: `${clampPct(Number(value))}%` }}
-                        />
-                      </div>
-                      <div className="w-12 text-right text-sm text-white/70">{clampPct(Number(value))}%</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+          {/* ARCHITECTURE: Dominance/ratio rendering removed - this belongs in WikiReportPanel only */}
+          {/* WikiStyleResultPanel only uses ViewModel fields (genetics.dominance is allowed) */}
           
           {/* Phase 4.6 Step 4.6.3 — Legacy ratio display (if nameFirstDisplay.ratio exists) */}
-          {result.nameFirstDisplay?.ratio && (
+          {viewModel.nameFirstDisplay?.ratio && (
             <div className="flex flex-col items-center gap-2 pt-2">
               {/* Phase 4.6 Step 4.6.3 — Display text (centered, compact) */}
               <p className="text-sm text-white/90 font-medium">
-                {result.nameFirstDisplay.ratio.displayText}
+                {viewModel.nameFirstDisplay.ratio.displayText}
               </p>
 
               {/* Phase 4.6 Step 4.6.4 — EXPLANATION (Optional, Collapsed) */}
-              {result.nameFirstDisplay.ratio.explanation && (
+              {viewModel.nameFirstDisplay.ratio.explanation && (
                 <CollapsibleSection
                   title="How this ratio was determined"
                   defaultExpanded={false}
@@ -207,7 +162,7 @@ export default function WikiStyleResultPanel({
                 >
                   <div className="space-y-2 pt-2">
                     <ul className="space-y-2">
-                      {result.nameFirstDisplay.ratio.explanation.fullExplanation.map((bullet, idx) => (
+                      {viewModel.nameFirstDisplay.ratio.explanation.fullExplanation.map((bullet, idx) => (
                         <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
                           <span className="text-purple-400 mr-2">•</span>
                           <span>{bullet}</span>
@@ -221,14 +176,14 @@ export default function WikiStyleResultPanel({
           )}
 
                       {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
-                      {result.nameFirstDisplay.terpeneExperience && (
+                      {viewModel.nameFirstDisplay.terpeneExperience && (
                         <div className="space-y-4 pt-4 border-t border-white/10">
                           {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
-                          {result.nameFirstDisplay.terpeneExperience.dominantTerpenes.length > 0 && (
+                          {viewModel.nameFirstDisplay.terpeneExperience.dominantTerpenes.length > 0 && (
                             <div className="space-y-2">
                               <h3 className="text-sm font-semibold text-white/90">Dominant Terpenes</h3>
                               <div className="flex flex-wrap gap-2">
-                                {result.nameFirstDisplay.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
+                                {viewModel.nameFirstDisplay.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
                                   <span
                                     key={idx}
                                     className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30"
@@ -236,9 +191,9 @@ export default function WikiStyleResultPanel({
                                     {terpene}
                                   </span>
                                 ))}
-                                {result.nameFirstDisplay.terpeneExperience.secondaryTerpenes.length > 0 && (
+                                {viewModel.nameFirstDisplay.terpeneExperience.secondaryTerpenes.length > 0 && (
                                   <>
-                                    {result.nameFirstDisplay.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
+                                    {viewModel.nameFirstDisplay.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
                                       <span
                                         key={`sec-${idx}`}
                                         className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20"
@@ -260,12 +215,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Body Relaxation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-purple-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%` }}
+                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%` }}
                                   />
                                 </div>
                               </div>
@@ -274,12 +229,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Mental Stimulation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-green-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%` }}
+                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%` }}
                                   />
                                 </div>
                               </div>
@@ -288,12 +243,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Mood Elevation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.moodElevation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.moodElevation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-yellow-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.moodElevation}%` }}
+                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.moodElevation}%` }}
                                   />
                                 </div>
                               </div>
@@ -302,12 +257,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Sedation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.sedation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.sedation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-blue-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.sedation}%` }}
+                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.sedation}%` }}
                                   />
                                 </div>
                               </div>
@@ -316,12 +271,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Focus / Clarity</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.focusClarity}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.focusClarity}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-cyan-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.focusClarity}%` }}
+                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.focusClarity}%` }}
                                   />
                                 </div>
                               </div>
@@ -330,23 +285,23 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Appetite Stimulation</span>
-                                  <span className="text-xs text-white/60">{result.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-orange-500/60 rounded-full transition-all"
-                                    style={{ width: `${result.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%` }}
+                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%` }}
                                   />
                                 </div>
                               </div>
                             </div>
 
                             {/* Phase 5.1 Step 5.1.5 — Consensus Notes (if available) */}
-                            {result.nameFirstDisplay.terpeneExperience.consensusNotes && 
-                             result.nameFirstDisplay.terpeneExperience.consensusNotes.length > 0 && (
+                            {viewModel.nameFirstDisplay.terpeneExperience.consensusNotes && 
+                             viewModel.nameFirstDisplay.terpeneExperience.consensusNotes.length > 0 && (
                               <div className="pt-2 mt-2 border-t border-white/10">
                                 <p className="text-xs text-white/60 italic leading-relaxed">
-                                  {result.nameFirstDisplay.terpeneExperience.consensusNotes.join(" ")}
+                                  {viewModel.nameFirstDisplay.terpeneExperience.consensusNotes.join(" ")}
                                 </p>
                               </div>
                             )}
@@ -356,16 +311,16 @@ export default function WikiStyleResultPanel({
                     </div>
 
                       {/* Phase 4.7 Step 4.7.2 — CLOSELY RELATED VARIANTS (if ambiguous, collapsed) */}
-          {result.nameFirstDisplay.closelyRelatedVariants && 
-           result.nameFirstDisplay.closelyRelatedVariants.length > 0 && 
-           result.nameFirstDisplay.isAmbiguous && (
+          {viewModel.nameFirstDisplay.closelyRelatedVariants && 
+           viewModel.nameFirstDisplay.closelyRelatedVariants.length > 0 && 
+           viewModel.nameFirstDisplay.isAmbiguous && (
             <CollapsibleSection
-              title={`Closely Related Variants (${result.nameFirstDisplay.closelyRelatedVariants.length} ${result.nameFirstDisplay.closelyRelatedVariants.length === 1 ? 'variant' : 'variants'})`}
+              title={`Closely Related Variants (${viewModel.nameFirstDisplay.closelyRelatedVariants.length} ${viewModel.nameFirstDisplay.closelyRelatedVariants.length === 1 ? 'variant' : 'variants'})`}
               defaultExpanded={false}
               icon="🔗"
             >
               <div className="space-y-2 pt-2">
-                {result.nameFirstDisplay.closelyRelatedVariants.map((variant, idx) => (
+                {viewModel.nameFirstDisplay.closelyRelatedVariants.map((variant, idx) => (
                   <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
                     <p className="text-sm text-white/90 font-medium mb-1">
                       {variant.name}
@@ -385,16 +340,16 @@ export default function WikiStyleResultPanel({
           )}
 
           {/* Phase 4.5 Step 4.5.2 — SECONDARY CANDIDATES (Optional, Collapsed if confidence < 92%) */}
-          {result.nameFirstDisplay.alternateMatches && 
-           result.nameFirstDisplay.alternateMatches.length > 0 && 
-           result.nameFirstDisplay.confidencePercent < 92 && (
+          {viewModel.nameFirstDisplay.alternateMatches && 
+           viewModel.nameFirstDisplay.alternateMatches.length > 0 && 
+           viewModel.nameFirstDisplay.confidencePercent < 92 && (
             <CollapsibleSection
-              title={`Also similar to (${result.nameFirstDisplay.alternateMatches.length} ${result.nameFirstDisplay.alternateMatches.length === 1 ? 'strain' : 'strains'})`}
+              title={`Also similar to (${viewModel.nameFirstDisplay.alternateMatches.length} ${viewModel.nameFirstDisplay.alternateMatches.length === 1 ? 'strain' : 'strains'})`}
               defaultExpanded={false}
               icon="🔍"
             >
               <div className="space-y-2 pt-2">
-                {result.nameFirstDisplay.alternateMatches.map((alt, idx) => (
+                {viewModel.nameFirstDisplay.alternateMatches.map((alt, idx) => (
                   <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
                     <p className="text-sm text-white/90 font-medium mb-1">
                       {alt.name}
@@ -414,7 +369,7 @@ export default function WikiStyleResultPanel({
           )}
 
           {/* Phase 4.5 Step 4.5.3 — WHY THIS STRAIN (Human Logic) - FREE TIER */}
-          {result.nameFirstDisplay.explanation && (
+          {viewModel.nameFirstDisplay.explanation && (
             <CollapsibleSection
               title="Why this strain?"
               defaultExpanded={true}
@@ -422,11 +377,11 @@ export default function WikiStyleResultPanel({
             >
               <div className="space-y-3 pt-2">
                 {/* Phase 4.5 Step 4.5.3 — Auto-generate 3-5 bullets from explanation */}
-                {result.nameFirstDisplay.explanation.whyThisNameWon && result.nameFirstDisplay.explanation.whyThisNameWon.length > 0 && (
+                {viewModel.nameFirstDisplay.explanation.whyThisNameWon && viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0 && (
                   <div>
                     <h4 className="text-sm font-semibold text-white/90 mb-2">Match Evidence:</h4>
                     <ul className="space-y-2">
-                      {result.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 5).map((reason, idx) => (
+                      {viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 5).map((reason, idx) => (
                         <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
                           <span className="text-green-400 mr-2">•</span>
                           <span>{reason}</span>
@@ -437,12 +392,12 @@ export default function WikiStyleResultPanel({
                 )}
                 
                 {/* Phase 4.5 Step 4.5.3 — What Ruled Out Others (if available) */}
-                {result.nameFirstDisplay.explanation.whatRuledOutOthers && 
-                 result.nameFirstDisplay.explanation.whatRuledOutOthers.length > 0 && (
+                {viewModel.nameFirstDisplay.explanation.whatRuledOutOthers && 
+                 viewModel.nameFirstDisplay.explanation.whatRuledOutOthers.length > 0 && (
                   <div className="pt-2">
                     <h4 className="text-sm font-semibold text-white/90 mb-2">Why not other strains?</h4>
                     <ul className="space-y-2">
-                      {result.nameFirstDisplay.explanation.whatRuledOutOthers.slice(0, 3).map((reason, idx) => (
+                      {viewModel.nameFirstDisplay.explanation.whatRuledOutOthers.slice(0, 3).map((reason, idx) => (
                         <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
                           <span className="text-yellow-400 mr-2">•</span>
                           <span>{reason}</span>
@@ -453,11 +408,11 @@ export default function WikiStyleResultPanel({
                 )}
 
                 {/* Phase 4.5 Step 4.5.3 — Variance Notes (if available) */}
-                {result.nameFirstDisplay.explanation.varianceNotes && 
-                 result.nameFirstDisplay.explanation.varianceNotes.length > 0 && (
+                {viewModel.nameFirstDisplay.explanation.varianceNotes && 
+                 viewModel.nameFirstDisplay.explanation.varianceNotes.length > 0 && (
                   <div className="pt-2">
                     <p className="text-xs text-white/70 leading-relaxed italic">
-                      {(result.nameFirstDisplay.explanation.varianceNotes ?? []).join(" ")}
+                      {(viewModel.nameFirstDisplay.explanation.varianceNotes ?? []).join(" ")}
                     </p>
                   </div>
                 )}
@@ -468,68 +423,68 @@ export default function WikiStyleResultPanel({
       )}
       
       {/* Phase 3.9 Part A — CORE IDENTITY (ABOVE THE FOLD) */}
-      {!result.nameFirstDisplay && (
+      {!viewModel.nameFirstDisplay && (
         <div className="space-y-4 pb-4">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-bold text-white">
-              {result.name || result.title}
+              {viewModel.name || viewModel.title}
             </h1>
 
           {/* Match type label */}
-          {result.namingInfo && (
+          {viewModel.namingInfo && (
             <p className="text-lg md:text-xl text-white/80 font-medium">
-              {result.namingInfo.displayLabel}
+              {viewModel.namingInfo.displayLabel}
             </p>
           )}
 
           {/* Phase 3.8 Part C — Confidence Tier Badge */}
-          {result.confidenceTier && (
+          {viewModel.confidenceTier && (
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                  result.confidenceTier.tier === "very_high"
+                  viewModel.confidenceTier.tier === "very_high"
                     ? "bg-green-500/30 text-green-200"
-                    : result.confidenceTier.tier === "high"
+                    : viewModel.confidenceTier.tier === "high"
                     ? "bg-green-500/20 text-green-300"
-                    : result.confidenceTier.tier === "medium"
+                    : viewModel.confidenceTier.tier === "medium"
                     ? "bg-yellow-500/20 text-yellow-300"
                     : "bg-orange-500/20 text-orange-300"
                 }`}
               >
-                {result.confidenceTier.label}
+                {viewModel.confidenceTier.label}
               </span>
-              {result.nameResolution?.strainFamily && (
+              {viewModel.nameResolution?.strainFamily && (
                 <span className="text-xs text-white/60">
-                  • {result.nameResolution.strainFamily}-type
+                  • {viewModel.nameResolution.strainFamily}-type
                 </span>
               )}
             </div>
           )}
 
           {/* Confidence & image count */}
-          {result.multiImageInfo ? (
+          {viewModel.multiImageInfo ? (
             <div className="space-y-2">
               <p className="text-sm text-white/70">
-                {result.multiImageInfo.imageCountText}
+                {viewModel.multiImageInfo.imageCountText}
               </p>
               <div className="flex items-center gap-3">
                 <p className="text-2xl md:text-3xl text-green-400 font-semibold">
-                  {result.multiImageInfo.confidenceRange}
+                  {viewModel.multiImageInfo.confidenceRange}
                 </p>
                 {/* Phase 3.7 Part F — Confidence increased indicator */}
-                {imageCount > 1 && (
+                {(viewModel.multiImageInfo?.imageCountText?.includes("2") || viewModel.multiImageInfo?.imageCountText?.includes("3") || viewModel.multiImageInfo?.imageCountText?.includes("4") || viewModel.multiImageInfo?.imageCountText?.includes("5")) && (
                   <span className="text-xs text-green-300 bg-green-500/20 px-2 py-1 rounded-full">
                     ✓ Multiple images boost
                   </span>
                 )}
               </div>
-              {result.multiImageInfo.improvementExplanation && (
+              {viewModel.multiImageInfo.improvementExplanation && (
                 <div className="space-y-1">
                   <p className="text-sm text-white/80 leading-relaxed">
-                    {result.multiImageInfo.improvementExplanation}
+                    {viewModel.multiImageInfo.improvementExplanation}
                   </p>
                   {/* Phase 3.7 Part F — Small explanation tooltip */}
-                  {imageCount > 1 && (
+                  {(viewModel.multiImageInfo?.imageCountText?.includes("2") || viewModel.multiImageInfo?.imageCountText?.includes("3") || viewModel.multiImageInfo?.imageCountText?.includes("4") || viewModel.multiImageInfo?.imageCountText?.includes("5")) && (
                     <p className="text-xs text-white/60 italic">
                       💡 Multiple angles improved accuracy
                     </p>
@@ -539,16 +494,16 @@ export default function WikiStyleResultPanel({
             </div>
           ) : (
             <p className="text-2xl md:text-3xl text-green-400 font-semibold">
-              {result.confidenceRange
-                ? `${result.confidenceRange.min}–${result.confidenceRange.max}%`
-                : `${result.confidence}%`}
+              {viewModel.confidenceRange
+                ? `${viewModel.confidenceRange.min}–${viewModel.confidenceRange.max}%`
+                : `${viewModel.confidence}%`}
             </p>
           )}
 
           {/* Rationale */}
-          {result.namingInfo?.rationale && (
+          {viewModel.namingInfo?.rationale && (
             <p className="text-base md:text-lg text-white/90 leading-relaxed">
-              {result.namingInfo.rationale}
+              {viewModel.namingInfo.rationale}
             </p>
           )}
         </div>
@@ -556,14 +511,14 @@ export default function WikiStyleResultPanel({
       )}
 
       {/* Phase 3.8 Part E — Why This Match (Expandable) */}
-        {result.nameReasoning && result.nameReasoning.bullets.length > 0 && (
+        {viewModel.nameReasoning && viewModel.nameReasoning.bullets.length > 0 && (
           <CollapsibleSection
             title="Why This Name?"
             defaultExpanded={true}
             icon="💡"
           >
             <ul className="space-y-2">
-              {result.nameReasoning.bullets.map((bullet, idx) => (
+              {viewModel.nameReasoning.bullets.map((bullet, idx) => (
                 <li key={idx} className="text-white/80 text-sm flex items-start gap-2">
                   <span className="text-white/40 mt-1">•</span>
                   <span>{bullet}</span>
@@ -574,7 +529,7 @@ export default function WikiStyleResultPanel({
         )}
 
         {/* Phase 3.8 Part E — Closest Alternatives (Collapsed) */}
-        {(safeSecondaryMatches.length > 0 || result.nameResolution?.closestAlternate) && (
+        {(safeSecondaryMatches.length > 0 || viewModel.nameResolution?.closestAlternate) && (
           <CollapsibleSection
             title="Closest Alternatives"
             defaultExpanded={false}
@@ -582,18 +537,18 @@ export default function WikiStyleResultPanel({
           >
             <div className="space-y-3">
               {/* Show name resolution alternate first if available */}
-              {result.nameResolution?.closestAlternate && (
+              {viewModel.nameResolution?.closestAlternate && (
                 <div className="p-3 rounded-lg border border-white/10 bg-white/5">
                   <div className="flex items-start justify-between mb-1">
                     <p className="font-semibold text-white">
-                      {result.nameResolution.closestAlternate.name}
+                      {viewModel.nameResolution.closestAlternate.name}
                     </p>
                     <span className="text-xs text-white/60">
-                      {result.nameResolution.closestAlternate.confidence}%
+                      {viewModel.nameResolution.closestAlternate.confidence}%
                     </span>
                   </div>
                   <p className="text-sm text-white/70">
-                    {result.nameResolution.closestAlternate.whyNotPrimary}
+                    {viewModel.nameResolution.closestAlternate.whyNotPrimary}
                   </p>
                 </div>
               )}
@@ -628,29 +583,29 @@ export default function WikiStyleResultPanel({
             <p className="text-white/80 leading-relaxed">
               This cultivar is classified as{" "}
               <strong className="text-white">
-                {result.genetics?.dominance || "Unknown"}
+                {viewModel.genetics?.dominance || "Unknown"}
               </strong>
-              {result.genetics?.dominance !== "Unknown" &&
-                `-dominant, which influences both its physical structure and expected effects. ${result.genetics?.dominance === "Indica" ? "Indica-dominant strains typically produce broad leaves, dense buds, and relaxing body effects." : result.genetics?.dominance === "Sativa" ? "Sativa-dominant strains usually feature narrow leaves, elongated structure, and uplifting cerebral effects." : "Hybrids combine traits from both genetic lineages, offering balanced characteristics."}`
+              {viewModel.genetics?.dominance !== "Unknown" &&
+                `-dominant, which influences both its physical structure and expected effects. ${viewModel.genetics?.dominance === "Indica" ? "Indica-dominant strains typically produce broad leaves, dense buds, and relaxing body effects." : viewModel.genetics?.dominance === "Sativa" ? "Sativa-dominant strains usually feature narrow leaves, elongated structure, and uplifting cerebral effects." : "Hybrids combine traits from both genetic lineages, offering balanced characteristics."}`
               }
             </p>
           </div>
 
           {/* Parent Strains & Family Tree */}
           {(extendedProfile?.genetics.lineage ||
-            result.genetics?.lineage ||
-            result.familyTree) && (
+            viewModel.genetics?.lineage ||
+            viewModel.familyTree) && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Parent Strains & Family Tree
               </h4>
               <p className="text-white/80 leading-relaxed mb-2">
-                {result.familyTree ||
+                {viewModel.familyTree ||
                   extendedProfile?.genetics.lineage ||
-                  result.genetics?.lineage ||
+                  viewModel.genetics?.lineage ||
                   "Lineage information not available."}
               </p>
-              {(extendedProfile?.genetics.lineage || result.genetics?.lineage) && (
+              {(extendedProfile?.genetics.lineage || viewModel.genetics?.lineage) && (
                 <p className="text-white/80 leading-relaxed text-sm">
                   This genetic combination contributes to the distinctive traits observed in this cultivar. The parent strains influence the plant's morphology, effects, and cultivation characteristics.
                 </p>
@@ -664,9 +619,9 @@ export default function WikiStyleResultPanel({
               Typical Phenotype Expression
             </h4>
             <p className="text-white/80 leading-relaxed">
-              {result.genetics?.dominance === "Indica"
+              {viewModel.genetics?.dominance === "Indica"
                 ? "Indica-dominant phenotypes typically display compact, bushy growth with dense, resinous flower clusters. Leaves are broad and dark green, with tight internodal spacing. Bud structure is usually dense and heavy, with high trichome production."
-                : result.genetics?.dominance === "Sativa"
+                : viewModel.genetics?.dominance === "Sativa"
                 ? "Sativa-dominant phenotypes often show tall, lanky growth patterns with elongated flower clusters. Leaves are narrow and light green, with wider internodal spacing. Bud structure tends to be airier and less dense than indica varieties."
                 : "Hybrid phenotypes can vary significantly depending on the specific genetic ratio. Some express more indica-like traits (dense structure, broad leaves), while others lean sativa (elongated structure, narrow leaves). The observed characteristics help determine the dominant influence."}
             </p>
@@ -690,7 +645,7 @@ export default function WikiStyleResultPanel({
             )}
 
           {/* Uncertainty Note */}
-          {(!extendedProfile?.genetics.lineage && !result.genetics?.lineage) && (
+          {(!extendedProfile?.genetics.lineage && !viewModel.genetics?.lineage) && (
             <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
               <p className="text-sm text-yellow-200 leading-relaxed">
                 <strong>Lineage Inference Limitation:</strong> Genetic lineage
@@ -712,71 +667,70 @@ export default function WikiStyleResultPanel({
       >
         <div className="space-y-4">
           <p className="text-sm text-white/60 italic mb-4">
-            Based solely on visual analysis of {imageCount} image
-            {imageCount > 1 ? "s" : ""}. These traits directly informed the
+            Based solely on visual analysis{viewModel.multiImageInfo?.imageCountText ? ` of ${viewModel.multiImageInfo.imageCountText.toLowerCase()}` : ""}. These traits directly informed the
             match decision.
           </p>
 
           {/* Bud Density & Structure */}
-          {(result.flowerStructureAnalysis ||
-            result.primaryMatch?.whyThisMatch) && (
+          {(viewModel.flowerStructureAnalysis ||
+            viewModel.primaryMatch?.whyThisMatch) && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Bud Density & Structure
               </h4>
               <p className="text-white/80 leading-relaxed">
-                {result.flowerStructureAnalysis ||
-                  `The observed bud structure shows ${result.morphology || "characteristics that align with known cultivars"}. This structural pattern was a key factor in the identification process.`}
+                {viewModel.flowerStructureAnalysis ||
+                  `The observed bud structure shows ${viewModel.morphology || "characteristics that align with known cultivars"}. This structural pattern was a key factor in the identification process.`}
               </p>
             </div>
           )}
 
           {/* Calyx Structure */}
-          {result.structure && (
+          {viewModel.structure && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Calyx Formation
               </h4>
-              <p className="text-white/80 leading-relaxed">{result.structure}</p>
+              <p className="text-white/80 leading-relaxed">{viewModel.structure}</p>
             </div>
           )}
 
           {/* Trichome Coverage */}
-          {(result.trichomeDensityMaturity || result.trichomes) && (
+          {(viewModel.trichomeDensityMaturity || viewModel.trichomes) && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Trichome Coverage & Maturity
               </h4>
               <p className="text-white/80 leading-relaxed">
-                {result.trichomeDensityMaturity ||
-                  result.trichomes ||
+                {viewModel.trichomeDensityMaturity ||
+                  viewModel.trichomes ||
                   "Trichome density and coverage are key indicators of resin production and maturity stage."}
               </p>
             </div>
           )}
 
           {/* Pistil Color & Maturity */}
-          {(result.colorPistilIndicators || result.pistils) && (
+          {(viewModel.colorPistilIndicators || viewModel.pistils) && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Pistil Color & Maturity Indicators
               </h4>
               <p className="text-white/80 leading-relaxed">
-                {result.colorPistilIndicators ||
-                  result.pistils ||
+                {viewModel.colorPistilIndicators ||
+                  viewModel.pistils ||
                   "Pistil coloration provides clues about flowering stage and can indicate strain characteristics."}
               </p>
             </div>
           )}
 
           {/* Leaf Shape Indicators */}
-          {result.leafShapeInternode && (
+          {viewModel.leafShapeInternode && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Leaf Shape & Internodal Spacing
               </h4>
               <p className="text-white/80 leading-relaxed">
-                {result.leafShapeInternode}
+                {viewModel.leafShapeInternode}
               </p>
             </div>
           )}
@@ -798,10 +752,10 @@ export default function WikiStyleResultPanel({
           )}
 
           {/* Match Decision Tie-in */}
-          {result.primaryMatch?.whyThisMatch && (
+          {viewModel.primaryMatch?.whyThisMatch && (
             <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3">
               <p className="text-sm text-green-200 leading-relaxed">
-                <strong>Match Decision:</strong> {result.primaryMatch.whyThisMatch}
+                <strong>Match Decision:</strong> {viewModel.primaryMatch.whyThisMatch}
               </p>
             </div>
           )}
@@ -915,13 +869,13 @@ export default function WikiStyleResultPanel({
           )}
           
           {/* Phase 3.9 Part D — Entourage Effect Explanation */}
-          {result.entourageExplanation && (
+          {viewModel.entourageExplanation && (
             <div className="mt-4 p-3 rounded-lg border border-blue-500/30 bg-blue-500/10">
               <h4 className="text-base font-semibold text-blue-200 mb-2">
                 The Entourage Effect
               </h4>
               <p className="text-sm text-blue-200/90 leading-relaxed">
-                {result.entourageExplanation}
+                {viewModel.entourageExplanation}
               </p>
             </div>
           )}
@@ -1011,9 +965,9 @@ export default function WikiStyleResultPanel({
               Mental vs Body Balance
             </h4>
             <p className="text-white/80 leading-relaxed">
-              {result.genetics?.dominance === "Indica"
+              {viewModel.genetics?.dominance === "Indica"
                 ? "This cultivar tends to produce primarily body-focused effects with a strong physical relaxation component. While some mental effects may be present, the body sensations typically dominate the experience."
-                : result.genetics?.dominance === "Sativa"
+                : viewModel.genetics?.dominance === "Sativa"
                 ? "This cultivar typically produces cerebral, mental effects with energizing qualities. Physical effects are usually minimal, allowing for active engagement and creative thinking."
                 : "This hybrid cultivar offers a balanced combination of mental and body effects. The specific balance can vary between phenotypes, with some leaning more toward cerebral stimulation and others toward physical relaxation."}
             </p>
@@ -1030,14 +984,14 @@ export default function WikiStyleResultPanel({
           </div>
           
           {/* Who It's Best For */}
-          {result.experience?.bestFor &&
-            result.experience.bestFor.length > 0 && (
+          {viewModel.experience?.bestFor &&
+            viewModel.experience.bestFor.length > 0 && (
               <div>
                 <h4 className="text-base font-semibold text-white/90 mb-2">
                   Typically Best For
                 </h4>
                 <p className="text-white/80 leading-relaxed">
-                  {result.experience.bestFor.join(", ")}
+                  {viewModel.experience.bestFor.join(", ")}
                   . These use cases are commonly reported for this strain type
                   and may vary based on individual tolerance, dosage, and
                   consumption method.
@@ -1060,9 +1014,9 @@ export default function WikiStyleResultPanel({
               Day vs Night Use
             </h4>
             <p className="text-white/80 leading-relaxed">
-              {result.genetics?.dominance === "Indica"
+              {viewModel.genetics?.dominance === "Indica"
                 ? "This cultivar is generally best suited for evening or nighttime use due to its relaxing and potentially sedative effects. It may interfere with daytime productivity or alertness."
-                : result.genetics?.dominance === "Sativa"
+                : viewModel.genetics?.dominance === "Sativa"
                 ? "This cultivar is well-suited for daytime use, as it typically provides energizing and uplifting effects without heavy sedation. It can enhance focus and creativity during active hours."
                 : "This hybrid cultivar can work for both day and night use depending on the specific phenotype and individual response. Some may find it suitable for afternoon or early evening, while others may prefer it for relaxed evening activities."}
             </p>
@@ -1074,13 +1028,13 @@ export default function WikiStyleResultPanel({
               Activity Suitability
             </h4>
             <div className="space-y-2 text-white/80">
-              {result.genetics?.dominance === "Indica" ? (
+              {viewModel.genetics?.dominance === "Indica" ? (
                 <>
                   <p><strong>Creativity:</strong> Lower stimulation may limit creative bursts; better for reflective, contemplative creative work.</p>
                   <p><strong>Focus:</strong> Not ideal for tasks requiring sharp focus; better for relaxation and stress relief.</p>
                   <p><strong>Relaxation:</strong> Excellent for unwinding, stress relief, and physical relaxation after activities.</p>
                 </>
-              ) : result.genetics?.dominance === "Sativa" ? (
+              ) : viewModel.genetics?.dominance === "Sativa" ? (
                 <>
                   <p><strong>Creativity:</strong> Excellent for stimulating creative thinking, brainstorming, and artistic activities.</p>
                   <p><strong>Focus:</strong> Can enhance focus and productivity for engaging tasks, though effects vary by individual.</p>
@@ -1102,9 +1056,9 @@ export default function WikiStyleResultPanel({
               Social vs Solo Contexts
             </h4>
             <p className="text-white/80 leading-relaxed">
-              {result.genetics?.dominance === "Indica"
+              {viewModel.genetics?.dominance === "Indica"
                 ? "This cultivar is typically better suited for solo or small-group settings where relaxation and introspection are desired. Large social gatherings may feel overwhelming."
-                : result.genetics?.dominance === "Sativa"
+                : viewModel.genetics?.dominance === "Sativa"
                 ? "This cultivar can enhance social experiences by promoting conversation, energy, and engagement. It's well-suited for group activities and social gatherings."
                 : "This hybrid cultivar can work in both social and solo contexts, with effects varying based on the specific balance of indica and sativa traits. It offers flexibility for different social situations."}
             </p>
@@ -1113,7 +1067,7 @@ export default function WikiStyleResultPanel({
       </CollapsibleSection>
       
       {/* Phase 3.9 Part G — VARIANTS & CLOSE RELATIVES */}
-      {(result.relatedStrains && result.relatedStrains.length > 0) || 
+      {(viewModel.relatedStrains && viewModel.relatedStrains.length > 0) || 
        (extendedProfile?.knownVariations && extendedProfile.knownVariations.length > 0) ? (
         <CollapsibleSection
           title="Variants & Close Relatives"
@@ -1122,13 +1076,13 @@ export default function WikiStyleResultPanel({
         >
           <div className="space-y-4">
             {/* Related Strains */}
-            {result.relatedStrains && result.relatedStrains.length > 0 && (
+            {viewModel.relatedStrains && viewModel.relatedStrains.length > 0 && (
               <div>
                 <h4 className="text-base font-semibold text-white/90 mb-2">
                   Closely Related Strains
                 </h4>
                 <div className="space-y-3">
-                  {result.relatedStrains.map((related, idx) => (
+                  {viewModel.relatedStrains.map((related, idx) => (
                     <div key={idx} className="p-3 rounded-lg border border-white/10 bg-white/5">
                       <div className="flex items-start justify-between mb-1">
                         <p className="font-semibold text-white">{related.name}</p>
@@ -1256,7 +1210,7 @@ export default function WikiStyleResultPanel({
       >
         <div className="space-y-4">
           {/* Confidence Tier */}
-          {result.confidenceTier && (
+          {viewModel.confidenceTier && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Confidence Assessment
@@ -1265,23 +1219,23 @@ export default function WikiStyleResultPanel({
                 <div className="flex items-center gap-2 mb-1">
                   <span
                     className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                      result.confidenceTier.tier === "high"
+                      viewModel.confidenceTier.tier === "high"
                         ? "bg-green-500/20 text-green-300"
-                    : result.confidenceTier.tier === "medium"
+                    : viewModel.confidenceTier.tier === "medium"
                     ? "bg-yellow-500/20 text-yellow-300"
                     : "bg-orange-500/20 text-orange-300"
                     }`}
                   >
-                    {result.confidenceTier.label}
+                    {viewModel.confidenceTier.label}
                   </span>
                   <span className="text-sm text-white/60">
-                    {result.confidenceRange
-                      ? `${result.confidenceRange.min}–${result.confidenceRange.max}%`
-                      : `${result.confidence}%`}
+                    {viewModel.confidenceRange
+                      ? `${viewModel.confidenceRange.min}–${viewModel.confidenceRange.max}%`
+                      : `${viewModel.confidence}%`}
                   </span>
                 </div>
                 <p className="text-sm text-white/70">
-                  {result.confidenceTier.description}
+                  {viewModel.confidenceTier.description}
                 </p>
               </div>
             </div>
@@ -1297,13 +1251,13 @@ export default function WikiStyleResultPanel({
                 {imageCount >= 2 && (
                   <li>Multiple images ({imageCount}) provided cross-validation</li>
                 )}
-                {result.multiImageInfo?.improvementExplanation && (
-                  <li>{result.multiImageInfo.improvementExplanation}</li>
+                {viewModel.multiImageInfo?.improvementExplanation && (
+                  <li>{viewModel.multiImageInfo.improvementExplanation}</li>
                 )}
-                {result.nameResolution?.matchType === "clear_winner" && (
+                {viewModel.nameResolution?.matchType === "clear_winner" && (
                   <li>Strong consensus across all analyzed images</li>
                 )}
-                {result.confidenceTier?.tier === "high" && (
+                {viewModel.confidenceTier?.tier === "high" && (
                   <li>High visual trait alignment with known cultivar characteristics</li>
                 )}
               </ul>
@@ -1319,10 +1273,10 @@ export default function WikiStyleResultPanel({
               {imageCount === 1 && (
                 <li>Single image analysis limits perspective and cross-validation</li>
               )}
-              {result.confidenceTier?.tier === "low" && (
+              {viewModel.confidenceTier?.tier === "low" && (
                 <li>Visual traits showed significant variation or ambiguity</li>
               )}
-              {result.nameResolution?.matchType === "family_level" && (
+              {viewModel.nameResolution?.matchType === "family_level" && (
                 <li>Specific cultivar identification uncertain; family-level match provided</li>
               )}
               <li>Phenotype variation within strains can create visual ambiguity</li>
@@ -1407,12 +1361,12 @@ export default function WikiStyleResultPanel({
             )}
 
           {/* Sources */}
-          {result.trustLayer?.sourcesUsed &&
-            result.trustLayer.sourcesUsed.length > 0 && (
+          {viewModel.trustLayer?.sourcesUsed &&
+            viewModel.trustLayer.sourcesUsed.length > 0 && (
               <div className="pt-4">
                 <p className="text-xs text-white/60">
                   <strong>Sources:</strong>{" "}
-                  {(result.trustLayer?.sourcesUsed ?? []).join(", ")}
+                  {(viewModel.trustLayer?.sourcesUsed ?? []).join(", ")}
                 </p>
               </div>
             )}
