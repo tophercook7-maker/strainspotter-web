@@ -28,13 +28,12 @@ export default function ResultPanel({ result, imageCount }: ResultPanelProps) {
   }
   
   // Phase 15.5.6 — Get ratio from result
-  const ratio = result.dominance 
-    ? { 
-        indica: result.dominance.indica ?? 0, 
-        sativa: result.dominance.sativa ?? 0, 
-        hybrid: result.dominance.hybrid ?? (100 - ((result.dominance.indica ?? 0) + (result.dominance.sativa ?? 0)))
-      }
-    : deriveRatio(result.genetics?.dominance);
+  const ratio = result.dominance ?? {
+    indica: 0,
+    sativa: 0,
+    hybrid: 0,
+    classification: "Hybrid",
+  };
   
   return (
     <section className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 space-y-6 max-h-[80vh] overflow-y-auto">

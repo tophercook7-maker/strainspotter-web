@@ -248,7 +248,8 @@ export interface ScannerViewModel {
   dominance?: {
     indica: number;
     sativa: number;
-    hybrid?: number; // Phase 8.6.5 — Hybrid percentage
+    hybrid: number; // Phase 8.6.5 — Hybrid percentage
+    classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid"; // Classification field
     label: string; // "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid"
     type?: "Indica" | "Sativa" | "Hybrid"; // Phase 8.2.4 — Type field
     confidence?: "Low" | "Medium" | "High" | "Very High" | number; // Phase 8.0.4 — Confidence tier, Phase 8.6.5 — Numeric confidence

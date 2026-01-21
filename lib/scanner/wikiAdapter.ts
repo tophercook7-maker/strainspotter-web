@@ -18,7 +18,13 @@ export function wikiToViewModel(
   aiReasoning?: AIReasoningResult,
   deepAnalysis?: DeepAnalysisSections,
   trustLayer?: TrustLayer,
-  extendedProfile?: ExtendedStrainProfile
+  extendedProfile?: ExtendedStrainProfile,
+  dominance?: {
+    indica: number;
+    sativa: number;
+    hybrid: number;
+    classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid";
+  }
 ): ScannerViewModel {
   const safeLineage = Array.isArray(wiki.genetics.lineage) ? wiki.genetics.lineage : [];
   const safeEffects = Array.isArray(wiki.experience.effects) ? wiki.experience.effects : [];
@@ -233,6 +239,17 @@ export function wikiToViewModel(
     // Phase 2.9 Part P Step 4 — Free Tier Guarantee (full profile, no truncation)
     // Phase 3.3 Part A — Ensure all required sections present
     extendedProfile,
+    
+    // Map dominance from consensus result
+    dominance: dominance
+      ? {
+          indica: dominance.indica,
+          sativa: dominance.sativa,
+          hybrid: dominance.hybrid,
+          classification: dominance.classification,
+          label: dominance.classification, // Derive label from classification
+        }
+      : undefined,
   };
 
   // Phase 3.3 Part A — Verify free tier depth requirements
