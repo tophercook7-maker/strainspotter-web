@@ -20,6 +20,14 @@ export default function ScannerPage() {
   const [images, setImages] = useState<File[]>([]);
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
+  const [analysis, setAnalysis] = useState<{
+    dominance?: {
+      indica: number;
+      sativa: number;
+      hybrid: number;
+      classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid";
+    };
+  } | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [singleImageConfirmed, setSingleImageConfirmed] = useState(false); // Phase 4.0 Part A — Single-image confirmation
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
@@ -121,6 +129,26 @@ export default function ScannerPage() {
       
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
+      
+      // Extract dominance from analysis layer (not ViewModel)
+      // TODO: This should come from scanResult.analysis, not viewModel
+      // For now, extract from viewModel.dominance if it exists (temporary until architecture is fixed)
+      const dominanceData = (scanResult.result as any).dominance;
+      if (dominanceData) {
+        setAnalysis({
+          dominance: {
+            indica: dominanceData.indica ?? 0,
+            sativa: dominanceData.sativa ?? 0,
+            hybrid: dominanceData.hybrid ?? (100 - ((dominanceData.indica ?? 0) + (dominanceData.sativa ?? 0))),
+            classification: dominanceData.label === "Indica-dominant" ? "Indica-dominant" 
+              : dominanceData.label === "Sativa-dominant" ? "Sativa-dominant" 
+              : "Hybrid" as const,
+          },
+        });
+      } else {
+        setAnalysis(null);
+      }
+      
       console.log("STEP 5: STATE UPDATED");
     } catch (error) {
       console.error("ERROR:", error);
@@ -289,12 +317,8 @@ export default function ScannerPage() {
         {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
         <section className="space-y-6">
-          {result && result.wikiReport && (
-            <WikiReportPanel result={result} imageCount={images.length} />
-          )}
-          {result && !result.wikiReport && (
-            <WikiStyleResultPanel result={result} imageCount={images.length} />
-          )}
+          {result && <ResultPanel result={result} />}
+          {analysis && <WikiReportPanel analysis={analysis} />}
         </section>
         </div>
       </main>

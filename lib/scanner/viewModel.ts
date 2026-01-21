@@ -241,20 +241,6 @@ export interface ScannerViewModel {
     ratioLabel: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid";
   };
   
-  // Phase 6.0.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with dominance
-  // Phase 8.0.4 — Enhanced with confidence
-  // Phase 8.2.4 — Enhanced with type field
-  // Phase 8.6.5 — Enhanced with hybrid field and numeric confidence
-  dominance?: {
-    indica: number;
-    sativa: number;
-    hybrid: number; // Phase 8.6.5 — Hybrid percentage
-    classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid"; // Classification field
-    label?: string; // "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid" (optional for backward compat)
-    type?: "Indica" | "Sativa" | "Hybrid"; // Phase 8.2.4 — Type field
-    confidence?: "Low" | "Medium" | "High" | "Very High" | number; // Phase 8.0.4 — Confidence tier, Phase 8.6.5 — Numeric confidence
-  };
-  
   // Additional fields for simplified view model access
   highlights?: string[];
   geneticsSummary?: string;
