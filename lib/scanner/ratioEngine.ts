@@ -1395,10 +1395,25 @@ export function resolveStrainRatio(
   // 4. TERPENE LIKELIHOOD (10%) - Myrcene → Indica lean, Limonene/Terpinolene → Sativa lean
   
   // Phase 5.8.2 — SCORING MODEL: Produce three scores (indicaScore, sativaScore, hybridScore)
+  // ENSURE ORIGINAL SCORES EXIST
+  const initialScores = {
+    indica: baseIndica,
+    sativa: baseSativa,
+    hybrid: 100 - baseIndica - baseSativa,
+  };
+  const indicaScore: number = initialScores.indica;
+  const sativaScore: number = initialScores.sativa;
+  const hybridScore: number = initialScores.hybrid;
+  
   let rawIndicaScore: number = 0;
   let rawSativaScore: number = 0;
   let rawHybridScore: number = 0;
   const rawRatios: Array<{ source: string; indica: number; sativa: number; hybrid: number; weight: number }> = [];
+  
+  // Declare mutable score variables before use
+  let finalIndicaScore: number = 0;
+  let finalSativaScore: number = 0;
+  let finalHybridScore: number = 0;
 
   // Phase 5.8.1 — RATIO SOURCES: Compute from 4 weighted signals
   // 1. DATABASE GENETICS (40%)
@@ -1467,9 +1482,9 @@ export function resolveStrainRatio(
   
   // Phase 5.8.2 — Normalize to 100%
   const totalScore = rawIndicaScore + rawSativaScore + rawHybridScore;
-  let finalIndicaScore = (rawIndicaScore / totalScore) * 100;
-  let finalSativaScore = (rawSativaScore / totalScore) * 100;
-  let finalHybridScore = (rawHybridScore / totalScore) * 100;
+  finalIndicaScore = (rawIndicaScore / totalScore) * 100;
+  finalSativaScore = (rawSativaScore / totalScore) * 100;
+  finalHybridScore = (rawHybridScore / totalScore) * 100;
   
   // Phase 5.8.3 — EDGE CASES: If database confidence < 70%, cap any category at 85%
   const databaseConfidence = databaseBaseline?.source === "database_explicit" ? 100 
@@ -1506,7 +1521,7 @@ export function resolveStrainRatio(
   // Round to integers
   let finalIndicaPercent = Math.round(finalIndicaScore);
   let finalSativaPercent = Math.round(finalSativaScore);
-  const finalHybridPercent = Math.round(finalHybridScore);
+  let finalHybridPercent = Math.round(finalHybridScore);
   
   // Ensure sum = 100
   const sum = finalIndicaPercent + finalSativaPercent + finalHybridPercent;
@@ -1561,11 +1576,11 @@ export function resolveStrainRatio(
   
   // Phase 5.0.7.2 — SCORING MODEL: Calculate indicaScore and sativaScore separately
   // These are the final scores used for classification
-  const finalIndicaScore = finalIndicaPercent;
-  const finalSativaScore = finalSativaPercent;
+  const classificationIndicaScore = finalIndicaPercent;
+  const classificationSativaScore = finalSativaPercent;
   
   // Phase 5.0.7.2 — Log scores
-  console.log("Phase 5.0.7.2 — SCORING MODEL: indicaScore =", finalIndicaScore.toFixed(1), ", sativaScore =", finalSativaScore.toFixed(1));
+  console.log("Phase 5.0.7.2 — SCORING MODEL: indicaScore =", classificationIndicaScore.toFixed(1), ", sativaScore =", classificationSativaScore.toFixed(1));
   
   // Phase 5.6.3 — CONFIDENCE GUARDS: Never claim 100/0 unless landrace
   // Check if strain is a landrace (pure indica or sativa)
@@ -2448,6 +2463,12 @@ export function resolveStrainRatio(
     (result as any).hasContradiction = true;
     explanation.push("Contradictory ratios detected across images (spread >15%)");
   }
+  
+  // RETURN THE MUTATED VALUES
+  (result as any).indica = finalIndicaScore;
+  (result as any).sativa = finalSativaScore;
+  (result as any).hybrid = finalHybridScore;
+  (result as any).confidence = databaseConfidence;
   
   return result;
 }
