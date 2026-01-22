@@ -66,6 +66,8 @@ import { inferImageRole } from "./imageRoleInference";
 import { inferImageAngleFromSeed } from "./imageAngleHeuristics";
 // Phase 4.0.3 — Duplicate / Near-Duplicate Image Detection
 import { imageFingerprint, similarityScore } from "./imageSimilarity";
+// Phase 4.0.4 — Angle & Perspective Heuristics
+import { classifyAngle, type ImageAngle } from "./angleClassifier";
 // Phase 4.0.3 — Near-duplicate image detection
 import { tagDuplicateImages } from "./imageDistinctiveness";
 // Phase 4.1 — Guaranteed strain name resolver
@@ -175,6 +177,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   let filteredImageSeeds: ImageSeed[] = input.imageSeeds;
   let filteredImageFiles: File[] | undefined = imageFiles;
   let filteredImageCount: number = input.imageCount;
+  let filteredBase64Data: string[] = []; // Phase 4.0.4 — Store base64 for angle classification
 
   if (imageFiles && imageFiles.length > 1) {
     // Convert files to base64 for fingerprinting
@@ -217,11 +220,28 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Filter to keep only unique images
     filteredImageSeeds = keptIndices.map(i => input.imageSeeds[i]);
     filteredImageFiles = keptIndices.map(i => imageFiles[i]);
+    filteredBase64Data = keptIndices.map(i => base64Data[i]); // Phase 4.0.4 — Store filtered base64
     filteredImageCount = keptIndices.length;
 
     if (keptIndices.length < input.imageCount) {
       console.log(`Phase 4.0.3 — Removed ${input.imageCount - keptIndices.length} duplicate/near-duplicate images`);
     }
+  } else if (imageFiles && imageFiles.length === 1) {
+    // Phase 4.0.4 — Convert single image to base64 for angle classification
+    filteredBase64Data = await Promise.all(
+      imageFiles.map(async (file) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64Data = result.includes(',') ? result.split(',')[1] : result;
+            resolve(base64Data);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      })
+    );
   }
 
   // Update input to use filtered images
@@ -815,6 +835,26 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   if (filteredInput.imageSeeds.length === 1) {
     console.warn("Single unique image detected — confidence capped");
     consensusConfidence = Math.min(consensusConfidence, 0.82);
+  }
+  
+  // Phase 4.0.4 — Enforce angle diversity (soft)
+  if (filteredBase64Data.length > 0) {
+    const angleMap = new Map<ImageAngle, string[]>();
+    
+    filteredBase64Data.forEach((base64, i) => {
+      const angle = classifyAngle(base64);
+      if (!angleMap.has(angle)) {
+        angleMap.set(angle, []);
+      }
+      angleMap.get(angle)!.push(filteredInput.imageSeeds[i].name);
+    });
+    
+    const distinctAngles = Array.from(angleMap.keys()).filter(a => a !== "unknown");
+    
+    if (distinctAngles.length < 2) {
+      console.warn("Low angle diversity — confidence capped");
+      consensusConfidence = Math.min(consensusConfidence, 0.85);
+    }
   }
   
   // Convert back to 0-100 range and update nameFirstResult

@@ -369,6 +369,11 @@ export default function ScannerPage() {
                 </div>
               )}
               
+              {/* Phase 4.0.4 — Angle guidance UI */}
+              <div className="text-xs text-white/60 mt-2">
+                Best results: include at least two angles (top + side or macro).
+              </div>
+              
               {/* Phase 4.0.3 — non-blocking UX guidance */}
               {angleHints.length > 0 && (
                 <div className="text-xs text-white/60 mt-2">
