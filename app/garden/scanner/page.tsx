@@ -5,6 +5,7 @@ import { scanImages } from "@/lib/scanner/runMultiScan";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
 import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
+import { assessImageDiversity } from "@/lib/scanner/imageDiversity";
 
 type ScanTier = "basic" | "pro" | "expert";
 import ResultPanel from "./ResultPanel";
@@ -23,6 +24,10 @@ export default function ScannerPage() {
   const [analysis, setAnalysis] = useState<FullScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [singleImageConfirmed, setSingleImageConfirmed] = useState(false); // Phase 4.0 Part A — Single-image confirmation
+  const [diversityWarning, setDiversityWarning] = useState(false); // Phase 4.0.2 — Track if images are similar
+  const [angleHints, setAngleHints] = useState<string[]>([]); // Phase 4.0.3 — Track angle diversity hints
+  const [diversityHint, setDiversityHint] = useState<string | null>(null); // Phase 4.0.5 — Diversity hint from scan result
+  const [scanResult, setScanResult] = useState<import("@/lib/scanner/types").ScanResult | null>(null); // Phase 4.0.8 — Store full scan result for partial status handling
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
 
   // NEVER clear result on re-render
@@ -30,6 +35,10 @@ export default function ScannerPage() {
   useEffect(() => {
     setResult(null);
     setSynthesis(null);
+    setDiversityWarning(false); // Phase 4.0.2 — Reset diversity warning when images change
+    setAngleHints([]); // Phase 4.0.3 — Reset angle hints when images change
+    setDiversityHint(null); // Phase 4.0.5 — Reset diversity hint when images change
+    setScanResult(null); // Phase 4.0.8 — Reset scan result when images change
   }, [images]);
 
   // Phase 4.0 Part A — Multi-image validation
@@ -123,6 +132,51 @@ export default function ScannerPage() {
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
       
+      // Phase 4.0.5 — Set diversity hint from scan result
+      setDiversityHint(scanResult.diversityNote || null);
+      
+      // Phase 4.0.2 — Check for diversity warning (images are similar)
+      // Compute diversity from image files to detect similarity
+      if (images.length >= 2) {
+        const imageHashes = images.map(img => 
+          `${img.name}-${img.size}-${img.lastModified}`
+        );
+        const diversity = assessImageDiversity(imageHashes);
+        // Show warning if overall similarity score is high (>= 0.85) or any penalty < 1
+        const hasDiversityIssue = diversity.overallScore >= 0.85 || 
+          Object.values(diversity.penalties).some(penalty => penalty < 1);
+        setDiversityWarning(hasDiversityIssue);
+      } else {
+        setDiversityWarning(false);
+      }
+      
+      // Phase 4.0.3 — Check angle diversity and provide hints
+      // Show hint when we have images but may be missing angle diversity
+      const angleHintsList: string[] = [];
+      if (images.length > 0) {
+        // Check if we have angle information in the scan result
+        const imageResults = (scanResult as any).imageResults || [];
+        if (imageResults.length > 0) {
+          const inferredAngles = imageResults
+            .map((r: any) => r.inferredAngle)
+            .filter((a: any) => a && a !== "unknown");
+          
+          const hasMacroBud = inferredAngles.includes("macro-bud");
+          const hasWiderView = inferredAngles.some((a: string) => 
+            a === "side-profile" || a === "top-canopy"
+          );
+          
+          // Show hint if missing either macro-bud or wider view
+          if (!hasMacroBud || !hasWiderView) {
+            angleHintsList.push("include a close-up bud photo and one wider plant view");
+          }
+        } else if (images.length === 1) {
+          // Proactive hint for single image
+          angleHintsList.push("include a close-up bud photo and one wider plant view");
+        }
+      }
+      setAngleHints(angleHintsList);
+      
       // Create FullScanResult with analysis layer (dominance from analysis, not ViewModel)
       const dominanceData = (scanResult.result as any).dominance;
       if (dominanceData) {
@@ -138,19 +192,41 @@ export default function ScannerPage() {
                 : "Hybrid" as const,
             },
           },
+          // Phase 4.0.5 — Pass diversity note from scan result
+          diversityNote: scanResult.diversityNote,
+          // Phase 4.0.6 — Pass scan warning from scan result
+          scanWarning: scanResult.scanWarning,
+          // Phase 4.1.7 — Pass scan note from scan result
+          scanNote: scanResult.scanNote,
+          // Phase 4.2.0 — Pass same-plant note from scan result
+          samePlantNote: scanResult.samePlantNote,
+          // Phase 4.2.6 — Pass scan meta from scan result
+          meta: scanResult.meta,
         });
       } else {
         // Still create FullScanResult even without dominance
         setAnalysis({
           result: scanResult.result,
+          // Phase 4.0.5 — Pass diversity note from scan result
+          diversityNote: scanResult.diversityNote,
+          // Phase 4.0.6 — Pass scan warning from scan result
+          scanWarning: scanResult.scanWarning,
+          // Phase 4.2.6 — Pass scan meta from scan result
+          meta: scanResult.meta,
         });
       }
       
       console.log("STEP 5: STATE UPDATED");
-    } catch (error) {
-      console.error("ERROR:", error);
-      alert("Analysis failed. Please try again with different images.");
-    } finally {
+    } catch (e) {
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Analysis failed due to image similarity.";
+
+      alert(
+        message +
+          "\n\nTip: Take photos from different angles, zoom levels, or lighting."
+      );
       setIsScanning(false);
       console.log("HANDLER COMPLETE");
     }
@@ -199,16 +275,47 @@ export default function ScannerPage() {
               <p className="text-xs text-white/50">
                 Add 1-3 photos — different angles help accuracy
               </p>
+              <p className="text-xs text-white/60 mt-2">
+                Tip: Use photos of the same plant taken from different angles.
+                Mixing different plants may reduce confidence.
+              </p>
+              
+              {/* Phase 4.0.5 — soft guidance below image uploader */}
+              {diversityHint && (
+                <div className="mt-2 text-xs text-yellow-400">
+                  {diversityHint}
+                </div>
+              )}
+              
+              {/* Phase 4.0.2 — UX hint when images are similar (non-blocking) */}
+              {diversityWarning && (
+                <div className="text-xs text-yellow-400 mt-2">
+                  Images appear similar. Results weighted accordingly.  
+                  For higher confidence, use different angles or zoom levels.
+                </div>
+              )}
+              
+              {/* Phase 4.0.3 — non-blocking UX guidance */}
+              {angleHints.length > 0 && (
+                <div className="text-xs text-white/60 mt-2">
+                  Tip for higher accuracy: include a close-up bud photo and one wider plant view.
+                </div>
+              )}
 
               {/* Phase 4.0 Part A — IMAGE PREVIEWS with Labels */}
               {images.length > 0 && (() => {
                 const imageLabels = assignUserImageLabels(images.length);
+                // Phase 4.0.2 — Extract role information from scan result if available
+                // Note: Role information would need to be stored in ViewModel or scanResult
+                // For now, we'll show the UI structure ready for role data
+                const imageRoles: (string | undefined)[] = []; // TODO: Get from scan result when available
                 return (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
                       {images.map((img, idx) => {
                         const url = URL.createObjectURL(img);
                         const label = imageLabels.get(idx) || "Optional";
+                        const role = imageRoles[idx] as "macro" | "structure" | "canopy" | "unknown" | undefined;
                         return (
                           <div
                             key={idx}
@@ -220,6 +327,12 @@ export default function ScannerPage() {
                               alt={`scan-${idx + 1}`}
                               className="w-full h-full object-contain max-h-64 rounded-xl"
                             />
+                            {/* Phase 4.0.2 — subtle role hints (no user burden) */}
+                            {role && role !== "unknown" && (
+                              <span className="absolute bottom-1 right-1 text-xs bg-black/60 px-2 py-0.5 rounded">
+                                {role}
+                              </span>
+                            )}
                             {/* Phase 15.5.3 — Image label and controls */}
                             <div className="mt-2 flex items-center justify-between">
                               <div className="flex items-center gap-2">
@@ -314,6 +427,13 @@ export default function ScannerPage() {
         {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
         <section className="space-y-6">
+          {/* Phase 4.0.8 — UI handling (no failure modal) */}
+          {scanResult?.status === "partial" && (
+            <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">
+              <strong>Analysis limited:</strong> {scanResult.guard.reason}
+            </div>
+          )}
+          
           {result && <ResultPanel result={result} />}
           {analysis && <WikiReportPanel analysis={analysis.analysis} />}
           {analysis && <WikiStyleResultPanel result={analysis} />}

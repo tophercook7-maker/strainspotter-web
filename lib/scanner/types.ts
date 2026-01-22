@@ -78,6 +78,12 @@ export interface WikiResult {
   reasoning?: {
     whyThisMatch: string
     conflictingSignals?: string[]
+    ratio?: {
+      indica?: number
+      sativa?: number
+      hybrid?: number
+      classification?: string
+    }
   }
 
   disclaimer: string
@@ -194,7 +200,66 @@ export interface FullScanResult {
       classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid";
     };
   };
+  diversityNote?: string; // Phase 4.0.4 — Diversity-related note for transparent explanation
+  scanWarning?: string | null; // Phase 4.0.6 — Warning when similarity limits confidence
+  scanNote?: string | null; // Phase 4.1.7 — Non-blocking UI message for low distinctness
+  samePlantNote?: string | null; // Phase 4.2.0 — User-facing note when same-plant detected
+  meta?: ScanMeta; // Phase 4.2.6 — Scan metadata (confidence cap, distinctiveness, guidance hints)
+}
+
+// Phase 4.3.1 — Name Confidence Stabilization
+export interface NameFirstDisplay {
+  primaryStrainName: string;
+  nameStabilityScore?: number;
+  stabilityExplanation?: string[];
 }
 
 // Re-export ScannerViewModel from the canonical source
 export type { ScannerViewModel } from "./viewModel";
+
+// Phase 4.0.8 — extend ScanResult
+export type ScanResult =
+  | {
+      status: "success"
+      consensus: import("./consensusEngine").ConsensusResult
+      confidence: number
+      result: import("./viewModel").ScannerViewModel // Backward compatibility
+      synthesis: WikiSynthesis // Backward compatibility
+      diversityNote?: string // Phase 4.0.5 — Backward compatibility
+      scanWarning?: string | null // Phase 4.0.6 — Backward compatibility
+      scanNote?: string | null // Phase 4.1.7 — Non-blocking UI message for low distinctness
+      samePlantNote?: string | null // Phase 4.2.0 — User-facing note when same-plant detected
+      meta?: ScanMeta // Phase 4.2.6 — Scan metadata
+    }
+  | {
+      status: "partial"
+      guard: {
+        status: "low-diversity" | "low-confidence"
+        reason: string
+      }
+      consensus: import("./consensusEngine").ConsensusResult
+      confidence: number
+      result: import("./viewModel").ScannerViewModel // Backward compatibility
+      synthesis: WikiSynthesis // Backward compatibility
+      diversityNote?: string // Phase 4.0.5 — Backward compatibility
+      scanWarning?: string | null // Phase 4.0.6 — Backward compatibility
+      scanNote?: string | null // Phase 4.1.7 — Non-blocking UI message for low distinctness
+      samePlantNote?: string | null // Phase 4.2.0 — User-facing note when same-plant detected
+      meta?: ScanMeta // Phase 4.2.6 — Scan metadata
+    }
+
+// Phase 4.0.2 — extend image result metadata
+// Phase 4.0.3 — extend ImageScanResult
+export type ImageScanResult = {
+  confidence: number
+  imageHash: string
+  diversityPenalty?: number
+  inferredAngle?: "macro-bud" | "side-profile" | "top-canopy" | "unknown"
+}
+
+// Phase 4.2.6 — extend ScanMeta
+export interface ScanMeta {
+  confidenceCap: number
+  visualDistinctivenessScore?: number
+  guidanceHints?: string[]
+}

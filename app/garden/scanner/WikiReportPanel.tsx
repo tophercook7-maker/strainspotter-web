@@ -92,6 +92,18 @@ export default function WikiReportPanel({
           </div>
         </div>
       )}
+      
+      {/* Analysis Notes */}
+      {result?.notes && (
+        <div className="mt-3 rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-3 text-sm">
+          <div className="font-semibold mb-1">Analysis Notes</div>
+          <ul className="list-disc ml-4 space-y-1">
+            {result.notes.map((n: string, i: number) => (
+              <li key={i}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

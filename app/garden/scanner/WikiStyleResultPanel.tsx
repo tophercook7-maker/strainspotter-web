@@ -71,10 +71,7 @@ export default function WikiStyleResultPanel({
           {/* Phase 15.5.5 — Large Strain Name */}
           <div className="mb-4">
             <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              {viewModel.nameFirstDisplay?.primaryStrainName ||
-                viewModel.name ||
-                viewModel.title ||
-                "Unknown Cultivar"}
+              {viewModel.nameFirstDisplay?.primaryStrainName || "Unknown Cultivar"}
             </div>
             
             {/* Phase 15.5.5 — Confidence badge */}
@@ -103,6 +100,50 @@ export default function WikiStyleResultPanel({
                 </span>
               )}
             </div>
+            
+            {/* Phase 4.3.1 — render name stability */}
+            {viewModel.nameFirstDisplay?.nameStabilityScore && (
+              <div className="mt-2 text-sm text-white/70">
+                <span className="font-semibold">Name confidence:</span>{" "}
+                {viewModel.nameFirstDisplay.nameStabilityScore}%
+              </div>
+            )}
+            
+            {/* Phase 4.0.4 — transparent explanation (no scary errors) */}
+            {(result.diversityNote || (viewModel.notes && viewModel.notes.some(n => 
+              n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
+            ))) && (
+              <div className="text-xs text-yellow-400 mt-2">
+                {result.diversityNote || viewModel.notes?.find(n => 
+                  n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
+                )}
+              </div>
+            )}
+            
+            {/* Phase 4.0.6 — non-blocking scan warning display */}
+            {result.scanWarning && (
+              <div className="mt-3 rounded-lg border border-yellow-400/40 bg-yellow-400/10 p-3 text-xs text-yellow-300">
+                {result.scanWarning}
+              </div>
+            )}
+
+            {/* Phase 4.2.6 — render guidance hints (collapsed, subtle) */}
+            {result.meta?.guidanceHints?.length ? (
+              <div className="mt-4 text-xs text-white/60">
+                <div className="font-semibold mb-1">Improve Scan Accuracy</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {result.meta.guidanceHints.includes("TRY_DIFFERENT_ANGLE") && (
+                    <li>Try a different angle (side vs top view)</li>
+                  )}
+                  {result.meta.guidanceHints.includes("TRY_DIFFERENT_DISTANCE") && (
+                    <li>Try a closer or farther shot</li>
+                  )}
+                  {result.meta.guidanceHints.includes("TRY_DIFFERENT_LIGHTING") && (
+                    <li>Try brighter or more even lighting</li>
+                  )}
+                </ul>
+              </div>
+            ) : null}
           </div>
           
           {/* Phase 5.5.5 — Also Known As */}
@@ -145,45 +186,17 @@ export default function WikiStyleResultPanel({
           {/* ARCHITECTURE: Dominance/ratio rendering removed - this belongs in WikiReportPanel only */}
           {/* WikiStyleResultPanel only uses ViewModel fields (genetics.dominance is allowed) */}
           
-          {/* Phase 4.6 Step 4.6.3 — Legacy ratio display (if nameFirstDisplay.ratio exists) */}
-          {viewModel.nameFirstDisplay?.ratio && (
-            <div className="flex flex-col items-center gap-2 pt-2">
-              {/* Phase 4.6 Step 4.6.3 — Display text (centered, compact) */}
-              <p className="text-sm text-white/90 font-medium">
-                {viewModel.nameFirstDisplay.ratio.displayText}
-              </p>
-
-              {/* Phase 4.6 Step 4.6.4 — EXPLANATION (Optional, Collapsed) */}
-              {viewModel.nameFirstDisplay.ratio.explanation && (
-                <CollapsibleSection
-                  title="How this ratio was determined"
-                  defaultExpanded={false}
-                  icon="📊"
-                >
-                  <div className="space-y-2 pt-2">
-                    <ul className="space-y-2">
-                      {viewModel.nameFirstDisplay.ratio.explanation.fullExplanation.map((bullet, idx) => (
-                        <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
-                          <span className="text-purple-400 mr-2">•</span>
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </CollapsibleSection>
-              )}
-            </div>
-          )}
+          {/* Phase 4.6 Step 4.6.3 — Ratio display removed (belongs in WikiReportPanel via analysis layer) */}
 
                       {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
-                      {viewModel.nameFirstDisplay.terpeneExperience && (
+                      {viewModel.terpeneExperience && (
                         <div className="space-y-4 pt-4 border-t border-white/10">
                           {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
-                          {viewModel.nameFirstDisplay.terpeneExperience.dominantTerpenes.length > 0 && (
+                          {viewModel.terpeneExperience.dominantTerpenes && viewModel.terpeneExperience.dominantTerpenes.length > 0 && (
                             <div className="space-y-2">
                               <h3 className="text-sm font-semibold text-white/90">Dominant Terpenes</h3>
                               <div className="flex flex-wrap gap-2">
-                                {viewModel.nameFirstDisplay.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
+                                {viewModel.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
                                   <span
                                     key={idx}
                                     className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30"
@@ -191,9 +204,9 @@ export default function WikiStyleResultPanel({
                                     {terpene}
                                   </span>
                                 ))}
-                                {viewModel.nameFirstDisplay.terpeneExperience.secondaryTerpenes.length > 0 && (
+                                {viewModel.terpeneExperience.secondaryTerpenes.length > 0 && (
                                   <>
-                                    {viewModel.nameFirstDisplay.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
+                                    {viewModel.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
                                       <span
                                         key={`sec-${idx}`}
                                         className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20"
@@ -215,12 +228,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Body Relaxation</span>
-                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.bodyRelaxation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-purple-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.bodyRelaxation}%` }}
+                                    style={{ width: `${viewModel.terpeneExperience.experience.bodyRelaxation}%` }}
                                   />
                                 </div>
                               </div>
@@ -229,12 +242,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Mental Stimulation</span>
-                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.mentalStimulation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-green-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.mentalStimulation}%` }}
+                                    style={{ width: `${viewModel.terpeneExperience.experience.mentalStimulation}%` }}
                                   />
                                 </div>
                               </div>
@@ -243,12 +256,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Mood Elevation</span>
-                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.moodElevation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.moodElevation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-yellow-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.moodElevation}%` }}
+                                    style={{ width: `${viewModel.terpeneExperience.experience.moodElevation}%` }}
                                   />
                                 </div>
                               </div>
@@ -257,12 +270,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Sedation</span>
-                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.sedation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.sedation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-blue-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.sedation}%` }}
+                                    style={{ width: `${viewModel.terpeneExperience.experience.sedation}%` }}
                                   />
                                 </div>
                               </div>
@@ -271,12 +284,12 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Focus / Clarity</span>
-                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.focusClarity}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.focusClarity}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-cyan-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.focusClarity}%` }}
+                                    style={{ width: `${viewModel.terpeneExperience.experience.focusClarity}%` }}
                                   />
                                 </div>
                               </div>
@@ -285,23 +298,23 @@ export default function WikiStyleResultPanel({
                               <div>
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-xs font-medium text-white/80">Appetite Stimulation</span>
-                                  <span className="text-xs text-white/60">{viewModel.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%</span>
+                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.appetiteStimulation}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                                   <div
                                     className="h-full bg-orange-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.nameFirstDisplay.terpeneExperience.experience.appetiteStimulation}%` }}
+                                    style={{ width: `${viewModel.terpeneExperience.experience.appetiteStimulation}%` }}
                                   />
                                 </div>
                               </div>
                             </div>
 
                             {/* Phase 5.1 Step 5.1.5 — Consensus Notes (if available) */}
-                            {viewModel.nameFirstDisplay.terpeneExperience.consensusNotes && 
-                             viewModel.nameFirstDisplay.terpeneExperience.consensusNotes.length > 0 && (
+                            {viewModel.terpeneExperience.consensusNotes && 
+                             viewModel.terpeneExperience.consensusNotes.length > 0 && (
                               <div className="pt-2 mt-2 border-t border-white/10">
                                 <p className="text-xs text-white/60 italic leading-relaxed">
-                                  {viewModel.nameFirstDisplay.terpeneExperience.consensusNotes.join(" ")}
+                                  {viewModel.terpeneExperience.consensusNotes.join(" ")}
                                 </p>
                               </div>
                             )}
@@ -311,16 +324,16 @@ export default function WikiStyleResultPanel({
                     </div>
 
                       {/* Phase 4.7 Step 4.7.2 — CLOSELY RELATED VARIANTS (if ambiguous, collapsed) */}
-          {viewModel.nameFirstDisplay.closelyRelatedVariants && 
-           viewModel.nameFirstDisplay.closelyRelatedVariants.length > 0 && 
-           viewModel.nameFirstDisplay.isAmbiguous && (
+          {viewModel.closelyRelatedVariants && 
+           viewModel.closelyRelatedVariants.length > 0 && 
+            viewModel.isAmbiguous && (
             <CollapsibleSection
-              title={`Closely Related Variants (${viewModel.nameFirstDisplay.closelyRelatedVariants.length} ${viewModel.nameFirstDisplay.closelyRelatedVariants.length === 1 ? 'variant' : 'variants'})`}
+              title={`Closely Related Variants (${viewModel.closelyRelatedVariants.length} ${viewModel.closelyRelatedVariants.length === 1 ? 'variant' : 'variants'})`}
               defaultExpanded={false}
               icon="🔗"
             >
               <div className="space-y-2 pt-2">
-                {viewModel.nameFirstDisplay.closelyRelatedVariants.map((variant, idx) => (
+                {viewModel.closelyRelatedVariants.map((variant, idx) => (
                   <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
                     <p className="text-sm text-white/90 font-medium mb-1">
                       {variant.name}
@@ -427,7 +440,7 @@ export default function WikiStyleResultPanel({
         <div className="space-y-4 pb-4">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-bold text-white">
-              {viewModel.name || viewModel.title}
+              {viewModel.nameFirstDisplay?.primaryStrainName || "Unknown Cultivar"}
             </h1>
 
           {/* Match type label */}

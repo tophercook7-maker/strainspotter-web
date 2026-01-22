@@ -4,6 +4,8 @@
 
 // Phase 2.9 Part P Step 1 — Extended Strain Profile type
 import type { ExtendedStrainProfile } from "./extendedProfile";
+// Phase 4.3.1 — Name Confidence Stabilization
+import type { NameFirstDisplay } from "./types";
 
 export type { ExtendedStrainProfile };
 
@@ -133,8 +135,8 @@ export interface ScannerViewModel {
   // Phase 4.6 — Indica/Sativa/Hybrid Ratio Engine
   // Phase 5.5 Step 5.5.5 — Enhanced with aliases
   // Phase 5.1.5 — VIEWMODEL UPDATE: ScannerViewModel must include primaryName, confidencePercent, alternateMatches, whyThisNameWon
-  nameFirstDisplay?: {
-    primaryStrainName: string;
+  // Phase 4.3.1 — Extended with NameFirstDisplay interface
+  nameFirstDisplay?: NameFirstDisplay & {
     primaryName: string; // Phase 5.1.5 — Alias for primaryStrainName
     confidencePercent: number;
     confidenceTier: "very_high" | "high" | "medium" | "low";
@@ -152,9 +154,25 @@ export interface ScannerViewModel {
       whatRuledOutOthers: string[]; // Why other candidates didn't win
       varianceNotes: string[]; // Phenotype variance explanation
     };
+    ratio?: {
+      indica: number;
+      sativa: number;
+      hybrid: number;
+      classification?: string;
+    };
+    signals?: Array<{
+      name: string;
+      confidence: number;
+      source: "visual" | "database" | "consensus";
+    }>; // Phase 4.3.4 — Name confidence fusion breakdown
+    terpeneExperience?: any;
+  };
+  
   // Phase 4.6 Step 4.6.2 — Indica/Sativa/Hybrid Ratio (FREE TIER)
   // Phase 5.0 Step 5.0.4 — Enhanced with range display
   // Phase 5.2.5 — VIEWMODEL INTEGRATION: Extend ScannerViewModel with strainType
+  // Phase 4.5.0 — Extended with simplified ratio structure
+  // Phase 4.8.0 — Extended with V48 engine fields
   ratio?: {
     indicaPercent: number; // 0-100
     sativaPercent: number; // 0-100
@@ -166,8 +184,83 @@ export interface ScannerViewModel {
     explanation: {
       summary: string; // Short summary for collapsed header
       fullExplanation: string[]; // Bullets for expanded section
-    };
+    } | string[]; // Phase 4.8.0 — Can be object (legacy) or string array (V48 engine)
+    // Phase 4.5.0 — Simplified ratio structure
+    indica?: number;
+    sativa?: number;
+    hybrid?: number;
+    label?: string;
+    confidence?: number;
+    // Phase 4.8.0 — V48 engine fields
+    classification?: string;
   };
+  
+  // Phase 4.3.2 — Ratio Stabilization (stabilized across multiple images)
+  stabilizedRatio?: {
+    indica: number;
+    sativa: number;
+    hybrid: number;
+    confidence: number;
+    explanation: string[];
+  };
+  
+  // Phase 4.3.5 — Indica/Sativa/Hybrid Ratio Normalization
+  dominance?: {
+    indica: number;
+    sativa: number;
+    hybrid: number;
+    classification: "Indica-dominant" | "Sativa-dominant" | "Hybrid";
+  };
+  
+  // Phase 4.3.6 — Confidence Explanation Layer
+  confidenceExplanation?: {
+    score: number;
+    tier: "Very High" | "High" | "Medium" | "Low";
+    explanation: string[];
+  };
+  
+  // Phase 4.4.0 — Name-First Matching Engine
+  nameFirst?: {
+    primaryName: string;
+    confidence: number;
+    alternateNames: string[];
+    reasoning: string[];
+  };
+  
+  // Phase 4.6.0 — Match Strength Meter
+  matchStrength?: {
+    score: number;
+    tier: string;
+    explanation: string[];
+  };
+  
+  // Phase 4.7.0 — Name-First Disambiguation
+  nameDisambiguation?: {
+    primary: {
+      name: string;
+      confidence: number;
+      whyChosen: string[];
+    };
+    alternatives: {
+      name: string;
+      confidence: number;
+      whyNotChosen: string[];
+    }[];
+  };
+  
+  // Phase 4.3.3 — Visual Trait Anchoring (stable traits across multiple images)
+  visualAnchors?: Array<{
+    trait: string;
+    strength: number;
+    sourceImages: number;
+  }>;
+  
+  // Phase 4.3.4 — Name Confidence Fusion (breakdown of name signals)
+  nameFusionBreakdown?: Array<{
+    name: string;
+    confidence: number;
+    source: "visual" | "database" | "consensus";
+  }>;
   
   // Phase 5.2.5 — VIEWMODEL INTEGRATION: strainType field
   strainType?: {
@@ -202,14 +295,15 @@ export interface ScannerViewModel {
   alternateMatchNames?: string[]; // Phase 5.9.5 — Array of alternate match names (string[]) - renamed to avoid conflict
   
   // Phase 8.3.5 — VIEWMODEL LOCK: Extend ScannerViewModel with strainName, nameConfidence, alternateMatches
-  nameConfidence?: number; // Phase 8.3.5 — Name confidence (separate from matchConfidence for clarity)
-  
-  // Phase 8.5.5 — VIEWMODEL UPDATE: Extend ScannerViewModel with primaryMatch
-  primaryMatch?: {
-    name: string;
+  // Phase 4.9.0 — Name-First Match Confidence Engine
+  nameConfidence?: {
+    primaryName: string;
     confidence: number;
+    alternateNames: string[];
+    explanation: string[];
   };
-  // Note: alternateMatches is in nameFirstDisplay, removed duplicate
+  
+  // Phase 8.5.5 — primaryMatch is already defined above (line 31), removed duplicate
   
   // Phase 8.1.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with identity
   identity?: {
@@ -232,6 +326,7 @@ export interface ScannerViewModel {
   highlights?: string[];
   geneticsSummary?: string;
   terpeneSummary?: string;
+  notes?: string[]; // Analysis notes (e.g., from consensus fallback scenarios)
   
   // Phase 7.0.4 — VIEWMODEL EXTENSION: Extend ScannerViewModel with chemistry
   chemistry?: {
@@ -240,67 +335,71 @@ export interface ScannerViewModel {
     thcRange: string;
     cbdPresence: string;
   };
-    // Phase 5.1 — Terpene-Weighted Experience Engine (FREE TIER)
-    terpeneExperience?: {
-      dominantTerpenes: string[]; // Top 3 primary terpenes
-      secondaryTerpenes: string[]; // Next 2 secondary terpenes
-      experience: {
-        bodyRelaxation: number; // 0-100
-        mentalStimulation: number; // 0-100
-        moodElevation: number; // 0-100
-        sedation: number; // 0-100
-        focusClarity: number; // 0-100
-        appetiteStimulation: number; // 0-100
-      };
-      visualBoosts?: Array<{ name: string; boost: number; reasoning: string }>;
-      consensusNotes?: string[];
+  
+  // Phase 5.1 — Terpene-Weighted Experience Engine (FREE TIER)
+  terpeneExperience?: {
+    dominantTerpenes: string[]; // Top 3 primary terpenes
+    secondaryTerpenes: string[]; // Next 2 secondary terpenes
+    experience: {
+      bodyRelaxation: number; // 0-100
+      mentalStimulation: number; // 0-100
+      moodElevation: number; // 0-100
+      sedation: number; // 0-100
+      focusClarity: number; // 0-100
+      appetiteStimulation: number; // 0-100
     };
-    // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE
-    terpeneCannabinoidProfile?: {
-      terpenes: Array<{
-        name: string;
-        likelihood: "High" | "Medium–High" | "Medium" | "Low–Medium" | "Low";
-        confidence: number;
-        reasoning: string[];
-      }>;
-      cannabinoids: Array<{
-        compound: string;
-        range: string;
-        min: number;
-        max: number;
-        isFlagged?: boolean;
-      }>;
-      confidence: "very_high" | "high" | "medium" | "low";
-      confidenceLabel: string;
-      disclaimer: string;
-      explanation: string[];
+    visualBoosts?: Array<{ name: string; boost: number; reasoning: string }>;
+    consensusNotes?: string[];
+  };
+  
+  // Phase 7.2 — TERPENE & CANNABINOID PROFILE ENGINE
+  terpeneCannabinoidProfile?: {
+    terpenes: Array<{
+      name: string;
+      likelihood: "High" | "Medium–High" | "Medium" | "Low–Medium" | "Low";
+      confidence: number;
+      reasoning: string[];
+    }>;
+    cannabinoids: Array<{
+      compound: string;
+      range: string;
+      min: number;
+      max: number;
+      isFlagged?: boolean;
+    }>;
+    confidence: "very_high" | "high" | "medium" | "low";
+    confidenceLabel: string;
+    disclaimer: string;
+    explanation: string[];
+    source: string;
+  };
+  
+  // Phase 7.4 — TERPENE PROFILE CONSENSUS ENGINE
+  terpeneProfileConsensus?: {
+    dominantTerpenes: Array<{
+      name: string;
+      likelihood: "High" | "Medium" | "Medium-Low" | "Low" | "Possible";
+      confidence: number;
+      interpretation: string;
+      reasoning: string[];
+      isTrace?: boolean;
+    }>;
+    traceTerpenes?: Array<{
+      name: string;
+      likelihood: "High" | "Medium" | "Medium-Low" | "Low" | "Possible";
+      confidence: number;
+      interpretation: string;
+      reasoning: string[];
+      isTrace?: boolean;
+    }>;
+    confidence: "very_high" | "high" | "medium" | "low";
+    confidenceLabel: string;
+    explanation: string[];
       source: string;
-    };
-    // Phase 7.4 — TERPENE PROFILE CONSENSUS ENGINE
-    terpeneProfileConsensus?: {
-      dominantTerpenes: Array<{
-        name: string;
-        likelihood: "High" | "Medium" | "Medium-Low" | "Low" | "Possible";
-        confidence: number;
-        interpretation: string;
-        reasoning: string[];
-        isTrace?: boolean;
-      }>;
-      traceTerpenes?: Array<{
-        name: string;
-        likelihood: "High" | "Medium" | "Medium-Low" | "Low" | "Possible";
-        confidence: number;
-        interpretation: string;
-        reasoning: string[];
-        isTrace?: boolean;
-      }>;
-      confidence: "very_high" | "high" | "medium" | "low";
-      confidenceLabel: string;
-      explanation: string[];
-      source: string;
-    };
-    // Phase 7.6 — EFFECT PROFILE & USE-CASE ENGINE
-    effectProfileUseCase?: {
+  };
+  
+  // Phase 7.6 — EFFECT PROFILE & USE-CASE ENGINE
+  effectProfileUseCase?: {
       primaryEffects: Array<{
         name: string;
         category: "primary" | "secondary";
@@ -323,42 +422,43 @@ export interface ScannerViewModel {
       confidence: "very_high" | "high" | "medium" | "low";
       confidenceLabel: string;
       source: string;
-    };
-    // Phase 7.8 — EFFECTS & EXPERIENCE PREDICTION ENGINE
-    effectExperiencePrediction?: {
-      primaryEffects: Array<{
-        name: string;
-        category: "primary" | "secondary";
-        intensity: "high" | "medium" | "low";
-        reasoning: string[];
-      }>;
-      secondaryEffects: Array<{
-        name: string;
-        category: "primary" | "secondary";
-        intensity: "high" | "medium" | "low";
-        reasoning: string[];
-      }>;
-      timingCurve: {
-        onsetSpeed: "Fast" | "Moderate" | "Slow";
-        peakWindow: string;
-        durationRange: string;
-        reasoning: string[];
-      };
-      experienceSummary: string;
-      varianceNotes: string[];
-      confidence: "very_high" | "high" | "medium" | "low";
-      confidenceLabel: string;
-      explanation: string[];
-      source: string;
-    };
-    // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
-    closelyRelatedVariants?: Array<{
-      name: string;
-      canonicalName: string;
-      whyNotPrimary: string;
-    }>; // 2–3 variants if ambiguous (collapsed)
-    isAmbiguous?: boolean; // If multiple variants could be correct
   };
+  
+  // Phase 7.8 — EFFECTS & EXPERIENCE PREDICTION ENGINE
+  effectExperiencePrediction?: {
+    primaryEffects: Array<{
+      name: string;
+      category: "primary" | "secondary";
+      intensity: "high" | "medium" | "low";
+      reasoning: string[];
+    }>;
+    secondaryEffects: Array<{
+      name: string;
+      category: "primary" | "secondary";
+      intensity: "high" | "medium" | "low";
+      reasoning: string[];
+    }>;
+    timingCurve: {
+      onsetSpeed: "Fast" | "Moderate" | "Slow";
+      peakWindow: string;
+      durationRange: string;
+      reasoning: string[];
+    };
+    experienceSummary: string;
+    varianceNotes: string[];
+    confidence: "very_high" | "high" | "medium" | "low";
+    confidenceLabel: string;
+    explanation: string[];
+    source: string;
+  };
+  
+  // Phase 4.7 Step 4.7.2 — Closely Related Variants (if ambiguous)
+  closelyRelatedVariants?: Array<{
+    name: string;
+    canonicalName: string;
+    whyNotPrimary: string;
+  }>; // 2–3 variants if ambiguous (collapsed)
+  isAmbiguous?: boolean; // If multiple variants could be correct
   
   // Phase 3.8 Part D — Why This Name (Enhanced)
   nameReasoning?: {
@@ -394,4 +494,10 @@ export interface ScannerViewModel {
   
   // Phase 3.9 Part D — Entourage Effect Explanation
   entourageExplanation?: string;
+  
+  // Phase 4.0.1 — Soft-fail support
+  softFail?: {
+    reason: string;
+    recommendation: string;
+  };
 }

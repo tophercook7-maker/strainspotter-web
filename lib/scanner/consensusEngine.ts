@@ -3,10 +3,12 @@
 
 import type { WikiResult } from "./types";
 import type { FusedFeatures } from "./multiImageFusion";
+import { computeImageSimilarity } from "./duplicateImageDetection";
 import type { StrainMatch } from "./nameFirstMatcher";
 import { matchStrainNameFirst } from "./nameFirstMatcher";
 import { determineStrainName } from "./namingHierarchy";
 import { assignImageWeights, applyQualityWeights, type ImageWeight } from "./imageWeighting";
+import { adjustConsensusWeight } from "./consensusWeights";
 
 export type ImageAngle = "top" | "side" | "macro";
 
@@ -39,6 +41,16 @@ export type ImageResult = {
   uncertaintySignals: string[];
   wikiResult: WikiResult;
   imageObservation?: ImageObservation; // Phase 3.1 Part A — Image type classification
+  imageHash?: string; // Phase 4.0.1 — Hash for diversity checking
+  diversityPenalty?: number; // Phase 4.0.2 — Penalty applied due to similarity with other images
+  embedding?: number[]; // Phase 4.0.4 — Visual embedding for duplicate detection
+  meta?: { // Phase 4.0.3 — Image metadata for angle inference
+    width: number;
+    height: number;
+    focusScore: number;
+    edgeDensity: number;
+  };
+  inferredAngle?: "macro-bud" | "side-profile" | "top-canopy" | "unknown"; // Phase 4.0.3 — Inferred image angle
 };
 
 // Legacy type (keep for backward compat)
@@ -71,6 +83,7 @@ export type ConsensusResult = {
   }>; // Legacy
   lowConfidence: boolean; // Legacy
   agreementLevel: "high" | "medium" | "low"; // Legacy
+  notes?: string[]; // Phase 4.0.4 — Analysis notes (e.g., low diversity warnings)
 };
 
 /**
@@ -147,11 +160,20 @@ export async function analyzePerImage(
 export function buildConsensusResultV3(
   imageResults: ImageResult[],
   fusedFeatures: FusedFeatures,
-  imageCount: number
+  imageCount: number,
+  samePlantLikely: boolean = false
 ): ConsensusResult {
   if (imageResults.length === 0) {
     throw new Error("No image results provided for consensus");
   }
+
+  // Phase 4.0.3 — Angle-aware confidence weighting
+  const angleWeights: Record<string, number> = {
+    "macro-bud": 1.15,
+    "side-profile": 1.0,
+    "top-canopy": 0.9,
+    "unknown": 0.85,
+  };
 
   // Phase 3.7 Part C — Image Weighting Logic
   const imageWeights = assignImageWeights(imageCount);
@@ -178,7 +200,12 @@ export function buildConsensusResultV3(
 
   imageResults.forEach((result, idx) => {
     const imageType = result.imageObservation?.imageType || "unknown";
-    result.candidateStrains.forEach(candidate => {
+    // Phase 4.0.2 — Use diversity-adjusted confidence
+    const weightedCandidates = result.candidateStrains.map(c => ({
+      ...c,
+      weightedScore: c.confidence * (result.diversityPenalty ?? 1),
+    }));
+    weightedCandidates.forEach(candidate => {
       const existing = strainAggregates.get(candidate.name) || {
         appearances: 0,
         totalConfidence: 0,
@@ -187,7 +214,7 @@ export function buildConsensusResultV3(
         imageTypes: new Set<string>(), // Phase 3.1 Part D
       };
       existing.appearances++;
-      existing.totalConfidence += candidate.confidence;
+      existing.totalConfidence += candidate.weightedScore;
       candidate.traitsMatched.forEach(trait => existing.traitMatches.add(trait));
       existing.imageIndices.push(idx);
       existing.imageTypes.add(imageType); // Phase 3.1 Part D — Track image type
@@ -210,7 +237,12 @@ export function buildConsensusResultV3(
     // Phase 3.7 Part D — Penalize one-off matches more strongly
     if (data.appearances >= 2) {
       // Phase 3.7 Part D — Stronger boost for cross-image agreement
-      const agreementBonus = (data.appearances - 1) * 15; // +15% per additional agreeing image (increased from 12%)
+      let agreementBonus = (data.appearances - 1) * 15; // +15% per additional agreeing image (increased from 12%)
+      // Phase 4.1.9 — Adjust consensus weight if same-plant detected
+      agreementBonus = adjustConsensusWeight({
+        baseWeight: agreementBonus,
+        samePlantLikely,
+      });
       score += agreementBonus;
       agreementScore = Math.max(agreementScore, Math.round((data.appearances / imageCount) * 100));
     } else {
@@ -264,19 +296,32 @@ export function buildConsensusResultV3(
   // Phase 3.5 Part A — Naming Hierarchy: Always return a result, never fail silently
   // Phase 3.5 Part A — Never return "Unknown" unless truly impossible
   if (!primaryMatch) {
-    const topCandidate = imageResults[0]?.candidateStrains[0];
+    // Phase 4.0.2 — Use diversity-adjusted confidence
+    const topResult = imageResults[0];
+    const topCandidate = topResult?.candidateStrains[0];
     if (topCandidate && topCandidate.name && topCandidate.name !== "Unknown") {
+      const weightedConfidence = topCandidate.confidence * (topResult.diversityPenalty ?? 1);
       primaryMatch = {
         name: topCandidate.name,
-        confidence: Math.min(82, topCandidate.confidence), // Phase 4.0 Part D — 1 image cap at 82%
+        confidence: Math.min(82, weightedConfidence), // Phase 4.0 Part D — 1 image cap at 82%
         reason: "Best match based on visual analysis",
       };
     } else {
       // Phase 3.5 Part A — Use naming hierarchy for fallback (never "Unknown")
+      // Phase 4.0.2 — Use diversity-adjusted confidence
+      // Phase 4.0.3 — Apply angle-aware weighting
+      const weightedCandidates = imageResults.flatMap(r => {
+        const penalty = r.diversityPenalty ?? 1;
+        const angleWeight = angleWeights[r.inferredAngle ?? "unknown"] ?? 1;
+        return r.candidateStrains.map(c => ({
+          name: c.name,
+          confidence: c.confidence * penalty * angleWeight,
+        }));
+      });
       const namingResult = determineStrainName(
         fusedFeatures,
         imageCount,
-        imageResults.flatMap(r => r.candidateStrains.map(c => ({ name: c.name, confidence: c.confidence })))
+        weightedCandidates
       );
       
       primaryMatch = {
@@ -372,25 +417,72 @@ export function buildConsensusResultV3(
       : "Lower agreement due to image variation",
   };
 
+  // Phase 4.0.4 — never hard-fail due to similarity
+  // Calculate diversity score from image embeddings
+  let diversityScore = 1.0; // Default to high diversity
+  if (imageResults.length >= 2) {
+    const embeddings = imageResults
+      .map(r => r.embedding)
+      .filter((e): e is number[] => Array.isArray(e) && e.length > 0);
+    
+    if (embeddings.length >= 2) {
+      // Calculate average similarity (lower = more diverse)
+      let totalSimilarity = 0;
+      let comparisons = 0;
+      for (let i = 0; i < embeddings.length; i++) {
+        for (let j = i + 1; j < embeddings.length; j++) {
+          const sim = computeImageSimilarity(embeddings[i], embeddings[j]);
+          totalSimilarity += sim;
+          comparisons++;
+        }
+      }
+      // Diversity score is inverse of average similarity (1.0 = completely different, 0.0 = identical)
+      diversityScore = comparisons > 0 ? 1.0 - (totalSimilarity / comparisons) : 1.0;
+    } else {
+      // Fallback: use average diversityPenalty as proxy for diversity
+      const avgPenalty = imageResults.reduce((sum, r) => sum + (r.diversityPenalty ?? 1.0), 0) / imageResults.length;
+      diversityScore = avgPenalty; // Lower penalty = lower diversity
+    }
+  }
+
+  // Cap confidence if diversity is low
+  let finalConfidence = primaryMatch.confidence;
+  const notes: string[] = [];
+  
+  if (diversityScore < 0.6) {
+    finalConfidence = Math.min(finalConfidence, 88);
+    notes.push(
+      "Images appear visually similar. Accuracy may improve with varied angles."
+    );
+  }
+
+  // Update primaryMatch with capped confidence
+  const adjustedPrimaryMatch = {
+    ...primaryMatch,
+    confidence: finalConfidence,
+  };
+
   // Determine agreement level
   const agreementLevel: "high" | "medium" | "low" = agreementScore >= 80 ? "high" : agreementScore >= 60 ? "medium" : "low";
-  const lowConfidence = primaryMatch.confidence < 70;
+  const lowConfidence = adjustedPrimaryMatch.confidence < 70;
 
   return {
     // Phase 3.0 Part C — New structure
-    primaryMatch,
+    primaryMatch: adjustedPrimaryMatch,
     alternates,
     agreementScore,
     // Legacy fields
-    strainName: primaryMatch.name,
+    strainName: adjustedPrimaryMatch.name,
     confidenceRange,
-    whyThisMatch: primaryMatch.reason,
+    whyThisMatch: adjustedPrimaryMatch.reason,
     alternateMatches: alternates.map(a => ({
       name: a.name,
       whyNotPrimary: `Confidence: ${a.confidence}% (lower than primary match)`,
     })),
     lowConfidence,
     agreementLevel,
+    // Phase 4.0.4 — Include notes for low diversity
+    ...(notes.length > 0 && { notes }),
   };
 }
 

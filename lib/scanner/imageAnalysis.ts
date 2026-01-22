@@ -153,6 +153,21 @@ export async function analyzeImage(
     uncertaintySignals.push("Visual features show moderate variation");
   }
 
+  // Phase 4.0.1 — Generate visual embedding from features for diversity checking
+  // Phase 4.0.4 — Store embedding for duplicate detection
+  const visualEmbedding: number[] = [
+    weightedConfidence / 100, // Normalize confidence to 0-1
+    traitWeights.budStructure,
+    traitWeights.trichomeDensity,
+    traitWeights.pistilColor,
+    traitWeights.leafShape,
+    imageObservation.confidence / 100, // Normalize observation confidence
+    detectedTraits.budStructure === "high" ? 1 : detectedTraits.budStructure === "low" ? 0 : 0.5,
+    detectedTraits.trichomeDensity === "high" ? 1 : detectedTraits.trichomeDensity === "low" ? 0 : 0.5,
+    wikiResult.identity.confidence / 100, // Normalize wiki confidence
+  ];
+  const imageHash = generateImageHash(visualEmbedding);
+
   return {
     imageIndex,
     candidateStrains,
@@ -160,6 +175,8 @@ export async function analyzeImage(
     uncertaintySignals,
     wikiResult,
     imageObservation, // Phase 3.1 Part A — Include image type observation
+    imageHash, // Phase 4.0.1 — Hash for diversity checking
+    embedding: visualEmbedding, // Phase 4.0.4 — Visual embedding for duplicate detection
   };
 }
 
@@ -203,4 +220,11 @@ function extractPistilColor(description: string): string {
   if (desc.includes("white")) return "white";
   if (desc.includes("pink")) return "pink";
   return "orange"; // Default
+}
+
+/**
+ * Phase 4.0.1 — Generate stable hash from image features for diversity checking
+ */
+export function generateImageHash(features: number[]): string {
+  return features.map(v => Math.round(v * 10)).join("");
 }
