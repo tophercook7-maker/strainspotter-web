@@ -6,6 +6,7 @@ import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
 import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
 import { assessImageDiversity } from "@/lib/scanner/imageDiversity";
+import { inferImageAngleFromBase64 } from "@/lib/scanner/imageAngleHeuristics";
 
 type ScanTier = "basic" | "pro" | "expert";
 import ResultPanel from "./ResultPanel";
@@ -29,6 +30,7 @@ export default function ScannerPage() {
   const [diversityHint, setDiversityHint] = useState<string | null>(null); // Phase 4.0.5 — Diversity hint from scan result
   const [scanResult, setScanResult] = useState<import("@/lib/scanner/types").ScanResult | null>(null); // Phase 4.0.8 — Store full scan result for partial status handling
   const [scanError, setScanError] = useState<{ reason: string } | null>(null); // Phase 4.0.1 — Non-fatal scan warnings
+  const [imagePreviews, setImagePreviews] = useState<Array<{ url: string; base64: string; angleLabel: string }>>([]); // Phase 4.0.2 — Previews with base64 and angles
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
 
   // NEVER clear result on re-render
@@ -41,6 +43,48 @@ export default function ScannerPage() {
     setDiversityHint(null); // Phase 4.0.5 — Reset diversity hint when images change
     setScanResult(null); // Phase 4.0.8 — Reset scan result when images change
     setScanError(null); // Phase 4.0.1 — Reset scan error when images change
+    setImagePreviews([]); // Phase 4.0.2 — Reset previews when images change
+  }, [images]);
+
+  // Phase 4.0.2 — Convert images to previews with base64 and angle labels
+  useEffect(() => {
+    const convertImagesToPreviews = async () => {
+      if (images.length === 0) {
+        setImagePreviews([]);
+        return;
+      }
+
+      const previews = await Promise.all(
+        images.map(async (img) => {
+          const url = URL.createObjectURL(img);
+          // Convert file to base64
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as string;
+              // Remove data URL prefix if present
+              const base64Data = result.includes(',') ? result.split(',')[1] : result;
+              resolve(base64Data);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(img);
+          });
+
+          // Phase 4.0.2 — Infer angle from base64
+          const angle = inferImageAngleFromBase64(base64);
+          const angleLabel = angle === "macro" ? "Macro" 
+            : angle === "side" ? "Side" 
+            : angle === "top" ? "Top" 
+            : "Unknown";
+
+          return { url, base64, angleLabel };
+        })
+      );
+
+      setImagePreviews(previews);
+    };
+
+    convertImagesToPreviews();
   }, [images]);
 
   // Phase 4.0 Part A — Multi-image validation
@@ -333,8 +377,7 @@ export default function ScannerPage() {
                 return (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-                      {images.map((img, idx) => {
-                        const url = URL.createObjectURL(img);
+                      {imagePreviews.map((preview, idx) => {
                         const label = imageLabels.get(idx) || "Optional";
                         const role = imageRoles[idx] as "macro" | "structure" | "canopy" | "unknown" | undefined;
                         return (
@@ -344,13 +387,17 @@ export default function ScannerPage() {
                           >
                             {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
                             <img
-                              src={url}
+                              src={preview.url}
                               alt={`scan-${idx + 1}`}
                               className="w-full h-full object-contain max-h-64 rounded-xl"
                             />
-                            {/* Phase 4.0.2 — subtle role hints (no user burden) */}
+                            {/* Phase 4.0.2 — Angle badges on previews */}
+                            <span className="absolute bottom-1 right-1 text-xs px-2 py-0.5 rounded bg-black/70">
+                              {preview.angleLabel}
+                            </span>
+                            {/* Phase 4.0.2 — subtle role hints (no user burden) - kept for backward compat */}
                             {role && role !== "unknown" && (
-                              <span className="absolute bottom-1 right-1 text-xs bg-black/60 px-2 py-0.5 rounded">
+                              <span className="absolute top-1 left-1 text-xs bg-black/60 px-2 py-0.5 rounded opacity-50">
                                 {role}
                               </span>
                             )}

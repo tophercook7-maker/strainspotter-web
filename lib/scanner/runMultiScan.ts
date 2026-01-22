@@ -62,6 +62,8 @@ import { calculateImageDistinctness, assessImageDistinctness } from "./imageDist
 import { areImagesDistinctEnough } from "./imageDistinctiveness";
 // Phase 4.0.2 — Image Role Weighting & Auto-Angle Inference
 import { inferImageRole } from "./imageRoleInference";
+// Phase 4.0.2 — Angle diversity bonus/penalty
+import { inferImageAngleFromSeed } from "./imageAngleHeuristics";
 // Phase 4.0.3 — Near-duplicate image detection
 import { tagDuplicateImages } from "./imageDistinctiveness";
 // Phase 4.1 — Guaranteed strain name resolver
@@ -731,6 +733,33 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         imageCountBonus: input.imageCount * 3,
         variancePenalty: 0,
       });
+  
+  // Phase 4.0.2 — Enforce angle diversity bonus / penalty
+  const angles = input.imageSeeds.map(inferImageAngleFromSeed);
+  const uniqueAngles = new Set(angles.filter(a => a !== "unknown"));
+  
+  let angleDiversityBonus = 0;
+  if (uniqueAngles.size >= 3) angleDiversityBonus = 0.12;
+  else if (uniqueAngles.size === 2) angleDiversityBonus = 0.06;
+  else angleDiversityBonus = -0.08;
+  
+  // Apply angle diversity bonus/penalty to confidence
+  let consensusConfidence = nameFirstResult.confidence / 100; // Convert to 0-1 range
+  consensusConfidence = Math.min(
+    0.99,
+    Math.max(0.55, consensusConfidence + angleDiversityBonus)
+  );
+  // Convert back to 0-100 range and update nameFirstResult
+  nameFirstResult.confidence = Math.round(consensusConfidence * 100);
+  nameFirstResult.primaryMatch.confidence = nameFirstResult.confidence;
+  
+  console.log("Phase 4.0.2 — Angle diversity:", {
+    angles: angles,
+    uniqueAngles: Array.from(uniqueAngles),
+    bonus: angleDiversityBonus,
+    adjustedConfidence: nameFirstResult.confidence
+  });
+  
   console.log("Phase 5.0.2 — STEP 5 COMPLETE: Confidence calculated");
   console.log("NAME-FIRST RESULT:", nameFirstResult);
   console.log("CONSENSUS AGREEMENT SCORE:", consensusResult?.agreementScore || "N/A");
