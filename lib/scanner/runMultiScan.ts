@@ -45,7 +45,7 @@ import { evaluateImageDiversity, assessImageDiversity } from "./imageDiversity";
 // Phase 4.0.3 — Angle & zoom inference
 import { inferImageAngle } from "./imageAngleHeuristics";
 // Phase 4.0.4 — Duplicate image detection
-import { detectDuplicates, computeImageSimilarity } from "./duplicateImageDetection";
+import { detectDuplicates, computeImageSimilarity as computeEmbeddingSimilarity } from "./duplicateImageDetection";
 // Phase 4.0.5 — Diversity hints
 import { generateDiversityHint } from "./imageDiversityHints";
 // Phase 4.0.5 — Similar-Image Tolerance & Retry Guard
@@ -68,6 +68,8 @@ import { inferImageRole } from "./imageRoleInference";
 import { inferImageAngleFromSeed } from "./imageAngleHeuristics";
 // Phase 4.0.3 — Duplicate / Near-Duplicate Image Detection
 import { imageFingerprint, similarityScore } from "./imageSimilarity";
+// Phase 4.0.7 — Image Similarity Detection
+import { computeImageSimilarity } from "./imageSimilarity";
 // Phase 4.0.4 — Angle & Perspective Heuristics
 import { classifyAngle, type ImageAngle } from "./angleClassifier";
 // Phase 4.0.3 — Near-duplicate image detection
@@ -847,6 +849,35 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       analysisWarnings.push(
         "Images were very similar. Results are still generated, but confidence is reduced."
       );
+    }
+  }
+
+  // Phase 4.0.6 — Apply angle diversity to confidence
+  const userImageLabels = assignUserImageLabels(filteredInput.imageCount);
+  const angleLabels = Array.from(userImageLabels.values());
+  const angleScore = computeAngleDiversity(angleLabels);
+  
+  if (angleScore < 0.6) {
+    console.warn("Low angle diversity detected — confidence capped");
+    consensusConfidence = Math.min(consensusConfidence, 0.88);
+    analysisWarnings.push("LOW_ANGLE_DIVERSITY");
+  }
+
+  // Phase 4.0.7 — Penalize high similarity sets
+  // Extract image hashes from imageResultsV3 if available
+  if (imageResultsV3 && imageResultsV3.length >= 2) {
+    const imagePerceptualHashes = imageResultsV3
+      .map(r => r.imageHash || "")
+      .filter(h => h.length > 0);
+    
+    if (imagePerceptualHashes.length >= 2) {
+      const similarityScore = computeImageSimilarity(imagePerceptualHashes);
+      
+      if (similarityScore > 0.7) {
+        console.warn("High image similarity detected — confidence capped");
+        consensusConfidence = Math.min(consensusConfidence, 0.9);
+        analysisWarnings.push("HIGH_IMAGE_SIMILARITY");
+      }
     }
   }
 
@@ -2764,7 +2795,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         let comparisons = 0;
         for (let i = 0; i < fallbackEmbeddings.length; i++) {
           for (let j = i + 1; j < fallbackEmbeddings.length; j++) {
-            const sim = computeImageSimilarity(fallbackEmbeddings[i], fallbackEmbeddings[j]);
+            const sim = computeEmbeddingSimilarity(fallbackEmbeddings[i], fallbackEmbeddings[j]);
             totalSimilarity += sim;
             comparisons++;
           }

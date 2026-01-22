@@ -271,6 +271,8 @@ export interface ScanMeta {
 }
 
 // Phase 4.0.5 — Warning channel (non-fatal)
+// Phase 4.0.6 — Warning enum update
+// Phase 4.0.7 — Warning enum
 export type ScanWarning =
   | "LOW_ANGLE_DIVERSITY"
   | "HIGH_IMAGE_SIMILARITY"

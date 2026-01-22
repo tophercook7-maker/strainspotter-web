@@ -347,6 +347,13 @@ export default function ScannerPage() {
                 Mixing different plants may reduce confidence.
               </p>
               
+              {/* Phase 4.0.6 — Inline capture guidance */}
+              {images.length < 3 && (
+                <div className="mb-3 rounded-md border border-white/15 bg-white/5 p-2 text-xs text-white/70">
+                  Tip: Add a side view or close-up for better accuracy
+                </div>
+              )}
+              
               {/* Phase 4.0.5 — soft guidance below image uploader */}
               {diversityHint && (
                 <div className="mt-2 text-xs text-yellow-400">
@@ -378,6 +385,13 @@ export default function ScannerPage() {
               {angleHints.length > 0 && (
                 <div className="text-xs text-white/60 mt-2">
                   Tip for higher accuracy: include a close-up bud photo and one wider plant view.
+                </div>
+              )}
+
+              {/* Phase 4.0.7 — User-facing warning */}
+              {result?.notes && result.notes.includes("HIGH_IMAGE_SIMILARITY") && (
+                <div className="mb-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-2 text-xs text-yellow-300">
+                  Photos appear very similar. Different angles improve identification accuracy.
                 </div>
               )}
 
