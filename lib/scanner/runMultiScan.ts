@@ -64,6 +64,8 @@ import { areImagesDistinctEnough } from "./imageDistinctiveness";
 import { inferImageRole } from "./imageRoleInference";
 // Phase 4.0.2 — Angle diversity bonus/penalty
 import { inferImageAngleFromSeed } from "./imageAngleHeuristics";
+// Phase 4.0.3 — Duplicate / Near-Duplicate Image Detection
+import { imageFingerprint, similarityScore } from "./imageSimilarity";
 // Phase 4.0.3 — Near-duplicate image detection
 import { tagDuplicateImages } from "./imageDistinctiveness";
 // Phase 4.1 — Guaranteed strain name resolver
@@ -169,6 +171,65 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     };
   }
 
+  // Phase 4.0.3 — De-duplicate similar images instead of failing scan
+  let filteredImageSeeds: ImageSeed[] = input.imageSeeds;
+  let filteredImageFiles: File[] | undefined = imageFiles;
+  let filteredImageCount: number = input.imageCount;
+
+  if (imageFiles && imageFiles.length > 1) {
+    // Convert files to base64 for fingerprinting
+    const base64Data = await Promise.all(
+      imageFiles.map(async (file) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            // Remove data URL prefix if present
+            const base64Data = result.includes(',') ? result.split(',')[1] : result;
+            resolve(base64Data);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      })
+    );
+
+    // Create fingerprints
+    const fingerprints = base64Data.map(imageFingerprint);
+
+    // De-duplicate: keep only unique images (similarity < 0.92)
+    const uniqueImages: number[] = [];
+    const keptIndices: number[] = [];
+
+    fingerprints.forEach((fp, i) => {
+      const isDuplicate = uniqueImages.some(u => similarityScore(u, fp) > 0.92);
+
+      if (!isDuplicate) {
+        uniqueImages.push(fp);
+        keptIndices.push(i);
+      }
+    });
+
+    if (keptIndices.length === 0) {
+      throw new Error("All images were duplicates");
+    }
+
+    // Filter to keep only unique images
+    filteredImageSeeds = keptIndices.map(i => input.imageSeeds[i]);
+    filteredImageFiles = keptIndices.map(i => imageFiles[i]);
+    filteredImageCount = keptIndices.length;
+
+    if (keptIndices.length < input.imageCount) {
+      console.log(`Phase 4.0.3 — Removed ${input.imageCount - keptIndices.length} duplicate/near-duplicate images`);
+    }
+  }
+
+  // Update input to use filtered images
+  const filteredInput: ScanPipelineInput = {
+    imageSeeds: filteredImageSeeds,
+    imageCount: filteredImageCount,
+  };
+
   // Phase 5.0.2 — Pipeline Order:
   // 1. Images → wiki results → fused features (needed for database query)
   // 2. nameFirstPipeline → leverageDatabaseFilter (DATABASE NAME MATCH - runs FIRST in pipeline)
@@ -177,9 +238,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // 5. Confidence calculation
   
   console.log("runScanPipeline: processing wiki results");
-  // Loop through all images and process each
+  // Loop through all images and process each (using filtered images)
   const wikiResults = await Promise.all(
-    input.imageSeeds.map(async (seed) => {
+    filteredInput.imageSeeds.map(async (seed) => {
       const syntheticFile = new File([], seed.name, {
         lastModified: Date.now(),
       });
@@ -188,7 +249,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         writable: false,
         configurable: false,
       });
-      const wiki = await runWikiEngine(syntheticFile, input.imageCount);
+      const wiki = await runWikiEngine(syntheticFile, filteredInput.imageCount);
       console.log("runScanPipeline: wiki result for", seed.name, wiki.identity.strainName);
       return wiki;
     })
@@ -205,7 +266,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
 
   // Phase 3.4 Part A — Image Intake Rules
   // Assign internal labels (Image A/B/C) without exposing to user
-  const imageLabels = assignImageLabels(input.imageCount);
+  const imageLabels = assignImageLabels(filteredInput.imageCount);
   console.log("Image labels assigned:", Array.from(imageLabels.entries()).map(([idx, info]) => 
     `Image ${idx} → Label ${info.label} (${info.role})`
   ));
@@ -227,13 +288,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // Phase 5.0.2 — STEP 3: IMAGE TRAIT FILTERING (narrows name candidates)
   // Phase 4.0 Part B — Per-Image Analysis (supports 1-5 images)
-  if (imageFiles && imageFiles.length >= 1 && imageFiles.length <= 5) {
+  if (filteredImageFiles && filteredImageFiles.length >= 1 && filteredImageFiles.length <= 5) {
     // Phase 5.0.2 — Image analysis extracts traits that will narrow database candidates
     // The nameFirstPipeline will use these image results to refine the database filter results
-    console.log("Phase 5.0.2 — STEP 3: IMAGE TRAIT FILTERING (extracting traits from", imageFiles.length, "images)");
+    console.log("Phase 5.0.2 — STEP 3: IMAGE TRAIT FILTERING (extracting traits from", filteredImageFiles.length, "images)");
     
     // Phase 3.0 Part B — Use enhanced analysis for all images (1-5)
-    imageResultsV3 = await analyzePerImageV3(imageFiles, input.imageCount);
+    imageResultsV3 = await analyzePerImageV3(filteredImageFiles, filteredInput.imageCount);
     console.log("Phase 5.0.2 — STEP 3 COMPLETE: Image traits extracted");
     console.log("PER-IMAGE RESULTS V3:", imageResultsV3);
     
@@ -526,7 +587,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         const nameMatchResult = runNameMatchEngine(
           imageResultsV3,
           fusedFeatures,
-          input.imageCount,
+          filteredInput.imageCount,
           undefined // terpeneProfile - will be provided in validation pass
         );
         
@@ -616,7 +677,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       : true; // Single image = same plant
     
     // Phase 3.0 Part C — Consensus Merge Engine
-    consensusResult = buildConsensusResultV3(imageResultsV3, fusedFeatures, input.imageCount, samePlantLikely);
+    consensusResult = buildConsensusResultV3(imageResultsV3, fusedFeatures, filteredInput.imageCount, samePlantLikely);
     console.log("CONSENSUS RESULT V3:", consensusResult);
     
     // Assess plant similarity across images
@@ -646,7 +707,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     ? imageResultsV3.flatMap(r => r.candidateStrains.map(c => ({ name: c.name, confidence: c.confidence })))
     : undefined;
   
-  const namingResult = determineStrainName(fusedFeatures, input.imageCount, existingCandidates);
+  const namingResult = determineStrainName(fusedFeatures, filteredInput.imageCount, existingCandidates);
   console.log("NAMING RESULT:", namingResult);
   
   // Phase 5.0.2 — STEP 5: CONFIDENCE CALCULATION (LAST)
@@ -684,7 +745,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           ? nameFirstPipelineResult.explanation.whyThisNameWon.join(". ")
           : String(nameFirstPipelineResult.explanation.whyThisNameWon || ""),
         lowConfidence: nameFirstPipelineResult.nameConfidencePercent < 75,
-        imageCountBonus: input.imageCount * 3,
+        imageCountBonus: filteredInput.imageCount * 3,
         variancePenalty: 0,
       }
     : (consensusResult // Phase 4.3 Step 4.3.1 — Fallback to consensus/legacy if pipeline not available 
@@ -711,7 +772,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         ].slice(0, 3), // Max 3 alternates
         confidence: consensusResult.primaryMatch.confidence, // Phase 3.0 Part D — Never 100%
         confidenceRange: namingResult.confidenceRange || consensusResult.confidenceRange, // Use naming hierarchy range
-        imageCountBonus: input.imageCount * 3,
+        imageCountBonus: filteredInput.imageCount * 3,
         variancePenalty: 0,
       }
     : {
@@ -730,12 +791,12 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           : [],
         confidence: Math.round((namingResult.confidenceRange.min + namingResult.confidenceRange.max) / 2),
         confidenceRange: namingResult.confidenceRange,
-        imageCountBonus: input.imageCount * 3,
+        imageCountBonus: filteredInput.imageCount * 3,
         variancePenalty: 0,
       });
   
   // Phase 4.0.2 — Enforce angle diversity bonus / penalty
-  const angles = input.imageSeeds.map(inferImageAngleFromSeed);
+  const angles = filteredInput.imageSeeds.map(inferImageAngleFromSeed);
   const uniqueAngles = new Set(angles.filter(a => a !== "unknown"));
   
   let angleDiversityBonus = 0;
@@ -749,6 +810,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     0.99,
     Math.max(0.55, consensusConfidence + angleDiversityBonus)
   );
+  
+  // Phase 4.0.3 — Remove hard failure for same-plant photos
+  if (filteredInput.imageSeeds.length === 1) {
+    console.warn("Single unique image detected — confidence capped");
+    consensusConfidence = Math.min(consensusConfidence, 0.82);
+  }
+  
   // Convert back to 0-100 range and update nameFirstResult
   nameFirstResult.confidence = Math.round(consensusConfidence * 100);
   nameFirstResult.primaryMatch.confidence = nameFirstResult.confidence;

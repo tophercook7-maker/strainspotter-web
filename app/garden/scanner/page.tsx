@@ -31,6 +31,7 @@ export default function ScannerPage() {
   const [scanResult, setScanResult] = useState<import("@/lib/scanner/types").ScanResult | null>(null); // Phase 4.0.8 — Store full scan result for partial status handling
   const [scanError, setScanError] = useState<{ reason: string } | null>(null); // Phase 4.0.1 — Non-fatal scan warnings
   const [imagePreviews, setImagePreviews] = useState<Array<{ url: string; base64: string; angleLabel: string }>>([]); // Phase 4.0.2 — Previews with base64 and angles
+  const [duplicateWarning, setDuplicateWarning] = useState(false); // Phase 4.0.3 — Track if duplicates were removed
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
 
   // NEVER clear result on re-render
@@ -44,6 +45,7 @@ export default function ScannerPage() {
     setScanResult(null); // Phase 4.0.8 — Reset scan result when images change
     setScanError(null); // Phase 4.0.1 — Reset scan error when images change
     setImagePreviews([]); // Phase 4.0.2 — Reset previews when images change
+    setDuplicateWarning(false); // Phase 4.0.3 — Reset duplicate warning when images change
   }, [images]);
 
   // Phase 4.0.2 — Convert images to previews with base64 and angle labels
@@ -357,6 +359,13 @@ export default function ScannerPage() {
                 <div className="text-xs text-yellow-400 mt-2">
                   Images appear similar. Results weighted accordingly.  
                   For higher confidence, use different angles or zoom levels.
+                </div>
+              )}
+              
+              {/* Phase 4.0.3 — User feedback (non-blocking) */}
+              {duplicateWarning && (
+                <div className="text-xs text-yellow-400 mt-2">
+                  Some photos were very similar — results adjusted for confidence.
                 </div>
               )}
               
