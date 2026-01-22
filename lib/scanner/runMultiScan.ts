@@ -62,6 +62,8 @@ import { calculateImageDistinctness } from "./imageDistinctness";
 import { areImagesDistinctEnough } from "./imageDistinctiveness";
 // Phase 4.0.2 — Image Role Weighting & Auto-Angle Inference
 import { inferImageRole } from "./imageRoleInference";
+// Phase 4.0.3 — Near-duplicate image detection
+import { tagDuplicateImages } from "./imageDistinctiveness";
 // Phase 4.1.0 — apply name boost
 import { applyNameConsensusBoost } from "./nameBoost";
 // Phase 4.1.1 — final name assignment
@@ -375,6 +377,31 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           })),
           diversityPenalty: penalty,
           weight: combinedWeight,
+        } as typeof result & { role?: string; weight?: number };
+      });
+    }
+    
+    // Phase 4.0.3 — Apply duplicate soft-penalty (never fail scan)
+    // Tag near-duplicate images and apply similarity penalties to weights
+    if (imageResultsV3.length >= 2) {
+      // Map imageResultsV3 to format expected by tagDuplicateImages (with visualSignature)
+      const weightedImageResults = imageResultsV3.map(r => ({
+        ...r,
+        visualSignature: r.embedding || [], // Use embedding as visual signature
+      }));
+      
+      const weightedImages = tagDuplicateImages(weightedImageResults);
+      
+      // Apply the adjusted weights back to imageResultsV3
+      imageResultsV3 = imageResultsV3.map((result, idx) => {
+        const adjustedWeight = weightedImages[idx]?.weight ?? (result as any).weight ?? 1;
+        return {
+          ...result,
+          weight: adjustedWeight,
+          candidateStrains: result.candidateStrains.map(strain => ({
+            ...strain,
+            confidence: Math.round(strain.confidence * adjustedWeight),
+          })),
         } as typeof result & { role?: string; weight?: number };
       });
     }
