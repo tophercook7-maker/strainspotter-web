@@ -205,6 +205,7 @@ export interface FullScanResult {
   scanNote?: string | null; // Phase 4.1.7 — Non-blocking UI message for low distinctness
   samePlantNote?: string | null; // Phase 4.2.0 — User-facing note when same-plant detected
   meta?: ScanMeta; // Phase 4.2.6 — Scan metadata (confidence cap, distinctiveness, guidance hints)
+  warnings?: string[]; // Phase 4.0.5 — Warning channel (non-fatal)
 }
 
 // Phase 4.3.1 — Name Confidence Stabilization
@@ -268,3 +269,8 @@ export interface ScanMeta {
   visualDistinctivenessScore?: number
   guidanceHints?: string[]
 }
+
+// Phase 4.0.5 — Warning channel (non-fatal)
+export type ScanWarning =
+  | "LOW_ANGLE_DIVERSITY"
+  | "HIGH_IMAGE_SIMILARITY"

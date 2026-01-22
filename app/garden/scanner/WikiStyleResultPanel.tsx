@@ -138,6 +138,15 @@ export default function WikiStyleResultPanel({
               </div>
             )}
 
+            {/* Phase 4.0.5 — Warning display (non-blocking) */}
+            {result.warnings?.length > 0 && (
+              <div className="mt-4 rounded-lg border border-yellow-400/30 bg-yellow-500/10 p-3 text-sm text-yellow-200">
+                {result.warnings.map((w, i) => (
+                  <div key={i}>⚠️ {w}</div>
+                ))}
+              </div>
+            )}
+
             {/* Phase 4.2.6 — render guidance hints (collapsed, subtle) */}
             {result.meta?.guidanceHints?.length ? (
               <div className="mt-4 text-xs text-white/60">

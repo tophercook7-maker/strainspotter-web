@@ -48,6 +48,8 @@ import { inferImageAngle } from "./imageAngleHeuristics";
 import { detectDuplicates, computeImageSimilarity } from "./duplicateImageDetection";
 // Phase 4.0.5 — Diversity hints
 import { generateDiversityHint } from "./imageDiversityHints";
+// Phase 4.0.5 — Similar-Image Tolerance & Retry Guard
+import { imagesTooSimilar } from "./similarityGuard";
 // Phase 4.0.6 — Similarity guard
 import { normalizeSimilarityFailure } from "./similarityGuard";
 // Phase 4.0.7 — Diversity scoring
@@ -243,6 +245,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       })
     );
   }
+
+  // Phase 4.0.5 — Do NOT fail scan on similar images
+  // Initialize analysis warnings array
+  const analysisWarnings: string[] = [];
 
   // Update input to use filtered images
   const filteredInput: ScanPipelineInput = {
@@ -831,6 +837,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     Math.max(0.55, consensusConfidence + angleDiversityBonus)
   );
   
+  // Phase 4.0.5 — Do NOT fail scan on similar images
+  // Check similarity using filtered base64 data if available
+  if (filteredBase64Data && filteredBase64Data.length >= 2) {
+    const similar = imagesTooSimilar(filteredBase64Data);
+    if (similar) {
+      console.warn("Images appear very similar — lowering confidence, continuing scan");
+      consensusConfidence = Math.min(consensusConfidence, 0.82);
+      analysisWarnings.push(
+        "Images were very similar. Results are still generated, but confidence is reduced."
+      );
+    }
+  }
+
   // Phase 4.0.3 — Remove hard failure for same-plant photos
   if (filteredInput.imageSeeds.length === 1) {
     console.warn("Single unique image detected — confidence capped");
@@ -3172,6 +3191,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       viewModel.notes = [];
     }
     viewModel.notes.push(guardResult.reason);
+  }
+
+  // Phase 4.0.5 — Add analysis warnings to viewModel notes
+  if (analysisWarnings.length > 0) {
+    if (!viewModel.notes) {
+      viewModel.notes = [];
+    }
+    viewModel.notes.push(...analysisWarnings);
   }
 
   // Phase 4.0.8 — Return discriminated union based on guard status
