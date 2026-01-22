@@ -66,13 +66,24 @@ export default function WikiStyleResultPanel({
     <section className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 space-y-6 max-h-[85vh] overflow-y-auto">
       {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
       {/* Phase 15.5.5 — Make strain name + confidence feel real */}
-      {viewModel.nameFirstDisplay && (
-        <div className="mb-6 space-y-4 pb-6">
-          {/* Phase 15.5.5 — Large Strain Name */}
-          <div className="mb-4">
-            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              {viewModel.nameFirstDisplay?.primaryStrainName || "Unknown Cultivar"}
-            </div>
+      {/* Phase 4.1 — UI NEVER EMPTY: nameFirstDisplay is guaranteed */}
+      <div className="mb-6 space-y-4 pb-6">
+        {/* Phase 15.5.5 — Large Strain Name */}
+        <div className="mb-4">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            {viewModel.nameFirstDisplay.primaryStrainName}
+          </h1>
+          
+          {/* Phase 4.1 — Display explanation */}
+          {viewModel.nameFirstDisplay.explanation && (
+            <p className="text-sm opacity-70 mt-1">
+              {Array.isArray(viewModel.nameFirstDisplay.explanation.whyThisNameWon)
+                ? viewModel.nameFirstDisplay.explanation.whyThisNameWon[0]
+                : typeof viewModel.nameFirstDisplay.explanation === 'string'
+                ? viewModel.nameFirstDisplay.explanation
+                : "Closest visual and genetic match from database"}
+            </p>
+          )}
             
             {/* Phase 15.5.5 — Confidence badge */}
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -433,10 +444,10 @@ export default function WikiStyleResultPanel({
             </CollapsibleSection>
           )}
         </div>
-      )}
       
       {/* Phase 3.9 Part A — CORE IDENTITY (ABOVE THE FOLD) */}
-      {!viewModel.nameFirstDisplay && (
+      {/* Phase 4.1 — nameFirstDisplay is always present, this section is legacy fallback */}
+      {false && (
         <div className="space-y-4 pb-4">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-bold text-white">

@@ -64,6 +64,8 @@ import { areImagesDistinctEnough } from "./imageDistinctiveness";
 import { inferImageRole } from "./imageRoleInference";
 // Phase 4.0.3 — Near-duplicate image detection
 import { tagDuplicateImages } from "./imageDistinctiveness";
+// Phase 4.1 — Guaranteed strain name resolver
+import { resolveFallbackName } from "./nameFallback";
 // Phase 4.1.0 — apply name boost
 import { applyNameConsensusBoost } from "./nameBoost";
 // Phase 4.1.1 — final name assignment
@@ -230,9 +232,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     if (imageFingerprints.length >= 2 && !areImagesDistinctEnough(imageFingerprints)) {
       // Return soft-fail result with recommendation
       const fallbackResult = imageResultsV3[0];
+      // Phase 4.1 — Ensure nameFirstDisplay is always present
+      const fallbackName = fallbackResult.candidateStrains[0]?.name || "Unknown Hybrid";
+      const fallbackConfidence = Math.max(60, fallbackResult.candidateStrains[0]?.confidence || 60);
+      
       const softFailViewModel: import("./viewModel").ScannerViewModel = {
-        name: fallbackResult.candidateStrains[0]?.name || "Unknown Cultivar",
-        title: fallbackResult.candidateStrains[0]?.name || "Unknown Cultivar",
+        name: fallbackName,
+        title: fallbackName,
         confidenceRange: { min: 60, max: 70, explanation: "Low diversity due to similar images" },
         matchBasis: "Single image result due to low image diversity",
         visualMatchSummary: "",
@@ -242,7 +248,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         colorPistilIndicators: "",
         growthPatternClues: "",
         primaryMatch: {
-          name: fallbackResult.candidateStrains[0]?.name || "Unknown Cultivar",
+          name: fallbackName,
           confidenceRange: { min: 60, max: 70 },
           whyThisMatch: "Single image result due to low image diversity",
         },
@@ -260,7 +266,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         aiWikiBlend: "",
         uncertaintyExplanation: "Images appear to be the same angle or lighting",
         accuracyTips: ["Try one close-up and one full-bud photo", "Use different lighting angles"],
-        confidence: fallbackResult.candidateStrains[0]?.confidence || 60,
+        confidence: fallbackConfidence,
         whyThisMatch: "Single image result due to low image diversity",
         morphology: "",
         trichomes: "",
@@ -285,6 +291,23 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         softFail: {
           reason: "Images too similar",
           recommendation: "Photos appear to be the same angle or lighting. Try one close-up and one full-bud photo.",
+        },
+        // Phase 4.1 — Guaranteed nameFirstDisplay
+        nameFirstDisplay: {
+          primaryStrainName: fallbackName,
+          primaryName: fallbackName,
+          confidencePercent: fallbackConfidence,
+          confidence: fallbackConfidence,
+          confidenceTier: fallbackConfidence >= 85 ? "very_high" as const
+            : fallbackConfidence >= 75 ? "high" as const
+            : fallbackConfidence >= 65 ? "medium" as const
+            : "low" as const,
+          tagline: "Closest known match based on visual analysis",
+          explanation: {
+            whyThisNameWon: ["Single image result due to low image diversity"],
+            whatRuledOutOthers: [],
+            varianceNotes: [],
+          },
         },
       };
       
@@ -911,6 +934,29 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   };
 
   const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
+  
+  // Phase 4.1 — Ensure nameFirstDisplay is always set (guaranteed field)
+  // Set a default fallback first, will be overridden if nameFirstPipelineResult exists
+  if (!viewModel.nameFirstDisplay) {
+    const fallbackName = lockedStrainName || nameFirstResult.primaryMatch.name || "Unknown Hybrid";
+    const fallbackConfidence = Math.max(60, nameFirstResult.confidence || 60);
+    viewModel.nameFirstDisplay = {
+      primaryStrainName: fallbackName,
+      primaryName: fallbackName,
+      confidencePercent: fallbackConfidence,
+      confidence: fallbackConfidence,
+      confidenceTier: fallbackConfidence >= 85 ? "very_high" as const
+        : fallbackConfidence >= 75 ? "high" as const
+        : fallbackConfidence >= 65 ? "medium" as const
+        : "low" as const,
+      tagline: "Closest known match based on visual analysis",
+      explanation: {
+        whyThisNameWon: ["Closest visual and genetic match from database"],
+        whatRuledOutOthers: [],
+        varianceNotes: [],
+      },
+    };
+  }
   
   // Phase 4.3 Step 4.3.6 — Add Name-First Display (TOP PRIORITY)
   // Phase 4.5 Step 4.5.1 — Include explanation for "Why this strain?" section
@@ -2000,15 +2046,47 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   }
                 }
                 
+                // Phase 4.1 — Enforce name-first output with fallback
+                let nameResult: { name: string; confidence: number; reason: string };
+                if (nameFirstPipelineResult?.primaryStrainName) {
+                  nameResult = {
+                    name: nameFirstPipelineResult.primaryStrainName,
+                    confidence: nameFirstPipelineResult.nameConfidencePercent || 60,
+                    reason: nameFirstPipelineResult.explanation?.whyThisNameWon?.[0] || "Closest visual and genetic match from database",
+                  };
+                } else if (consensusResult?.primaryMatch) {
+                  nameResult = {
+                    name: consensusResult.primaryMatch.name,
+                    confidence: consensusResult.primaryMatch.confidence,
+                    reason: consensusResult.primaryMatch.reason || "Closest visual and genetic match from database",
+                  };
+                } else {
+                  // Fallback: use candidates from consensus or image results
+                  const candidates = consensusResult?.alternates || 
+                    imageResultsV3.flatMap(r => r.candidateStrains.map(c => ({
+                      name: c.name,
+                      confidence: c.confidence,
+                    })));
+                  nameResult = resolveFallbackName(candidates);
+                }
+                
                 viewModel.nameFirstDisplay = {
-                  primaryStrainName: nameFirstPipelineResult.primaryStrainName,
-                  primaryName: nameFirstPipelineResult.primaryStrainName, // Required field
-                  confidencePercent: nameFirstPipelineResult.nameConfidencePercent,
-                  confidenceTier: nameFirstPipelineResult.nameConfidenceTier,
+                  primaryStrainName: nameResult.name,
+                  primaryName: nameResult.name, // Required field
+                  confidencePercent: nameResult.confidence,
+                  confidence: nameResult.confidence, // Phase 4.1 — Guaranteed field
+                  confidenceTier: nameResult.confidence >= 85 ? "very_high" as const
+                    : nameResult.confidence >= 75 ? "high" as const
+                    : nameResult.confidence >= 65 ? "medium" as const
+                    : "low" as const,
                   tagline: displayTagline,
                   alsoKnownAs,
                   alternateMatches: computedAlternateMatches,
-                  explanation: nameFirstPipelineResult.explanation,
+                  explanation: {
+                    whyThisNameWon: Array.isArray(nameResult.reason) ? nameResult.reason : [nameResult.reason],
+                    whatRuledOutOthers: [],
+                    varianceNotes: [],
+                  },
                   ratio: ratioForNameFirstDisplay,
                 };
                 
@@ -2063,8 +2141,45 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 if (computedEffectExperiencePrediction) {
                   viewModel.effectExperiencePrediction = computedEffectExperiencePrediction;
                 }
+    // Phase 4.1 — Ensure nameFirstDisplay is always set (guaranteed field)
+    if (!viewModel.nameFirstDisplay) {
+      // Fallback: use consensus result or resolve fallback name
+      let fallbackNameResult: { name: string; confidence: number; reason: string };
+      if (consensusResult?.primaryMatch) {
+        fallbackNameResult = {
+          name: consensusResult.primaryMatch.name,
+          confidence: consensusResult.primaryMatch.confidence,
+          reason: consensusResult.primaryMatch.reason || "Closest visual and genetic match from database",
+        };
+      } else {
+        const candidates = consensusResult?.alternates || 
+          imageResultsV3.flatMap(r => r.candidateStrains.map(c => ({
+            name: c.name,
+            confidence: c.confidence,
+          })));
+        fallbackNameResult = resolveFallbackName(candidates);
+      }
+      
+      viewModel.nameFirstDisplay = {
+        primaryStrainName: fallbackNameResult.name,
+        primaryName: fallbackNameResult.name,
+        confidencePercent: fallbackNameResult.confidence,
+        confidence: fallbackNameResult.confidence,
+        confidenceTier: fallbackNameResult.confidence >= 85 ? "very_high" as const
+          : fallbackNameResult.confidence >= 75 ? "high" as const
+          : fallbackNameResult.confidence >= 65 ? "medium" as const
+          : "low" as const,
+        tagline: "Closest known match based on visual analysis",
+        explanation: {
+          whyThisNameWon: [fallbackNameResult.reason],
+          whatRuledOutOthers: [],
+          varianceNotes: [],
+        },
+      };
+    }
+    
     console.log("Phase 4.3 Step 4.3.6 — NAME-FIRST DISPLAY:", viewModel.nameFirstDisplay);
-    console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", nameFirstPipelineResult.explanation);
+    console.log("Phase 4.5 Step 4.5.3 — EXPLANATION INCLUDED (FREE TIER):", viewModel.nameFirstDisplay.explanation);
     // Note: ratio belongs in analysis layer, not nameFirstDisplay
     
     // Phase 5.3.5 — VIEWMODEL OUTPUT: Populate strainIdentity

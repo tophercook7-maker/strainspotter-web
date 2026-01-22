@@ -136,24 +136,25 @@ export interface ScannerViewModel {
   // Phase 5.5 Step 5.5.5 — Enhanced with aliases
   // Phase 5.1.5 — VIEWMODEL UPDATE: ScannerViewModel must include primaryName, confidencePercent, alternateMatches, whyThisNameWon
   // Phase 4.3.1 — Extended with NameFirstDisplay interface
-  nameFirstDisplay?: NameFirstDisplay & {
+  // Phase 4.1 — ViewModel guarantee: nameFirstDisplay is always present
+  nameFirstDisplay: NameFirstDisplay & {
+    primaryStrainName: string; // Phase 4.1 — Guaranteed field
     primaryName: string; // Phase 5.1.5 — Alias for primaryStrainName
     confidencePercent: number;
+    confidence: number; // Phase 4.1 — Guaranteed field (alias for confidencePercent)
     confidenceTier: "very_high" | "high" | "medium" | "low";
     tagline: string; // "Closest known match based on visual + database consensus"
+    explanation: {
+      whyThisNameWon: string[]; // Phase 4.1 — Guaranteed field (at least one reason)
+      whatRuledOutOthers?: string[]; // Why other candidates didn't win
+      varianceNotes?: string[]; // Phenotype variance explanation
+    };
     alsoKnownAs?: string[]; // Phase 5.5.5 — Aliases (e.g., "GSC", "Girl Scout Cookies")
     alternateMatches?: Array<{
       name: string;
       confidence?: number; // Phase 5.1.5
       whyNotPrimary: string;
     }>; // "Often confused with: X, Y" (Phase 4.5 Step 4.5.2 — Collapsed if confidence < 92%)
-    // Phase 4.5 Step 4.5.3 — Explanation for "Why this strain?" section (FREE TIER)
-    // Phase 5.1.5 — whyThisNameWon is required
-    explanation?: {
-      whyThisNameWon: string[]; // 3-5 bullets: Visual markers, database frequency, lineage, terpenes (Phase 5.1.4)
-      whatRuledOutOthers: string[]; // Why other candidates didn't win
-      varianceNotes: string[]; // Phenotype variance explanation
-    };
     ratio?: {
       indica: number;
       sativa: number;

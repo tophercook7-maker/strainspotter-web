@@ -240,6 +240,26 @@ export function wikiToViewModel(
     // Phase 3.3 Part A — Ensure all required sections present
     extendedProfile,
     
+    // Phase 4.1 — Guaranteed nameFirstDisplay (always present)
+    nameFirstDisplay: {
+      primaryStrainName: primaryName,
+      primaryName: primaryName,
+      confidencePercent: confidence,
+      confidence: confidence,
+      confidenceTier: confidence >= 85 ? "very_high" as const
+        : confidence >= 75 ? "high" as const
+        : confidence >= 65 ? "medium" as const
+        : "low" as const,
+      tagline: "Closest known match based on visual analysis",
+      explanation: {
+        whyThisNameWon: Array.isArray(nameFirstResult?.primaryMatch.whyThisMatch) 
+          ? [nameFirstResult.primaryMatch.whyThisMatch]
+          : [nameFirstResult?.primaryMatch.whyThisMatch || whyThisMatch || "Closest visual and genetic match from database"],
+        whatRuledOutOthers: [],
+        varianceNotes: [],
+      },
+    },
+    
     // Dominance data belongs in analysis layer, not ViewModel (architectural fix)
     // Removed dominance assignment - will be accessible via result.analysis.dominance in FullScanResult
   };
