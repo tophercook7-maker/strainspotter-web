@@ -43,3 +43,47 @@ export function resolveStrainRatio(input: {
     confidence: Math.min(95, Math.round(70 + input.nameConsensusStrength * 0.3)),
   }
 }
+
+// Phase 4.2 — Indica / Sativa / Hybrid Ratio Resolver
+export function resolvePlantRatio({
+  strainRecord,
+  visualSignals,
+  terpeneSignals,
+}: {
+  strainRecord?: any
+  visualSignals?: any
+  terpeneSignals?: any
+}): {
+  indica: number
+  sativa: number
+  hybrid: number
+} {
+  let indica = 0
+  let sativa = 0
+  let hybrid = 0
+
+  // 1️⃣ Database genetics (highest weight)
+  if (strainRecord?.type) {
+    if (strainRecord.type === "indica") indica += 55
+    if (strainRecord.type === "sativa") sativa += 55
+    if (strainRecord.type === "hybrid") hybrid += 55
+  }
+
+  // 2️⃣ Visual morphology
+  if (visualSignals?.leafWidth === "wide") indica += 15
+  if (visualSignals?.leafWidth === "narrow") sativa += 15
+  if (visualSignals?.structure === "balanced") hybrid += 15
+
+  // 3️⃣ Terpene bias
+  if (terpeneSignals?.includes("myrcene")) indica += 10
+  if (terpeneSignals?.includes("limonene")) sativa += 10
+  if (terpeneSignals?.includes("caryophyllene")) hybrid += 10
+
+  const total = indica + sativa + hybrid || 1
+
+  return {
+    indica: Math.round((indica / total) * 100),
+    sativa: Math.round((sativa / total) * 100),
+    hybrid: Math.round((hybrid / total) * 100),
+  }
+}

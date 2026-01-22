@@ -204,6 +204,27 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
         </div>
       )}
 
+      {/* Phase 4.2 — Ratio UI (compact, centered) */}
+      {result.ratio && result.ratio.indica !== undefined && result.ratio.sativa !== undefined && result.ratio.hybrid !== undefined && (
+        <div className="mt-6 max-w-md mx-auto">
+          <div className="text-sm font-semibold mb-2 text-center">
+            Indica / Sativa / Hybrid
+          </div>
+
+          <div className="flex h-3 rounded overflow-hidden">
+            <div style={{ width: `${result.ratio.indica}%` }} className="bg-purple-600" />
+            <div style={{ width: `${result.ratio.sativa}%` }} className="bg-green-500" />
+            <div style={{ width: `${result.ratio.hybrid}%` }} className="bg-yellow-500" />
+          </div>
+
+          <div className="flex justify-between text-xs mt-1 opacity-70">
+            <span>Indica {result.ratio.indica}%</span>
+            <span>Sativa {result.ratio.sativa}%</span>
+            <span>Hybrid {result.ratio.hybrid}%</span>
+          </div>
+        </div>
+      )}
+
       {/* Phase 4.6.0 — render match strength UI */}
       {result.matchStrength && (
         <div className="mt-8 max-w-md">

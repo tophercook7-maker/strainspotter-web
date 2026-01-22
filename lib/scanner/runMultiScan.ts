@@ -57,7 +57,7 @@ import { applyDiversityConfidenceCap } from "./confidenceCaps";
 // Phase 4.0.8 — replace hard failure with guided recovery
 import { evaluateAnalysisGuards } from "./analysisGuards";
 // Phase 4.0.9 — integrate distinctness score
-import { calculateImageDistinctness } from "./imageDistinctness";
+import { calculateImageDistinctness, assessImageDistinctness } from "./imageDistinctness";
 // Phase 4.0.1 — Image Distinctiveness Guard
 import { areImagesDistinctEnough } from "./imageDistinctiveness";
 // Phase 4.0.2 — Image Role Weighting & Auto-Angle Inference
@@ -99,7 +99,7 @@ import { buildConfidenceExplanation } from "./confidenceExplainer";
 // Phase 4.4.0 — Name-First Matching Engine
 import { runNameFirstMatching } from "./nameFirstMatcher";
 // Phase 4.5.0 — Indica/Sativa/Hybrid Ratio Resolver
-import { resolveStrainRatio as resolveStrainRatioV4_5 } from "./ratioResolver";
+import { resolveStrainRatio as resolveStrainRatioV4_5, resolvePlantRatio } from "./ratioResolver";
 // Phase 4.6.0 — Match Strength Resolver
 import { resolveMatchStrength } from "./matchStrength";
 // Phase 4.8.0 — Indica/Sativa/Hybrid Ratio Engine (Visual + Genetics + Terpenes)
@@ -154,6 +154,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 2.7 Part N Step 1 — Require minimum 2 images (if multiple images provided)
   if (input.imageCount > 1 && input.imageCount < 2) {
     throw new Error("Multi-image scan requires at least 2 images");
+  }
+
+  // Phase 4.0.1 — Block scan if images lack variance
+  const distinctness = assessImageDistinctness(input.imageSeeds);
+  
+  if (!distinctness.distinct) {
+    return {
+      error: true,
+      userMessage:
+        "These photos look too similar. Try different angles (top, side, close-up) for better accuracy.",
+    };
   }
 
   // Phase 5.0.2 — Pipeline Order:
@@ -1168,6 +1179,90 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   }
                   
                   console.log("Phase 4.8.0 — Ratio resolved with V48 engine:", ratioV48);
+                }
+                
+                // Phase 4.2 — Resolve plant ratio using weighted scoring
+                if (dbEntry && fusedFeatures) {
+                  // Map dbEntry to strainRecord format
+                  // dbEntry.type is "Indica" | "Sativa" | "Hybrid"
+                  const dbType = dbEntry.type || (dbEntry as any).dominantType || "Hybrid";
+                  const matchedStrain = {
+                    type: dbType.toLowerCase() === "indica" ? "indica"
+                      : dbType.toLowerCase() === "sativa" ? "sativa"
+                      : "hybrid",
+                  };
+                  
+                  // Extract visual signals from fusedFeatures
+                  const consensusVisualSignals = {
+                    leafWidth: fusedFeatures.leafShape === "broad" ? "wide" as const
+                      : fusedFeatures.leafShape === "narrow" ? "narrow" as const
+                      : undefined,
+                    structure: fusedFeatures.budStructure === "high" ? "balanced" as const
+                      : undefined,
+                  };
+                  
+                  // Extract terpene signals (reuse from Phase 4.8.0 if available, or extract from dbEntry)
+                  let consensusTerpenes: string[] | undefined = undefined;
+                  try {
+                    const terpeneProfile = (viewModel as any).terpeneCannabinoidProfile;
+                    if (terpeneProfile?.terpenes) {
+                      consensusTerpenes = terpeneProfile.terpenes
+                        .filter((t: any) => t.likelihood === "High" || t.likelihood === "Medium–High")
+                        .map((t: any) => t.name.toLowerCase());
+                    } else if (dbEntry?.commonTerpenes) {
+                      consensusTerpenes = dbEntry.commonTerpenes.map(t => t.toLowerCase());
+                    }
+                  } catch (e) {
+                    // Terpene profile not available, continue without it
+                  }
+                  
+                  const ratio = resolvePlantRatio({
+                    strainRecord: matchedStrain,
+                    visualSignals: consensusVisualSignals,
+                    terpeneSignals: consensusTerpenes,
+                  });
+                  
+                  // Update viewModel.ratio with Phase 4.2 result
+                  if (viewModel.ratio) {
+                    // Update existing ratio with Phase 4.2 values
+                    viewModel.ratio.indica = ratio.indica;
+                    viewModel.ratio.sativa = ratio.sativa;
+                    viewModel.ratio.hybrid = ratio.hybrid;
+                    viewModel.ratio.indicaPercent = ratio.indica;
+                    viewModel.ratio.sativaPercent = ratio.sativa;
+                  } else {
+                    // Create new ratio structure with Phase 4.2 result
+                    const hybridLabel = ratio.indica >= 55 ? "Indica-dominant"
+                      : ratio.sativa >= 55 ? "Sativa-dominant"
+                      : ratio.indica > ratio.sativa ? "Indica-leaning Hybrid"
+                      : ratio.sativa > ratio.indica ? "Sativa-leaning Hybrid"
+                      : "Balanced Hybrid";
+                    
+                    viewModel.ratio = {
+                      indicaPercent: ratio.indica,
+                      sativaPercent: ratio.sativa,
+                      dominance: ratio.indica >= 55 ? "Indica"
+                        : ratio.sativa >= 55 ? "Sativa"
+                        : "Hybrid",
+                      hybridLabel: hybridLabel,
+                      displayText: `${ratio.indica}% Indica · ${ratio.sativa}% Sativa · ${ratio.hybrid}% Hybrid`,
+                      explanation: {
+                        summary: `Ratio determined from database genetics, visual morphology, and terpene signals`,
+                        fullExplanation: [
+                          `Database genetics: ${matchedStrain.type}`,
+                          consensusVisualSignals.leafWidth ? `Visual: ${consensusVisualSignals.leafWidth} leaves` : "No visual signals",
+                          consensusTerpenes ? `Terpenes: ${consensusTerpenes.join(", ")}` : "No terpene signals",
+                        ],
+                      },
+                      indica: ratio.indica,
+                      sativa: ratio.sativa,
+                      hybrid: ratio.hybrid,
+                      label: ratio.indica >= 55 ? "Indica-dominant" : ratio.sativa >= 55 ? "Sativa-dominant" : "Hybrid",
+                      confidence: 75, // Default confidence for Phase 4.2
+                    };
+                  }
+                  
+                  console.log("Phase 4.2 — Plant ratio resolved:", ratio);
                 }
                 
                 // Phase 5.0.3.4 — Ensure hybridLabel is set

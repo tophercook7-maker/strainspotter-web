@@ -218,6 +218,7 @@ export interface NameFirstDisplay {
 export type { ScannerViewModel } from "./viewModel";
 
 // Phase 4.0.8 — extend ScanResult
+// Phase 4.0.1 — Add error case for blocking scans
 export type ScanResult =
   | {
       status: "success"
@@ -246,6 +247,10 @@ export type ScanResult =
       scanNote?: string | null // Phase 4.1.7 — Non-blocking UI message for low distinctness
       samePlantNote?: string | null // Phase 4.2.0 — User-facing note when same-plant detected
       meta?: ScanMeta // Phase 4.2.6 — Scan metadata
+    }
+  | {
+      error: true // Phase 4.0.1 — Block scan if images lack variance
+      userMessage: string
     }
 
 // Phase 4.0.2 — extend image result metadata

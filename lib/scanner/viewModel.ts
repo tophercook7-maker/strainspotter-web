@@ -174,6 +174,7 @@ export interface ScannerViewModel {
   // Phase 5.2.5 — VIEWMODEL INTEGRATION: Extend ScannerViewModel with strainType
   // Phase 4.5.0 — Extended with simplified ratio structure
   // Phase 4.8.0 — Extended with V48 engine fields
+  // Phase 4.2 — Plant ratio resolver ensures indica, sativa, hybrid fields are populated
   ratio?: {
     indicaPercent: number; // 0-100
     sativaPercent: number; // 0-100
@@ -187,9 +188,10 @@ export interface ScannerViewModel {
       fullExplanation: string[]; // Bullets for expanded section
     } | string[]; // Phase 4.8.0 — Can be object (legacy) or string array (V48 engine)
     // Phase 4.5.0 — Simplified ratio structure
-    indica?: number;
-    sativa?: number;
-    hybrid?: number;
+    // Phase 4.2 — Plant ratio resolver populates these fields (weighted scoring: genetics 55pts, visual 15pts, terpenes 10pts)
+    indica?: number; // Phase 4.2 — Normalized percentage (0-100)
+    sativa?: number; // Phase 4.2 — Normalized percentage (0-100)
+    hybrid?: number; // Phase 4.2 — Normalized percentage (0-100)
     label?: string;
     confidence?: number;
     // Phase 4.8.0 — V48 engine fields

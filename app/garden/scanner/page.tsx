@@ -28,6 +28,7 @@ export default function ScannerPage() {
   const [angleHints, setAngleHints] = useState<string[]>([]); // Phase 4.0.3 — Track angle diversity hints
   const [diversityHint, setDiversityHint] = useState<string | null>(null); // Phase 4.0.5 — Diversity hint from scan result
   const [scanResult, setScanResult] = useState<import("@/lib/scanner/types").ScanResult | null>(null); // Phase 4.0.8 — Store full scan result for partial status handling
+  const [scanError, setScanError] = useState<{ reason: string } | null>(null); // Phase 4.0.1 — Non-fatal scan warnings
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
 
   // NEVER clear result on re-render
@@ -39,6 +40,7 @@ export default function ScannerPage() {
     setAngleHints([]); // Phase 4.0.3 — Reset angle hints when images change
     setDiversityHint(null); // Phase 4.0.5 — Reset diversity hint when images change
     setScanResult(null); // Phase 4.0.8 — Reset scan result when images change
+    setScanError(null); // Phase 4.0.1 — Reset scan error when images change
   }, [images]);
 
   // Phase 4.0 Part A — Multi-image validation
@@ -128,6 +130,25 @@ export default function ScannerPage() {
       console.log("STEP 3: ENGINE CALLED");
       const scanResult = await scanImages(images);
       console.log("STEP 4: RESULT RECEIVED", scanResult);
+      
+      // Phase 4.0.1 — Handle non-fatal warning (images lack variance)
+      if ('error' in scanResult && scanResult.error === true) {
+        // Set warning but allow scan to continue (non-fatal)
+        setScanError({ reason: "images-too-similar" });
+        // Continue processing - don't return early
+        // Note: When error is returned, there's no result/synthesis, so we skip those
+        setIsScanning(false);
+        return;
+      }
+      
+      // Clear any previous errors
+      setScanError(null);
+      
+      // TypeScript now knows this is a success or partial result
+      if (!('status' in scanResult)) {
+        setIsScanning(false);
+        return;
+      }
       
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
@@ -427,8 +448,19 @@ export default function ScannerPage() {
         {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
         <section className="space-y-6">
+          {/* Phase 4.0.1 — User-facing warning (non-fatal UI) */}
+          {scanError?.reason === "images-too-similar" && (
+            <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
+              <strong>Need more variation</strong>
+              <p className="mt-1 opacity-80">
+                Try photos from different angles or distances. Multiple identical shots
+                reduce accuracy.
+              </p>
+            </div>
+          )}
+
           {/* Phase 4.0.8 — UI handling (no failure modal) */}
-          {scanResult?.status === "partial" && (
+          {scanResult && 'status' in scanResult && scanResult.status === "partial" && (
             <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">
               <strong>Analysis limited:</strong> {scanResult.guard.reason}
             </div>
