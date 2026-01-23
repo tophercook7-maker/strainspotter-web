@@ -185,6 +185,9 @@ export default function ScannerPage() {
     console.log("ANALYZING", images.length, "IMAGES");
 
     setIsScanning(true);
+    
+    // Phase 5.2.6 — Prevent scroll jump on scan: Store current scroll position
+    const scrollPosition = window.scrollY;
 
     try {
       console.log("STEP 1: PREP DONE");
@@ -192,6 +195,15 @@ export default function ScannerPage() {
       console.log("STEP 3: ENGINE CALLED");
       const scanResult = await scanImages(images);
       console.log("STEP 4: RESULT RECEIVED", scanResult);
+      
+      // Phase 5.2.6 — Prevent scroll jump: Restore scroll position after results appear
+      // Use requestAnimationFrame to ensure DOM has updated
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: scrollPosition,
+          behavior: 'instant' // Instant to prevent jump, not smooth
+        });
+      });
       
       // FAILURE MESSAGING SOFTENED — Handle non-fatal warning (images lack variance)
       if ('error' in scanResult && scanResult.error === true) {
@@ -339,8 +351,9 @@ export default function ScannerPage() {
       
       {/* UI FIX — Content Well Wrapper */}
       <main className="min-h-screen bg-black text-white">
+        {/* Phase 5.2.6 — MOBILE-FIRST CONSTRAINTS: Max content width (not edge-to-edge) */}
         {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
-      <div className="mx-auto w-full max-w-[680px] px-4 pb-16 space-y-6">
+      <div className="mx-auto w-full max-w-[680px] px-4 pb-24 md:pb-16 space-y-6">
         {/* A) Upload + Preview Card */}
         <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 space-y-4">
               {/* Phase 5.2.4 — Improved File Upload UX with Drag and Drop */}
@@ -537,10 +550,11 @@ export default function ScannerPage() {
                           >
                             {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
                             {/* Phase 4.4.5 — Image scale lock: max 260px, object-contain, rounded, never full-screen */}
+                            {/* Phase 5.2.6 — Image previews capped in height (mobile-first) */}
                             <img
                               src={preview.url}
                               alt={`scan-${idx + 1}`}
-                              className="w-full h-full object-contain max-h-[260px] rounded-xl"
+                              className="w-full h-full object-contain max-h-[200px] sm:max-h-[260px] rounded-xl"
                             />
                             
                             {/* Phase 5.2.2 — Slot label and checkmark when filled */}
@@ -640,8 +654,9 @@ export default function ScannerPage() {
         </div>
 
         {/* Phase 5.2.5 — SCAN CTA BEHAVIOR (FIX) */}
+        {/* Phase 5.2.6 — Sticky scan button on mobile only */}
         {/* B) Big Scan Button Card */}
-        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6">
+        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 sticky bottom-0 md:static z-10 bg-black/95 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none">
           {/* Phase 4.0 Part A — Multi-image validation warning */}
           {images.length > 0 && images.length < 2 && !singleImageConfirmed && (
             <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md mx-auto">
@@ -655,6 +670,7 @@ export default function ScannerPage() {
           )}
           
           {/* Phase 5.2.5 — Run Scan Button: Full-width capped (max-w-md), height ≥ 52px, single click, disabled only while scanning */}
+          {/* Phase 5.2.6 — Mobile-first: Sticky on mobile, normal on desktop */}
           <div className="w-full max-w-md mx-auto">
             <button
               type="button"
@@ -709,11 +725,12 @@ export default function ScannerPage() {
           </div>
         </div>
 
+        {/* Phase 5.2.6 — MOBILE-FIRST CONSTRAINTS: Max content width (not edge-to-edge) */}
         {/* UI FIX — Results Card(s) — Wrapped in container, cards not lines */}
         {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
         {/* Phase 4.4.1 — Center the result column with intentional containment */}
-        <section className="space-y-6 max-w-3xl mx-auto px-4">
+        <section className="space-y-6 max-w-[680px] mx-auto px-4">
           {/* FAILURE MESSAGING SOFTENED — User-facing warnings (non-fatal, non-blocking) */}
           {scanError?.reason === "images-too-similar" && (
             <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
