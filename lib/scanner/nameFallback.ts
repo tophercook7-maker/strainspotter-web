@@ -4,7 +4,7 @@
 export function resolveFallbackName(candidates: any[]) {
   if (!candidates || candidates.length === 0) {
     return {
-      name: "Unknown Hybrid",
+      name: "Closest Known Cultivar",
       confidence: 60,
       reason: "Insufficient visual distinction; classified as hybrid"
     }

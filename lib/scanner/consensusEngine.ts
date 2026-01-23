@@ -125,7 +125,7 @@ export async function analyzePerImage(
     );
 
     // Extract strain candidate and confidence
-    const strainCandidate = wikiResult.identity.strainName || "Unknown";
+    const strainCandidate = wikiResult.identity.strainName || "Closest Known Cultivar";
     const confidenceScore = wikiResult.identity.confidence || 60;
 
     // Extract key traits
@@ -579,7 +579,7 @@ export function buildConsensusResult(
   }
 
   // If no consensus, use name-first matcher as fallback
-  if (!primaryStrain || primaryStrain === "Unknown") {
+  if (!primaryStrain || primaryStrain === "Unknown" || primaryStrain === "Closest Known Cultivar") {
     const nameFirstResult = matchStrainNameFirst(fusedFeatures, imageCount);
     primaryStrain = nameFirstResult.primaryMatch.name;
   }

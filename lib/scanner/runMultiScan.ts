@@ -495,7 +495,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       // Return soft-fail result with recommendation
       const fallbackResult = imageResultsV3[0];
       // Phase 4.1 — Ensure nameFirstDisplay is always present
-      const fallbackName = fallbackResult.candidateStrains[0]?.name || "Unknown Hybrid";
+      const fallbackName = fallbackResult.candidateStrains[0]?.name || "Closest Known Cultivar";
       const fallbackConfidence = Math.max(60, fallbackResult.candidateStrains[0]?.confidence || 60);
       
       const softFailViewModel: import("./viewModel").ScannerViewModel = {
@@ -581,13 +581,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         },
         consensus: {
           primaryMatch: {
-            name: fallbackResult.candidateStrains[0]?.name || "Unknown Cultivar",
+            name: fallbackResult.candidateStrains[0]?.name || "Closest Known Cultivar",
             confidence: fallbackResult.candidateStrains[0]?.confidence || 60,
             reason: "Images appear to be the same angle or lighting. Try one close-up and one full-bud photo.",
           },
           alternates: [],
           agreementScore: 0,
-          strainName: fallbackResult.candidateStrains[0]?.name || "Unknown Cultivar",
+          strainName: fallbackResult.candidateStrains[0]?.name || "Closest Known Cultivar",
           confidenceRange: { min: 60, max: 70, explanation: "Low diversity due to similar images" },
           whyThisMatch: "Single image result due to low image diversity",
           alternateMatches: [],
@@ -1109,7 +1109,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // STABILIZATION MODE — Use fallback name instead of throwing
   const primaryName = nameFirstResult.primaryMatch.name;
-  if (!primaryName || primaryName.trim() === "" || primaryName === "Unknown" || primaryName === "Unidentified") {
+  if (!primaryName || primaryName.trim() === "" || primaryName === "Unknown" || primaryName === "Unidentified" || primaryName.toLowerCase() === "unknown") {
     console.warn("STABILIZATION: Invalid primary strain name resolved, using fallback:", {
       resolvedName: primaryName,
       nameFirstPipelineResult: nameFirstPipelineResult?.primaryStrainName,

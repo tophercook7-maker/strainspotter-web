@@ -19,7 +19,7 @@ export function translateVaultToScannerResult(
       confidence: 70,
     },
     closestCultivarMatch: {
-      name: signals.metadata.knownCultivarNames?.[0] ?? "Unknown Hybrid",
+      name: signals.metadata.knownCultivarNames?.[0] ?? "Closest Known Cultivar",
       confidence: 75,
     },
     userFacingHighlights: {

@@ -4,6 +4,6 @@
 export function resolvePrimaryStrainName(
   rankedNames: { name: string; score: number }[]
 ): string {
-  if (!rankedNames.length) return "Unknown Cultivar"
+  if (!rankedNames.length) return "Closest Known Cultivar"
   return rankedNames[0].name
 }

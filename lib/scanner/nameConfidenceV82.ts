@@ -540,7 +540,7 @@ export function runNameConfidenceV82(
     // Phase 8.2.1 — Fallback if no candidates
     return {
       primaryName: {
-        name: "Unknown Cultivar",
+        name: "Closest Known Cultivar",
         confidence: 55,
         confidenceTier: "low",
         matchType: "closest_known",

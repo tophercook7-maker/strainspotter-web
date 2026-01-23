@@ -917,7 +917,7 @@ export default function WikiStyleResultPanel({
         <div className="space-y-4 pb-4">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-bold text-white">
-              {viewModel.nameFirstDisplay?.primaryStrainName || "Unknown Cultivar"}
+              {viewModel.nameFirstDisplay?.primaryStrainName || "Closest Known Cultivar"}
             </h1>
 
           {/* Match type label */}

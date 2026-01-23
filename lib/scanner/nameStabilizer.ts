@@ -12,7 +12,7 @@ export function stabilizeStrainName(
 ): NameStabilityResult {
   if (!candidateNames || candidateNames.length === 0) {
     return {
-      stabilizedName: "Unknown Cultivar",
+      stabilizedName: "Closest Known Cultivar",
       stabilityScore: 0,
       explanation: ["No candidate names provided"],
     }
@@ -29,7 +29,7 @@ export function stabilizeStrainName(
 
   if (sorted.length === 0) {
     return {
-      stabilizedName: "Unknown Cultivar",
+      stabilizedName: "Closest Known Cultivar",
       stabilityScore: 0,
       explanation: ["No valid candidate names found"],
     }

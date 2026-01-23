@@ -78,7 +78,7 @@ export function matchStrainNameFirst(
   // This maintains compatibility with existing code that calls this function
   return {
     primaryMatch: {
-      name: "Unknown Cultivar",
+      name: "Closest Known Cultivar",
       confidence: 0,
       matchedTraits: [],
     },

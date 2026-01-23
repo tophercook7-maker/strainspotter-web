@@ -24,7 +24,7 @@ export function buildConsensusResultV4(results: any[]) {
   )
 
   return {
-    primaryMatch: sorted[0]?.[0] ?? "Unknown",
+    primaryMatch: sorted[0]?.[0] ?? "Closest Known Cultivar",
     rankedMatches: sorted.slice(0, 5),
     confidence: finalConfidence,
   }
