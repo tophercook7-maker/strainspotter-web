@@ -29,6 +29,13 @@ export type FinalDecision = {
     score: number;
     whyRejected: string;
   }>;
+  // Phase 5.0.8 — Failsafe: Signal conflict detection
+  signalConflicts?: {
+    hasConflicts: boolean;
+    conflictTypes: string[]; // e.g., ["visual_genetic", "terpene_effect", "cross_image"]
+    uncertaintyExplanation: string[]; // User-facing explanations
+    confidenceReduction: number; // How much confidence was reduced due to conflicts
+  };
 };
 
 /**
@@ -148,6 +155,90 @@ function calculateCrossImageAgreement(
   // Combined agreement score
   // 70% weight on agreement ratio, 30% on average rank
   return agreementRatio * 0.7 + avgRankScore * 0.3;
+}
+
+/**
+ * Phase 5.0.8 — Detect Signal Conflicts
+ * 
+ * Identifies when different signals (visual, genetic, terpene, effect, cross-image) conflict.
+ * Returns conflict types and user-facing uncertainty explanations.
+ */
+function detectSignalConflicts(
+  candidate: CandidateMatch,
+  observed: ObservedFingerprint,
+  contradictionScore: number,
+  crossImageAgreement: number,
+  imageResults?: ImageResult[],
+  fingerprintSeparation?: number
+): {
+  hasConflicts: boolean;
+  conflictTypes: string[];
+  uncertaintyExplanation: string[];
+  confidenceReduction: number;
+} {
+  const conflictTypes: string[] = [];
+  const uncertaintyExplanation: string[] = [];
+  
+  // Conflict 1: Visual vs Genetic mismatch
+  const visualScore = candidate.channelScores.visual;
+  const geneticScore = candidate.channelScores.genetics;
+  const visualGeneticGap = Math.abs(visualScore - geneticScore);
+  
+  if (visualGeneticGap > 0.3) {
+    conflictTypes.push("visual_genetic");
+    if (visualScore > geneticScore + 0.3) {
+      uncertaintyExplanation.push("Visual traits suggest this strain, but genetic lineage shows some differences");
+    } else {
+      uncertaintyExplanation.push("Genetic lineage aligns well, but visual characteristics show some variation");
+    }
+  }
+  
+  // Conflict 2: Terpene vs Effect mismatch
+  const terpeneScore = candidate.channelScores.terpenes;
+  const effectScore = candidate.channelScores.effects;
+  const terpeneEffectGap = Math.abs(terpeneScore - effectScore);
+  
+  if (terpeneEffectGap > 0.3 && terpeneScore > 0.3 && effectScore > 0.3) {
+    conflictTypes.push("terpene_effect");
+    uncertaintyExplanation.push("Terpene profile and expected effects show some inconsistency");
+  }
+  
+  // Conflict 3: Cross-image disagreement (if multiple images)
+  if (imageResults && imageResults.length > 1) {
+    if (crossImageAgreement < 0.6) {
+      conflictTypes.push("cross_image");
+      if (crossImageAgreement < 0.4) {
+        uncertaintyExplanation.push("Images show significant variation — different angles suggest different characteristics");
+      } else {
+        uncertaintyExplanation.push("Some variation detected across images — results based on best overall match");
+      }
+    }
+  }
+  
+  // Conflict 4: High contradiction score overall
+  if (contradictionScore > 0.4) {
+    conflictTypes.push("high_contradiction");
+    if (contradictionScore > 0.6) {
+      uncertaintyExplanation.push("Multiple signals conflict — confidence reduced to reflect uncertainty");
+    } else {
+      uncertaintyExplanation.push("Some conflicting signals detected — best match selected with reduced confidence");
+    }
+  }
+  
+  // Conflict 5: Low fingerprint separation (close competitors)
+  if (fingerprintSeparation !== undefined && fingerprintSeparation < 0.05) {
+    conflictTypes.push("close_competitors");
+    uncertaintyExplanation.push("Multiple strains scored very close — best match selected with reduced confidence");
+  }
+  
+  return {
+    hasConflicts: conflictTypes.length > 0,
+    conflictTypes,
+    uncertaintyExplanation: uncertaintyExplanation.length > 0 
+      ? uncertaintyExplanation 
+      : ["Analysis complete — best match selected based on available evidence"],
+    confidenceReduction: 0, // Will be set in makeFinalDecision
+  };
 }
 
 /**
@@ -289,6 +380,27 @@ export function makeFinalDecision(
   const contradictionPenalty = Math.round(selected.contradictionScore * 15); // Up to -15 points
   confidence -= contradictionPenalty;
   
+  // Phase 5.0.8 — FAILSAFE: Detect signal conflicts and apply additional penalties
+  const signalConflicts = detectSignalConflicts(
+    primaryCandidate,
+    observed,
+    selected.contradictionScore,
+    selected.crossImageAgreement,
+    imageResults,
+    scoredCandidates.length > 1 ? selected.fingerprintScore - scoredCandidates[1].fingerprintScore : selected.fingerprintScore
+  );
+  
+  // Additional confidence reduction for conflicts
+  if (signalConflicts.hasConflicts) {
+    // Reduce confidence by 5-15% based on conflict severity
+    const conflictSeverity = signalConflicts.conflictTypes.length;
+    const conflictPenalty = Math.min(15, 5 + (conflictSeverity * 3)); // 5% base + 3% per conflict type
+    confidence -= conflictPenalty;
+    signalConflicts.confidenceReduction = conflictPenalty;
+  } else {
+    signalConflicts.confidenceReduction = 0;
+  }
+  
   // Phase 5.0.6.4 — Apply image count caps
   // Rules:
   // - 1 image → cap ~82%
@@ -372,6 +484,16 @@ export function makeFinalDecision(
     reasoning.push("Some contradictions detected — confidence reduced");
   }
   
+  // Phase 5.0.8 — Add signal conflict explanations to reasoning
+  if (signalConflicts.hasConflicts) {
+    reasoning.push(`Signal conflicts detected: ${signalConflicts.conflictTypes.join(", ")}`);
+    reasoning.push(`Confidence reduced by ${signalConflicts.confidenceReduction}% due to conflicts`);
+    // Add user-facing uncertainty explanations
+    signalConflicts.uncertaintyExplanation.forEach(explanation => {
+      reasoning.push(explanation);
+    });
+  }
+  
   // Phase 5.0.5.6 — Format alternates
   const alternates = scoredCandidates
     .slice(1, 11) // Top 10 alternates (excluding primary)
@@ -435,6 +557,33 @@ export function makeFinalDecision(
   // - Image count caps (1 image = 82%, 2 images = 90%, 3-5 images = 97-99%)
   // - Never 100%
   
+  // Phase 5.0.8 — FAILSAFE: Ensure scanner NEVER fails
+  // Always return a valid decision, even if all signals conflict
+  if (confidence < 50) {
+    // If confidence dropped too low due to conflicts, floor it at 50%
+    // But keep the uncertainty explanation
+    confidence = 50;
+    if (!signalConflicts.hasConflicts) {
+      signalConflicts.hasConflicts = true;
+      signalConflicts.conflictTypes.push("low_confidence");
+      signalConflicts.uncertaintyExplanation.push("Multiple conflicting signals detected — showing best available match with reduced confidence");
+    }
+  }
+  
+  // Ensure primary strain name is never empty
+  if (!primaryStrainName || primaryStrainName.trim() === "") {
+    primaryStrainName = "Closest Known Cultivar";
+    confidence = Math.max(50, confidence - 10); // Reduce confidence further for fallback
+    if (!signalConflicts.hasConflicts) {
+      signalConflicts.hasConflicts = true;
+      signalConflicts.conflictTypes.push("name_uncertainty");
+      signalConflicts.uncertaintyExplanation.push("Unable to identify exact strain — showing closest known cultivar match");
+    }
+  }
+  
+  // Ensure confidence is within bounds
+  confidence = Math.max(50, Math.min(99, confidence));
+  
   return {
     primaryStrainName,
     confidence,
@@ -444,6 +593,7 @@ export function makeFinalDecision(
     reasoning,
     alternates,
     rejectedButClose,
+    signalConflicts, // Phase 5.0.8 — Include signal conflict information
   };
 }
 
