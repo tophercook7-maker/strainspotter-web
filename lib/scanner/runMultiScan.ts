@@ -147,6 +147,8 @@ import {
 import { extractVisualSignature, type VisualSignature } from "./visualFeatureExtraction";
 // Phase 4.9.2 — Strain Visual Baselines
 import { getStrainVisualBaseline, checkBaselineMatch, type VisualBaselineRange } from "./strainVisualBaselines";
+// Phase 4.9.3 — Image ↔ Strain Match Scoring
+import { calculateImageStrainMatchScore, scoreCandidateStrains, type VisualMatchScoreResult } from "./imageStrainMatchScoring";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -3691,6 +3693,64 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     if (candidateNamesForB1.length > 0) {
       try {
         phaseB1Result = nameFirstMatchingEngine(candidateNamesForB1);
+        
+        // Phase 4.9.3 — IMAGE ↔ STRAIN MATCH SCORING
+        // Score each candidate strain against image visual signatures
+        if (phaseB1Result && phaseB1Result.candidates.length > 0 && visualSignatures && visualSignatures.length > 0) {
+          try {
+            // Get database entries for candidates
+            type CandidateWithDb = {
+              candidate: typeof phaseB1Result.candidates[0];
+              dbEntry: CultivarReference;
+            };
+            const candidateStrains = phaseB1Result.candidates
+              .map(c => {
+                const dbEntry = CULTIVAR_LIBRARY.find(s =>
+                  s.name.toLowerCase() === c.strainName.toLowerCase() ||
+                  s.aliases?.some(a => a.toLowerCase() === c.strainName.toLowerCase())
+                );
+                return dbEntry ? { candidate: c, dbEntry } : null;
+              })
+              .filter((item): item is CandidateWithDb => item !== null);
+            
+            if (candidateStrains.length > 0) {
+              // Use primary visual signature (first image) for scoring
+              const primarySignature = visualSignatures[0];
+              
+              // Score each candidate strain
+              const scoredCandidates = candidateStrains.map(({ candidate, dbEntry }) => {
+                const matchResult = calculateImageStrainMatchScore(primarySignature, dbEntry);
+                
+                // Boost candidate score based on visual match (visual match contributes up to 20% boost)
+                const visualBoost = matchResult.visualMatchScore * 20; // 0-20 points
+                const adjustedScore = Math.min(100, candidate.score + visualBoost);
+                
+                return {
+                  ...candidate,
+                  score: adjustedScore,
+                  visualMatchScore: matchResult.visualMatchScore, // Store for reference
+                  visualMatchResult: matchResult, // Store detailed result
+                };
+              });
+              
+              // Update phaseB1Result with visual match scores (re-sort by adjusted score)
+              phaseB1Result = {
+                ...phaseB1Result,
+                candidates: scoredCandidates.sort((a, b) => b.score - a.score).slice(0, 5), // Re-sort and keep top 5
+              };
+              
+              console.log("Phase 4.9.3 — Visual Match Scoring applied:", {
+                candidatesScored: scoredCandidates.length,
+                topVisualMatch: scoredCandidates[0]?.visualMatchScore,
+                topScore: scoredCandidates[0]?.score,
+              });
+            }
+          } catch (error) {
+            console.warn("Phase 4.9.3 — Visual match scoring error:", error);
+            // Continue without visual match scoring
+          }
+        }
+        
         console.log("Phase B.1 — NAME-FIRST MATCHING ENGINE:", {
           candidates: phaseB1Result.candidates.map(c => `${c.strainName} (${c.score}%, [${c.reasonTags.join(", ")}])`),
           primary: phaseB1Result.primaryStrainName,
