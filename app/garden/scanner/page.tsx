@@ -493,12 +493,13 @@ export default function ScannerPage() {
           )}
           
           {/* Phase 4.7 — 6. Action button: min-height 48px, min-width 200px, centered, rounded-full */}
+          {/* Phase 4.4.6 — Run scan button hit target: proper sizing, contrast, cursor, no nested traps */}
           <button
             type="button"
             disabled={images.length === 0 || isScanning}
             onClick={handleAnalyzePlant}
             onKeyDown={handleKeyDown}
-            className="min-h-[48px] min-w-[200px] rounded-full bg-white text-black font-semibold text-base px-8 py-3 shadow-lg shadow-white/10 active:scale-[0.99] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 mx-auto"
+            className="min-h-[48px] min-w-[200px] rounded-full bg-white text-black font-semibold text-base px-8 py-3 shadow-lg shadow-white/10 active:scale-[0.99] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 mx-auto cursor-pointer"
             aria-label={isScanning ? "Analyzing plant" : "Analyze plant"}
             aria-busy={isScanning}
           >
