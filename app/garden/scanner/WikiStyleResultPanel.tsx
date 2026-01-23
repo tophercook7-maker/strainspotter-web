@@ -615,16 +615,151 @@ export default function WikiStyleResultPanel({
             </div>
           </CollapsibleSection>
           
-          {/* Phase 4.2 — Name Selection Trust Message */}
+          {/* Phase 5.1 — User Trust & Explanation Layer */}
+          {(() => {
+            // Try to get final decision data if available
+            const finalDecision = (viewModel.nameFirstDisplay as any)?.finalDecision;
+            const primaryCandidate = finalDecision ? {
+              channelScores: {
+                visual: finalDecision.fingerprintScore || 0.7,
+                genetics: finalDecision.fingerprintScore || 0.7,
+                terpenes: 0.6,
+                effects: 0.6,
+              },
+            } : null;
+            
+            // Generate trust explanation if we have enough data
+            if (finalDecision && primaryCandidate) {
+              const { generateTrustExplanation } = require("@/lib/scanner/userTrustExplanation");
+              const trustExplanation = generateTrustExplanation(
+                finalDecision,
+                primaryCandidate,
+                { inferredTerpeneVector: { likely: [], possible: [] }, inferredEffectVector: { likely: [], possible: [] } },
+                undefined,
+                imageCount
+              );
+              
+              return (
+                <div className="mt-6 space-y-4">
+                  {/* Primary Trust Message */}
+                  <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 backdrop-blur-sm">
+                    <p className="text-sm text-white/90 leading-relaxed font-medium">
+                      {trustExplanation.primaryTrustMessage}
+                    </p>
+                  </div>
+                  
+                  {/* Evidence Chain */}
+                  <CollapsibleSection
+                    title="How we identified this strain"
+                    defaultExpanded={false}
+                    icon="🔍"
+                  >
+                    <div className="pt-2 space-y-3">
+                      {trustExplanation.evidenceChain.map((evidence, idx) => {
+                        const strengthColor = evidence.strength === "strong" ? "text-green-400" :
+                                             evidence.strength === "moderate" ? "text-yellow-400" : "text-orange-400";
+                        const strengthIcon = evidence.strength === "strong" ? "✓" :
+                                            evidence.strength === "moderate" ? "~" : "?";
+                        
+                        return (
+                          <div key={idx} className="flex items-start gap-3">
+                            <span className={`text-lg ${strengthColor}`}>{strengthIcon}</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-white/90">{evidence.source}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${strengthColor} bg-opacity-20`}>
+                                  {evidence.strength}
+                                </span>
+                              </div>
+                              <p className="text-sm text-white/75 leading-relaxed">{evidence.contribution}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleSection>
+                  
+                  {/* Uncertainty Acknowledgment */}
+                  {trustExplanation.uncertaintyAcknowledgment?.hasUncertainty && (
+                    <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 backdrop-blur-sm">
+                      <h4 className="text-sm font-semibold text-yellow-200 mb-2">Understanding the uncertainty</h4>
+                      <ul className="space-y-1.5 mb-3">
+                        {trustExplanation.uncertaintyAcknowledgment.reasons.map((reason, idx) => (
+                          <li key={idx} className="text-sm text-yellow-100/90 leading-relaxed flex items-start">
+                            <span className="text-yellow-400 mr-2 mt-0.5">•</span>
+                            <span>{reason}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-3 pt-3 border-t border-yellow-500/20">
+                        <p className="text-xs font-semibold text-yellow-200 mb-1.5">How to improve confidence:</p>
+                        <ul className="space-y-1">
+                          {trustExplanation.uncertaintyAcknowledgment.howToImprove.map((tip, idx) => (
+                            <li key={idx} className="text-xs text-yellow-100/80 leading-relaxed flex items-start">
+                              <span className="text-yellow-400 mr-1.5 mt-0.5">→</span>
+                              <span>{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Educational Content */}
+                  <CollapsibleSection
+                    title="How this analysis works"
+                    defaultExpanded={false}
+                    icon="📚"
+                  >
+                    <div className="pt-2 space-y-3">
+                      <div>
+                        <p className="text-sm text-white/80 leading-relaxed mb-2">
+                          {trustExplanation.educationalContent.howItWorks}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white/90 mb-1.5">What we compare:</p>
+                        <ul className="space-y-1">
+                          {trustExplanation.educationalContent.whatWeCompare.map((item, idx) => (
+                            <li key={idx} className="text-sm text-white/70 leading-relaxed flex items-start">
+                              <span className="text-blue-400 mr-2 mt-0.5">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="pt-2 border-t border-white/10">
+                        <p className="text-sm text-white/75 leading-relaxed italic">
+                          {trustExplanation.educationalContent.whyThisMatters}
+                        </p>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+                  
+                  {/* Authority Indicators */}
+                  <div className="rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      <span className="font-semibold text-white/70">Analysis powered by:</span>{" "}
+                      {trustExplanation.authorityIndicators.databaseSize} • {trustExplanation.authorityIndicators.analysisDepth}
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+            
+            // Fallback: Show existing trust message
+            return viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" ? (
+              <div className="mt-6 rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                <p className="text-sm text-white/75 leading-relaxed">
+                  <span className="font-semibold text-white/90">Name Selection:</span>{" "}
+                  This strain name was selected through systematic analysis comparing your images against a database of 35,000+ documented cultivars. The identification is based on visual morphology, genetic lineage, and known cultivar characteristics.
+                </p>
+              </div>
+            ) : null;
+          })()}
+          
+          {/* Phase 4.2 — Name Selection Trust Message (Legacy fallback) */}
           {/* Phase 4.4 — Visual Authority Upgrade: Enhanced containment */}
-          {viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
-            <div className="mt-6 rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-              <p className="text-sm text-white/75 leading-relaxed">
-                <span className="font-semibold text-white/90">Name Selection:</span>{" "}
-                This strain name was selected through systematic analysis comparing your images against a database of 35,000+ documented cultivars. The identification is based on visual morphology, genetic lineage, and known cultivar characteristics.
-              </p>
-            </div>
-          )}
           
           {/* Phase 4.9.7 — Visual Contradiction Note (SAFETY) */}
           {(() => {
