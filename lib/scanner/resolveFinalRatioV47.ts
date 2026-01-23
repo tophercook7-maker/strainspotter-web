@@ -65,9 +65,50 @@ function getGeneticsRatio(
 }
 
 /**
- * Phase 4.7.1 — Get strain family baseline ratio
+ * Phase 4.7.3 — Family baseline ratios
+ * Known genetic baselines for major families
+ */
+const FAMILY_BASELINES: Record<string, { indica: number; sativa: number }> = {
+  "OG Kush": { indica: 70, sativa: 30 },
+  "Haze": { indica: 20, sativa: 80 },
+  "Cookies": { indica: 60, sativa: 40 },
+  "Kush": { indica: 75, sativa: 25 },
+  "Blueberry": { indica: 80, sativa: 20 },
+  "Northern Lights": { indica: 90, sativa: 10 },
+  "White Widow": { indica: 60, sativa: 40 },
+  "Skunk": { indica: 50, sativa: 50 },
+  "Afghan": { indica: 85, sativa: 15 },
+  "Thai": { indica: 10, sativa: 90 },
+  "Chemdawg": { indica: 50, sativa: 50 },
+  "Diesel": { indica: 30, sativa: 70 },
+  "Purple": { indica: 70, sativa: 30 },
+  "Gelato": { indica: 55, sativa: 45 },
+  "Zkittlez": { indica: 60, sativa: 40 },
+  "Wedding Cake": { indica: 60, sativa: 40 },
+  "Gorilla Glue": { indica: 50, sativa: 50 },
+  "Girl Scout Cookies": { indica: 60, sativa: 40 },
+  "GSC": { indica: 60, sativa: 40 },
+  "Sour": { indica: 30, sativa: 70 },
+  "Jack Herer": { indica: 20, sativa: 80 },
+  "AK-47": { indica: 50, sativa: 50 },
+  "Trainwreck": { indica: 20, sativa: 80 },
+  "Durban Poison": { indica: 5, sativa: 95 },
+  "Granddaddy Purple": { indica: 80, sativa: 20 },
+  "GDP": { indica: 80, sativa: 20 },
+  "Pineapple Express": { indica: 50, sativa: 50 },
+  "Bruce Banner": { indica: 50, sativa: 50 },
+  "Dosidos": { indica: 70, sativa: 30 },
+  "Strawberry Cough": { indica: 20, sativa: 80 },
+  "Green Crack": { indica: 15, sativa: 85 },
+  "Bubble Gum": { indica: 50, sativa: 50 },
+};
+
+/**
+ * Phase 4.7.3 — Get strain family baseline ratio
  * Weight: 20%
- * Uses average ratio of strains in the same family
+ * 
+ * Uses known family baselines, then applies adjustments from sibling strains on top
+ * Never replaces baseline blindly — adjustments are applied on top
  */
 function getFamilyBaselineRatio(
   strainName: string,
@@ -82,7 +123,68 @@ function getFamilyBaselineRatio(
       return { indica: 50, sativa: 50, weight };
     }
     
-    // Calculate average ratio from family members
+    // Phase 4.7.3 — Check for known family baseline
+    const familyBaseline = FAMILY_BASELINES[family.familyName];
+    if (familyBaseline) {
+      // Use known baseline as starting point
+      let baselineIndica = familyBaseline.indica;
+      let baselineSativa = familyBaseline.sativa;
+      
+      // Phase 4.7.3 — Apply adjustments from sibling strains on top of baseline
+      // Calculate average adjustment from family members
+      let adjustmentIndica = 0;
+      let adjustmentSativa = 0;
+      let adjustmentCount = 0;
+      
+      for (const siblingName of family.siblingStrains) {
+        const sibling = CULTIVAR_LIBRARY.find(s => s.name === siblingName);
+        if (sibling) {
+          const siblingAny = sibling as any;
+          let siblingIndica = 50;
+          let siblingSativa = 50;
+          
+          if (siblingAny.indicaPercent !== undefined && siblingAny.sativaPercent !== undefined) {
+            siblingIndica = siblingAny.indicaPercent;
+            siblingSativa = siblingAny.sativaPercent;
+          } else if (sibling.type === "Indica") {
+            siblingIndica = 80;
+            siblingSativa = 20;
+          } else if (sibling.type === "Sativa") {
+            siblingIndica = 20;
+            siblingSativa = 80;
+          }
+          
+          // Calculate adjustment (difference from baseline)
+          adjustmentIndica += (siblingIndica - baselineIndica);
+          adjustmentSativa += (siblingSativa - baselineSativa);
+          adjustmentCount++;
+        }
+      }
+      
+      // Apply average adjustment (limited to ±10% to prevent over-correction)
+      if (adjustmentCount > 0) {
+        const avgAdjustmentIndica = Math.max(-10, Math.min(10, adjustmentIndica / adjustmentCount));
+        const avgAdjustmentSativa = Math.max(-10, Math.min(10, adjustmentSativa / adjustmentCount));
+        
+        baselineIndica = Math.max(0, Math.min(100, baselineIndica + avgAdjustmentIndica));
+        baselineSativa = Math.max(0, Math.min(100, baselineSativa + avgAdjustmentSativa));
+        
+        // Normalize to sum to 100
+        const total = baselineIndica + baselineSativa;
+        if (total > 0) {
+          baselineIndica = (baselineIndica / total) * 100;
+          baselineSativa = (baselineSativa / total) * 100;
+        }
+      }
+      
+      return {
+        indica: Math.round(baselineIndica),
+        sativa: Math.round(baselineSativa),
+        weight,
+      };
+    }
+    
+    // Fallback: Calculate average from family members (if no known baseline)
     let totalIndica = 0;
     let totalSativa = 0;
     let count = 0;
@@ -120,7 +222,7 @@ function getFamilyBaselineRatio(
       };
     }
   } catch (error) {
-    console.warn("Phase 4.7.1 — Family baseline calculation error:", error);
+    console.warn("Phase 4.7.3 — Family baseline calculation error:", error);
   }
   
   // Fallback: balanced hybrid
