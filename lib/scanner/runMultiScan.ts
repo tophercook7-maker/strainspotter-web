@@ -150,6 +150,8 @@ import { resolveFinalConfidenceV48 } from "./resolveFinalConfidenceV48";
 import { resolveFinalConfidenceV50 } from "./resolveFinalConfidenceV50";
 // Phase 5.2 — Confidence Calibration Engine
 import { resolveFinalConfidenceV52 } from "./resolveFinalConfidenceV52";
+// CONFIDENCE CALIBRATION (REALISTIC)
+import { resolveFinalConfidenceV1 } from "./resolveFinalConfidenceV1";
 // Phase 5.3 — Name-First Strengthening & Alias Matching
 import { strengthenNameSelectionV53, findStrainByNameOrAlias } from "./nameStrengtheningV53";
 // Phase 5.5 — Name Confidence + Disambiguation Upgrade
@@ -4255,25 +4257,67 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Check if forced fallback name
   const hasForcedFallbackName = v52PrimaryStrainName === "Closest Known Cultivar" || v52PrimaryStrainName.length < 3;
   
-  // Phase 5.2 — Resolve final confidence using V52 (base by image count, modifiers, penalties, hard caps)
-  const finalConfidenceV52 = resolveFinalConfidenceV52({
+  // CONFIDENCE CALIBRATION V1 — Derive inputs for realistic confidence
+  // Image agreement score (0–1) - how well images agree on name/candidates
+  let imageAgreementScore = 0.7; // Default
+  if (consensusAgreementStrength !== undefined) {
+    imageAgreementScore = consensusAgreementStrength;
+  } else if (imageResultsV3.length > 1) {
+    // Count how many images have the same top candidate
+    const topCandidates = imageResultsV3.map(r => r.candidateStrains?.[0]?.name).filter(Boolean);
+    const uniqueCandidates = new Set(topCandidates);
+    if (uniqueCandidates.size === 1) {
+      imageAgreementScore = 1.0; // All images agree
+    } else if (uniqueCandidates.size === 2) {
+      imageAgreementScore = 0.7; // Most images agree
+    } else {
+      imageAgreementScore = 0.5; // Low agreement
+    }
+  }
+  
+  // Name pipeline confidence (0–1) - from name-first matching or name pipeline
+  let namePipelineConfidence = 0.7; // Default
+  if (nameFirstMatchingResult) {
+    namePipelineConfidence = Math.min(1.0, nameFirstMatchingResult.confidence / 100);
+  } else if (nameConfidenceV55) {
+    namePipelineConfidence = Math.min(1.0, nameConfidenceV55.confidence / 100);
+  } else if (strengthenedNameV53) {
+    namePipelineConfidence = Math.min(1.0, strengthenedNameV53.selectedScore / 100);
+  } else if (nameFirstPipelineResult?.nameConfidencePercent !== undefined) {
+    namePipelineConfidence = Math.min(1.0, nameFirstPipelineResult.nameConfidencePercent / 100);
+  }
+  
+  // Visual clarity score (0–1) - visual distinctness/clarity
+  let visualClarityScore = 0.6; // Default
+  if (imageDiversityScore !== undefined) {
+    visualClarityScore = imageDiversityScore;
+  } else if (fusedFeatures) {
+    // Use variance as a proxy for clarity (higher variance = more distinct = higher clarity)
+    const variance = (fusedFeatures as any).variance || 0;
+    visualClarityScore = Math.min(1.0, Math.max(0.3, variance / 100));
+  }
+  
+  // Check if images are similar
+  const hasSimilarImages = imageDiversityScore !== undefined && imageDiversityScore < 0.5;
+  
+  // Check if fallback name
+  const hasFallbackName = finalPrimaryName === "Closest Known Cultivar" || finalPrimaryName.length < 3;
+  
+  // CONFIDENCE CALIBRATION V1 — Resolve final confidence (realistic)
+  const finalConfidenceV1 = resolveFinalConfidenceV1({
     imageCount: v52ImageCount,
-    imageDiversityScore,
-    consensusAgreementStrength,
     databaseMatchStrength,
-    nameFirstCertainty,
-    ratioStability,
-    hasDatabaseLineageMatch: hasDatabaseLineageMatch || false,
-    hasClearMorphologySignals: hasClearMorphologySignals || false,
-    hasTerpeneAlignment,
-    hasConflictingCandidates,
+    imageAgreementScore,
+    namePipelineConfidence,
+    visualClarityScore,
+    hasSimilarImages,
+    hasFallbackName,
     hasWeakDatabaseMatch,
-    hasForcedFallbackName,
     previousConfidence: undefined, // TODO: Add session state for stability rule
   });
   
-  // Phase 5.2 — Update final confidence with V52 result
-  finalConfidence = finalConfidenceV52.confidence;
+  // CONFIDENCE CALIBRATION V1 — Update final confidence with V1 result
+  finalConfidence = finalConfidenceV1.confidence;
   
   // Phase 4.6 — Update name locking based on final confidence
   // Re-check name locking with final confidence
@@ -4282,51 +4326,55 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     (viewModel.nameFirstDisplay as any).isLocked = shouldLockNameFinal;
   }
   
-  // Phase 5.2 — 6. Output structure - Attach to ScannerViewModel.confidencePercent and confidenceTier
+  // CONFIDENCE CALIBRATION V1 — Output structure - Attach to ScannerViewModel.confidencePercent and confidenceTier
   if (viewModel.nameFirstDisplay) {
     viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
     viewModel.nameFirstDisplay.confidence = finalConfidence;
     
-    // Update confidenceTier based on V52 tier
-    const v52TierForDisplay = finalConfidenceV52.tier === "Very High" ? "very_high" as const
-      : finalConfidenceV52.tier === "High" ? "high" as const
-      : finalConfidenceV52.tier === "Medium" ? "medium" as const
+    // Update confidenceTier based on V1 tier
+    const v1TierForDisplay = finalConfidenceV1.tier === "Very High" ? "very_high" as const
+      : finalConfidenceV1.tier === "High" ? "high" as const
+      : finalConfidenceV1.tier === "Medium" ? "medium" as const
       : "low" as const;
-    viewModel.nameFirstDisplay.confidenceTier = v52TierForDisplay;
+    viewModel.nameFirstDisplay.confidenceTier = v1TierForDisplay;
     
-    // Update name confidence tier (Phase 4.2 format)
-    (viewModel.nameFirstDisplay as any).nameConfidenceTier = finalConfidenceV52.tier;
+    // Update name confidence tier
+    (viewModel.nameFirstDisplay as any).nameConfidenceTier = finalConfidenceV1.tier;
+    
+    // Update explanation if available (store in explanation.whyThisNameWon or as separate field)
+    // Note: explanation is already set from name-first matching, so we don't overwrite it
+    // Store confidence explanation separately if needed
+    (viewModel.nameFirstDisplay as any).confidenceExplanation = finalConfidenceV1.explanation;
   }
   viewModel.confidence = finalConfidence;
   
-  // Phase 5.2 — Update confidenceTier in viewModel (using V52 tier)
-  const v52TierValue = finalConfidenceV52.tier === "Very High" ? "very_high"
-    : finalConfidenceV52.tier === "High" ? "high"
-    : finalConfidenceV52.tier === "Medium" ? "medium"
+  // CONFIDENCE CALIBRATION V1 — Update confidenceTier in viewModel (using V1 tier)
+  const v1TierValue = finalConfidenceV1.tier === "Very High" ? "very_high"
+    : finalConfidenceV1.tier === "High" ? "high"
+    : finalConfidenceV1.tier === "Medium" ? "medium"
     : "low";
   
   viewModel.confidenceTier = {
-    tier: v52TierValue,
-    label: finalConfidenceV52.tier, // Phase 5.2 — Use V52 tier label
-    description: finalConfidenceV52.explanation, // User-facing explanation
+    tier: v1TierValue,
+    label: finalConfidenceV1.tier, // CONFIDENCE CALIBRATION V1 — Use V1 tier label
+    description: finalConfidenceV1.explanation, // User-facing explanation
   };
   
   // Phase 5.2 — Attach confidence explanation to viewModel (user-facing, short explanation)
   viewModel.confidenceExplanation = {
     score: finalConfidence,
-    tier: finalConfidenceV52.tier,
-    explanation: [finalConfidenceV52.explanation], // User-facing explanation (single string)
+    tier: finalConfidenceV1.tier,
+    explanation: [finalConfidenceV1.explanation], // User-facing explanation (single string)
   };
   
-  // Phase 5.2 — Logging (debug only)
-  console.log("CONFIDENCE_CALIBRATED_V52:", {
-    confidence: finalConfidenceV52.confidence,
-    tier: finalConfidenceV52.tier,
-    base: finalConfidenceV52.base,
-    modifiers: finalConfidenceV52.modifiers,
-    penalties: finalConfidenceV52.penalties,
-    cap: finalConfidenceV52.cap,
-    explanation: finalConfidenceV52.explanation,
+  // CONFIDENCE CALIBRATION V1 — Logging (debug only)
+  console.log("CONFIDENCE_CALIBRATED_V1:", {
+    confidence: finalConfidenceV1.confidence,
+    tier: finalConfidenceV1.tier,
+    raw: finalConfidenceV1.raw,
+    penalties: finalConfidenceV1.penalties,
+    cap: finalConfidenceV1.cap,
+    explanation: finalConfidenceV1.explanation,
   });
 
   // Phase 4.4 — Update ratio needsEstimationNote with final confidence
@@ -4334,9 +4382,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     (viewModel.ratio as any).needsEstimationNote = finalConfidence < 65;
   }
 
-  // Phase 5.2 — Honest caps are already applied in V52
-  // V52 applies: floor 55%, max 99% (never 100%), with base by image count, modifiers, penalties, and hard caps
-  // All confidence calculation is now handled by V52 with stability rules
+  // CONFIDENCE CALIBRATION V1 — Honest caps are already applied in V1
+  // V1 applies: floor 55%, max 99% (never 100%), with weighted inputs, penalties, and hard caps
+  // All confidence calculation is now handled by V1 with stability rules
 
   // 6) Safety floor: If confidence < 60%, still return result but mark as partial
   // Ensure confidence is never below 55 for UX stability
