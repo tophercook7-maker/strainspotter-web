@@ -527,11 +527,16 @@ function updateCultivarLibrary(newLibrary: CultivarReference[]): void {
  * @returns CultivarReference or undefined if not found
  */
 export function findByName(name: string): CultivarReference | undefined {
-  const library = getCultivarLibrarySync();
-  const normalizedName = name.toLowerCase().trim();
-  return library.find(strain => 
-    strain.name.toLowerCase().trim() === normalizedName
-  );
+  try {
+    const library = getCultivarLibrarySync();
+    const normalizedName = name.toLowerCase().trim();
+    return library.find(strain => 
+      strain.name.toLowerCase().trim() === normalizedName
+    );
+  } catch (error) {
+    // Database not loaded yet - return undefined
+    return undefined;
+  }
 }
 
 /**
@@ -541,11 +546,16 @@ export function findByName(name: string): CultivarReference | undefined {
  * @returns CultivarReference or undefined if not found
  */
 export function findByAlias(alias: string): CultivarReference | undefined {
-  const library = getCultivarLibrarySync();
-  const normalizedAlias = alias.toLowerCase().trim();
-  return library.find(strain => 
-    strain.aliases.some(a => a.toLowerCase().trim() === normalizedAlias)
-  );
+  try {
+    const library = getCultivarLibrarySync();
+    const normalizedAlias = alias.toLowerCase().trim();
+    return library.find(strain => 
+      strain.aliases.some(a => a.toLowerCase().trim() === normalizedAlias)
+    );
+  } catch (error) {
+    // Database not loaded yet - return undefined
+    return undefined;
+  }
 }
 
 /**
@@ -562,7 +572,8 @@ export function findClosestByTraits(traits: {
   terpenes?: string[];
   type?: "Indica" | "Sativa" | "Hybrid";
 }, limit: number = 5): CultivarReference[] {
-  const library = getCultivarLibrarySync();
+  try {
+    const library = getCultivarLibrarySync();
   
   // Score each strain based on trait matches
   const scored = library.map(strain => {
@@ -599,11 +610,15 @@ export function findClosestByTraits(traits: {
     return { strain, score };
   });
   
-  // Sort by score (descending) and return top N
-  return scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(item => item.strain);
+    // Sort by score (descending) and return top N
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(item => item.strain);
+  } catch (error) {
+    // Database not loaded yet - return empty array
+    return [];
+  }
 }
 
 /**

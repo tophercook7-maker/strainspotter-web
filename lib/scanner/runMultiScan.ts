@@ -154,6 +154,8 @@ import { resolveFinalConfidenceV52 } from "./resolveFinalConfidenceV52";
 import { strengthenNameSelectionV53, findStrainByNameOrAlias } from "./nameStrengtheningV53";
 // Phase 5.5 — Name Confidence + Disambiguation Upgrade
 import { resolveNameConfidenceV55 } from "./nameConfidenceV55";
+// NAME-FIRST MATCHING (NON-NEGOTIABLE)
+import { selectPrimaryStrainName } from "./selectPrimaryStrainName";
 // Phase 4.1.9 — consensus weight adjustment
 import { adjustConsensusWeight } from "./consensusWeights";
 // Phase 4.1.3 — replace analysis failure paths
@@ -3512,13 +3514,12 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     confidence: currentConfidence,
   });
   
-  // Phase 5.3 — NAME-FIRST STRENGTHENING & ALIAS MATCHING
-  // Strengthen name selection with alias matching, lineage inference, and phenotype fallback
-  let strengthenedNameV53: ReturnType<typeof strengthenNameSelectionV53> | null = null;
+  // NAME-FIRST MATCHING (NON-NEGOTIABLE) — Select primary strain name with priority order
+  let nameFirstMatchingResult: { name: string; confidence: number; reasons: string[]; isLocked: boolean; source: string } | null = null;
   let perImageTopNames: string[] = []; // Declare outside if block for Phase 5.5
   let databaseCandidates: import("./cultivarLibrary").CultivarReference[] = []; // Declare outside if block for Phase 5.5
   
-  if (nameFirstPipelineResult && imageResultsV3.length > 0) {
+  if (imageResultsV3.length > 0) {
     // Collect per-image top names
     perImageTopNames = imageResultsV3.map(r => {
       const topCandidate = r.candidateStrains?.[0];
@@ -3531,14 +3532,62 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       databaseCandidates.push(dbEntry);
     }
     // Add alternate matches from nameFirstPipelineResult
-    if (nameFirstPipelineResult.alternateMatches) {
+    if (nameFirstPipelineResult?.alternateMatches) {
       for (const alt of nameFirstPipelineResult.alternateMatches) {
-        const match = findStrainByNameOrAlias(alt.name);
+        const altName = typeof alt === "string" ? alt : alt.name;
+        const match = findStrainByNameOrAlias(altName);
         if (match && !databaseCandidates.find(c => c.name === match.strain.name)) {
           databaseCandidates.push(match.strain);
         }
       }
     }
+    
+    // Extract terpene profile for name-first matching
+    let terpeneProfileForName: string[] = [];
+    if (viewModel.terpeneExperience?.dominantTerpenes || viewModel.terpeneExperience?.secondaryTerpenes) {
+      const allTerpenes = [
+        ...(viewModel.terpeneExperience.dominantTerpenes || []),
+        ...(viewModel.terpeneExperience.secondaryTerpenes || []),
+      ];
+      terpeneProfileForName = allTerpenes.map(t => typeof t === "string" ? t : (t as any).name || "").filter(Boolean);
+    } else if (dbEntry?.terpeneProfile || (dbEntry as any)?.commonTerpenes) {
+      terpeneProfileForName = (dbEntry.terpeneProfile || (dbEntry as any).commonTerpenes || []).map((t: string) => String(t));
+    }
+    
+    // NAME-FIRST MATCHING — Select primary strain name (NON-NEGOTIABLE)
+    try {
+      nameFirstMatchingResult = selectPrimaryStrainName({
+        perImageTopNames,
+        imageCount: imageResultsV3.length || filteredInput.imageCount,
+        databaseCandidates,
+        fusedFeatures: fusedFeatures || undefined,
+        terpeneProfile: terpeneProfileForName,
+      });
+      
+      console.log("NAME-FIRST MATCHING:", {
+        name: nameFirstMatchingResult.name,
+        confidence: nameFirstMatchingResult.confidence,
+        source: nameFirstMatchingResult.source,
+        isLocked: nameFirstMatchingResult.isLocked,
+      });
+    } catch (error) {
+      // If name-first matching fails (e.g., database not loaded), use fallback
+      console.warn("NAME-FIRST MATCHING: Error, using fallback:", error);
+      nameFirstMatchingResult = {
+        name: perImageTopNames[0] || "Closest Known Cultivar",
+        confidence: 70,
+        reasons: ["Name selected based on available analysis"],
+        isLocked: false,
+        source: "fallback",
+      };
+    }
+  }
+
+  // Phase 5.3 — NAME-FIRST STRENGTHENING & ALIAS MATCHING
+  // Strengthen name selection with alias matching, lineage inference, and phenotype fallback
+  let strengthenedNameV53: ReturnType<typeof strengthenNameSelectionV53> | null = null;
+  
+  if (nameFirstPipelineResult && imageResultsV3.length > 0) {
 
     // Extract observed lineage from dbEntry if available
     const observedLineage = dbEntry?.genetics || undefined;
@@ -3653,51 +3702,73 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Note: finalConfidence will be updated after V45, but we use current confidence for locking
   const shouldLockName = nameTrustV46.isLocked && currentConfidence >= 75;
   
-  // Phase 5.5 — Primary rule: ALWAYS return one primary strain name (never empty/Unknown/Unidentified)
-  // Priority: Phase 5.5 > Phase 5.3 > Phase 4.6
+  // NAME-FIRST MATCHING (NON-NEGOTIABLE) — Primary rule: ALWAYS return one primary strain name
+  // Priority: nameFirstMatchingResult > nameConfidenceV55 > strengthenedNameV53 > nameTrustV46
   let finalPrimaryName = "Closest Known Cultivar"; // Fallback
-  if (nameConfidenceV55) {
+  let finalNameConfidence = 70; // Default
+  let finalNameReasons: string[] = ["Name selected based on available analysis"];
+  let finalNameIsLocked = false;
+  
+  if (nameFirstMatchingResult) {
+    // NAME-FIRST MATCHING takes highest priority
+    finalPrimaryName = nameFirstMatchingResult.name;
+    finalNameConfidence = nameFirstMatchingResult.confidence;
+    finalNameReasons = nameFirstMatchingResult.reasons;
+    finalNameIsLocked = nameFirstMatchingResult.isLocked;
+  } else if (nameConfidenceV55) {
     finalPrimaryName = nameConfidenceV55.primaryStrainName;
+    finalNameConfidence = nameConfidenceV55.confidence;
+    finalNameReasons = nameConfidenceV55.whyThisNameWon;
+    finalNameIsLocked = nameConfidenceV55.confidence >= 85;
   } else if (strengthenedNameV53) {
     finalPrimaryName = strengthenedNameV53.primaryStrainName;
+    finalNameConfidence = strengthenedNameV53.selectedScore;
+    finalNameReasons = [`Name selected based on ${strengthenedNameV53.selectedSource} match`];
+    finalNameIsLocked = strengthenedNameV53.selectedScore >= 85;
   } else if (nameTrustV46) {
     finalPrimaryName = nameTrustV46.primaryName;
+    finalNameConfidence = currentConfidence;
+    finalNameReasons = [nameTrustV46.explanation];
+    finalNameIsLocked = nameTrustV46.isLocked;
   }
   
-  // Ensure name is never empty
+  // Ensure name is never empty (NAME-FIRST MATCHING guarantee)
   if (!finalPrimaryName || finalPrimaryName.length < 3) {
     finalPrimaryName = "Closest Known Cultivar";
+    finalNameConfidence = 70;
+    finalNameReasons = ["Fallback selection due to insufficient data"];
+    finalNameIsLocked = false;
   }
   
-  // Phase 5.5 — Update nameFirstDisplay with V55 results (enhanced with V53 and V46)
+  // NAME-FIRST MATCHING — Update nameFirstDisplay with name-first result (NON-NEGOTIABLE)
   if (viewModel.nameFirstDisplay) {
-    // Override primary name (always non-empty, never "Unknown") - Phase 5.5 prioritized
+    // Override primary name (always non-empty, never "Unknown") - NAME-FIRST MATCHING prioritized
     viewModel.nameFirstDisplay.primaryStrainName = finalPrimaryName;
     viewModel.nameFirstDisplay.primaryName = finalPrimaryName;
     
-    // Update confidence from Phase 5.5 if available
-    if (nameConfidenceV55) {
-      viewModel.nameFirstDisplay.confidencePercent = nameConfidenceV55.confidence;
-      viewModel.nameFirstDisplay.confidence = nameConfidenceV55.confidence;
-      viewModel.nameFirstDisplay.confidenceTier = nameConfidenceV55.confidenceTier;
-    }
+    // Update confidence from name-first matching
+    viewModel.nameFirstDisplay.confidencePercent = finalNameConfidence;
+    viewModel.nameFirstDisplay.confidence = finalNameConfidence;
     
-    // Update explanation (clear reason why this name won) - Phase 5.5 prioritized
-    // 6) Free vs Paid: FREE shows 2 bullets, PAID shows full explanation
+    // Determine confidence tier
+    let confidenceTier: "very_high" | "high" | "medium" | "low";
+    if (finalNameConfidence >= 90) {
+      confidenceTier = "very_high";
+    } else if (finalNameConfidence >= 80) {
+      confidenceTier = "high";
+    } else if (finalNameConfidence >= 70) {
+      confidenceTier = "medium";
+    } else {
+      confidenceTier = "low";
+    }
+    viewModel.nameFirstDisplay.confidenceTier = confidenceTier;
+    
+    // Update explanation (clear reason why this name won) - NAME-FIRST MATCHING prioritized
     if (!viewModel.nameFirstDisplay.explanation) {
       viewModel.nameFirstDisplay.explanation = { whyThisNameWon: [], whatRuledOutOthers: [], varianceNotes: [] };
     }
-    if (nameConfidenceV55) {
-      // Phase 5.5 — whyThisNameWon is an array (at least 2 bullets: one database, one image)
-      // FREE tier: Show first 2 bullets only
-      // PAID tier: Show all bullets + disambiguation notes
-      viewModel.nameFirstDisplay.explanation.whyThisNameWon = nameConfidenceV55.whyThisNameWon;
-    } else {
-      const explanationText = strengthenedNameV53
-        ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
-        : nameTrustV46.explanation;
-      viewModel.nameFirstDisplay.explanation.whyThisNameWon = [explanationText];
-    }
+    // NAME-FIRST MATCHING provides reasons array
+    viewModel.nameFirstDisplay.explanation.whyThisNameWon = finalNameReasons;
     
     // Attach alternates (ranked, max 3) - Phase 5.5 prioritized
     if (nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0) {
@@ -3708,56 +3779,62 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       viewModel.nameFirstDisplay.alternateNames = nameTrustV46.alternates;
     }
     
-    // Mark as locked if confidence ≥75%
-    (viewModel.nameFirstDisplay as any).isLocked = shouldLockName;
+    // NAME-FIRST MATCHING — Mark as locked if DB confidence >= 85% OR name-first result says locked
+    (viewModel.nameFirstDisplay as any).isLocked = finalNameIsLocked || (shouldLockName && finalNameConfidence >= 75);
     
     // Phase 5.5 — Attach disambiguation flag
     if (nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
     }
     
-    // Phase 5.3 — Attach source information (if V55 didn't override)
-    if (!nameConfidenceV55) {
+    // NAME-FIRST MATCHING — Attach source information
+    if (nameFirstMatchingResult) {
+      (viewModel.nameFirstDisplay as any).nameSource = nameFirstMatchingResult.source;
+    } else if (!nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
     }
   } else {
-    // Create nameFirstDisplay if it doesn't exist
+    // Create nameFirstDisplay if it doesn't exist - NAME-FIRST MATCHING
+    let confidenceTier: "very_high" | "high" | "medium" | "low";
+    if (finalNameConfidence >= 90) {
+      confidenceTier = "very_high";
+    } else if (finalNameConfidence >= 80) {
+      confidenceTier = "high";
+    } else if (finalNameConfidence >= 70) {
+      confidenceTier = "medium";
+    } else {
+      confidenceTier = "low";
+    }
+    
     viewModel.nameFirstDisplay = {
       primaryStrainName: finalPrimaryName,
       primaryName: finalPrimaryName,
-      confidencePercent: nameConfidenceV55?.confidence || finalConfidence,
-      confidence: nameConfidenceV55?.confidence || finalConfidence,
-      confidenceTier: nameConfidenceV55?.confidenceTier || (finalConfidence >= 75 ? "high" as const : "medium" as const),
-      tagline: nameConfidenceV55
-        ? nameConfidenceV55.whyThisNameWon[0] || "Closest known match"
-        : strengthenedNameV53 
-        ? `Name selected based on ${strengthenedNameV53.selectedSource} match`
-        : "Closest known match based on available analysis",
+      confidencePercent: finalNameConfidence,
+      confidence: finalNameConfidence,
+      confidenceTier,
+      tagline: finalNameReasons[0] || "Closest known match based on available analysis",
       explanation: { 
-        whyThisNameWon: nameConfidenceV55
-          ? nameConfidenceV55.whyThisNameWon // Array of explanation bullets
-          : [strengthenedNameV53 
-          ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
-          : nameTrustV46.explanation], 
+        whyThisNameWon: finalNameReasons, 
         whatRuledOutOthers: [], 
         varianceNotes: [] 
       },
       alternateNames: nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0
         ? nameConfidenceV55.alternateMatches.map(a => a.name)
-        : strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates,
+        : strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates || [],
     };
-    (viewModel.nameFirstDisplay as any).isLocked = shouldLockName;
+    (viewModel.nameFirstDisplay as any).isLocked = finalNameIsLocked || (shouldLockName && finalNameConfidence >= 75);
     if (nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
     }
-    if (!nameConfidenceV55) {
+    if (nameFirstMatchingResult) {
+      (viewModel.nameFirstDisplay as any).nameSource = nameFirstMatchingResult.source;
+    } else if (!nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
     }
   }
   
-  // Phase 5.5 — 8. Logging
+  // NAME-FIRST MATCHING — 8. Logging
   // NAME_FINAL: <name> confidence=<c> alternates=<n>
-  const finalNameConfidence = nameConfidenceV55?.confidence || currentConfidence;
   const finalAlternates = nameConfidenceV55?.alternateMatches.map(a => a.name) || strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates || [];
   console.log("NAME_FINAL:", {
     name: finalPrimaryName,
