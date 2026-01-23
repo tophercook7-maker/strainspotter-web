@@ -79,8 +79,9 @@ export default function WikiStyleResultPanel({
         <div>
           {/* Primary Header: Strain Name + Confidence Badge */}
           <div className="mb-6">
-            {/* Strain Name — Large, Bold, Primary Anchor */}
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-3">
+            {/* Phase 5.3.5 — NAME-FIRST FEEL (CRITICAL) */}
+            {/* Strain Name — Large, Bold, Primary Anchor (THE HERO) */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-4">
               {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
                 ? "Unidentified Hybrid Phenotype"
                 : viewModel.nameFirstDisplay.primaryStrainName}
@@ -140,14 +141,26 @@ export default function WikiStyleResultPanel({
                 const familyColor = familyTier === "very_high" || familyTier === "high" ? "bg-green-600" : familyTier === "medium" ? "bg-yellow-500" : "bg-orange-500";
                 const strainColor = strainTier === "very_high" || strainTier === "high" ? "bg-green-600" : strainTier === "medium" ? "bg-yellow-500" : "bg-orange-500";
                 
+                // Phase 5.3.5 — NAME-FIRST FEEL (CRITICAL)
+                // Dual confidence display with percentages shown smaller, secondary
                 return (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${familyColor}`}>
-                      {familyLabel} (family)
-                    </span>
-                    <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${strainColor}`}>
-                      {strainLabel} (strain)
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className={`px-4 py-2 rounded-full text-lg font-semibold text-white shadow-sm ${familyColor}`}>
+                        {familyLabel} (family)
+                      </span>
+                      <span className="text-sm text-white/50 font-medium">
+                        {familyConf}%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className={`px-4 py-2 rounded-full text-lg font-semibold text-white shadow-sm ${strainColor}`}>
+                        {strainLabel} (strain)
+                      </span>
+                      <span className="text-sm text-white/50 font-medium">
+                        {strainConf}%
+                      </span>
+                    </div>
                   </div>
                 );
               }
