@@ -7,6 +7,7 @@ import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
 import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
 import { assessImageDiversity } from "@/lib/scanner/imageDiversity";
 import { inferImageAngleFromBase64 } from "@/lib/scanner/imageAngleHeuristics";
+import { analyzeImageSet } from "@/lib/scanner/multiImageGuidance"; // Phase 5.2.2 — Slot-aware UI
 
 type ScanTier = "basic" | "pro" | "expert";
 import ResultPanel from "./ResultPanel";
@@ -464,19 +465,28 @@ export default function ScannerPage() {
                 </div>
               )}
               
-              {/* Phase 4.0 Part A — IMAGE PREVIEWS with Labels */}
+              {/* Phase 5.2.2 — SLOT-AWARE UI (FREE TIER) */}
+              {/* Phase 4.0 Part A — IMAGE PREVIEWS with Slot Labels */}
               {images.length > 0 && (() => {
+                // Phase 5.2.2 — Get slot information from guidance system
+                const guidance = analyzeImageSet(imagePreviews, MAX_IMAGES);
                 const imageLabels = assignUserImageLabels(images.length);
-                // Phase 4.0.2 — Extract role information from scan result if available
-                // Note: Role information would need to be stored in ViewModel or scanResult
-                // For now, we'll show the UI structure ready for role data
-                const imageRoles: (string | undefined)[] = []; // TODO: Get from scan result when available
+                
+                // Create a map from image index to slot
+                const imageToSlot = new Map<number, typeof guidance.slots[0]>();
+                guidance.slots.forEach(slot => {
+                  if (slot.filled && slot.imageIndex !== undefined) {
+                    imageToSlot.set(slot.imageIndex, slot);
+                  }
+                });
+                
                 return (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
                       {imagePreviews.map((preview, idx) => {
+                        const slot = imageToSlot.get(idx);
                         const label = imageLabels.get(idx) || "Optional";
-                        const role = imageRoles[idx] as "macro" | "structure" | "canopy" | "unknown" | undefined;
+                        
                         return (
                           <div
                             key={idx}
@@ -489,25 +499,37 @@ export default function ScannerPage() {
                               alt={`scan-${idx + 1}`}
                               className="w-full h-full object-contain max-h-[260px] rounded-xl"
                             />
+                            
+                            {/* Phase 5.2.2 — Slot label and checkmark when filled */}
+                            {slot && (
+                              <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-md">
+                                <span className="text-green-400 text-xs">✓</span>
+                                <span className="text-xs text-white font-medium">
+                                  {slot.label}
+                                </span>
+                              </div>
+                            )}
+                            
                             {/* Phase 4.0.2 — Angle badges on previews */}
                             <span className="absolute bottom-1 right-1 text-xs px-2 py-0.5 rounded bg-black/70">
                               {preview.angleLabel}
                             </span>
-                            {/* Phase 4.0.2 — subtle role hints (no user burden) - kept for backward compat */}
-                            {role && role !== "unknown" && (
-                              <span className="absolute top-1 left-1 text-xs bg-black/60 px-2 py-0.5 rounded opacity-50">
-                                {role}
-                              </span>
-                            )}
-                            {/* Phase 15.5.3 — Image label and controls */}
+                            
+                            {/* Phase 5.2.2 — Image label and controls */}
                             <div className="mt-2 flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
                                   {idx + 1}
                                 </span>
-                                <span className="text-xs text-white/70 font-medium">
-                                  {label}
-                                </span>
+                                {slot ? (
+                                  <span className="text-xs text-white/70 font-medium">
+                                    Slot {slot.slotNumber}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-white/50 font-medium">
+                                    {label}
+                                  </span>
+                                )}
                               </div>
                               <button
                                 onClick={() => removeImage(idx)}
@@ -521,6 +543,46 @@ export default function ScannerPage() {
                         );
                       })}
                     </div>
+                    
+                    {/* Phase 5.2.2 — Empty slot hints (subtle, non-blocking) */}
+                    {guidance.slots.some(s => !s.filled && s.requirement !== "optional") && (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-xs text-white/50 font-medium">
+                          Recommended slots:
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {guidance.slots
+                            .filter(s => !s.filled && s.requirement !== "optional")
+                            .map((slot) => (
+                              <div
+                                key={slot.slotNumber}
+                                className="rounded-lg border border-white/10 bg-white/5 p-2 text-center"
+                              >
+                                <div className="text-sm mb-1">{slot.icon}</div>
+                                <div className="text-xs text-white/60 font-medium mb-0.5">
+                                  Slot {slot.slotNumber}
+                                </div>
+                                <div className="text-xs text-white/70 font-semibold mb-1">
+                                  {slot.label}
+                                </div>
+                                <div className="text-[10px] text-white/50 leading-tight">
+                                  {slot.description}
+                                </div>
+                                {slot.requirement === "required" && (
+                                  <div className="text-[10px] text-orange-400 mt-1">
+                                    Required
+                                  </div>
+                                )}
+                                {slot.requirement === "recommended" && (
+                                  <div className="text-[10px] text-yellow-400 mt-1">
+                                    Recommended
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                     {/* Phase 4.0 Part A — Single Image Warning */}
                     {images.length === 1 && !singleImageConfirmed && (
                       <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
