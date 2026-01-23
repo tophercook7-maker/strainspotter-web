@@ -5302,7 +5302,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
     
     const result: ScanResult = {
-      status: needsFallback ? "partial" : "success",
+      status: (needsFallback ? "partial" : "success") as "partial" | "success",
       consensus: finalConsensusResult,
       confidence: viewModel.nameFirstDisplay.confidencePercent,
       result: viewModel, // Backward compatibility
