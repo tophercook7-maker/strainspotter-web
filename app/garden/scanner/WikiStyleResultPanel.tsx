@@ -281,19 +281,15 @@ export default function WikiStyleResultPanel({
                 return null;
               })()}
               
-              {/* Phase 4.2 — Subtle info banner (if samePlantNote exists OR multiple images) */}
+              {/* Phase 5.1.5 — SAME-PLANT DETECTION MESSAGE (TRANSPARENT) */}
               {(() => {
                 const hasSamePlantNote = !!(result as any).samePlantNote;
-                const imageCount = viewModel.multiImageInfo?.imageCountText 
-                  ? parseInt(viewModel.multiImageInfo.imageCountText.match(/\d+/)?.[0] || "1")
-                  : 1;
                 
-                if (hasSamePlantNote || imageCount > 1) {
+                // Only show if same-plant is explicitly detected (not just multiple images)
+                if (hasSamePlantNote) {
                   return (
-                    <div className="mt-2 rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2">
-                      <p className="text-xs text-blue-200/90 leading-relaxed">
-                        Scanning the same plant from additional angles improves name stability.
-                      </p>
+                    <div className="mt-3 text-xs text-white/60 leading-relaxed">
+                      Photos appear to be the same plant. Confidence reflects limited angle diversity.
                     </div>
                   );
                 }
