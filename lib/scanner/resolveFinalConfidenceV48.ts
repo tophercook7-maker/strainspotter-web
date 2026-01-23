@@ -93,10 +93,9 @@ export function resolveFinalConfidenceV48(args: {
       rawConfidence = Math.max(rawConfidence, 88);
     }
 
-    // 5) Free-tier realism - Cap displayed confidence at 94%
-    if (isFreeTier) {
-      rawConfidence = Math.min(rawConfidence, 94);
-    }
+    // Phase 5.3.6 — FREE TIER OPTIMIZATION
+    // No "crippled" feel - free tier gets full confidence range
+    // Removed: Free-tier confidence cap (was 94%)
 
     // 7) Safety clamp
     rawConfidence = Math.max(55, Math.min(99, rawConfidence));

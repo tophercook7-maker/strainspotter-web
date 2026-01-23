@@ -1158,16 +1158,19 @@ export default function WikiStyleResultPanel({
           
           {/* Phase 4.6 Step 4.6.3 — Ratio display removed (belongs in WikiReportPanel via analysis layer) */}
 
+          {/* Phase 5.3.6 — FREE TIER OPTIMIZATION: Always show dominant terpenes */}
           {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
-          {/* UI CONTRACT ENFORCEMENT — terpeneExperience is optional, only render if present */}
-          {viewModel.terpeneExperience && (
+          {/* Show terpenes from terpeneGuess if terpeneExperience is not available (free tier) */}
+          {(viewModel.terpeneExperience || (safeTerpeneGuess && safeTerpeneGuess.length > 0)) && (
             <div className="space-y-4 pt-4">
             {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
-            {viewModel.terpeneExperience.dominantTerpenes && viewModel.terpeneExperience.dominantTerpenes.length > 0 && (
+            {/* Phase 5.3.6 — Show terpenes from terpeneExperience OR terpeneGuess (free tier always gets terpenes) */}
+            {((viewModel.terpeneExperience?.dominantTerpenes && viewModel.terpeneExperience.dominantTerpenes.length > 0) || 
+              (safeTerpeneGuess && safeTerpeneGuess.length > 0)) && (
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-white/90">Dominant Terpenes</h3>
                 <div className="flex flex-wrap gap-2">
-                  {viewModel.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
+                  {(viewModel.terpeneExperience?.dominantTerpenes || safeTerpeneGuess).map((terpene, idx) => (
                     <span
                       key={idx}
                       className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30"
@@ -1175,7 +1178,7 @@ export default function WikiStyleResultPanel({
                       {terpene}
                     </span>
                   ))}
-                  {viewModel.terpeneExperience.secondaryTerpenes.length > 0 && (
+                  {viewModel.terpeneExperience?.secondaryTerpenes && viewModel.terpeneExperience.secondaryTerpenes.length > 0 && (
                     <>
                       {viewModel.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
                         <span

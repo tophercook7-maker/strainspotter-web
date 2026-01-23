@@ -11,6 +11,8 @@ import type { ImageResult, ConsensusResult } from "./consensusEngine";
 import { buildTrustLayer } from "./trustEngine";
 import { generateExtendedProfile } from "./extendedProfile";
 import { checkConsistency } from "./freeTierDepth";
+// Phase 5.3.6 — FREE TIER OPTIMIZATION
+import { ensureFreeTierFeatures } from "./freeTierOptimization";
 import { generateConfidenceExplanation } from "./confidenceExplanation";
 import { assignImageLabels } from "./imageIntakeLabels";
 import { determineStrainName } from "./namingHierarchy";
@@ -5935,6 +5937,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       // Validation warnings stored in validationWarnings array (will be added to result.scanWarning)
     }
     
+    // Phase 5.3.6 — FREE TIER OPTIMIZATION
+    // Ensure all core features are always available (no "crippled" feel)
+    const optimizedViewModel = ensureFreeTierFeatures(viewModel);
+    
     const result: ScanResult = {
       status: "partial",
       guard: {
@@ -5942,8 +5948,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         reason: guardResult.status === "low-diversity" || guardResult.status === "low-confidence" ? guardResult.reason : "Analysis completed",
       },
       consensus: finalConsensusResult,
-      confidence: viewModel.nameFirstDisplay.confidencePercent,
-      result: viewModel, // Backward compatibility
+      confidence: optimizedViewModel.nameFirstDisplay.confidencePercent,
+      result: optimizedViewModel, // Backward compatibility
       synthesis, // Backward compatibility
       diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
       scanWarning: needsFallback 
@@ -6120,6 +6126,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       ? (warning ? `${warning}. ${validationWarningText}` : validationWarningText)
       : (warning || undefined);
     
+    // Phase 5.3.6 — FREE TIER OPTIMIZATION
+    // Ensure all core features are always available (no "crippled" feel)
+    const optimizedViewModel = ensureFreeTierFeatures(viewModel);
+    
     // Create result based on status (discriminated union: "partial" requires guard, "success" does not)
     const result: ScanResult = needsFallback
       ? {
@@ -6129,27 +6139,27 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
             reason: validationWarningText || "Contract validation failed",
           },
           consensus: finalConsensusResult,
-          confidence: viewModel.nameFirstDisplay.confidencePercent,
-          result: viewModel, // Backward compatibility
+          confidence: optimizedViewModel.nameFirstDisplay.confidencePercent,
+          result: optimizedViewModel, // Backward compatibility
           synthesis, // Backward compatibility
           diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
           scanWarning: finalScanWarning, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
           scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
           samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
-          similarImagesNote: similarImagesNote || undefined, // Phase 5.2.4 — User-facing note when images are similar
+          similarImagesNote: similarImagesNote || samePlantPenaltyNote || undefined, // Phase 5.2.4 — User-facing note when images are similar, Phase 5.3.4 — Same-plant penalty note
           meta: scanMeta, // Phase 4.2.6 — Scan metadata
         }
       : {
           status: "success",
           consensus: finalConsensusResult,
-          confidence: viewModel.nameFirstDisplay.confidencePercent,
-          result: viewModel, // Backward compatibility
+          confidence: optimizedViewModel.nameFirstDisplay.confidencePercent,
+          result: optimizedViewModel, // Backward compatibility
           synthesis, // Backward compatibility
           diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
           scanWarning: finalScanWarning, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
           scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
           samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
-          similarImagesNote: similarImagesNote || undefined, // Phase 5.2.4 — User-facing note when images are similar
+          similarImagesNote: similarImagesNote || samePlantPenaltyNote || undefined, // Phase 5.2.4 — User-facing note when images are similar, Phase 5.3.4 — Same-plant penalty note
           meta: scanMeta, // Phase 4.2.6 — Scan metadata
         };
   
