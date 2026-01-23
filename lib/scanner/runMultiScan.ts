@@ -3769,40 +3769,38 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Note: finalConfidence will be updated after V45, but we use current confidence for locking
   const shouldLockName = nameTrustV46.isLocked && currentConfidence >= 75;
   
-  // Phase B.1 — NAME-FIRST MATCHING CORE (Database first, always)
-  // Priority: phaseB1Result > nameFirstMatchingResult > nameConfidenceV55 > strengthenedNameV53 > nameTrustV46
+  // PRIMARY STRAIN SELECTION LOGIC
+  // Select primaryStrainName ONLY from top-5 name-first results (Phase B.1)
+  // If top score < 60: primaryStrainName = "Closest Known Cultivar"
+  // Never leave primaryStrainName empty
+  // Never throw
+  
   let finalPrimaryName = "Closest Known Cultivar"; // Fallback
   let finalNameConfidence = 70; // Default
   let finalNameReasons: string[] = ["Name selected based on available analysis"];
   let finalNameIsLocked = false;
   
-  if (phaseB1Result && phaseB1Result.candidates.length > 0) {
-    // Phase B.1 — Database-first matching takes highest priority
+  // RULE: Select primaryStrainName ONLY from Phase B.1 top-5 results
+  if (phaseB1Result) {
+    // Phase B.1 result is the ONLY source for primary strain name
     finalPrimaryName = phaseB1Result.primaryStrainName;
     finalNameConfidence = phaseB1Result.confidence;
     finalNameReasons = phaseB1Result.explanation;
     finalNameIsLocked = phaseB1Result.confidence >= 85;
-  } else if (nameFirstMatchingResult) {
-    // NAME-FIRST MATCHING takes second priority
-    finalPrimaryName = nameFirstMatchingResult.name;
-    finalNameConfidence = nameFirstMatchingResult.confidence;
-    finalNameReasons = nameFirstMatchingResult.reasons;
-    finalNameIsLocked = nameFirstMatchingResult.isLocked;
-  } else if (nameConfidenceV55) {
-    finalPrimaryName = nameConfidenceV55.primaryStrainName;
-    finalNameConfidence = nameConfidenceV55.confidence;
-    finalNameReasons = nameConfidenceV55.whyThisNameWon;
-    finalNameIsLocked = nameConfidenceV55.confidence >= 85;
-  } else if (strengthenedNameV53) {
-    finalPrimaryName = strengthenedNameV53.primaryStrainName;
-    finalNameConfidence = strengthenedNameV53.selectedScore;
-    finalNameReasons = [`Name selected based on ${strengthenedNameV53.selectedSource} match`];
-    finalNameIsLocked = strengthenedNameV53.selectedScore >= 85;
-  } else if (nameTrustV46) {
-    finalPrimaryName = nameTrustV46.primaryName;
-    finalNameConfidence = currentConfidence;
-    finalNameReasons = [nameTrustV46.explanation];
-    finalNameIsLocked = nameTrustV46.isLocked;
+    
+    // Safety: Never leave primaryStrainName empty
+    if (!finalPrimaryName || finalPrimaryName.trim().length < 3) {
+      console.warn("PRIMARY STRAIN SELECTION: Phase B.1 returned empty name, using fallback");
+      finalPrimaryName = "Closest Known Cultivar";
+      finalNameConfidence = 70;
+      finalNameReasons = ["Fallback selection due to empty name from Phase B.1"];
+    }
+  } else {
+    // Phase B.1 didn't run or returned null - use fallback
+    console.warn("PRIMARY STRAIN SELECTION: Phase B.1 result not available, using fallback");
+    finalPrimaryName = "Closest Known Cultivar";
+    finalNameConfidence = 70;
+    finalNameReasons = ["Phase B.1 matching not available — using fallback"];
   }
   
   // Phase B.2 — CONFIDENCE CALIBRATION
@@ -3875,8 +3873,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
   
   
-  // Ensure name is never empty (NAME-FIRST MATCHING guarantee)
-  if (!finalPrimaryName || finalPrimaryName.length < 3) {
+  // PRIMARY STRAIN SELECTION LOGIC — Final safety check
+  // Never leave primaryStrainName empty
+  // Never throw
+  if (!finalPrimaryName || finalPrimaryName.trim().length < 3) {
+    console.warn("PRIMARY STRAIN SELECTION: Final check — name was empty, forcing fallback");
     finalPrimaryName = "Closest Known Cultivar";
     finalNameConfidence = 70;
     finalNameReasons = ["Fallback selection due to insufficient data"];
@@ -3952,7 +3953,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
     }
   } else {
-    // Create nameFirstDisplay if it doesn't exist - Phase B.1 prioritized
+    // PRIMARY STRAIN SELECTION LOGIC — Create nameFirstDisplay if it doesn't exist
+    // Always populate: primaryStrainName, confidencePercent, explanation.whyThisNameWon[]
+    // Never leave primaryStrainName empty
+    // Never throw
+    
     let confidenceTier: "very_high" | "high" | "medium" | "low";
     if (finalNameConfidence >= 90) {
       confidenceTier = "very_high";
@@ -3964,23 +3969,31 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       confidenceTier = "low";
     }
     
+    // Ensure finalPrimaryName is never empty
+    const safePrimaryName = finalPrimaryName && finalPrimaryName.trim().length >= 3
+      ? finalPrimaryName
+      : "Closest Known Cultivar";
+    
+    // Ensure finalNameReasons is never empty
+    const safeReasons = finalNameReasons.length > 0
+      ? finalNameReasons
+      : ["Name selected based on available analysis"];
+    
     viewModel.nameFirstDisplay = {
-      primaryStrainName: finalPrimaryName,
-      primaryName: finalPrimaryName,
+      primaryStrainName: safePrimaryName,
+      primaryName: safePrimaryName,
       confidencePercent: finalNameConfidence,
       confidence: finalNameConfidence,
       confidenceTier,
-      tagline: finalNameReasons[0] || "Closest known match based on available analysis",
+      tagline: safeReasons[0] || "Closest known match based on available analysis",
       explanation: { 
-        whyThisNameWon: finalNameReasons, 
+        whyThisNameWon: safeReasons, 
         whatRuledOutOthers: [], 
         varianceNotes: [] 
       },
       alternateNames: phaseB1Result && phaseB1Result.candidates.length > 1
         ? phaseB1Result.candidates.slice(1, 4).map(c => c.strainName) // Top 3 alternates from Phase B.1
-        : nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0
-        ? nameConfidenceV55.alternateMatches.map(a => a.name)
-        : strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates || [],
+        : [],
     };
     (viewModel.nameFirstDisplay as any).isLocked = finalNameIsLocked || (shouldLockName && finalNameConfidence >= 75);
     if (nameConfidenceV55) {
@@ -3997,10 +4010,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         score: c.score,
         reasonTags: c.reasonTags,
       }));
-    } else if (nameFirstMatchingResult) {
-      (viewModel.nameFirstDisplay as any).nameSource = nameFirstMatchingResult.source;
-    } else if (!nameConfidenceV55) {
-      (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
+    } else {
+      (viewModel.nameFirstDisplay as any).nameSource = "fallback";
     }
   }
   

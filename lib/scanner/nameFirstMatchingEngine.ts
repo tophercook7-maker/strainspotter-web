@@ -397,44 +397,59 @@ export function nameFirstMatchingEngine(
     .sort((a, b) => b.score - a.score)
     .slice(0, 5); // Top 5
   
-  // Select primaryStrainName from candidates[0] ONLY
-  let primaryStrainName = "Closest Known Cultivar";
-  let confidence = 70;
+  // PRIMARY STRAIN SELECTION LOGIC
+  // Select primaryStrainName ONLY from top-5 name-first results
+  // If top score < 60: primaryStrainName = "Closest Known Cultivar"
+  // Never leave primaryStrainName empty
+  // Never throw
+  
+  let primaryStrainName = "Closest Known Cultivar"; // Default fallback
+  let confidence = 70; // Default confidence
   const explanation: string[] = [];
   
-  if (candidates.length > 0 && candidates[0].score >= 60) {
-    primaryStrainName = candidates[0].strainName;
-    confidence = Math.min(99, candidates[0].score);
+  if (candidates.length > 0) {
+    const topCandidate = candidates[0];
     
-    // Build explanation from reasonTags
-    const tags = candidates[0].reasonTags;
-    if (tags.includes("exact")) {
-      explanation.push("Exact database match found");
-    } else if (tags.includes("alias")) {
-      explanation.push("Matched via known alias");
-    } else if (tags.includes("token")) {
-      explanation.push("Token similarity match");
-    } else if (tags.includes("phonetic")) {
-      explanation.push("Phonetic similarity match");
-    } else if (tags.includes("lineage")) {
-      explanation.push("Lineage proximity match");
-    }
-    
-    if (tags.length > 1) {
-      explanation.push(`Matched using: ${tags.join(", ")}`);
-    }
-  } else if (candidates.length > 0) {
-    // Use top candidate even if score < 60, but reduce confidence
-    primaryStrainName = candidates[0].strainName;
-    confidence = Math.max(55, candidates[0].score);
-    explanation.push(`Low confidence match — database suggests this strain`);
-    if (candidates[0].reasonTags.length > 0) {
-      explanation.push(`Matched using: ${candidates[0].reasonTags.join(", ")}`);
+    // RULE: If top score < 60, use "Closest Known Cultivar"
+    if (topCandidate.score >= 60) {
+      primaryStrainName = topCandidate.strainName;
+      confidence = Math.min(99, topCandidate.score);
+      
+      // Build explanation from reasonTags
+      const tags = topCandidate.reasonTags;
+      if (tags.includes("exact")) {
+        explanation.push("Exact database match found");
+      } else if (tags.includes("alias")) {
+        explanation.push("Matched via known alias");
+      } else if (tags.includes("token")) {
+        explanation.push("Token similarity match");
+      } else if (tags.includes("phonetic")) {
+        explanation.push("Phonetic similarity match");
+      } else if (tags.includes("lineage")) {
+        explanation.push("Lineage proximity match");
+      }
+      
+      if (tags.length > 1) {
+        explanation.push(`Matched using: ${tags.join(", ")}`);
+      }
+    } else {
+      // Top score < 60: use "Closest Known Cultivar"
+      primaryStrainName = "Closest Known Cultivar";
+      confidence = Math.max(55, Math.min(59, topCandidate.score));
+      explanation.push(`Top match score (${topCandidate.score}%) below threshold — using fallback`);
+      explanation.push(`Database suggests: ${topCandidate.strainName}`);
     }
   } else {
     // No matches found
     explanation.push("No database matches found for candidate names");
     explanation.push("Using fallback: Closest Known Cultivar");
+  }
+  
+  // Safety: Never leave primaryStrainName empty
+  if (!primaryStrainName || primaryStrainName.trim().length < 3) {
+    primaryStrainName = "Closest Known Cultivar";
+    confidence = 70;
+    explanation.push("Fallback selection due to invalid name");
   }
   
   return {
