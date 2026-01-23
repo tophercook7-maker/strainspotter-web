@@ -2696,9 +2696,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     let computedStrainIdentityAlternates = [];
     if (nameFirstPipelineResult && Array.isArray(nameFirstPipelineResult.alternateMatches)) {
       computedStrainIdentityAlternates = nameFirstPipelineResult.alternateMatches.map(function(a) {
-        return a.name || "Unknown";
+        return a.name || "Closest Known Cultivar";
       }).filter(function(n) {
-        return n !== "Unknown";
+        return n !== "Unknown" && n !== "Closest Known Cultivar";
       });
     }
     

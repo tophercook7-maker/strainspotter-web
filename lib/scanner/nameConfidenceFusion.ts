@@ -16,7 +16,7 @@ export interface FusedNameResult {
 export function fuseNameConfidence(signals: NameSignal[]): FusedNameResult {
   if (!signals || signals.length === 0) {
     return {
-      primaryName: "Unknown",
+      primaryName: "Closest Known Cultivar",
       confidence: 0,
       breakdown: [],
     }
@@ -31,7 +31,7 @@ export function fuseNameConfidence(signals: NameSignal[]): FusedNameResult {
   }
 
   const sorted = Array.from(map.entries()).sort((a, b) => b[1] - a[1])
-  const [primaryName, total] = sorted[0] ?? ["Unknown", 0]
+  const [primaryName, total] = sorted[0] ?? ["Closest Known Cultivar", 0]
 
   return {
     primaryName,
