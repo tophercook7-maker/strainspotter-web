@@ -4505,6 +4505,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   });
 
   // Phase 4.7.1 — Output format (always sums to 100) - Attach to viewModel
+  // Phase 4.7.6 — Include expert explanation from V47
   viewModel.finalRatio = {
     indica: finalRatioV47.indicaPercent,
     sativa: finalRatioV47.sativaPercent,
@@ -4513,7 +4514,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       : finalRatioV47.dominanceLabel.includes("Sativa-dominant") ? "Sativa-dominant" as const
       : "Balanced Hybrid" as const,
     confidence: finalRatioV47.confidence,
-    explanation: [], // V47 provides source breakdown but not explanation bullets yet
+    explanation: finalRatioV47.explanation || [], // Phase 4.7.6 — Expert explanation bullets
   };
 
   // Phase 4.7.1 — Integration - Attach to ScannerViewModel.ratio
@@ -4529,7 +4530,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     hybridLabel: finalRatioV47.dominanceLabel as any,
     classification: finalRatioV47.dominanceLabel,
     displayText: `${finalRatioV47.indicaPercent}% Indica · ${finalRatioV47.sativaPercent}% Sativa · ${finalRatioV47.hybridPercent}% Hybrid`,
-    explanation: [], // V47 provides source breakdown but not explanation bullets yet
+    explanation: finalRatioV47.explanation || [], // Phase 4.7.6 — Expert explanation bullets
   };
   // Phase 4.7.1 — Add dominantLabel and needsEstimationNote for UI display
   if (viewModel.ratio) {

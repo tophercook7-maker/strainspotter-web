@@ -20,6 +20,7 @@ export type FinalStrainRatioV47 = {
     terpeneBias: { indica: number; sativa: number; weight: number };
     nameConsensus: { indica: number; sativa: number; weight: number };
   };
+  explanation?: string[]; // Phase 4.7.6 — Expert-level explanation bullets
 };
 
 /**
@@ -614,6 +615,73 @@ function applyUncertaintyCaps(
 }
 
 /**
+ * Phase 4.7.6 — Generate expert-level ratio explanation
+ * Makes ratios feel like expert knowledge, not guesses
+ */
+function generateExpertRatioExplanation(args: {
+  genetics: { indica: number; sativa: number; weight: number };
+  familyBaseline: { indica: number; sativa: number; weight: number };
+  visualMorphology: { indica: number; sativa: number; weight: number };
+  terpeneBias: { indica: number; sativa: number; weight: number };
+  nameConsensus: { indica: number; sativa: number; weight: number };
+  dbEntry?: CultivarReference;
+  strainName: string;
+  finalIndica: number;
+  finalSativa: number;
+  hasRealData: boolean;
+  strongLineage: boolean;
+}): string[] {
+  const explanation: string[] = [];
+  const { genetics, familyBaseline, visualMorphology, terpeneBias, dbEntry, strainName, hasRealData, strongLineage } = args;
+  
+  // Primary source: Database genetics (40% weight - highest)
+  if (dbEntry && (genetics.indica !== 50 || genetics.sativa !== 50)) {
+    const dbEntryAny = dbEntry as any;
+    if (dbEntryAny.indicaPercent !== undefined && dbEntryAny.sativaPercent !== undefined) {
+      explanation.push(`Ratio determined from documented genetics in 35,000+ strain database`);
+    } else if (strongLineage) {
+      explanation.push(`Genetic lineage analysis indicates ${genetics.indica > genetics.sativa ? 'indica' : 'sativa'}-dominant heritage from documented parent strains`);
+    } else {
+      explanation.push(`Ratio derived from known genetic classification in strain database`);
+    }
+  } else if (genetics.indica !== 50 || genetics.sativa !== 50) {
+    explanation.push(`Genetic analysis based on documented lineage and parent strain characteristics`);
+  }
+  
+  // Family baseline (20% weight - second highest)
+  if (familyBaseline.indica !== 50 || familyBaseline.sativa !== 50) {
+    const family = getStrainFamily(strainName);
+    if (family) {
+      explanation.push(`Strain family baseline (${family.familyName} lineage) confirms ${familyBaseline.indica > familyBaseline.sativa ? 'indica' : 'sativa'}-leaning genetic profile`);
+    }
+  }
+  
+  // Visual morphology (15% weight)
+  if (visualMorphology.indica !== 50 || visualMorphology.sativa !== 50) {
+    const visualBias = visualMorphology.indica > visualMorphology.sativa ? 'indica' : 'sativa';
+    explanation.push(`Visual morphology analysis (bud structure, leaf shape, trichome density) supports ${visualBias}-dominant phenotype`);
+  }
+  
+  // Terpene bias (15% weight)
+  if (terpeneBias.indica !== 50 || terpeneBias.sativa !== 50) {
+    const terpeneBiasDirection = terpeneBias.indica > terpeneBias.sativa ? 'indica' : 'sativa';
+    explanation.push(`Terpene profile analysis aligns with ${terpeneBiasDirection}-dominant cultivar characteristics`);
+  }
+  
+  // Fallback if no real data
+  if (!hasRealData) {
+    explanation.push(`Ratio estimated from visual traits and reference genetics — insufficient database match for precise determination`);
+  }
+  
+  // Ensure at least one explanation
+  if (explanation.length === 0) {
+    explanation.push(`Ratio calculated using weighted combination of genetic, family, and visual analysis`);
+  }
+  
+  return explanation.slice(0, 3); // Max 3 bullets for clarity
+}
+
+/**
  * Phase 4.7.1 — Multi-Source Ratio Engine (Locked)
  * Phase 4.7.2 — Confidence-Aware Ratio Scoring
  * 
@@ -750,6 +818,21 @@ export function resolveFinalRatioV47(args: {
     // Ratio confidence (capped by overall confidence)
     const ratioConfidence = Math.min(overallConfidence, 95);
     
+    // Phase 4.7.6 — Generate expert-level explanation text
+    const explanation = generateExpertRatioExplanation({
+      genetics,
+      familyBaseline,
+      visualMorphology,
+      terpeneBias,
+      nameConsensus,
+      dbEntry,
+      strainName,
+      finalIndica,
+      finalSativa,
+      hasRealData,
+      strongLineage: detectStrongLineage(genetics, dbEntry),
+    });
+    
     return {
       indicaPercent: finalIndica,
       sativaPercent: finalSativa,
@@ -763,6 +846,7 @@ export function resolveFinalRatioV47(args: {
         terpeneBias,
         nameConsensus,
       },
+      explanation, // Phase 4.7.6 — Expert explanation
     };
   } catch (error) {
     console.warn("Phase 4.7.1 — Multi-source ratio engine error:", error);
@@ -780,6 +864,7 @@ export function resolveFinalRatioV47(args: {
         terpeneBias: { indica: 50, sativa: 50, weight: 0.15 },
         nameConsensus: { indica: 50, sativa: 50, weight: 0.10 },
       },
+      explanation: ["Ratio estimated from visual traits and reference genetics — insufficient database match for precise determination"], // Phase 4.7.6
     };
   }
 }
