@@ -12,9 +12,10 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
       {/* Phase 4.7 — 1. Constrain width: max-w-3xl, mx-auto, px-4 */}
       
       {/* Phase 4.9 — 1. Name display rules (LOCKED): Primary strain name MUST render large, first, above all other content */}
-      {/* Fallback order: 1. nameFirstDisplay.primaryStrainName, 2. consensus.primaryName, 3. "Closest Known Cultivar" */}
+      {/* STABILIZATION RESET — READ ONLY from nameFirstDisplay and confidence */}
       {(() => {
-        const primaryName = result.nameFirstDisplay?.primaryStrainName || result.name || result.title || "Closest Known Cultivar";
+        // STABILIZATION RESET — Only read from nameFirstDisplay (no fallbacks to name/title)
+        const primaryName = result.nameFirstDisplay?.primaryStrainName || "Closest Known Cultivar";
         const confidenceTier = result.confidenceTier?.label || (result.nameFirstDisplay as any)?.nameConfidenceTier || "Moderate Confidence";
         
         return (
@@ -275,20 +276,8 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
         </section>
       )}
 
-      {/* Phase 4.3.5 — render normalized dominance ratio (legacy fallback - deprecated) */}
-      {!result.finalRatio && result.dominance && (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
-          {/* Phase 4.7 — 4. Section separators */}
-          <div className="text-lg md:text-xl font-semibold mb-3">
-            {result.dominance.classification}
-          </div>
-          <div className="flex gap-4 text-sm md:text-base">
-            <span>Indica {result.dominance.indica}%</span>
-            <span>Sativa {result.dominance.sativa}%</span>
-            <span>Hybrid {result.dominance.hybrid}%</span>
-          </div>
-        </section>
-      )}
+      {/* STABILIZATION RESET — REMOVED: dominance fallback (not guaranteed) */}
+      {/* Use result.ratio or result.finalRatio only */}
 
       {/* Phase 4.3.2 — render stabilized ratio (legacy fallback - deprecated) */}
       {!result.finalRatio && !result.dominance && result.stabilizedRatio && (

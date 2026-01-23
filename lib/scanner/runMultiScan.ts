@@ -271,10 +271,12 @@ function buildSafeFallbackResult(
 async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): Promise<ScanResult> {
   console.log("runScanPipeline: starting with", input.imageCount, "images");
   
-  // STABILIZATION MODE — No throws, return safe fallback
-  if (input.imageCount === 0) {
-    return buildSafeFallbackResult("No images provided for analysis", 0);
-  }
+  // STABILIZATION RESET — Wrap entire function in try-catch to ensure always returns
+  try {
+    // STABILIZATION MODE — No throws, return safe fallback
+    if (input.imageCount === 0) {
+      return buildSafeFallbackResult("No images provided for analysis", 0);
+    }
 
   // Phase 2.7 Part N Step 1 — Require minimum 2 images (if multiple images provided)
   // STABILIZATION MODE — This condition is impossible (x > 1 && x < 2), but keep for safety
@@ -4659,6 +4661,42 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     return result;
   }
 
+  // STABILIZATION RESET — Final safety check: ensure nameFirstDisplay.primaryStrainName is never empty
+  if (!viewModel.nameFirstDisplay) {
+    viewModel.nameFirstDisplay = {
+      primaryStrainName: "Closest Known Cultivar",
+      primaryName: "Closest Known Cultivar",
+      confidencePercent: Math.min(72, finalConfidence),
+      confidence: Math.min(72, finalConfidence),
+      confidenceTier: "low" as const,
+      tagline: "Closest known match based on available analysis",
+      explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
+    };
+  } else {
+    const finalName = viewModel.nameFirstDisplay.primaryStrainName;
+    if (!finalName || finalName.trim().length < 3 || 
+        finalName.toLowerCase() === "unknown" ||
+        finalName.toLowerCase() === "unidentified" ||
+        finalName.trim() === "") {
+      console.warn("STABILIZATION RESET: Final check - primaryStrainName invalid, forcing fallback");
+      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+      viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+      finalConfidence = Math.min(72, finalConfidence);
+      viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
+      viewModel.nameFirstDisplay.confidence = finalConfidence;
+    }
+  }
+  
+  // STABILIZATION RESET — Ensure viewModel.name is set from nameFirstDisplay (for backward compatibility)
+  if (!viewModel.name || viewModel.name.trim().length < 3) {
+    viewModel.name = viewModel.nameFirstDisplay.primaryStrainName;
+  }
+  
+  // STABILIZATION RESET — Ensure viewModel.title is set (for backward compatibility)
+  if (!viewModel.title || viewModel.title.trim().length < 3) {
+    viewModel.title = viewModel.nameFirstDisplay.primaryStrainName;
+  }
+
   const result: ScanResult = {
     status: "success",
     consensus: finalConsensusResult,
@@ -4671,9 +4709,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
     meta: scanMeta, // Phase 4.2.6 — Scan metadata
   };
-  console.log(`SCAN COMPLETE — status=success confidence=${finalConfidence}`);
-  console.log("FINAL CONFIDENCE V406:", finalConfidenceV406);
-  return result;
+    console.log(`SCAN COMPLETE — status=success confidence=${finalConfidence}`);
+    console.log("FINAL CONFIDENCE V406:", finalConfidenceV406);
+    return result;
+  } catch (error) {
+    // STABILIZATION RESET — Catch any unexpected errors and return safe fallback
+    console.error("STABILIZATION RESET: Unexpected error in runScanPipeline, returning safe fallback:", error);
+    return buildSafeFallbackResult(
+      `Analysis encountered an error: ${error instanceof Error ? error.message : String(error)}`,
+      input.imageCount || 0
+    );
+  }
 }
 
 /**
