@@ -86,6 +86,26 @@ export default function WikiStyleResultPanel({
                 bud density, coloration, and known cultivar traits.
               </p>
               
+              {/* Phase 4.2 — Subtle info banner (if samePlantNote exists OR multiple images) */}
+              {(() => {
+                const hasSamePlantNote = !!(result as any).samePlantNote;
+                const imageCount = viewModel.multiImageInfo?.imageCountText 
+                  ? parseInt(viewModel.multiImageInfo.imageCountText.match(/\d+/)?.[0] || "1")
+                  : 1;
+                
+                if (hasSamePlantNote || imageCount > 1) {
+                  return (
+                    <div className="mt-2 rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2">
+                      <p className="text-xs text-blue-200/90 leading-relaxed">
+                        Scanning the same plant from additional angles improves name stability.
+                      </p>
+                    </div>
+                  );
+                }
+                
+                return null;
+              })()}
+              
               {/* Phase 4.2 — Enhanced subtitle with trust messaging */}
               <div className="mt-2 space-y-1">
                 {(() => {
