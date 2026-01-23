@@ -4827,12 +4827,64 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       finalConfidence = Math.min(72, finalConfidence);
       viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
       viewModel.nameFirstDisplay.confidence = finalConfidence;
+      
+      // Ensure explanation.whyThisNameWon is populated
+      if (!viewModel.nameFirstDisplay.explanation) {
+        viewModel.nameFirstDisplay.explanation = {
+          whyThisNameWon: ["Fallback selection due to invalid name"],
+          whatRuledOutOthers: [],
+          varianceNotes: [],
+        };
+      } else if (!viewModel.nameFirstDisplay.explanation.whyThisNameWon || 
+                 viewModel.nameFirstDisplay.explanation.whyThisNameWon.length === 0) {
+        viewModel.nameFirstDisplay.explanation.whyThisNameWon = ["Fallback selection due to invalid name"];
+      }
+    }
+  }
+  
+  // PRIMARY STRAIN SELECTION LOGIC — Final verification
+  // Ensure nameFirstDisplay is always populated with required fields
+  if (!viewModel.nameFirstDisplay) {
+    viewModel.nameFirstDisplay = {
+      primaryStrainName: "Closest Known Cultivar",
+      primaryName: "Closest Known Cultivar",
+      confidencePercent: 70,
+      confidence: 70,
+      confidenceTier: "low",
+      tagline: "Closest known match based on available analysis",
+      explanation: {
+        whyThisNameWon: ["Analysis completed with limited certainty"],
+        whatRuledOutOthers: [],
+        varianceNotes: [],
+      },
+      alternateNames: [],
+    };
+  } else {
+    // Ensure all required fields are populated
+    if (!viewModel.nameFirstDisplay.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim().length < 3) {
+      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+    }
+    if (!viewModel.nameFirstDisplay.primaryName || viewModel.nameFirstDisplay.primaryName.trim().length < 3) {
+      viewModel.nameFirstDisplay.primaryName = viewModel.nameFirstDisplay.primaryStrainName;
+    }
+    if (viewModel.nameFirstDisplay.confidencePercent === undefined || viewModel.nameFirstDisplay.confidencePercent === null) {
+      viewModel.nameFirstDisplay.confidencePercent = 70;
+    }
+    if (!viewModel.nameFirstDisplay.explanation) {
+      viewModel.nameFirstDisplay.explanation = {
+        whyThisNameWon: ["Name selected based on available analysis"],
+        whatRuledOutOthers: [],
+        varianceNotes: [],
+      };
+    } else if (!viewModel.nameFirstDisplay.explanation.whyThisNameWon || 
+               viewModel.nameFirstDisplay.explanation.whyThisNameWon.length === 0) {
+      viewModel.nameFirstDisplay.explanation.whyThisNameWon = ["Name selected based on available analysis"];
     }
   }
   
   // Phase 5.3 — Ensure name field is also set (for backward compatibility)
   if (!viewModel.name || viewModel.name.trim().length < 3) {
-    viewModel.name = viewModel.nameFirstDisplay?.primaryStrainName || strengthenedNameV53?.primaryStrainName || "Closest Known Cultivar";
+    viewModel.name = viewModel.nameFirstDisplay.primaryStrainName;
   }
   
   // Phase 4.9 — Attach dbEntry to viewModel for aliases/lineage display
