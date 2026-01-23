@@ -152,6 +152,8 @@ import { resolveFinalConfidenceV50 } from "./resolveFinalConfidenceV50";
 import { resolveFinalConfidenceV52 } from "./resolveFinalConfidenceV52";
 // Phase 5.3 — Name-First Strengthening & Alias Matching
 import { strengthenNameSelectionV53, findStrainByNameOrAlias } from "./nameStrengtheningV53";
+// Phase 5.5 — Name Confidence + Disambiguation Upgrade
+import { resolveNameConfidenceV55 } from "./nameConfidenceV55";
 // Phase 4.1.9 — consensus weight adjustment
 import { adjustConsensusWeight } from "./consensusWeights";
 // Phase 4.1.3 — replace analysis failure paths
@@ -3511,16 +3513,18 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 5.3 — NAME-FIRST STRENGTHENING & ALIAS MATCHING
   // Strengthen name selection with alias matching, lineage inference, and phenotype fallback
   let strengthenedNameV53: ReturnType<typeof strengthenNameSelectionV53> | null = null;
+  let perImageTopNames: string[] = []; // Declare outside if block for Phase 5.5
+  let databaseCandidates: import("./cultivarLibrary").CultivarReference[] = []; // Declare outside if block for Phase 5.5
   
   if (nameFirstPipelineResult && imageResultsV3.length > 0) {
     // Collect per-image top names
-    const perImageTopNames = imageResultsV3.map(r => {
+    perImageTopNames = imageResultsV3.map(r => {
       const topCandidate = r.candidateStrains?.[0];
       return topCandidate?.name || nameFirstPipelineResult?.primaryStrainName || "";
     }).filter(name => name && name.trim());
 
     // Collect database candidates from nameFirstPipelineResult and dbEntry
-    const databaseCandidates: import("./cultivarLibrary").CultivarReference[] = [];
+    databaseCandidates = [];
     if (dbEntry) {
       databaseCandidates.push(dbEntry);
     }
@@ -3558,69 +3562,200 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     });
   }
 
+  // Phase 5.5 — NAME CONFIDENCE + DISAMBIGUATION UPGRADE
+  // Calculate name confidence using weighted inputs and handle disambiguation
+  let nameConfidenceV55: ReturnType<typeof resolveNameConfidenceV55> | null = null;
+  
+  if (nameFirstPipelineResult && imageResultsV3.length > 0) {
+    // Collect candidate names from all sources
+    const candidateNamesSet = new Set<string>();
+    
+    // From per-image top names
+    perImageTopNames.forEach(name => {
+      if (name && name.trim()) candidateNamesSet.add(name);
+    });
+    
+    // From nameFirstPipelineResult
+    if (nameFirstPipelineResult.primaryStrainName) {
+      candidateNamesSet.add(nameFirstPipelineResult.primaryStrainName);
+    }
+    if (nameFirstPipelineResult.alternateMatches) {
+      nameFirstPipelineResult.alternateMatches.forEach(alt => {
+        const altName = typeof alt === "string" ? alt : alt.name;
+        if (altName && altName.trim()) candidateNamesSet.add(altName);
+      });
+    }
+    
+    // From strengthenedNameV53
+    if (strengthenedNameV53) {
+      candidateNamesSet.add(strengthenedNameV53.primaryStrainName);
+      strengthenedNameV53.alternateMatches.forEach(alt => {
+        if (alt.name && alt.name.trim()) candidateNamesSet.add(alt.name);
+      });
+    }
+    
+    // From image results
+    imageResultsV3.forEach(img => {
+      img.candidateStrains?.forEach(candidate => {
+        if (candidate.name && candidate.name.trim()) {
+          candidateNamesSet.add(candidate.name);
+        }
+      });
+    });
+    
+    const candidateNames = Array.from(candidateNamesSet);
+    
+    // Extract terpene profile from viewModel or dbEntry
+    let terpeneProfile: Array<{ name: string; likelihood: string }> | undefined = undefined;
+    if (viewModel.terpeneExperience?.dominantTerpenes || viewModel.terpeneExperience?.secondaryTerpenes) {
+      const allTerpenes = [
+        ...(viewModel.terpeneExperience.dominantTerpenes || []),
+        ...(viewModel.terpeneExperience.secondaryTerpenes || []),
+      ];
+      terpeneProfile = allTerpenes.map(t => ({
+        name: typeof t === "string" ? t : (t as any).name || "",
+        likelihood: "high",
+      }));
+    } else if (dbEntry?.terpeneProfile || (dbEntry as any)?.commonTerpenes) {
+      const terpenes = dbEntry.terpeneProfile || (dbEntry as any).commonTerpenes || [];
+      terpeneProfile = terpenes.map((t: string) => ({
+        name: t,
+        likelihood: "high",
+      }));
+    }
+    
+    // Extract effect profile from dbEntry
+    let effectProfile: Array<{ effect: string; likelihood: string }> | undefined = undefined;
+    if (dbEntry?.effects && dbEntry.effects.length > 0) {
+      effectProfile = dbEntry.effects.map((e: string) => ({
+        effect: e,
+        likelihood: "high",
+      }));
+    }
+    
+    // Phase 5.5 — Resolve name confidence
+    nameConfidenceV55 = resolveNameConfidenceV55({
+      candidateNames,
+      perImageTopNames,
+      databaseCandidates,
+      fusedFeatures,
+      terpeneProfile,
+      effectProfile,
+      imageCount: imageResultsV3.length || filteredInput.imageCount,
+    });
+  }
+
   // Phase 4.6 — 1) Name locking rule
   // If confidence ≥75%, lock primary strain name (don't change on re-scan)
   // If confidence <75%, allow alternate candidates and show "Closest Known Cultivar" framing
   // Note: finalConfidence will be updated after V45, but we use current confidence for locking
   const shouldLockName = nameTrustV46.isLocked && currentConfidence >= 75;
   
-  // Phase 5.3 — Override primary name with strengthened name if available
-  const finalPrimaryName = strengthenedNameV53?.primaryStrainName || nameTrustV46.primaryName;
+  // Phase 5.5 — Primary rule: ALWAYS return one primary strain name (never empty/Unknown/Unidentified)
+  // Priority: Phase 5.5 > Phase 5.3 > Phase 4.6
+  let finalPrimaryName = "Closest Known Cultivar"; // Fallback
+  if (nameConfidenceV55) {
+    finalPrimaryName = nameConfidenceV55.primaryStrainName;
+  } else if (strengthenedNameV53) {
+    finalPrimaryName = strengthenedNameV53.primaryStrainName;
+  } else if (nameTrustV46) {
+    finalPrimaryName = nameTrustV46.primaryName;
+  }
   
-  // Phase 4.6 — Update nameFirstDisplay with V46 results (enhanced with V53)
+  // Ensure name is never empty
+  if (!finalPrimaryName || finalPrimaryName.length < 3) {
+    finalPrimaryName = "Closest Known Cultivar";
+  }
+  
+  // Phase 5.5 — Update nameFirstDisplay with V55 results (enhanced with V53 and V46)
   if (viewModel.nameFirstDisplay) {
-    // Override primary name (always non-empty, never "Unknown") - Phase 5.3 strengthened
+    // Override primary name (always non-empty, never "Unknown") - Phase 5.5 prioritized
     viewModel.nameFirstDisplay.primaryStrainName = finalPrimaryName;
     viewModel.nameFirstDisplay.primaryName = finalPrimaryName;
     
-    // Update explanation (1 line, user-facing)
+    // Update confidence from Phase 5.5 if available
+    if (nameConfidenceV55) {
+      viewModel.nameFirstDisplay.confidencePercent = nameConfidenceV55.confidence;
+      viewModel.nameFirstDisplay.confidence = nameConfidenceV55.confidence;
+      viewModel.nameFirstDisplay.confidenceTier = nameConfidenceV55.confidenceTier;
+    }
+    
+    // Update explanation (clear reason why this name won) - Phase 5.5 prioritized
     if (!viewModel.nameFirstDisplay.explanation) {
       viewModel.nameFirstDisplay.explanation = { whyThisNameWon: [], whatRuledOutOthers: [], varianceNotes: [] };
     }
-    // Phase 5.3 — Use V53 explanation if available, otherwise V46
-    const explanationText = strengthenedNameV53
+    const explanationText = nameConfidenceV55
+      ? nameConfidenceV55.whyThisNameWon
+      : strengthenedNameV53
       ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
       : nameTrustV46.explanation;
     viewModel.nameFirstDisplay.explanation.whyThisNameWon = [explanationText];
     
-    // Attach alternates (if applicable) - Phase 5.3 enhanced
-    viewModel.nameFirstDisplay.alternateNames = strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates;
+    // Attach alternates (ranked, max 3) - Phase 5.5 prioritized
+    if (nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0) {
+      viewModel.nameFirstDisplay.alternateNames = nameConfidenceV55.alternateMatches.map(a => a.name);
+    } else if (strengthenedNameV53) {
+      viewModel.nameFirstDisplay.alternateNames = strengthenedNameV53.alternateMatches.map(a => a.name);
+    } else {
+      viewModel.nameFirstDisplay.alternateNames = nameTrustV46.alternates;
+    }
     
     // Mark as locked if confidence ≥75%
     (viewModel.nameFirstDisplay as any).isLocked = shouldLockName;
     
-    // Phase 5.3 — Attach source information
-    (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
+    // Phase 5.5 — Attach disambiguation flag
+    if (nameConfidenceV55) {
+      (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
+    }
+    
+    // Phase 5.3 — Attach source information (if V55 didn't override)
+    if (!nameConfidenceV55) {
+      (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
+    }
   } else {
     // Create nameFirstDisplay if it doesn't exist
     viewModel.nameFirstDisplay = {
       primaryStrainName: finalPrimaryName,
       primaryName: finalPrimaryName,
-      confidencePercent: finalConfidence,
-      confidence: finalConfidence,
-      confidenceTier: finalConfidence >= 75 ? "high" as const : "medium" as const,
-      tagline: strengthenedNameV53 
+      confidencePercent: nameConfidenceV55?.confidence || finalConfidence,
+      confidence: nameConfidenceV55?.confidence || finalConfidence,
+      confidenceTier: nameConfidenceV55?.confidenceTier || (finalConfidence >= 75 ? "high" as const : "medium" as const),
+      tagline: nameConfidenceV55
+        ? nameConfidenceV55.whyThisNameWon
+        : strengthenedNameV53 
         ? `Name selected based on ${strengthenedNameV53.selectedSource} match`
         : "Closest known match based on available analysis",
       explanation: { 
-        whyThisNameWon: [strengthenedNameV53 
+        whyThisNameWon: [nameConfidenceV55
+          ? nameConfidenceV55.whyThisNameWon
+          : strengthenedNameV53 
           ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
           : nameTrustV46.explanation], 
         whatRuledOutOthers: [], 
         varianceNotes: [] 
       },
-      alternateNames: strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates,
+      alternateNames: nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0
+        ? nameConfidenceV55.alternateMatches.map(a => a.name)
+        : strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates,
     };
     (viewModel.nameFirstDisplay as any).isLocked = shouldLockName;
-    (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
+    if (nameConfidenceV55) {
+      (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
+    }
+    if (!nameConfidenceV55) {
+      (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
+    }
   }
   
-  // Phase 4.6 — Logging (debug only) - Enhanced with Phase 5.3
+  // Phase 5.5 — Logging (debug only) - Enhanced with Phase 5.5
   // Note: finalConfidence will be updated after V45, log current confidence for now
   console.log("NAME_DECISION:", {
     primary: finalPrimaryName,
-    alternates: strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates,
-    confidence: currentConfidence, // Will be updated to finalConfidence after V45
+    alternates: nameConfidenceV55?.alternateMatches.map(a => a.name) || strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates,
+    confidence: nameConfidenceV55?.confidence || currentConfidence, // Phase 5.5 confidence if available
+    confidenceTier: nameConfidenceV55?.confidenceTier || (currentConfidence >= 75 ? "high" : "medium"),
+    whyThisNameWon: nameConfidenceV55?.whyThisNameWon || (strengthenedNameV53 ? `Name selected based on ${strengthenedNameV53.selectedSource} match` : nameTrustV46.explanation),
+    disambiguationTriggered: nameConfidenceV55?.disambiguationTriggered || false,
     sourcesUsed: nameTrustV46.sourcesUsed,
     nameSource: strengthenedNameV53?.selectedSource || "direct",
     isLocked: shouldLockName,
