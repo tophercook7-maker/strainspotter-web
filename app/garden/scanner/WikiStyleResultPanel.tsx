@@ -185,16 +185,24 @@ export default function WikiStyleResultPanel({
                 hasMultiImageAgreement,
               });
               
+              // Phase 5.3.5 — NAME-FIRST FEEL (CRITICAL)
+              // Confidence tier label (text, not %) is primary
+              // % shown smaller, secondary
+              // Name is the hero, confidence supports the name
               return (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${confidenceColor}`}>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-3">
+                    {/* Confidence tier label — Primary confidence display */}
+                    <span className={`px-4 py-2 rounded-full text-lg font-semibold text-white shadow-sm ${confidenceColor}`}>
                       {confidenceLabel}
                     </span>
-                    {/* Phase 5.3.3 — No percentage shown, replaced with natural language */}
+                    {/* Percentage — Smaller, secondary */}
+                    <span className="text-sm text-white/50 font-medium">
+                      {clampedConfidence}%
+                    </span>
                   </div>
                   {/* Phase 5.3.3 — User-facing confidence copy (no math, no engine terms) */}
-                  <p className="text-xs text-white/50 italic">
+                  <p className="text-xs text-white/50 italic leading-relaxed">
                     {confidenceCopy}
                   </p>
                 </div>
