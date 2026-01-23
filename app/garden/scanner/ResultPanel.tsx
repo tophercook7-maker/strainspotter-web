@@ -145,94 +145,124 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
       {/* Phase 5.1 — 5. Integration: Display near strain name */}
       {/* Phase 4.4 — 2. Indica / Sativa / Hybrid ratio (REQUIRED) */}
       {/* Phase 4.7.4 — UI Presentation (Trust-First) */}
+      {/* Phase 4.7.5 — Failure Safety */}
       {result.ratio && (
         <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
           {/* Phase 4.7.4 — Trust-First Presentation: Visualization first, not raw numbers */}
-          <div className="space-y-4">
-            {/* Label: Dominance label (e.g., "Indica-leaning Hybrid") */}
-            <div className="text-lg md:text-xl font-semibold text-white/95">
-              {(result.ratio as any).dominantLabel || result.ratio.classification || "Balanced Hybrid"}
-            </div>
+          {/* Phase 4.7.5 — Failure Safety: Check confidence threshold */}
+          {(() => {
+            const ratioConfidence = (result.ratio as any).confidence ?? (result.finalRatio as any)?.confidence ?? 100;
+            const CONFIDENCE_THRESHOLD = 60; // Below this, show fallback
+            const hasLowConfidence = ratioConfidence < CONFIDENCE_THRESHOLD;
             
-            {/* Bar visualization (primary display) */}
-            <div className="space-y-2">
-              <div className="h-4 bg-white/10 rounded-full overflow-hidden">
-                <div className="flex h-full">
-                  <div 
-                    style={{ width: `${result.ratio.indica}%` }} 
-                    className="bg-purple-600 transition-all" 
-                    title={`Indica: ${result.ratio.indica}%`}
-                  />
-                  <div 
-                    style={{ width: `${result.ratio.sativa}%` }} 
-                    className="bg-green-500 transition-all" 
-                    title={`Sativa: ${result.ratio.sativa}%`}
-                  />
-                  <div 
-                    style={{ width: `${result.ratio.hybrid || 0}%` }} 
-                    className="bg-yellow-500/60 transition-all" 
-                    title={`Hybrid: ${result.ratio.hybrid || 0}%`}
-                  />
-                </div>
-              </div>
-              
-              {/* Subtext: "Based on genetics + visual structure" */}
-              {/* Phase 4.7.4 — Dynamic subtext based on available sources */}
-              {(() => {
-                const sourceBreakdown = (result.ratio as any)?.sourceBreakdown;
-                const sources: string[] = [];
-                
-                if (sourceBreakdown?.genetics && (sourceBreakdown.genetics.indica !== 50 || sourceBreakdown.genetics.sativa !== 50)) {
-                  sources.push("genetics");
-                }
-                if (sourceBreakdown?.familyBaseline && (sourceBreakdown.familyBaseline.indica !== 50 || sourceBreakdown.familyBaseline.sativa !== 50)) {
-                  sources.push("family baseline");
-                }
-                if (sourceBreakdown?.visualMorphology && (sourceBreakdown.visualMorphology.indica !== 50 || sourceBreakdown.visualMorphology.sativa !== 50)) {
-                  sources.push("visual structure");
-                }
-                if (sourceBreakdown?.terpeneBias && (sourceBreakdown.terpeneBias.indica !== 50 || sourceBreakdown.terpeneBias.sativa !== 50)) {
-                  sources.push("terpene profile");
-                }
-                
-                const subtext = sources.length > 0 
-                  ? `Based on ${sources.join(" + ")}`
-                  : "Based on genetics + visual structure";
-                
-                return (
-                  <p className="text-xs text-white/60 font-medium">
-                    {subtext}
-                  </p>
-                );
-              })()}
-            </div>
+            // Phase 4.7.5 — Never fabricate dominance when confidence is low
+            const displayLabel = hasLowConfidence
+              ? "Balanced Hybrid (insufficient evidence to bias)"
+              : ((result.ratio as any).dominantLabel || result.ratio.classification || "Balanced Hybrid");
             
-            {/* Phase 4.7.4 — Expandable exact % breakdown */}
-            <details className="cursor-pointer group">
-              <summary className="text-sm text-white/70 hover:text-white/90 transition-colors list-none">
-                <span className="flex items-center gap-2">
-                  <span>Show exact breakdown</span>
-                  <span className="text-white/50 group-open:rotate-180 transition-transform">▼</span>
-                </span>
-              </summary>
-              <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/80">Indica</span>
-                  <span className="text-white/90 font-medium">{result.ratio.indica}%</span>
+            // Phase 4.7.5 — Force 50/50 when confidence is too low
+            const displayIndica = hasLowConfidence ? 50 : result.ratio.indica;
+            const displaySativa = hasLowConfidence ? 50 : result.ratio.sativa;
+            const displayHybrid = hasLowConfidence ? 0 : (result.ratio.hybrid || 0);
+            
+            return (
+              <div className="space-y-4">
+                {/* Label: Dominance label (e.g., "Indica-leaning Hybrid") */}
+                <div className="text-lg md:text-xl font-semibold text-white/95">
+                  {displayLabel}
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/80">Sativa</span>
-                  <span className="text-white/90 font-medium">{result.ratio.sativa}%</span>
-                </div>
-                {result.ratio.hybrid !== undefined && result.ratio.hybrid > 0 && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-white/80">Hybrid</span>
-                    <span className="text-white/90 font-medium">{result.ratio.hybrid}%</span>
+            
+                {/* Bar visualization (primary display) */}
+                <div className="space-y-2">
+                  <div className="h-4 bg-white/10 rounded-full overflow-hidden">
+                    <div className="flex h-full">
+                      <div 
+                        style={{ width: `${displayIndica}%` }} 
+                        className="bg-purple-600 transition-all" 
+                        title={`Indica: ${displayIndica}%`}
+                      />
+                      <div 
+                        style={{ width: `${displaySativa}%` }} 
+                        className="bg-green-500 transition-all" 
+                        title={`Sativa: ${displaySativa}%`}
+                      />
+                      {displayHybrid > 0 && (
+                        <div 
+                          style={{ width: `${displayHybrid}%` }} 
+                          className="bg-yellow-500/60 transition-all" 
+                          title={`Hybrid: ${displayHybrid}%`}
+                        />
+                      )}
+                    </div>
                   </div>
-                )}
+              
+                  {/* Subtext: "Based on genetics + visual structure" */}
+                  {/* Phase 4.7.4 — Dynamic subtext based on available sources */}
+                  {/* Phase 4.7.5 — Hide subtext when confidence is too low */}
+                  {!hasLowConfidence && (() => {
+                    const sourceBreakdown = (result.ratio as any)?.sourceBreakdown;
+                    const sources: string[] = [];
+                    
+                    if (sourceBreakdown?.genetics && (sourceBreakdown.genetics.indica !== 50 || sourceBreakdown.genetics.sativa !== 50)) {
+                      sources.push("genetics");
+                    }
+                    if (sourceBreakdown?.familyBaseline && (sourceBreakdown.familyBaseline.indica !== 50 || sourceBreakdown.familyBaseline.sativa !== 50)) {
+                      sources.push("family baseline");
+                    }
+                    if (sourceBreakdown?.visualMorphology && (sourceBreakdown.visualMorphology.indica !== 50 || sourceBreakdown.visualMorphology.sativa !== 50)) {
+                      sources.push("visual structure");
+                    }
+                    if (sourceBreakdown?.terpeneBias && (sourceBreakdown.terpeneBias.indica !== 50 || sourceBreakdown.terpeneBias.sativa !== 50)) {
+                      sources.push("terpene profile");
+                    }
+                    
+                    const subtext = sources.length > 0 
+                      ? `Based on ${sources.join(" + ")}`
+                      : "Based on genetics + visual structure";
+                    
+                    return (
+                      <p className="text-xs text-white/60 font-medium">
+                        {subtext}
+                      </p>
+                    );
+                  })()}
+                </div>
+                
+                {/* Phase 4.7.4 — Expandable exact % breakdown */}
+                <details className="cursor-pointer group">
+                  <summary className="text-sm text-white/70 hover:text-white/90 transition-colors list-none">
+                    <span className="flex items-center gap-2">
+                      <span>Show exact breakdown</span>
+                      <span className="text-white/50 group-open:rotate-180 transition-transform">▼</span>
+                    </span>
+                  </summary>
+                  <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/80">Indica</span>
+                      <span className="text-white/90 font-medium">{displayIndica}%</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/80">Sativa</span>
+                      <span className="text-white/90 font-medium">{displaySativa}%</span>
+                    </div>
+                    {displayHybrid > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/80">Hybrid</span>
+                        <span className="text-white/90 font-medium">{displayHybrid}%</span>
+                      </div>
+                    )}
+                    {hasLowConfidence && (
+                      <div className="mt-2 pt-2 border-t border-white/5">
+                        <p className="text-xs text-white/50 italic">
+                          Confidence too low to determine genetic bias. Showing balanced hybrid as default.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </details>
               </div>
-            </details>
-          </div>
+            );
+          })()}
           
           {/* Phase 5.1 — 4. User-facing explanation: Generate 2–3 bullets (if available) */}
           {result.finalRatio && result.finalRatio.explanation && result.finalRatio.explanation.length > 0 && (
