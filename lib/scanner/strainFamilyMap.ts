@@ -105,11 +105,13 @@ function extractParents(genetics: string): string[] {
   ];
 
   for (const pattern of patterns) {
-    const matches = genetics.matchAll(pattern);
-    for (const match of matches) {
+    let match;
+    while ((match = pattern.exec(genetics)) !== null) {
       const parts = match[0].split(/[×x/]/).map(p => p.trim());
       parents.push(...parts);
     }
+    // Reset regex for next iteration
+    pattern.lastIndex = 0;
   }
 
   return parents
