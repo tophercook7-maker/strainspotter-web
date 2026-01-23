@@ -4,7 +4,6 @@
 import type { CultivarReference } from "./cultivarLibrary";
 import type { VisualSignature } from "./visualFeatureExtraction";
 import type { FusedFeatures } from "./multiImageFusion";
-import type { NormalizedTerpeneProfile } from "./types";
 
 /**
  * Phase 5.0 — Strain DNA Fingerprint
@@ -75,11 +74,11 @@ function generateVisualHash(strain: CultivarReference): string {
   };
   
   // Normalize visual characteristics
-  const bud = (visual.budStructure || "medium").toLowerCase();
-  const trichome = (visual.trichomeDensity || "medium").toLowerCase();
-  const leaf = (visual.leafShape || "broad").toLowerCase();
-  const pistils = (visual.pistilColor || []).map(c => c.toLowerCase()).sort().join(",");
-  const color = (visual.colorProfile || "").toLowerCase()
+  const bud = ((visual as any).budStructure || (visual as any).budDensity || "medium").toLowerCase();
+  const trichome = ((visual as any).trichomeDensity || "medium").toLowerCase();
+  const leaf = ((visual as any).leafShape || "broad").toLowerCase();
+  const pistils = ((visual as any).pistilColor || []).map((c: string) => c.toLowerCase()).sort().join(",");
+  const color = ((visual as any).colorProfile || "").toLowerCase()
     .replace(/[^a-z]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -142,11 +141,11 @@ function calculateComponentScores(strain: CultivarReference): {
   // Visual score: 0-100 based on completeness
   let visualScore = 0;
   const visual = strain.visualProfile || strain.morphology;
-  if (visual.budStructure || visual.budDensity) visualScore += 20;
-  if (visual.trichomeDensity) visualScore += 20;
-  if (visual.leafShape) visualScore += 20;
-  if (visual.pistilColor && visual.pistilColor.length > 0) visualScore += 20;
-  if (visual.colorProfile && visual.colorProfile.length > 10) visualScore += 20;
+  if ((visual as any).budStructure || (visual as any).budDensity) visualScore += 20;
+  if ((visual as any).trichomeDensity) visualScore += 20;
+  if ((visual as any).leafShape) visualScore += 20;
+  if ((visual as any).pistilColor && (visual as any).pistilColor.length > 0) visualScore += 20;
+  if ((visual as any).colorProfile && (visual as any).colorProfile.length > 10) visualScore += 20;
   
   // Terpene score: 0-100 based on completeness
   const terpenes = strain.terpeneProfile || strain.commonTerpenes || [];
@@ -265,7 +264,7 @@ export type ObservedFingerprint = {
  */
 export function generateObservedFingerprint(
   visualSignature: VisualSignature | FusedFeatures,
-  terpeneProfile?: NormalizedTerpeneProfile | string[],
+  terpeneProfile?: string[] | Array<{ name: string }> | any,
   effects?: string[],
   genetics?: string
 ): ObservedFingerprint {
@@ -308,9 +307,12 @@ export function generateObservedFingerprint(
   // Generate terpene hash (if available)
   let terpeneHash: string | null = null;
   if (terpeneProfile) {
-    const terpenes = Array.isArray(terpeneProfile)
-      ? terpeneProfile
-      : (terpeneProfile as any).terpenes?.map((t: any) => typeof t === "string" ? t : t.name) || [];
+    let terpenes: string[] = [];
+    if (Array.isArray(terpeneProfile)) {
+      terpenes = terpeneProfile.map((t: any) => typeof t === "string" ? t : (t.name || ""));
+    } else if (terpeneProfile.terpenes) {
+      terpenes = terpeneProfile.terpenes.map((t: any) => typeof t === "string" ? t : (t.name || ""));
+    }
     terpeneHash = terpenes
       .map((t: string) => t.toLowerCase().trim())
       .filter((t: string) => t.length > 0)

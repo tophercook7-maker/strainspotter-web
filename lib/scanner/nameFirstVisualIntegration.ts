@@ -7,6 +7,16 @@ import type { VisualConsensusResult } from "./imageStrainMatchScoring";
 import type { VisualSignature } from "./visualFeatureExtraction";
 import { calculateMultiImageVisualConsensus, calculateImageStrainMatchScore } from "./imageStrainMatchScoring";
 import { CULTIVAR_LIBRARY } from "./cultivarLibrary";
+// Phase 5.0 — Strain DNA Fingerprint (DB-weighted decision core)
+import {
+  generateStrainDnaFingerprint,
+  generateObservedFingerprint,
+  compareFingerprints,
+  makeDbWeightedDecision,
+  type StrainDnaFingerprint,
+  type ObservedFingerprint,
+  type DbWeightedDecision,
+} from "./strainDnaFingerprint";
 
 /**
  * Phase 4.9.5 — Integrated Name-First Score
@@ -98,23 +108,31 @@ function calculateTerpeneOverlap(
 
 /**
  * Phase 4.9.5 — Integrate Name-First with Visual Consensus
+ * Phase 5.0 — Enhanced with DNA Fingerprint DB-weighted decisions
  * 
  * Combines:
  * - Name consensus (from Phase B.1)
  * - Genetic similarity
  * - Terpene overlap
  * - VisualConsensusScore
+ * - DNA Fingerprint comparison (Phase 5.0)
  * 
  * Visual score can:
  * - Break name ties
  * - Demote false positives
  * - Increase confidence ceiling
+ * 
+ * DNA Fingerprint (Phase 5.0) can:
+ * - Apply DB-weighted decisions (trust DB more when DB confidence is high)
+ * - Refine scores based on fingerprint match
+ * - Prioritize database knowledge over image-only signals
  */
 export function integrateNameFirstWithVisual(
   nameCandidates: NameMatchCandidate[],
   visualSignatures: VisualSignature[],
   observedTerpenes?: string[],
-  observedGenetics?: string
+  observedGenetics?: string,
+  observedEffects?: string[] // Phase 5.0 — Add effects for fingerprint
 ): IntegratedNameFirstScore[] {
   if (nameCandidates.length === 0) return [];
   
@@ -129,8 +147,23 @@ export function integrateNameFirstWithVisual(
     })
     .filter((item): item is { candidate: NameMatchCandidate; dbEntry: CultivarReference } => item !== null);
   
+  // Phase 5.0 — Generate observed fingerprint (once, reused for all candidates)
+  let observedFingerprint: ObservedFingerprint | null = null;
+  if (visualSignatures.length > 0) {
+    const primarySignature = visualSignatures[0];
+    observedFingerprint = generateObservedFingerprint(
+      primarySignature,
+      observedTerpenes,
+      observedEffects,
+      observedGenetics
+    );
+  }
+  
   // Phase 4.9.5.2 — Calculate integrated scores
   const integratedScores: IntegratedNameFirstScore[] = candidatesWithDb.map(({ candidate, dbEntry }) => {
+    // Phase 5.0 — Generate strain DNA fingerprint
+    const strainFingerprint = generateStrainDnaFingerprint(dbEntry);
+    
     // Calculate visual consensus score
     let visualConsensusScore = 0;
     let visualConsensusResult: VisualConsensusResult | null = null;
@@ -153,6 +186,40 @@ export function integrateNameFirstWithVisual(
     // Calculate terpene overlap
     const terpeneOverlap = calculateTerpeneOverlap(observedTerpenes, dbEntry);
     
+    // Phase 5.0 — DNA Fingerprint comparison and DB-weighted decision
+    let fingerprintBoost = 0;
+    let dbWeightedDecision: DbWeightedDecision | null = null;
+    
+    if (observedFingerprint) {
+      const fingerprintComparison = compareFingerprints(observedFingerprint, strainFingerprint);
+      
+      // Make DB-weighted decision
+      const dbScore = candidate.score; // Name-first score (DB-based)
+      const imageScore = Math.round(visualConsensusScore * 100); // Visual score (image-based)
+      
+      dbWeightedDecision = makeDbWeightedDecision(
+        strainFingerprint,
+        observedFingerprint,
+        imageScore,
+        dbScore
+      );
+      
+      // Apply fingerprint boost/penalty based on DB-weighted decision
+      // If DB confidence is high and fingerprints match well, boost score
+      // If fingerprints don't match well, reduce score
+      const fingerprintMatchScore = fingerprintComparison.overallSimilarity;
+      if (strainFingerprint.dbWeight >= 0.7 && fingerprintMatchScore >= 0.7) {
+        // High DB confidence + good match = boost
+        fingerprintBoost = Math.round((fingerprintMatchScore - 0.7) * 10); // Up to +3 points
+      } else if (strainFingerprint.dbWeight >= 0.7 && fingerprintMatchScore < 0.5) {
+        // High DB confidence + poor match = penalty
+        fingerprintBoost = Math.round((fingerprintMatchScore - 0.5) * 15); // Up to -7.5 points
+      } else if (strainFingerprint.dbWeight < 0.5 && fingerprintMatchScore >= 0.7) {
+        // Low DB confidence + good match = moderate boost (trust image more)
+        fingerprintBoost = Math.round((fingerprintMatchScore - 0.7) * 5); // Up to +1.5 points
+      }
+    }
+    
     // Phase 4.9.5.3 — Calculate integrated score
     // Weights: Name 40%, Visual 30%, Genetics 15%, Terpenes 15%
     const nameWeight = 0.40;
@@ -161,12 +228,15 @@ export function integrateNameFirstWithVisual(
     const terpeneWeight = 0.15;
     
     const normalizedNameScore = candidate.score / 100; // 0-1
-    const integratedScore = Math.round(
+    let integratedScore = Math.round(
       (normalizedNameScore * nameWeight +
        visualConsensusScore * visualWeight +
        geneticSimilarity * geneticWeight +
        terpeneOverlap * terpeneWeight) * 100
     );
+    
+    // Phase 5.0 — Apply fingerprint boost/penalty
+    integratedScore = Math.max(0, Math.min(100, integratedScore + fingerprintBoost));
     
     // Phase 4.9.5.4 — Determine if false positive (visual score very low)
     const isFalsePositive = visualConsensusScore < 0.3 && candidate.score < 80;
@@ -204,6 +274,19 @@ export function integrateNameFirstWithVisual(
     
     if (visualConsensusScore >= 0.8) {
       explanation.push("✓ Strong visual alignment increases confidence ceiling");
+    }
+    
+    // Phase 5.0 — Add DNA fingerprint reasoning
+    if (dbWeightedDecision) {
+      explanation.push(`DNA Fingerprint: ${Math.round(dbWeightedDecision.decisionConfidence)}% match confidence`);
+      if (strainFingerprint.dbWeight >= 0.7) {
+        explanation.push(`High DB confidence (${strainFingerprint.confidence}%) — database knowledge prioritized`);
+      }
+      if (fingerprintBoost > 0) {
+        explanation.push(`Fingerprint match boosted score by ${fingerprintBoost} points`);
+      } else if (fingerprintBoost < 0) {
+        explanation.push(`Fingerprint mismatch reduced score by ${Math.abs(fingerprintBoost)} points`);
+      }
     }
     
     return {
@@ -276,7 +359,8 @@ export function applyVisualIntegrationToNameFirst(
   },
   visualSignatures: VisualSignature[],
   observedTerpenes?: string[],
-  observedGenetics?: string
+  observedGenetics?: string,
+  observedEffects?: string[] // Phase 5.0 — Add effects for fingerprint
 ): {
   candidates: Array<NameMatchCandidate & {
     integratedScore: number;
@@ -295,7 +379,8 @@ export function applyVisualIntegrationToNameFirst(
     phaseB1Result.candidates,
     visualSignatures,
     observedTerpenes,
-    observedGenetics
+    observedGenetics,
+    observedEffects // Phase 5.0 — Pass effects for fingerprint
   );
   
   // Update candidates with integrated scores

@@ -3791,12 +3791,25 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 observedGenetics = viewModel.genetics.lineage;
               }
               
-              // Apply visual integration to name-first results
+              // Phase 5.0 — Extract observed effects for DNA fingerprint
+              let observedEffects: string[] | undefined = undefined;
+              if (viewModel.experience?.effects && viewModel.experience.effects.length > 0) {
+                observedEffects = viewModel.experience.effects;
+              } else if ((viewModel as any).effectExperience?.primaryEffects) {
+                const effectExp = (viewModel as any).effectExperience;
+                observedEffects = [
+                  ...(effectExp.primaryEffects || []).map((e: any) => typeof e === "string" ? e : e.name || ""),
+                  ...(effectExp.secondaryEffects || []).map((e: any) => typeof e === "string" ? e : e.name || ""),
+                ].filter((e: string) => e.length > 0);
+              }
+              
+              // Apply visual integration to name-first results (Phase 5.0 — includes DNA fingerprint)
               const integratedResult = applyVisualIntegrationToNameFirst(
                 phaseB1Result,
                 visualSignatures,
                 observedTerpenes,
-                observedGenetics
+                observedGenetics,
+                observedEffects // Phase 5.0 — Pass effects for fingerprint
               );
               
               // Update phaseB1Result with integrated scores
@@ -3829,7 +3842,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 (phaseB1Result as any).visualConsensus = scoredCandidates[0].visualConsensusResult;
               }
               
-              console.log("Phase 4.9.5 — Name-First Integration applied:", {
+              console.log("Phase 4.9.5 / Phase 5.0 — Name-First Integration + DNA Fingerprint applied:", {
                 imageCount: visualSignatures.length,
                 candidatesScored: integratedResult.candidates.length,
                 topIntegratedScore: integratedResult.candidates[0]?.integratedScore,
@@ -3837,6 +3850,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 confidenceCeiling: integratedResult.candidates[0]?.confidenceCeiling,
                 isFalsePositive: integratedResult.candidates[0]?.isFalsePositive,
                 integrationNote: integratedResult.visualIntegrationNote,
+                dnaFingerprintApplied: true, // Phase 5.0 — DNA fingerprint integrated
               });
             }
           } catch (error) {
