@@ -137,14 +137,33 @@ export default function WikiStyleResultPanel({
               
               // Standard single confidence badge
               // Phase 5.1.7 — Text hierarchy: Confidence (text-base) > Reasons (text-base heading, text-sm content)
+              // Phase 5.3.5 — Add expectation-setting subtitle
               return (
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${confidenceColor}`}>
-                    {confidenceLabel}
-                  </span>
-                  <span className="text-base text-white/60">
-                    {confidence}%
-                  </span>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${confidenceColor}`}>
+                      {confidenceLabel}
+                    </span>
+                    <span className="text-base text-white/60">
+                      {confidence}%
+                    </span>
+                  </div>
+                  {/* Phase 5.3.5 — Confidence expectation subtitle */}
+                  {confidence >= 85 && (
+                    <p className="text-xs text-white/50 italic">
+                      Strong evidence from multiple sources
+                    </p>
+                  )}
+                  {confidence >= 70 && confidence < 85 && (
+                    <p className="text-xs text-white/50 italic">
+                      Good evidence with some uncertainty
+                    </p>
+                  )}
+                  {confidence < 70 && (
+                    <p className="text-xs text-white/50 italic">
+                      Best available match based on limited evidence
+                    </p>
+                  )}
                 </div>
               );
             })()}

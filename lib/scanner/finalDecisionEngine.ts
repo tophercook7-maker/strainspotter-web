@@ -444,6 +444,28 @@ export function makeFinalDecision(
   
   // Phase 5.0.5.5 — Build reasoning
   const reasoning: string[] = [];
+  
+  // Phase 5.3.3 — Evidence threshold check for 85%+ confidence
+  // Require strong evidence before allowing 85%+
+  if (confidence >= 85) {
+    const { checkEvidenceThresholdsForHighConfidence } = require("./confidenceExpectations");
+    const evidenceCheck = checkEvidenceThresholdsForHighConfidence({
+      fingerprintScore: selected.fingerprintScore,
+      fingerprintSeparation: fingerprintSeparation,
+      crossImageAgreement: selected.crossImageAgreement,
+      visualAlignment: visualAlignment,
+      geneticAlignment: geneticAlignment,
+      contradictionScore: selected.contradictionScore,
+      imageCount,
+      hasStrongDatabaseMatch: primaryCandidate.channelScores.genetics >= 0.7, // Strong DB match
+    });
+    
+    if (!evidenceCheck.meetsThreshold) {
+      // Cap at 84% if evidence thresholds not met
+      confidence = Math.min(confidence, 84);
+      reasoning.push(`Confidence capped at 84% — requires stronger evidence for 85%+ (missing: ${evidenceCheck.missingRequirements.slice(0, 2).join(", ")})`);
+    }
+  }
   reasoning.push(`Fingerprint match: ${Math.round(selected.fingerprintScore * 100)}%`);
   
   // Add fingerprint separation note

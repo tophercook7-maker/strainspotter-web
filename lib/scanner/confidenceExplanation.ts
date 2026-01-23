@@ -1,9 +1,11 @@
 // Phase 5.1.4 — CONFIDENCE EXPLANATION
+// Phase 5.3 — Confidence Tuning & Expectation Setting
 // lib/scanner/confidenceExplanation.ts
 
 import type { FinalDecision } from "./finalDecisionEngine";
 import type { ConsensusResult } from "./consensusEngine";
 import type { ImageResult } from "./consensusEngine";
+import { getConfidenceExpectation, getConfidenceExplanation as getExpectationExplanation } from "./confidenceExpectations";
 
 /**
  * Phase 5.1.4 — Generate confidence explanation
@@ -137,16 +139,24 @@ export function generateConfidenceExplanationV514(
   // Build final explanation
   let explanation = parts.join(" ");
   
+  // Phase 5.3.4 — Add expectation-setting context
+  const expectation = getConfidenceExpectation(confidence);
+  
   if (uncertainties.length > 0) {
     if (uncertainties.length === 1) {
       explanation += `. Confidence is reduced because ${uncertainties[0]}`;
     } else {
       explanation += `. Some uncertainty exists: ${uncertainties.join("; ")}`;
     }
+    // Add expectation context for lower confidence
+    if (confidence < 85) {
+      explanation += `. ${expectation.description}`;
+    }
   } else if (confidence >= 85) {
-    explanation += `. Multiple signals align strongly, supporting high confidence`;
+    // Phase 5.3.4 — For 85%+, explain what makes it meaningful
+    explanation += `. ${expectation.description}. This confidence level requires strong evidence from multiple sources.`;
   } else {
-    explanation += `. Overall match quality supports this identification`;
+    explanation += `. Overall match quality supports this identification. ${expectation.description}`;
   }
   
   return explanation;
