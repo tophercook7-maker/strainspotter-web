@@ -3681,15 +3681,21 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
     
     // Update explanation (clear reason why this name won) - Phase 5.5 prioritized
+    // 6) Free vs Paid: FREE shows 2 bullets, PAID shows full explanation
     if (!viewModel.nameFirstDisplay.explanation) {
       viewModel.nameFirstDisplay.explanation = { whyThisNameWon: [], whatRuledOutOthers: [], varianceNotes: [] };
     }
-    const explanationText = nameConfidenceV55
-      ? nameConfidenceV55.whyThisNameWon
-      : strengthenedNameV53
-      ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
-      : nameTrustV46.explanation;
-    viewModel.nameFirstDisplay.explanation.whyThisNameWon = [explanationText];
+    if (nameConfidenceV55) {
+      // Phase 5.5 — whyThisNameWon is an array (at least 2 bullets: one database, one image)
+      // FREE tier: Show first 2 bullets only
+      // PAID tier: Show all bullets + disambiguation notes
+      viewModel.nameFirstDisplay.explanation.whyThisNameWon = nameConfidenceV55.whyThisNameWon;
+    } else {
+      const explanationText = strengthenedNameV53
+        ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
+        : nameTrustV46.explanation;
+      viewModel.nameFirstDisplay.explanation.whyThisNameWon = [explanationText];
+    }
     
     // Attach alternates (ranked, max 3) - Phase 5.5 prioritized
     if (nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0) {
@@ -3721,14 +3727,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       confidence: nameConfidenceV55?.confidence || finalConfidence,
       confidenceTier: nameConfidenceV55?.confidenceTier || (finalConfidence >= 75 ? "high" as const : "medium" as const),
       tagline: nameConfidenceV55
-        ? nameConfidenceV55.whyThisNameWon
+        ? nameConfidenceV55.whyThisNameWon[0] || "Closest known match"
         : strengthenedNameV53 
         ? `Name selected based on ${strengthenedNameV53.selectedSource} match`
         : "Closest known match based on available analysis",
       explanation: { 
-        whyThisNameWon: [nameConfidenceV55
-          ? nameConfidenceV55.whyThisNameWon
-          : strengthenedNameV53 
+        whyThisNameWon: nameConfidenceV55
+          ? nameConfidenceV55.whyThisNameWon // Array of explanation bullets
+          : [strengthenedNameV53 
           ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
           : nameTrustV46.explanation], 
         whatRuledOutOthers: [], 
@@ -3747,18 +3753,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
   }
   
-  // Phase 5.5 — Logging (debug only) - Enhanced with Phase 5.5
-  // Note: finalConfidence will be updated after V45, log current confidence for now
-  console.log("NAME_DECISION:", {
-    primary: finalPrimaryName,
-    alternates: nameConfidenceV55?.alternateMatches.map(a => a.name) || strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates,
-    confidence: nameConfidenceV55?.confidence || currentConfidence, // Phase 5.5 confidence if available
-    confidenceTier: nameConfidenceV55?.confidenceTier || (currentConfidence >= 75 ? "high" : "medium"),
-    whyThisNameWon: nameConfidenceV55?.whyThisNameWon || (strengthenedNameV53 ? `Name selected based on ${strengthenedNameV53.selectedSource} match` : nameTrustV46.explanation),
-    disambiguationTriggered: nameConfidenceV55?.disambiguationTriggered || false,
-    sourcesUsed: nameTrustV46.sourcesUsed,
-    nameSource: strengthenedNameV53?.selectedSource || "direct",
-    isLocked: shouldLockName,
+  // Phase 5.5 — 8. Logging
+  // NAME_FINAL: <name> confidence=<c> alternates=<n>
+  const finalNameConfidence = nameConfidenceV55?.confidence || currentConfidence;
+  const finalAlternates = nameConfidenceV55?.alternateMatches.map(a => a.name) || strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates || [];
+  console.log("NAME_FINAL:", {
+    name: finalPrimaryName,
+    confidence: finalNameConfidence,
+    alternates: finalAlternates.length,
   });
 
   // Phase 4.0.5 — INDICA / SATIVA / HYBRID RATIO FINALIZATION

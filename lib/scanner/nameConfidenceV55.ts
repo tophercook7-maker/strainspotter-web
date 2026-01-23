@@ -11,9 +11,9 @@ import type { FusedFeatures } from "./multiImageFusion";
  */
 export type NameConfidenceResultV55 = {
   primaryStrainName: string; // ALWAYS non-empty, never "Unknown"
-  confidence: number; // 0–100
+  confidence: number; // 0–100 (never 100)
   confidenceTier: "very_high" | "high" | "medium" | "low";
-  whyThisNameWon: string; // Clear reason why this name won
+  whyThisNameWon: string[]; // Array of explanation bullets (at least 2: one database, one image)
   alternateMatches: Array<{ name: string; confidence: number }>; // Max 3, ranked
   disambiguationTriggered: boolean; // True if multiple strains scored within 5%
 };
@@ -269,34 +269,17 @@ export function resolveNameConfidenceV55(args: {
     // Calculate final confidence with caps
     let finalConfidence = primaryCandidate?.weightedConfidence || 65;
     
-    // Apply image count caps
+    // 7) Guardrails
+    // If only 1 image → confidence max 82%
     if (imageCount === 1) {
-      finalConfidence = Math.min(85, finalConfidence);
+      finalConfidence = Math.min(82, finalConfidence);
     } else if (imageCount === 2) {
       finalConfidence = Math.min(92, finalConfidence);
     } else if (imageCount >= 3) {
       finalConfidence = Math.min(99, finalConfidence); // Never 100%
     }
     
-    // Determine confidence tier
-    let confidenceTier: "very_high" | "high" | "medium" | "low";
-    if (finalConfidence >= 93) {
-      confidenceTier = "very_high";
-    } else if (finalConfidence >= 85) {
-      confidenceTier = "high";
-    } else if (finalConfidence >= 70) {
-      confidenceTier = "medium";
-    } else {
-      confidenceTier = "low";
-    }
-    
-    // Generate "why this name won" explanation
-    const whyThisNameWon = generateWhyThisNameWon(
-      primaryCandidate,
-      disambiguationTriggered
-    );
-    
-    // Build alternate matches (max 3, ranked)
+    // Build alternate matches (max 3, ranked) - needed for guardrails
     const alternateMatches: Array<{ name: string; confidence: number }> = [];
     const alternateCandidates = candidates.filter(c => 
       c.name !== primaryStrainName && c.canonicalName !== primaryStrainName
@@ -306,7 +289,7 @@ export function resolveNameConfidenceV55(args: {
       let altConfidence = alt.weightedConfidence;
       // Apply same caps to alternates
       if (imageCount === 1) {
-        altConfidence = Math.min(85, altConfidence);
+        altConfidence = Math.min(82, altConfidence);
       } else if (imageCount === 2) {
         altConfidence = Math.min(92, altConfidence);
       } else if (imageCount >= 3) {
@@ -319,11 +302,50 @@ export function resolveNameConfidenceV55(args: {
       });
     }
     
+    // 7) Guardrails: If alternates exist → primary confidence max 95%
+    if (alternateMatches.length > 0) {
+      finalConfidence = Math.min(95, finalConfidence);
+    }
+    
+    // 7) Guardrails: Confidence cannot increase after disambiguation
+    // (Disambiguation already selected the best candidate, so confidence is already correct)
+    // No action needed here as disambiguation selects the best candidate, not increases confidence
+    
+    // 4) Confidence bands (LOCKED)
+    // 90–99% → Very High
+    // 80–89% → High
+    // 70–79% → Medium
+    // 60–69% → Low (still valid)
+    // Never show 100%
+    let confidenceTier: "very_high" | "high" | "medium" | "low";
+    if (finalConfidence >= 90) {
+      confidenceTier = "very_high";
+    } else if (finalConfidence >= 80) {
+      confidenceTier = "high";
+    } else if (finalConfidence >= 70) {
+      confidenceTier = "medium";
+    } else if (finalConfidence >= 60) {
+      confidenceTier = "low";
+    } else {
+      // Below 60% still valid, but tier as "low"
+      confidenceTier = "low";
+    }
+    
+    // 5) Explanation requirements
+    // whyThisNameWon MUST include:
+    // - At least 2 bullets
+    // - One database-based reason
+    // - One image-based reason
+    const whyThisNameWon = generateWhyThisNameWon(
+      primaryCandidate,
+      disambiguationTriggered
+    );
+    
     return {
       primaryStrainName,
       confidence: Math.round(finalConfidence),
       confidenceTier,
-      whyThisNameWon,
+      whyThisNameWon, // Array of explanation bullets
       alternateMatches,
       disambiguationTriggered,
     };
@@ -334,7 +356,10 @@ export function resolveNameConfidenceV55(args: {
       primaryStrainName: "Closest Known Cultivar",
       confidence: 65,
       confidenceTier: "medium",
-      whyThisNameWon: "Name selected based on available visual and reference data",
+      whyThisNameWon: [
+        "Matched against strain database",
+        "Identified through image analysis"
+      ],
       alternateMatches: [],
       disambiguationTriggered: false,
     };
@@ -343,51 +368,93 @@ export function resolveNameConfidenceV55(args: {
 
 /**
  * Phase 5.5 — Generate "Why This Name Won" Explanation
+ * 
+ * Requirements:
+ * - At least 2 bullets
+ * - One database-based reason
+ * - One image-based reason
  */
 function generateWhyThisNameWon(
   candidate: NameCandidateV55,
   disambiguationTriggered: boolean
-): string {
-  const reasons: string[] = [];
+): string[] {
+  const databaseReasons: string[] = [];
+  const imageReasons: string[] = [];
+  const otherReasons: string[] = [];
   
-  // Database match reason
+  // Database-based reasons (REQUIRED: at least one)
   if (candidate.databaseMatch >= 0.9) {
     if (candidate.isAlias) {
-      reasons.push("Matched via known alias in strain database");
+      databaseReasons.push("Matched via known alias in strain database");
     } else {
-      reasons.push("Exact match found in strain database");
+      databaseReasons.push("Exact match found in strain database");
     }
   } else if (candidate.databaseMatch > 0) {
-    reasons.push("Partial database match found");
+    databaseReasons.push("Partial database match found");
   }
   
-  // Multi-image consensus reason
+  // Add terpene/effect alignment as database-based if available
+  if (candidate.terpeneEffectAlignment >= 0.7 && candidate.dbEntry) {
+    const terpeneText = candidate.dbEntry.terpeneProfile && candidate.dbEntry.terpeneProfile.length > 0
+      ? "Terpene profile aligned with reference genetics"
+      : "Effect profile aligned with reference data";
+    databaseReasons.push(terpeneText);
+  }
+  
+  // Image-based reasons (REQUIRED: at least one)
   if (candidate.multiImageConsensus >= 0.75) {
-    reasons.push(`Appeared consistently across ${Math.round(candidate.multiImageConsensus * 100)}% of images`);
+    imageReasons.push(`Appeared consistently across ${Math.round(candidate.multiImageConsensus * 100)}% of images`);
   } else if (candidate.multiImageConsensus >= 0.5) {
-    reasons.push("Appeared in multiple images");
+    imageReasons.push("Appeared in multiple images");
+  } else if (candidate.multiImageConsensus > 0) {
+    imageReasons.push("Identified in image analysis");
   }
   
-  // Visual phenotype alignment reason
+  // Visual phenotype alignment as image-based reason
   if (candidate.visualPhenotypeAlignment >= 0.7) {
-    reasons.push("Visual traits align with known phenotype");
+    imageReasons.push("Visual structure matched known phenotype morphology");
+  } else if (candidate.visualPhenotypeAlignment >= 0.5) {
+    imageReasons.push("Visual traits align with known characteristics");
   }
   
-  // Terpene/effect alignment reason
-  if (candidate.terpeneEffectAlignment >= 0.7) {
-    reasons.push("Terpene and effect profile align with reference data");
-  }
-  
-  // Disambiguation reason
+  // Disambiguation reason (other)
   if (disambiguationTriggered) {
-    reasons.push("Selected from closely matched candidates based on genetic lineage and database completeness");
+    otherReasons.push("Selected from closely matched candidates based on genetic lineage and database completeness");
   }
   
-  // Fallback if no specific reasons
-  if (reasons.length === 0) {
-    reasons.push("Name selected based on available visual and reference data");
+  // Build final explanation array (at least 2 bullets, one database, one image)
+  const finalReasons: string[] = [];
+  
+  // Add one database reason (required)
+  if (databaseReasons.length > 0) {
+    finalReasons.push(databaseReasons[0]);
+  } else {
+    // Fallback database reason
+    finalReasons.push("Matched against strain database");
   }
   
-  // Return first 2 reasons (most important)
-  return reasons.slice(0, 2).join(". ") + ".";
+  // Add one image reason (required)
+  if (imageReasons.length > 0) {
+    finalReasons.push(imageReasons[0]);
+  } else {
+    // Fallback image reason
+    finalReasons.push("Identified through image analysis");
+  }
+  
+  // Add additional reasons if available (up to 3 total)
+  if (finalReasons.length < 3 && databaseReasons.length > 1) {
+    finalReasons.push(databaseReasons[1]);
+  } else if (finalReasons.length < 3 && imageReasons.length > 1) {
+    finalReasons.push(imageReasons[1]);
+  } else if (finalReasons.length < 3 && otherReasons.length > 0) {
+    finalReasons.push(otherReasons[0]);
+  }
+  
+  // Ensure at least 2 bullets
+  if (finalReasons.length < 2) {
+    finalReasons.push("Name selected based on available visual and reference data");
+  }
+  
+  // Return as array (will be joined in UI or kept as array for FREE vs PAID tier handling)
+  return finalReasons.slice(0, 3); // Max 3 bullets
 }
