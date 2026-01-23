@@ -5148,11 +5148,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       viewModel.nameFirstDisplay.confidence = Math.min(70, viewModel.nameFirstDisplay.confidence);
       viewModel.nameFirstDisplay.confidenceTier = "low";
       
-      // Add scanWarning
-      const validationWarning = validationWarnings.join("; ");
-      // Get existing scanWarning if any
-      const existingWarning = scanWarning || warning || undefined;
-      scanWarning = existingWarning ? `${existingWarning}. ${validationWarning}` : validationWarning;
+      // Validation warnings stored in validationWarnings array (will be added to result.scanWarning)
     }
     
     const result: ScanResult = {
