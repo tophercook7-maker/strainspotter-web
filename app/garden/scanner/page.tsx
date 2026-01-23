@@ -426,11 +426,11 @@ export default function ScannerPage() {
                             className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group"
                           >
                             {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
-                            {/* UI FIX — Reduce image size (not viewport) */}
+                            {/* Phase 4.4.5 — Image scale lock: max 260px, object-contain, rounded, never full-screen */}
                             <img
                               src={preview.url}
                               alt={`scan-${idx + 1}`}
-                              className="w-full h-full object-contain max-h-[200px] md:max-h-[240px] rounded-xl mx-auto"
+                              className="w-full h-full object-contain max-h-[260px] rounded-xl"
                             />
                             {/* Phase 4.0.2 — Angle badges on previews */}
                             <span className="absolute bottom-1 right-1 text-xs px-2 py-0.5 rounded bg-black/70">
