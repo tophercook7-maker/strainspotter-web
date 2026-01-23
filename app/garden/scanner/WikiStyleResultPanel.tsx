@@ -474,6 +474,118 @@ export default function WikiStyleResultPanel({
             )}
           </div>
           
+          {/* Phase 5.0.7 — User Output (FREE TIER) */}
+          {/* Show: Strain Name, Confidence %, "Why this match" (3 bullets), 2-3 closest alternates (collapsed) */}
+          {/* Tone: Educational, confident, not absolute */}
+          {(() => {
+            const primaryName = viewModel.nameFirstDisplay.primaryStrainName;
+            const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+            
+            // Skip if fallback name
+            if (primaryName === "Closest Known Cultivar" || !primaryName) {
+              return null;
+            }
+            
+            // Get "Why this match" reasons (3 bullets max)
+            // Tone: Educational, confident, not absolute
+            const whyThisMatch: string[] = [];
+            
+            // Try to get from final decision reasoning if available
+            const finalDecision = (viewModel.nameFirstDisplay as any)?.finalDecision;
+            if (finalDecision?.reasoning && finalDecision.reasoning.length > 0) {
+              // Format reasoning points for educational tone
+              finalDecision.reasoning.slice(0, 3).forEach(reason => {
+                // Make tone educational and confident but not absolute
+                let formatted = reason;
+                
+                // Remove absolute language, add educational framing
+                formatted = formatted.replace(/exact|perfect|guaranteed|certain/gi, "strong");
+                formatted = formatted.replace(/match found/gi, "match identified");
+                formatted = formatted.replace(/confirms/gi, "suggests");
+                
+                // Ensure educational tone
+                if (!formatted.toLowerCase().includes("suggest") && 
+                    !formatted.toLowerCase().includes("indicate") &&
+                    !formatted.toLowerCase().includes("align")) {
+                  formatted = formatted.replace(/matches/gi, "aligns with");
+                }
+                
+                whyThisMatch.push(formatted);
+              });
+            } else if (viewModel.nameFirstDisplay.explanation?.whyThisNameWon && viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0) {
+              // Fallback to existing explanation (format for educational tone)
+              viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 3).forEach(reason => {
+                let formatted = reason;
+                formatted = formatted.replace(/exact|perfect|guaranteed|certain/gi, "strong");
+                formatted = formatted.replace(/confirms/gi, "suggests");
+                whyThisMatch.push(formatted);
+              });
+            } else {
+              // Default educational reasons (confident but not absolute)
+              whyThisMatch.push(
+                "Visual characteristics align with known cultivar traits in our database",
+                "Database match identified from 35,000+ strain library",
+                "Multi-image analysis supports this identification"
+              );
+            }
+            
+            // Get alternates (2-3 closest)
+            const alternates: Array<{ name: string; whyNotPrimary: string }> = [];
+            
+            // Try to get from final decision alternates if available
+            if (finalDecision?.alternates && finalDecision.alternates.length > 0) {
+              alternates.push(...finalDecision.alternates.slice(0, 3).map(alt => ({
+                name: alt.name,
+                whyNotPrimary: alt.whyNotPrimary || "Close match with slightly lower confidence",
+              })));
+            } else if (viewModel.nameFirstDisplay.alternateNames && viewModel.nameFirstDisplay.alternateNames.length > 0) {
+              // Fallback to alternate names
+              alternates.push(...viewModel.nameFirstDisplay.alternateNames.slice(0, 3).map(name => ({
+                name,
+                whyNotPrimary: "Close match with slightly lower confidence",
+              })));
+            }
+            
+            return (
+              <div className="mt-6 space-y-4">
+                {/* Why This Match — 3 bullet reasons */}
+                <div className="space-y-2">
+                  <h3 className="text-base font-semibold text-white/90">
+                    Why this match
+                  </h3>
+                  <ul className="space-y-2">
+                    {whyThisMatch.slice(0, 3).map((reason, idx) => (
+                      <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
+                        <span className="text-blue-400 mr-2.5 mt-0.5 text-base">•</span>
+                        <span>{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                {/* Closest Alternates (collapsed) */}
+                {alternates.length > 0 && (
+                  <CollapsibleSection
+                    title={`${alternates.length} close alternative${alternates.length > 1 ? 's' : ''} considered`}
+                    defaultExpanded={false}
+                    icon=""
+                  >
+                    <div className="pt-2 space-y-2">
+                      {alternates.map((alt, idx) => (
+                        <div key={idx} className="text-sm text-white/75">
+                          <span className="font-medium text-white/90">{alt.name}</span>
+                          {alt.whyNotPrimary && (
+                            <span className="text-white/60 ml-2">— {alt.whyNotPrimary}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleSection>
+                )}
+              </div>
+            );
+          })()}
+          
           {/* Phase 4.3.2 — How confidence is determined (expandable) */}
           {/* Phase 4.4.3 — Confidence badge moved to sit directly under strain name */}
           <CollapsibleSection
