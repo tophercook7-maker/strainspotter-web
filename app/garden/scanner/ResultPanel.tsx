@@ -102,17 +102,29 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
             
             {/* Phase 4.8 — 1. Rename confidence concept: Displayed as "Confidence Level" */}
             {/* Phase 4.7 — 3. Confidence badge directly below (pill, subtle) */}
-            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20">
-              <span className="text-xs opacity-70">Confidence Level:</span>
-              <span className="text-sm font-medium">
-                {(result.nameFirstDisplay as any)?.confidenceDisplayRange || `${result.nameFirstDisplay?.confidencePercent ?? result.confidence ?? 0}%`}
-              </span>
-              {result.confidenceTier && (
-                <span className="text-xs opacity-70">
-                  {result.confidenceTier.label}
-                </span>
-              )}
-            </div>
+            {/* Phase 5.3.3 — USER-FACING CONFIDENCE COPY (no percentages) */}
+            {(() => {
+              const { getShortConfidenceCopy } = require("@/lib/scanner/confidenceCopy");
+              const confidence = result.nameFirstDisplay?.confidencePercent ?? result.confidence ?? 0;
+              const confidenceTier = confidence >= 90 ? "very_high" : confidence >= 75 ? "high" : confidence >= 60 ? "medium" : "low";
+              const imageCount = (result as any).imageCount ?? 1;
+              const confidenceCopy = getShortConfidenceCopy({
+                confidence,
+                confidenceTier,
+                imageCount,
+                hasStrongVisualMatch: confidence >= 75,
+                hasDatabaseMatch: true,
+              });
+              
+              return (
+                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20">
+                  <span className="text-xs opacity-70">Confidence:</span>
+                  <span className="text-sm font-medium">
+                    {confidenceCopy}
+                  </span>
+                </div>
+              );
+            })()}
           {/* Phase 4.8 — 5. Free-tier note (if applicable) */}
           {(result as any).isFreeTier && (result.nameFirstDisplay?.confidencePercent ?? 0) >= 94 && (
             <div className="mt-2 text-xs opacity-60 italic">

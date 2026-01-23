@@ -154,39 +154,36 @@ export default function WikiStyleResultPanel({
               
               // Standard single confidence badge
               // Phase 5.1.7 — Text hierarchy: Confidence (text-base) > Reasons (text-base heading, text-sm content)
-              // Phase 5.3.5 — Add expectation-setting subtitle
+              // Phase 5.3.3 — USER-FACING CONFIDENCE COPY (no percentages, no technical terms)
+              const { getShortConfidenceCopy } = require("@/lib/scanner/confidenceCopy");
+              
+              // Derive evidence signals for confidence copy
+              const imageCount = (viewModel as any).imageCount ?? 1;
+              const hasStrongVisualMatch = clampedConfidence >= 75;
+              const hasDatabaseMatch = (viewModel.nameFirstDisplay as any)?.hasDatabaseMatch ?? true;
+              const hasMultiImageAgreement = imageCount >= 2;
+              
+              const confidenceCopy = getShortConfidenceCopy({
+                confidence: clampedConfidence,
+                confidenceTier,
+                imageCount,
+                hasStrongVisualMatch,
+                hasDatabaseMatch,
+                hasMultiImageAgreement,
+              });
+              
               return (
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${confidenceColor}`}>
                       {confidenceLabel}
                     </span>
-                    <span className="text-base text-white/60">
-                      {confidence}%
-                    </span>
+                    {/* Phase 5.3.3 — No percentage shown, replaced with natural language */}
                   </div>
-                  {/* Phase 5.3.5 — Confidence expectation subtitle */}
-                  {/* Phase 5.3.1 — Never imply lab certainty */}
-                  {clampedConfidence >= 90 && (
-                    <p className="text-xs text-white/50 italic">
-                      Strong evidence from multiple sources
-                    </p>
-                  )}
-                  {clampedConfidence >= 75 && clampedConfidence < 90 && (
-                    <p className="text-xs text-white/50 italic">
-                      Good evidence with some uncertainty
-                    </p>
-                  )}
-                  {clampedConfidence >= 60 && clampedConfidence < 75 && (
-                    <p className="text-xs text-white/50 italic">
-                      Reasonable evidence with some uncertainty
-                    </p>
-                  )}
-                  {clampedConfidence < 60 && (
-                    <p className="text-xs text-white/50 italic">
-                      Best available match based on limited evidence
-                    </p>
-                  )}
+                  {/* Phase 5.3.3 — User-facing confidence copy (no math, no engine terms) */}
+                  <p className="text-xs text-white/50 italic">
+                    {confidenceCopy}
+                  </p>
                 </div>
               );
             })()}
@@ -614,7 +611,7 @@ export default function WikiStyleResultPanel({
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-medium text-white/90 text-sm">{alt.name}</span>
                               <span className="text-xs text-white/60 font-medium">
-                                {alt.confidence}% confidence
+                                {/* Phase 5.3.3 — No percentage shown */}
                               </span>
                             </div>
                             {alt.whyNotPrimary && (
