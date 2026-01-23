@@ -350,11 +350,13 @@ export function detectCloneRelationships(
   
   const canonicalName = dbEntry?.name || bestGroup.rootName;
   
-  // Phase 4.8 — Calculate genetic similarity
-  const geneticSimilarity = calculateGeneticSimilarity(bestGroup.variants, dbEntry);
+  // Phase 4.8 — Calculate genetic similarity (legacy - convert to 0-100 scale)
+  const lineageSimilarity = calculateLineageSimilarity(bestGroup.variants, dbEntry);
+  const geneticSimilarity = Math.round(lineageSimilarity * 100);
   
-  // Phase 4.8 — Calculate visual similarity
-  const visualSimilarity = calculateVisualSimilarity(bestGroup.variants, fusedFeatures);
+  // Phase 4.8 — Calculate visual similarity (legacy - convert to 0-100 scale)
+  const visualMorphologyOverlap = calculateVisualMorphologyOverlap(bestGroup.variants, fusedFeatures, dbEntry);
+  const visualSimilarity = Math.round(visualMorphologyOverlap * 100);
   
   // Phase 4.8 — Build detected clones list
   const detectedClones = bestGroup.variants
@@ -752,5 +754,77 @@ export function selectPrimaryNameFromClones(
       `Final score: ${Math.round(topGroup.score)}`,
     ],
     cloneGroupId: primaryGroup.cloneGroupId,
+  };
+}
+
+/**
+ * Phase 4.8.4 — User-Facing Disambiguation Copy
+ * Generates user-friendly messages when clones are detected
+ */
+export type DisambiguationCopy = {
+  primaryMessage: string; // e.g., "Likely OG Kush — multiple named cuts detected"
+  expandableTitle: string; // e.g., "Also known as"
+  variantNames: string[]; // e.g., ["OG Kush #1", "SFV OG", "OG Kush Cut"]
+  hasClones: boolean; // True if clones were detected
+};
+
+/**
+ * Phase 4.8.4 — Generate User-Facing Disambiguation Copy
+ * 
+ * If clones detected:
+ * - "Likely [Primary Name] — multiple named cuts detected"
+ * 
+ * Expandable:
+ * - "Also known as: [variant names]"
+ */
+export function generateDisambiguationCopy(
+  selectionResult: PrimaryNameSelectionResult,
+  cloneGroups: CloneGroup[]
+): DisambiguationCopy {
+  if (!selectionResult.cloneGroupId || cloneGroups.length === 0) {
+    return {
+      primaryMessage: selectionResult.primaryStrainName,
+      expandableTitle: "",
+      variantNames: [],
+      hasClones: false,
+    };
+  }
+  
+  // Phase 4.8.4 — Find the clone group
+  const cloneGroup = cloneGroups.find(g => g.cloneGroupId === selectionResult.cloneGroupId);
+  
+  if (!cloneGroup || cloneGroup.variants.length <= 1) {
+    return {
+      primaryMessage: selectionResult.primaryStrainName,
+      expandableTitle: "",
+      variantNames: [],
+      hasClones: false,
+    };
+  }
+  
+  // Phase 4.8.4 — Build primary message
+  const primaryMessage = `Likely ${selectionResult.primaryStrainName} — multiple named cuts detected`;
+  
+  // Phase 4.8.4 — Collect variant names (exclude canonical name)
+  const variantNames = cloneGroup.variants
+    .filter(v => 
+      v.name.toLowerCase() !== selectionResult.primaryStrainName.toLowerCase() &&
+      v.canonicalName.toLowerCase() !== selectionResult.primaryStrainName.toLowerCase()
+    )
+    .map(v => v.name)
+    .slice(0, 5); // Limit to 5 variants for UI
+  
+  // Phase 4.8.4 — Also include alternates from selection result
+  const alternateNames = selectionResult.alternateNames
+    .map(alt => alt.name)
+    .filter(name => !variantNames.includes(name));
+  
+  const allVariants = [...variantNames, ...alternateNames].slice(0, 5);
+  
+  return {
+    primaryMessage,
+    expandableTitle: "Also known as",
+    variantNames: allVariants,
+    hasClones: true,
   };
 }

@@ -274,6 +274,37 @@ export default function WikiStyleResultPanel({
                 );
               })()}
               
+              {/* Phase 4.8.4 — User-Facing Disambiguation Copy */}
+              {(() => {
+                const disambiguationCopy = (viewModel.nameFirstDisplay as any)?.disambiguationCopy;
+                if (disambiguationCopy?.hasClones && disambiguationCopy.variantNames.length > 0) {
+                  return (
+                    <div className="mt-3 mb-4">
+                      {/* Primary message */}
+                      <p className="text-sm text-white/90 font-medium mb-2">
+                        {disambiguationCopy.primaryMessage}
+                      </p>
+                      
+                      {/* Expandable "Also known as" section */}
+                      <details className="cursor-pointer group">
+                        <summary className="text-xs text-white/70 hover:text-white/90 transition-colors list-none">
+                          <span className="flex items-center gap-2">
+                            <span>{disambiguationCopy.expandableTitle}:</span>
+                            <span className="text-white/50 group-open:rotate-180 transition-transform">▼</span>
+                          </span>
+                        </summary>
+                        <div className="mt-2 pt-2 border-t border-white/10">
+                          <p className="text-xs text-white/80 leading-relaxed">
+                            {disambiguationCopy.variantNames.join(", ")}
+                          </p>
+                        </div>
+                      </details>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              
               {/* Phase 4.2 — Subtle info banner (if samePlantNote exists OR multiple images) */}
               {(() => {
                 const hasSamePlantNote = !!(result as any).samePlantNote;

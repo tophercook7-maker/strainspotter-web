@@ -129,6 +129,14 @@ import { computeNameTrustV404 } from "./nameTrustV404";
 // Phase 4.5.1 — Name Memory Cache
 import { getNameMemoryBias, cacheScanResult } from "./nameMemory";
 import { applyFamilyFirstConfidenceBoost } from "./familyFirstBoost";
+// Phase 4.8 — Clone Detection & Disambiguation
+import { 
+  groupClones, 
+  selectPrimaryNameFromClones, 
+  generateDisambiguationCopy,
+  type CloneGroup,
+  type PrimaryNameSelectionResult 
+} from "./cloneDetectionV48";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -3855,6 +3863,51 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       effectProfile,
       imageCount: imageResultsV3.length || filteredInput.imageCount,
     });
+    
+    // Phase 4.8 — Clone Detection & Disambiguation
+    let cloneGroups: CloneGroup[] = [];
+    let primaryNameSelection: PrimaryNameSelectionResult | null = null;
+    let disambiguationCopy: ReturnType<typeof generateDisambiguationCopy> | null = null;
+    
+    try {
+      // Convert candidate names to format expected by clone detection
+      const candidateNamesForClones = candidateNames.map(name => ({
+        name,
+        confidence: 70, // Default confidence (will be refined by clone grouping)
+      }));
+      
+      // Phase 4.8.2 — Group clones
+      cloneGroups = groupClones(
+        candidateNamesForClones,
+        fusedFeatures,
+        terpeneProfile
+      );
+      
+      // Phase 4.8.3 — Select primary name from clone groups
+      if (cloneGroups.length > 0) {
+        primaryNameSelection = selectPrimaryNameFromClones(
+          cloneGroups,
+          perImageTopNames,
+          imageResultsV3.length || filteredInput.imageCount
+        );
+        
+        // Phase 4.8.4 — Generate user-facing disambiguation copy
+        disambiguationCopy = generateDisambiguationCopy(
+          primaryNameSelection,
+          cloneGroups
+        );
+        
+        console.log("Phase 4.8 — Clone detection:", {
+          cloneGroups: cloneGroups.length,
+          primaryName: primaryNameSelection.primaryStrainName,
+          hasClones: disambiguationCopy.hasClones,
+          variants: disambiguationCopy.variantNames.length,
+        });
+      }
+    } catch (error) {
+      console.warn("Phase 4.8 — Clone detection error:", error);
+      // Continue without clone detection
+    }
   }
 
   // Phase 4.6 — 1) Name locking rule
@@ -4207,6 +4260,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     (viewModel.nameFirstDisplay as any).isLocked = finalNameIsLocked || (shouldLockName && finalNameConfidence >= 75);
     if (nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
+    }
+    // Phase 4.8.4 — Attach disambiguation copy if clones detected
+    if (disambiguationCopy && disambiguationCopy.hasClones) {
+      (viewModel.nameFirstDisplay as any).disambiguationCopy = disambiguationCopy;
     }
     // Phase B.1 — Attach source information (Phase B.1 prioritized)
     if (phaseB1Result && phaseB1Result.candidates.length > 0) {
