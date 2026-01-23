@@ -13,6 +13,7 @@ import ResultPanel from "./ResultPanel";
 import WikiStyleResultPanel from "./WikiStyleResultPanel";
 import WikiReportPanel from "./WikiReportPanel"; // Phase 4.2 — Extensive Wiki-Style Report
 import TopNav from "../_components/TopNav";
+import ImageGuidancePanel from "./ImageGuidancePanel"; // Phase 5.2 — Multi-Image Guidance
 
 /**
  * 🔒 A.2 — runScan uses ViewModel ONLY (UI NEVER TOUCHES WIKI DIRECTLY)
@@ -32,6 +33,7 @@ export default function ScannerPage() {
   const [scanError, setScanError] = useState<{ reason: string } | null>(null); // Phase 4.0.1 — Non-fatal scan warnings
   const [imagePreviews, setImagePreviews] = useState<Array<{ url: string; base64: string; angleLabel: string }>>([]); // Phase 4.0.2 — Previews with base64 and angles
   const [duplicateWarning, setDuplicateWarning] = useState(false); // Phase 4.0.3 — Track if duplicates were removed
+  const [isDragging, setIsDragging] = useState(false); // Phase 5.2.4 — Drag and drop state
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
 
   // NEVER clear result on re-render
@@ -327,35 +329,95 @@ export default function ScannerPage() {
       <div className="mx-auto w-full max-w-[680px] px-4 pb-16 space-y-6">
         {/* A) Upload + Preview Card */}
         <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 space-y-4">
-              {/* FILE PICKER */}
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  if (!e.target.files) return;
-                  const selected = Array.from(e.target.files);
-                  if (selected.length > MAX_IMAGES) {
-                    alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
-                    setImages(selected.slice(0, MAX_IMAGES));
-                  } else {
-                    setImages(selected);
-                  }
-                }}
-                className="block w-full text-sm text-white/70"
-              />
-              <p className="text-xs text-white/50">
-                Add 1-3 photos — different angles help accuracy
-              </p>
-              <p className="text-xs text-white/60 mt-2">
-                Tip: Use photos of the same plant taken from different angles.
-                Mixing different plants may reduce confidence.
-              </p>
-              
-              {/* Phase 4.0.6 — Inline capture guidance */}
-              {images.length < 3 && (
-                <div className="mb-3 rounded-md border border-white/15 bg-white/5 p-2 text-xs text-white/70">
-                  Tip: Add a side view or close-up for better accuracy
+              {/* Phase 5.2.4 — Improved File Upload UX with Drag and Drop */}
+              <div className="space-y-2">
+                <label className="block">
+                  <div
+                    className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl transition-all cursor-pointer group ${
+                      isDragging
+                        ? "border-blue-500/60 bg-blue-500/20 border-solid"
+                        : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
+                    }`}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDragging(false);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDragging(false);
+                      
+                      const files = Array.from(e.dataTransfer.files).filter(
+                        (file) => file.type.startsWith("image/")
+                      );
+                      
+                      if (files.length > 0) {
+                        if (files.length > MAX_IMAGES) {
+                          alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
+                          setImages(files.slice(0, MAX_IMAGES));
+                        } else {
+                          setImages(files);
+                        }
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg
+                        className="w-10 h-10 mb-3 text-white/50 group-hover:text-white/70 transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      <p className="mb-2 text-sm text-white/70 group-hover:text-white/90">
+                        <span className="font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-white/50">
+                        {images.length > 0
+                          ? `${images.length}/${MAX_IMAGES} images selected`
+                          : `Upload 1-${MAX_IMAGES} photos (PNG, JPG, WEBP)`}
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      if (!e.target.files) return;
+                      const selected = Array.from(e.target.files);
+                      if (selected.length > MAX_IMAGES) {
+                        alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
+                        setImages(selected.slice(0, MAX_IMAGES));
+                      } else {
+                        setImages(selected);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              {/* Phase 5.2 — Multi-Image Guidance & Capture UX */}
+              {/* Show guidance before images are uploaded */}
+              {images.length === 0 && (
+                <div className="mb-4">
+                  <ImageGuidancePanel imagePreviews={[]} maxImages={MAX_IMAGES} />
                 </div>
               )}
               
@@ -380,18 +442,6 @@ export default function ScannerPage() {
                   Some photos were very similar — results adjusted for confidence.
                 </div>
               )}
-              
-              {/* Phase 4.0.4 — Angle guidance UI */}
-              <div className="text-xs text-white/60 mt-2">
-                Best results: include at least two angles (top + side or macro).
-              </div>
-              
-              {/* Phase 4.0.3 — non-blocking UX guidance */}
-              {angleHints.length > 0 && (
-                <div className="text-xs text-white/60 mt-2">
-                  Tip for higher accuracy: include a close-up bud photo and one wider plant view.
-                </div>
-              )}
 
               {/* Phase 4.0.7 — User-facing warning */}
               {result?.notes && result.notes.includes("HIGH_IMAGE_SIMILARITY") && (
@@ -407,6 +457,13 @@ export default function ScannerPage() {
                 </div>
               )}
 
+              {/* Phase 5.2 — Real-time guidance as images are added */}
+              {images.length > 0 && images.length < MAX_IMAGES && (
+                <div className="mt-4">
+                  <ImageGuidancePanel imagePreviews={imagePreviews} maxImages={MAX_IMAGES} />
+                </div>
+              )}
+              
               {/* Phase 4.0 Part A — IMAGE PREVIEWS with Labels */}
               {images.length > 0 && (() => {
                 const imageLabels = assignUserImageLabels(images.length);
