@@ -3786,6 +3786,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Calculate name confidence using weighted inputs and handle disambiguation
   let nameConfidenceV55: ReturnType<typeof resolveNameConfidenceV55> | null = null;
   
+  // Phase 4.8 — Clone Detection & Disambiguation (declare at function scope)
+  let cloneGroups: CloneGroup[] = [];
+  let primaryNameSelection: PrimaryNameSelectionResult | null = null;
+  let disambiguationCopy: ReturnType<typeof generateDisambiguationCopy> | null = null;
+  
   if (nameFirstPipelineResult && imageResultsV3.length > 0) {
     // Collect candidate names from all sources
     const candidateNamesSet = new Set<string>();
@@ -3865,10 +3870,6 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     });
     
     // Phase 4.8 — Clone Detection & Disambiguation
-    let cloneGroups: CloneGroup[] = [];
-    let primaryNameSelection: PrimaryNameSelectionResult | null = null;
-    let disambiguationCopy: ReturnType<typeof generateDisambiguationCopy> | null = null;
-    
     try {
       // Convert candidate names to format expected by clone detection
       const candidateNamesForClones = candidateNames.map(name => ({
