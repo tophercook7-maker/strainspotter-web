@@ -396,8 +396,10 @@ export function detectCloneRelationships(
       return {
         name: variant.name,
         canonicalName,
-        confidence: Math.min(95, variant.confidence + (lineageSimilarity > 0.7 ? 10 : 0)),
+        rootName: bestGroup.rootName,
+        confidence: Math.min(95, variant.confidence + (geneticSimilarity > 70 ? 10 : 0)),
         evidence,
+        dbEntry: variantDbEntry,
       };
     });
   
