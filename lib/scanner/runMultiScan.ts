@@ -4021,6 +4021,22 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       shouldUseFallbackName: phaseB2ConfidenceResult.shouldUseFallbackName,
       explanation: phaseB2ConfidenceResult.explanation,
     });
+    
+    // Phase 4.8.5 — CONFIDENCE CALIBRATION (Clone-based)
+    // Clone detected: Name confidence capped at 97%, add uncertainty note
+    // No clone detected: Normal confidence rules apply
+    if (disambiguationCopy && disambiguationCopy.hasClones) {
+      // Phase 4.8.5 — Cap confidence at 97% when clones detected
+      if (finalNameConfidence > 97) {
+        finalNameConfidence = 97;
+        // Phase 4.8.5 — Add uncertainty note
+        finalNameReasons.push("Multiple named cuts detected — confidence capped to reflect variant uncertainty");
+        console.log("Phase 4.8.5 — Clone detected: Confidence capped at 97%");
+      } else {
+        // Confidence already ≤ 97%, but still add uncertainty note
+        finalNameReasons.push("Multiple named cuts detected — exact variant may vary");
+      }
+    }
   } catch (error) {
     console.warn("Phase B.2 — Confidence calibration error:", error);
     // Continue with existing confidence
