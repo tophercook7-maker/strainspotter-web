@@ -1,5 +1,8 @@
 // Phase 4.3.6 — CONFIDENCE EXPLANATION ENGINE
+// Phase 4.1 — Enhanced with perceived intelligence improvements
 // lib/scanner/confidenceExplainer.ts
+
+import { generateIntelligentExplanation } from "./perceivedIntelligence";
 
 export interface ConfidenceExplanation {
   score: number
@@ -12,6 +15,12 @@ export function buildConfidenceExplanation(input: {
   consensusStrength: number
   databaseSupport: number
   conflicts: number
+  hasDatabaseMatch?: boolean
+  hasMultiImageAgreement?: boolean
+  agreementCount?: number
+  matchType?: "exact" | "alias" | "token" | "phonetic" | "lineage"
+  keyTraits?: string[]
+  morphologySignals?: string[]
 }): ConfidenceExplanation {
   const score = Math.min(
     99,
@@ -28,17 +37,24 @@ export function buildConfidenceExplanation(input: {
   else if (score >= 85) tier = "High"
   else if (score < 70) tier = "Low"
 
-  const explanation: string[] = [
-    `${input.imageCount} image${input.imageCount > 1 ? "s" : ""} analyzed`,
-    `Consensus strength: ${input.consensusStrength}%`,
-    `Database alignment: ${input.databaseSupport}%`,
-  ]
+  // Phase 4.1 — Use intelligent explanation generation
+  const explanation = generateIntelligentExplanation({
+    confidencePercent: score,
+    imageCount: input.imageCount,
+    hasDatabaseMatch: input.hasDatabaseMatch ?? (input.databaseSupport > 0.6),
+    hasMultiImageAgreement: input.hasMultiImageAgreement ?? (input.consensusStrength > 0.7),
+    agreementCount: input.agreementCount,
+    matchType: input.matchType,
+    keyTraits: input.keyTraits,
+    morphologySignals: input.morphologySignals,
+  })
 
+  // Add conflict context if present
   if (input.conflicts > 0) {
     explanation.push(
       `${input.conflicts} conflicting signal${
         input.conflicts > 1 ? "s" : ""
-      } detected`
+      } detected — confidence adjusted accordingly`
     )
   }
 

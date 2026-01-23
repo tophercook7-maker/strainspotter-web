@@ -119,13 +119,33 @@ export function buildWhyThisMatch(
 /**
  * Generate appropriate confidence language
  * Phase 2.8 Part O Step 4 — Never say "definitive", "guaranteed", or "exact"
+ * Phase 4.1 — Enhanced with intelligent confidence language
  */
 export function generateConfidenceLanguage(
   confidenceRange: { min: number; max: number },
-  agreementLevel: "high" | "medium" | "low"
+  agreementLevel: "high" | "medium" | "low",
+  context?: {
+    imageCount?: number;
+    hasDatabaseMatch?: boolean;
+    hasMultiImageAgreement?: boolean;
+    consensusStrength?: number;
+  }
 ): string {
   const avgConfidence = (confidenceRange.min + confidenceRange.max) / 2;
+  
+  // Phase 4.1 — Use intelligent confidence language if context provided
+  if (context) {
+    const { generateIntelligentConfidenceLanguage } = require("./perceivedIntelligence");
+    return generateIntelligentConfidenceLanguage({
+      confidencePercent: avgConfidence,
+      imageCount: context.imageCount ?? 1,
+      hasDatabaseMatch: context.hasDatabaseMatch ?? false,
+      hasMultiImageAgreement: context.hasMultiImageAgreement ?? (agreementLevel === "high"),
+      consensusStrength: context.consensusStrength,
+    });
+  }
 
+  // Fallback to original logic if no context
   if (avgConfidence >= 85 && agreementLevel === "high") {
     return "Closest known match with high visual similarity";
   } else if (avgConfidence >= 75) {

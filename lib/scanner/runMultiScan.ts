@@ -260,7 +260,17 @@ function buildSafeFallbackResult(
       confidencePercent: fallbackConfidence,
       confidence: fallbackConfidence,
       confidenceTier: fallbackConfidence >= 75 ? "high" as const : fallbackConfidence >= 65 ? "medium" as const : "low" as const,
-      tagline: "Low confidence — results may vary",
+      // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        const fallbackConf = Math.max(50, 75 - (imageCount === 1 ? 15 : 0));
+        return generateIntelligentTagline({
+          confidencePercent: fallbackConf,
+          imageCount: imageCount || 0,
+          hasDatabaseMatch: false,
+          hasMultiImageAgreement: false,
+        });
+      })(),
       explanation: { whyThisNameWon: [softReason], whatRuledOutOthers: [], varianceNotes: [] },
     },
   };
@@ -2112,9 +2122,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 }
 
                 // Phase 5.9.4 — STRAIN TITLE FORMAT: Use strainTitle from nameFirstPipelineResult if available
+                // Phase 4.1 — Enhanced with intelligent tagline generation (will be set after nameResult is defined)
                 const strainTitle = (nameFirstPipelineResult as any)?.strainTitle;
                 const confidenceTierLabel = (nameFirstPipelineResult as any)?.confidenceTierLabel;
-                const displayTagline = strainTitle || confidenceTierLabel || "Closest known match based on visual + database consensus";
                 
                 // Phase 5.1 — Compute terpene experience (FREE TIER)
                 // --- PRECOMPUTED TERPENE EXPERIENCE (SAFE) ---
@@ -2534,14 +2544,53 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                     : nameResult.confidence >= 75 ? "high" as const
                     : nameResult.confidence >= 65 ? "medium" as const
                     : "low" as const,
-                  tagline: displayTagline,
                   alsoKnownAs,
                   alternateMatches: computedAlternateMatches,
                   explanation: {
-                    whyThisNameWon: Array.isArray(nameResult.reason) ? nameResult.reason : [nameResult.reason],
+                    // Phase 4.1 — Enhance whyThisNameWon with intelligent explanations
+                    whyThisNameWon: (() => {
+                      const baseReasons = Array.isArray(nameResult.reason) ? nameResult.reason : [nameResult.reason];
+                      const { enhanceWhyThisNameWon } = require("./perceivedIntelligence");
+                      // Phase 4.1 — Determine match type from available data (phaseB1Result may not be available yet)
+                      const matchTypeFromNameFirst = nameFirstPipelineResult?.explanation?.whyThisNameWon?.[0]?.toLowerCase().includes("exact") ? "exact"
+                        : nameFirstPipelineResult?.explanation?.whyThisNameWon?.[0]?.toLowerCase().includes("alias") ? "alias"
+                        : nameFirstPipelineResult?.explanation?.whyThisNameWon?.[0]?.toLowerCase().includes("lineage") ? "lineage"
+                        : undefined;
+                      
+                      return enhanceWhyThisNameWon(baseReasons, {
+                        matchType: matchTypeFromNameFirst,
+                        imageCount: imageResultsV3.length,
+                        agreementCount: imageResultsV3.filter(r => 
+                          r.candidateStrains?.some(c => c.name === nameResult.name)
+                        ).length,
+                        keyTraits: fusedFeatures ? [
+                          fusedFeatures.budStructure ? `bud structure: ${fusedFeatures.budStructure}` : null,
+                          fusedFeatures.trichomeDensity ? `trichome density: ${fusedFeatures.trichomeDensity}` : null,
+                          fusedFeatures.leafShape ? `leaf shape: ${fusedFeatures.leafShape}` : null,
+                        ].filter(Boolean) as string[] : undefined,
+                      });
+                    })(),
                     whatRuledOutOthers: [],
                     varianceNotes: [],
                   },
+                  // Phase 4.1 — Generate intelligent tagline after nameResult is defined
+                  tagline: (() => {
+                    const { generateIntelligentTagline } = require("./perceivedIntelligence");
+                    // Phase 4.1 — Determine match type from available data
+                    const matchTypeFromNameFirst = nameFirstPipelineResult?.explanation?.whyThisNameWon?.[0]?.toLowerCase().includes("exact") ? "exact"
+                      : nameFirstPipelineResult?.explanation?.whyThisNameWon?.[0]?.toLowerCase().includes("alias") ? "alias"
+                      : nameFirstPipelineResult?.explanation?.whyThisNameWon?.[0]?.toLowerCase().includes("lineage") ? "lineage"
+                      : undefined;
+                    
+                    const intelligentTagline = generateIntelligentTagline({
+                      confidencePercent: nameResult.confidence,
+                      imageCount: imageResultsV3.length,
+                      hasDatabaseMatch: !!dbEntry,
+                      hasMultiImageAgreement: imageResultsV3.length >= 2 && (consensusResult?.agreementScore ?? 0) > 70,
+                      matchType: matchTypeFromNameFirst,
+                    });
+                    return strainTitle || confidenceTierLabel || intelligentTagline;
+                  })(),
                   ratio: ratioForNameFirstDisplay,
                 };
                 
@@ -4680,7 +4729,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       confidencePercent: finalConfidence,
       confidence: finalConfidence,
       confidenceTier: "low" as const,
-      tagline: "Closest known match based on available analysis",
+      // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        return generateIntelligentTagline({
+          confidencePercent: finalConfidence,
+          imageCount: imageResultsV3.length,
+          hasDatabaseMatch: !!dbEntry,
+          hasMultiImageAgreement: imageResultsV3.length >= 2,
+        });
+      })(),
       explanation: { whyThisNameWon: [], whatRuledOutOthers: [], varianceNotes: [] },
       alternateNames: [],
     };
@@ -4823,7 +4881,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         confidencePercent: Math.min(72, finalConfidence),
         confidence: Math.min(72, finalConfidence),
         confidenceTier: "low" as const,
-        tagline: "Closest known match based on available analysis",
+        // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        return generateIntelligentTagline({
+          confidencePercent: finalConfidence,
+          imageCount: imageResultsV3.length,
+          hasDatabaseMatch: !!dbEntry,
+          hasMultiImageAgreement: imageResultsV3.length >= 2,
+        });
+      })(),
         explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
       };
     } else {
@@ -4857,7 +4924,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       confidencePercent: 70,
       confidence: 70,
       confidenceTier: "low",
-      tagline: "Closest known match based on available analysis",
+      // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        return generateIntelligentTagline({
+          confidencePercent: finalConfidence,
+          imageCount: imageResultsV3.length,
+          hasDatabaseMatch: !!dbEntry,
+          hasMultiImageAgreement: imageResultsV3.length >= 2,
+        });
+      })(),
       explanation: {
         whyThisNameWon: ["Analysis completed with limited certainty"],
         whatRuledOutOthers: [],
@@ -5004,7 +5080,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         confidencePercent: Math.min(72, finalConfidence),
         confidence: Math.min(72, finalConfidence),
         confidenceTier: "low" as const,
-        tagline: "Closest known match based on available analysis",
+        // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        return generateIntelligentTagline({
+          confidencePercent: finalConfidence,
+          imageCount: imageResultsV3.length,
+          hasDatabaseMatch: !!dbEntry,
+          hasMultiImageAgreement: imageResultsV3.length >= 2,
+        });
+      })(),
         explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
       };
     } else {
@@ -5068,7 +5153,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         confidencePercent: Math.min(72, finalConfidence),
         confidence: Math.min(72, finalConfidence),
         confidenceTier: "low" as const,
-        tagline: "Closest known match based on available analysis",
+        // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        return generateIntelligentTagline({
+          confidencePercent: finalConfidence,
+          imageCount: imageResultsV3.length,
+          hasDatabaseMatch: !!dbEntry,
+          hasMultiImageAgreement: imageResultsV3.length >= 2,
+        });
+      })(),
         explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
       };
     } else {
@@ -5107,7 +5201,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         confidencePercent: 70,
         confidence: 70,
         confidenceTier: "low",
-        tagline: "Closest known match based on available analysis",
+        // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        return generateIntelligentTagline({
+          confidencePercent: finalConfidence,
+          imageCount: imageResultsV3.length,
+          hasDatabaseMatch: !!dbEntry,
+          hasMultiImageAgreement: imageResultsV3.length >= 2,
+        });
+      })(),
         explanation: {
           whyThisNameWon: ["Analysis completed with limited certainty"],
           whatRuledOutOthers: [],
@@ -5182,7 +5285,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       confidencePercent: Math.min(72, finalConfidence),
       confidence: Math.min(72, finalConfidence),
       confidenceTier: "low" as const,
-      tagline: "Closest known match based on available analysis",
+      // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        return generateIntelligentTagline({
+          confidencePercent: finalConfidence,
+          imageCount: imageResultsV3.length,
+          hasDatabaseMatch: !!dbEntry,
+          hasMultiImageAgreement: imageResultsV3.length >= 2,
+        });
+      })(),
       explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
     };
   } else {
@@ -5220,7 +5332,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         confidencePercent: Math.min(72, finalConfidence),
         confidence: Math.min(72, finalConfidence),
         confidenceTier: "low" as const,
-        tagline: "Low confidence — results may vary",
+        // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        const fallbackConf = Math.max(50, 75 - (imageCount === 1 ? 15 : 0));
+        return generateIntelligentTagline({
+          confidencePercent: fallbackConf,
+          imageCount: imageCount || 0,
+          hasDatabaseMatch: false,
+          hasMultiImageAgreement: false,
+        });
+      })(),
         explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
         alternateNames: [],
       };
@@ -5256,7 +5378,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       confidencePercent: 70,
       confidence: 70,
       confidenceTier: "low",
-      tagline: "Closest known match based on available analysis",
+      // Phase 4.1 — Enhanced tagline
+      tagline: (() => {
+        const { generateIntelligentTagline } = require("./perceivedIntelligence");
+        return generateIntelligentTagline({
+          confidencePercent: finalConfidence,
+          imageCount: imageResultsV3.length,
+          hasDatabaseMatch: !!dbEntry,
+          hasMultiImageAgreement: imageResultsV3.length >= 2,
+        });
+      })(),
       explanation: {
         whyThisNameWon: ["Analysis completed with limited certainty"],
         whatRuledOutOthers: [],
