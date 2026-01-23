@@ -288,6 +288,7 @@ export function applyVisualIntegrationToNameFirst(
   confidence: number;
   explanation: string[];
   visualIntegrationNote?: string;
+  visualContradictionNote?: string; // Phase 4.9.7 — Visual contradiction note
 } {
   // Calculate integrated scores
   const integratedScores = integrateNameFirstWithVisual(
@@ -336,16 +337,55 @@ export function applyVisualIntegrationToNameFirst(
   const topCandidate = updatedCandidates[0];
   const primaryStrainName = topCandidate ? topCandidate.strainName : phaseB1Result.primaryStrainName;
   
-  // Use confidence ceiling for final confidence
-  const confidence = topCandidate 
+  // Phase 4.9.7 — SAFETY: Detect visual contradictions
+  // If visuals contradict name (high name score but low visual score), lower confidence
+  let confidence = topCandidate 
     ? Math.min(topCandidate.confidenceCeiling, topCandidate.integratedScore)
+    : phaseB1Result.confidence;
+  
+  let hasVisualContradiction = false;
+  let visualContradictionNote: string | undefined = undefined;
+  
+  if (topCandidate) {
+    // Get name score from original candidate or integrated scores
+    const integratedScore = integratedScores.find(s => s.strainName === topCandidate.strainName);
+    const nameScore = integratedScore?.nameScore ?? topCandidate.score ?? 0;
+    const visualScore = topCandidate.visualConsensusScore;
+    
+    // Phase 4.9.7 — Contradiction detection: High name score (≥80) but low visual score (<0.4)
+    if (nameScore >= 80 && visualScore < 0.4) {
+      hasVisualContradiction = true;
+      
+      // Lower confidence by 10-15 points (but never below 60)
+      const contradictionPenalty = Math.min(15, Math.max(10, Math.round((nameScore - (visualScore * 100)) / 10)));
+      confidence = Math.max(60, confidence - contradictionPenalty);
+      
+      // Add user-facing note
+      visualContradictionNote = "Visual traits differ from typical reference examples";
+      
+      console.log("Phase 4.9.7 — Visual contradiction detected:", {
+        nameScore,
+        visualScore,
+        originalConfidence: topCandidate.confidenceCeiling,
+        adjustedConfidence: confidence,
+        penalty: contradictionPenalty,
+      });
+    }
+  }
+  
+  // Use confidence ceiling for final confidence (after contradiction penalty)
+  confidence = topCandidate 
+    ? Math.min(topCandidate.confidenceCeiling, confidence)
     : phaseB1Result.confidence;
   
   // Build explanation
   const explanation = [...phaseB1Result.explanation];
   if (topCandidate && topCandidate.visualConsensusScore > 0) {
     explanation.push(`Visual consensus: ${Math.round(topCandidate.visualConsensusScore * 100)}%`);
-    if (topCandidate.isFalsePositive) {
+    if (hasVisualContradiction) {
+      explanation.push(`⚠️ ${visualContradictionNote}`);
+      explanation.push("Confidence reduced due to visual mismatch");
+    } else if (topCandidate.isFalsePositive) {
       explanation.push("⚠️ Low visual match — confidence reduced");
     } else if (topCandidate.visualConsensusScore >= 0.8) {
       explanation.push("✓ Strong visual alignment increases confidence");
@@ -363,5 +403,6 @@ export function applyVisualIntegrationToNameFirst(
     confidence,
     explanation,
     visualIntegrationNote,
+    visualContradictionNote, // Phase 4.9.7 — Add contradiction note
   };
 }

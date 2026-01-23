@@ -514,6 +514,22 @@ export default function WikiStyleResultPanel({
             </div>
           )}
           
+          {/* Phase 4.9.7 — Visual Contradiction Note (SAFETY) */}
+          {(() => {
+            const visualContradictionNote = (viewModel.nameFirstDisplay as any)?.visualContradictionNote;
+            if (visualContradictionNote) {
+              return (
+                <div className="mt-6 rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 backdrop-blur-sm">
+                  <p className="text-sm text-orange-200/90 leading-relaxed flex items-start">
+                    <span className="mr-2 text-base">⚠️</span>
+                    <span>{visualContradictionNote}</span>
+                  </p>
+                </div>
+              );
+            }
+            return null;
+          })()}
+          
           {/* Phase 4.1 — Why This Looks Like {Primary Strain Name} */}
           {/* Phase 4.4 — Visual Authority Upgrade: Enhanced section spacing and typography */}
           <div className="mt-8 space-y-3">

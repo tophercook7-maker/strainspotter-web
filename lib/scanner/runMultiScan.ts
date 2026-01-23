@@ -3818,7 +3818,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 confidenceCeiling: integratedResult.candidates[0]?.confidenceCeiling,
                 isFalsePositive: integratedResult.candidates[0]?.isFalsePositive,
                 integrationNote: integratedResult.visualIntegrationNote,
+                visualContradictionNote: integratedResult.visualContradictionNote, // Phase 4.9.7 — Store contradiction note
               };
+              
+              // Store full integration result for Phase 4.9.7 access
+              (phaseB1Result as any).visualIntegrationResult = integratedResult;
               
               // Store visual consensus results for top candidate
               if (scoredCandidates.length > 0 && scoredCandidates[0].visualConsensusResult) {
@@ -4126,6 +4130,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     finalNameReasons = phaseB1Result.explanation;
     
     // Phase 4.9.5 — Use confidence ceiling from visual integration if available
+    // Phase 4.9.7 — SAFETY: Apply visual contradiction penalty if detected
     const visualIntegration = (phaseB1Result as any).visualIntegration;
     if (visualIntegration?.confidenceCeiling) {
       // Visual score can increase confidence ceiling
@@ -4136,6 +4141,26 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       if (visualIntegration.confidenceCeiling > phaseB1Result.confidence) {
         finalNameReasons.push(`Visual consensus increased confidence ceiling to ${visualIntegration.confidenceCeiling}%`);
       }
+    }
+    
+    // Phase 4.9.7 — SAFETY: If visuals contradict name, lower confidence and add note
+    // This is already handled in applyVisualIntegrationToNameFirst, but we need to ensure
+    // the contradiction note is passed through to the viewModel
+    const integratedResult = (phaseB1Result as any).visualIntegrationResult;
+    if (integratedResult?.visualContradictionNote) {
+      // Confidence was already lowered in applyVisualIntegrationToNameFirst
+      // Just ensure the note is added to final reasons
+      if (!finalNameReasons.some(r => r.includes("Visual traits differ"))) {
+        finalNameReasons.push(integratedResult.visualContradictionNote);
+      }
+      
+      // Store contradiction note in viewModel for UI display
+      (viewModel.nameFirstDisplay as any).visualContradictionNote = integratedResult.visualContradictionNote;
+      
+      console.log("Phase 4.9.7 — Visual contradiction applied:", {
+        note: integratedResult.visualContradictionNote,
+        finalConfidence: finalNameConfidence,
+      });
     }
     
     finalNameIsLocked = finalNameConfidence >= 85;
