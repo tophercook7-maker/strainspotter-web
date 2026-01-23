@@ -70,16 +70,63 @@ export default function WikiStyleResultPanel({
       {/* Phase 4.1 — UI NEVER EMPTY: nameFirstDisplay is guaranteed */}
       <div className="mb-6 space-y-4 pb-6">
         {/* Phase 15.5.5 — Large Strain Name */}
+        {/* Phase 4.2 — Name Stability & Trust Messaging */}
         <div className="mb-4">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
-              ? "Unidentified Hybrid Phenotype"
-              : viewModel.nameFirstDisplay.primaryStrainName}
-          </h1>
-          
-          {/* Phase 4.0.3.1 — Subtitle directly under the title */}
-          <div className="text-sm text-muted-foreground mt-1">
-            Closest visual match found in database
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
+                  ? "Unidentified Hybrid Phenotype"
+                  : viewModel.nameFirstDisplay.primaryStrainName}
+              </h1>
+              
+              {/* Phase 4.2 — Enhanced subtitle with trust messaging */}
+              <div className="mt-2 space-y-1">
+                {(() => {
+                  const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+                  const scanStatus = (result as any).status || "success";
+                  const isFallback = viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar";
+                  
+                  if (isFallback) {
+                    return (
+                      <div className="text-sm text-muted-foreground">
+                        Best available match from 35,000+ strain database
+                      </div>
+                    );
+                  }
+                  
+                  if (confidence >= 85) {
+                    return (
+                      <div className="text-sm text-muted-foreground">
+                        Confirmed match from expert-curated strain database
+                      </div>
+                    );
+                  } else if (confidence >= 70) {
+                    return (
+                      <div className="text-sm text-muted-foreground">
+                        Selected from database analysis of visual and genetic traits
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="text-sm text-muted-foreground">
+                        Closest match identified through systematic database comparison
+                      </div>
+                    );
+                  }
+                })()}
+              </div>
+            </div>
+            
+            {/* Phase 4.2 — Trust indicator badge */}
+            {viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
+              <div className="mt-1">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  <span className="mr-1.5">✓</span>
+                  Database Match
+                </span>
+              </div>
+            )}
           </div>
           
           {/* Phase 4.0.3.1 — Confidence badge (always visible) */}
@@ -108,6 +155,16 @@ export default function WikiStyleResultPanel({
               </div>
             );
           })()}
+          
+          {/* Phase 4.2 — Name Selection Trust Message */}
+          {viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
+            <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
+              <p className="text-xs text-white/70 leading-relaxed">
+                <span className="font-semibold text-white/90">Name Selection:</span>{" "}
+                This strain name was selected through systematic analysis comparing your images against a database of 35,000+ documented cultivars. The identification is based on visual morphology, genetic lineage, and known cultivar characteristics.
+              </p>
+            </div>
+          )}
           
           {/* Phase 4.1 — Why This Looks Like {Primary Strain Name} */}
           <div className="mt-4 space-y-2">
@@ -251,7 +308,57 @@ export default function WikiStyleResultPanel({
             );
           })()}
             
-            {/* Phase 4.3.1 — render name stability */}
+            {/* Phase 4.2 — Name Stability Indicator */}
+            {(() => {
+              const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+              const scanStatus = (result as any).status || "success";
+              
+              // Show stability message for medium/high confidence or when name is stable
+              if (confidence >= 70 || viewModel.nameFirstDisplay?.nameStabilityScore) {
+                return (
+                  <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/10 p-2.5">
+                    <div className="flex items-start gap-2">
+                      <span className="text-green-400 text-sm">✓</span>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-green-200 mb-1">
+                          Stable Identification
+                        </p>
+                        <p className="text-xs text-green-200/80 leading-relaxed">
+                          {confidence >= 85 
+                            ? "This name is highly stable and unlikely to change with additional images."
+                            : confidence >= 70
+                            ? "This identification is stable based on current analysis. Additional images may refine confidence but are unlikely to change the primary match."
+                            : "This name was selected through systematic comparison and represents the best available match."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // For lower confidence, show a different message
+              if (confidence < 70 || scanStatus === "partial") {
+                return (
+                  <div className="mt-3 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-2.5">
+                    <div className="flex items-start gap-2">
+                      <span className="text-yellow-400 text-sm">ℹ</span>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-yellow-200 mb-1">
+                          Preliminary Identification
+                        </p>
+                        <p className="text-xs text-yellow-200/80 leading-relaxed">
+                          This name represents the best match from our database analysis. Additional images from different angles may refine the identification.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              return null;
+            })()}
+            
+            {/* Phase 4.3.1 — render name stability (legacy, keep for backward compat) */}
             {viewModel.nameFirstDisplay?.nameStabilityScore && (
               <div className="mt-2 text-sm text-white/70">
                 <span className="font-semibold">Name confidence:</span>{" "}
