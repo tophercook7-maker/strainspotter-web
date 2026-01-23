@@ -6,6 +6,8 @@
 import type { FullScanResult } from "@/lib/scanner/types";
 import CollapsibleSection from "./CollapsibleSection";
 import { generateWhyThisMatchReasons } from "@/lib/scanner/whyThisMatchEngine";
+import { generateConfidenceExplanationV514 } from "@/lib/scanner/confidenceExplanation";
+import { generateConfidenceExplanation } from "@/lib/scanner/confidenceExplanation";
 
 export default function WikiStyleResultPanel({
   result,
@@ -583,34 +585,50 @@ export default function WikiStyleResultPanel({
             );
           })()}
           
-          {/* Phase 4.3.2 — How confidence is determined (expandable) */}
-          {/* Phase 4.4.3 — Confidence badge moved to sit directly under strain name */}
-          <CollapsibleSection
-            title="How confidence is determined"
-            defaultExpanded={false}
-            icon="📊"
-          >
-            <div className="space-y-2 pt-2">
-              <ul className="space-y-2">
-                <li className="text-sm text-white/80 leading-relaxed flex items-start">
-                  <span className="text-blue-400 mr-2 mt-1">•</span>
-                  <span>Visual structure alignment</span>
-                </li>
-                <li className="text-sm text-white/80 leading-relaxed flex items-start">
-                  <span className="text-blue-400 mr-2 mt-1">•</span>
-                  <span>Cross-image consistency</span>
-                </li>
-                <li className="text-sm text-white/80 leading-relaxed flex items-start">
-                  <span className="text-blue-400 mr-2 mt-1">•</span>
-                  <span>Cultivar database similarity</span>
-                </li>
-                <li className="text-sm text-white/80 leading-relaxed flex items-start">
-                  <span className="text-blue-400 mr-2 mt-1">•</span>
-                  <span>Known phenotype patterns</span>
-                </li>
-              </ul>
-            </div>
-          </CollapsibleSection>
+          {/* Phase 5.1.4 — CONFIDENCE EXPLANATION (COLLAPSIBLE) */}
+          {(() => {
+            const currentConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+            const finalDecision = (viewModel.nameFirstDisplay as any)?.finalDecision;
+            const primaryCandidate = finalDecision ? {
+              channelScores: {
+                visual: (finalDecision as any).channelScores?.visual || 0.7,
+                genetics: (finalDecision as any).channelScores?.genetics || 0.7,
+                terpenes: (finalDecision as any).channelScores?.terpenes || 0.6,
+                effects: (finalDecision as any).channelScores?.effects || 0.6,
+              }
+            } : undefined;
+            
+            const confidenceExplanation = generateConfidenceExplanationV514(
+              finalDecision || {
+                primaryStrainName: viewModel.nameFirstDisplay.primaryStrainName,
+                confidence: currentConfidence,
+                contradictionScore: 0,
+                crossImageAgreement: 0.7,
+                fingerprintScore: 0.7,
+                reasoning: [],
+                alternates: [],
+                rejectedButClose: [],
+              },
+              primaryCandidate,
+              imageCount,
+              finalDecision?.crossImageAgreement,
+              finalDecision?.contradictionScore
+            );
+            
+            return (
+              <CollapsibleSection
+                title="How confidence was determined"
+                defaultExpanded={false}
+                icon="📊"
+              >
+                <div className="pt-2">
+                  <p className="text-sm text-white/80 leading-relaxed">
+                    {confidenceExplanation}
+                  </p>
+                </div>
+              </CollapsibleSection>
+            );
+          })()}
           
           {/* Phase 5.1 — User Trust & Explanation Layer */}
           {(() => {
