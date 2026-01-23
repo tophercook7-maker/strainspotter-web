@@ -95,22 +95,24 @@ export default function WikiStyleResultPanel({
                     );
                   }
                   
-                  if (confidence >= 85) {
+                  // Phase 4.2 — Updated primary name header copy
+                  if (confidence >= 90) {
                     return (
                       <div className="text-sm text-muted-foreground">
-                        Confirmed match from expert-curated strain database
+                        Strong visual and database agreement
                       </div>
                     );
-                  } else if (confidence >= 70) {
+                  } else if (confidence >= 80) {
                     return (
                       <div className="text-sm text-muted-foreground">
-                        Selected from database analysis of visual and genetic traits
+                        Best match based on visible traits and known cultivars
                       </div>
                     );
                   } else {
+                    // confidence < 80 OR status === "partial"
                     return (
                       <div className="text-sm text-muted-foreground">
-                        Closest match identified through systematic database comparison
+                        Closest known cultivar based on available visual data
                       </div>
                     );
                   }
