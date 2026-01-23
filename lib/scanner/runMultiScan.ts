@@ -160,6 +160,8 @@ import { strengthenNameSelectionV53, findStrainByNameOrAlias } from "./nameStren
 import { resolveNameConfidenceV55 } from "./nameConfidenceV55";
 // NAME-FIRST MATCHING (NON-NEGOTIABLE)
 import { selectPrimaryStrainName } from "./selectPrimaryStrainName";
+// Phase B.1 — NAME-FIRST MATCHING CORE (Database first, always)
+import { nameFirstMatchingCore } from "./nameFirstMatchingCore";
 // Phase 4.1.9 — consensus weight adjustment
 import { adjustConsensusWeight } from "./consensusWeights";
 // Phase 4.1.3 — replace analysis failure paths
@@ -3529,6 +3531,42 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     confidence: currentConfidence,
   });
   
+  // Phase B.1 — NAME-FIRST MATCHING CORE (Database first, always)
+  // Run BEFORE other name matching logic
+  // No vision logic yet - database matching only
+  let phaseB1Result: ReturnType<typeof nameFirstMatchingCore> | null = null;
+  let candidateNamesForB1: string[] = [];
+  
+  if (imageResultsV3.length > 0) {
+    // Collect candidate names from image results
+    candidateNamesForB1 = imageResultsV3.flatMap(r => 
+      r.candidateStrains?.map(c => c.name).filter(Boolean) || []
+    );
+    
+    // Also include name from pipeline if available
+    if (nameFirstPipelineResult?.primaryStrainName) {
+      candidateNamesForB1.push(nameFirstPipelineResult.primaryStrainName);
+    }
+    
+    // Remove duplicates
+    candidateNamesForB1 = Array.from(new Set(candidateNamesForB1));
+    
+    // Phase B.1 — Run name-first matching core (database only)
+    if (candidateNamesForB1.length > 0) {
+      try {
+        phaseB1Result = nameFirstMatchingCore(candidateNamesForB1);
+        console.log("Phase B.1 — NAME-FIRST MATCHING CORE:", {
+          candidates: phaseB1Result.candidates.map(c => `${c.strain.name} (${c.score}%, ${c.matchType})`),
+          primary: phaseB1Result.primaryStrainName,
+          confidence: phaseB1Result.confidence,
+        });
+      } catch (error) {
+        console.warn("Phase B.1 — Name-first matching core error:", error);
+        phaseB1Result = null;
+      }
+    }
+  }
+  
   // NAME-FIRST MATCHING (NON-NEGOTIABLE) — Select primary strain name with priority order
   let nameFirstMatchingResult: { name: string; confidence: number; reasons: string[]; isLocked: boolean; source: string } | null = null;
   let perImageTopNames: string[] = []; // Declare outside if block for Phase 5.5
@@ -3540,6 +3578,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       const topCandidate = r.candidateStrains?.[0];
       return topCandidate?.name || nameFirstPipelineResult?.primaryStrainName || "";
     }).filter(name => name && name.trim());
+    
+    // Phase B.1 — Use Phase B.1 candidates if available (database first)
+    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
+      databaseCandidates = phaseB1Result.candidates.map(c => c.strain);
+    }
 
     // Collect database candidates from nameFirstPipelineResult and dbEntry
     databaseCandidates = [];
@@ -3717,15 +3760,21 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Note: finalConfidence will be updated after V45, but we use current confidence for locking
   const shouldLockName = nameTrustV46.isLocked && currentConfidence >= 75;
   
-  // NAME-FIRST MATCHING (NON-NEGOTIABLE) — Primary rule: ALWAYS return one primary strain name
-  // Priority: nameFirstMatchingResult > nameConfidenceV55 > strengthenedNameV53 > nameTrustV46
+  // Phase B.1 — NAME-FIRST MATCHING CORE (Database first, always)
+  // Priority: phaseB1Result > nameFirstMatchingResult > nameConfidenceV55 > strengthenedNameV53 > nameTrustV46
   let finalPrimaryName = "Closest Known Cultivar"; // Fallback
   let finalNameConfidence = 70; // Default
   let finalNameReasons: string[] = ["Name selected based on available analysis"];
   let finalNameIsLocked = false;
   
-  if (nameFirstMatchingResult) {
-    // NAME-FIRST MATCHING takes highest priority
+  if (phaseB1Result && phaseB1Result.candidates.length > 0) {
+    // Phase B.1 — Database-first matching takes highest priority
+    finalPrimaryName = phaseB1Result.primaryStrainName;
+    finalNameConfidence = phaseB1Result.confidence;
+    finalNameReasons = phaseB1Result.explanation;
+    finalNameIsLocked = phaseB1Result.confidence >= 85;
+  } else if (nameFirstMatchingResult) {
+    // NAME-FIRST MATCHING takes second priority
     finalPrimaryName = nameFirstMatchingResult.name;
     finalNameConfidence = nameFirstMatchingResult.confidence;
     finalNameReasons = nameFirstMatchingResult.reasons;
@@ -3785,13 +3834,26 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // NAME-FIRST MATCHING provides reasons array
     viewModel.nameFirstDisplay.explanation.whyThisNameWon = finalNameReasons;
     
-    // Attach alternates (ranked, max 3) - Phase 5.5 prioritized
-    if (nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0) {
+    // Phase B.1 — Attach alternates (ranked, max 3) - Phase B.1 prioritized
+    if (phaseB1Result && phaseB1Result.candidates.length > 1) {
+      // Use Phase B.1 candidates (top 3 alternates, excluding primary)
+      viewModel.nameFirstDisplay.alternateNames = phaseB1Result.candidates.slice(1, 4).map(c => c.strain.name);
+    } else if (nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0) {
       viewModel.nameFirstDisplay.alternateNames = nameConfidenceV55.alternateMatches.map(a => a.name);
     } else if (strengthenedNameV53) {
       viewModel.nameFirstDisplay.alternateNames = strengthenedNameV53.alternateMatches.map(a => a.name);
     } else {
       viewModel.nameFirstDisplay.alternateNames = nameTrustV46.alternates;
+    }
+    
+    // Phase B.1 — Store top 5 candidates if available
+    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
+      (viewModel.nameFirstDisplay as any).phaseB1Candidates = phaseB1Result.candidates.map(c => ({
+        name: c.strain.name,
+        score: c.score,
+        matchType: c.matchType,
+        matchDetails: c.matchDetails,
+      }));
     }
     
     // NAME-FIRST MATCHING — Mark as locked if DB confidence >= 85% OR name-first result says locked
@@ -3802,14 +3864,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
     }
     
-    // NAME-FIRST MATCHING — Attach source information
-    if (nameFirstMatchingResult) {
+    // Phase B.1 — Attach source information (Phase B.1 prioritized)
+    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
+      (viewModel.nameFirstDisplay as any).nameSource = phaseB1Result.candidates[0].matchType;
+      (viewModel.nameFirstDisplay as any).phaseB1Primary = true;
+    } else if (nameFirstMatchingResult) {
       (viewModel.nameFirstDisplay as any).nameSource = nameFirstMatchingResult.source;
     } else if (!nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
     }
   } else {
-    // Create nameFirstDisplay if it doesn't exist - NAME-FIRST MATCHING
+    // Create nameFirstDisplay if it doesn't exist - Phase B.1 prioritized
     let confidenceTier: "very_high" | "high" | "medium" | "low";
     if (finalNameConfidence >= 90) {
       confidenceTier = "very_high";
@@ -3833,7 +3898,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         whatRuledOutOthers: [], 
         varianceNotes: [] 
       },
-      alternateNames: nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0
+      alternateNames: phaseB1Result && phaseB1Result.candidates.length > 1
+        ? phaseB1Result.candidates.slice(1, 4).map(c => c.strain.name) // Top 3 alternates from Phase B.1
+        : nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0
         ? nameConfidenceV55.alternateMatches.map(a => a.name)
         : strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates || [],
     };
@@ -3841,7 +3908,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     if (nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
     }
-    if (nameFirstMatchingResult) {
+    // Phase B.1 — Attach source information (Phase B.1 prioritized)
+    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
+      (viewModel.nameFirstDisplay as any).nameSource = phaseB1Result.candidates[0].matchType;
+      (viewModel.nameFirstDisplay as any).phaseB1Primary = true;
+      (viewModel.nameFirstDisplay as any).phaseB1Candidates = phaseB1Result.candidates.map(c => ({
+        name: c.strain.name,
+        score: c.score,
+        matchType: c.matchType,
+        matchDetails: c.matchDetails,
+      }));
+    } else if (nameFirstMatchingResult) {
       (viewModel.nameFirstDisplay as any).nameSource = nameFirstMatchingResult.source;
     } else if (!nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
