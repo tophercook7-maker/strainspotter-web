@@ -211,6 +211,10 @@ export default function WikiStyleResultPanel({
                 <p className="text-xs text-white/60 leading-relaxed">
                   Confidence calculated from systematic comparison of visual structure, bud morphology, and database alignment across {viewModel.multiImageInfo?.imageCountText?.match(/\d+/)?.[0] || "1"} image{viewModel.multiImageInfo?.imageCountText?.match(/\d+/)?.[0] !== "1" ? "s" : ""}.
                 </p>
+                {/* Phase 4.3.4 — Confidence stability note (legal + expectation safety) */}
+                <p className="text-xs text-white/40 italic mt-1">
+                  Confidence reflects overall match quality, not certainty of genetics.
+                </p>
               </div>
             );
           })()}
