@@ -4160,6 +4160,22 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       }
     }
     
+    // Phase 4.8.5 — CONFIDENCE CALIBRATION (Clone-based)
+    // Clone detected: Name confidence capped at 97%, add uncertainty note
+    // No clone detected: Normal confidence rules apply
+    if (disambiguationCopy && disambiguationCopy.hasClones) {
+      // Phase 4.8.5 — Cap confidence at 97% when clones detected
+      if (stabilityAdjustedConfidence > 97) {
+        stabilityAdjustedConfidence = 97;
+        // Phase 4.8.5 — Add uncertainty note to explanation
+        finalNameReasons.push("Multiple named cuts detected — confidence capped to reflect variant uncertainty");
+        console.log("Phase 4.8.5 — Clone detected: Confidence capped at 97% (was", displayConfidence, ")");
+      } else {
+        // Confidence already ≤ 97%, but still add uncertainty note
+        finalNameReasons.push("Multiple named cuts detected — exact variant may vary");
+      }
+    }
+    
     viewModel.nameFirstDisplay.confidencePercent = stabilityAdjustedConfidence;
     viewModel.nameFirstDisplay.confidence = stabilityAdjustedConfidence;
     // Phase 4.5.2 — Use stability-adjusted confidence for tier
