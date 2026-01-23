@@ -143,6 +143,8 @@ import {
   getVisualSimilarityAdjustment, 
   type VisualSimilarityIndexResult 
 } from "./visualSimilarityIndex";
+// Phase 4.9.1 — Visual Feature Extraction (LOCK)
+import { extractVisualSignature, type VisualSignature } from "./visualFeatureExtraction";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -465,6 +467,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   const fusedFeatures = fuseMultiImageFeatures(wikiResults);
   console.log("FUSED FEATURES:", fusedFeatures);
   
+  // Phase 4.9.1 — VISUAL FEATURE EXTRACTION (LOCK)
+  // Extract detailed visual signatures from each image
+  const visualSignatures: VisualSignature[] = wikiResults.map((wiki, idx) => 
+    extractVisualSignature(wiki, idx)
+  );
+  console.log("Phase 4.9.1 — Visual Signatures extracted:", visualSignatures.map((vs, idx) => ({
+    imageIndex: idx,
+    densityScore: vs.densityScore,
+    trichomeLevel: vs.trichomeLevel,
+    colorPrimary: vs.colorProfile.primary,
+    extractionConfidence: vs.extractionConfidence,
+  })));
+  
   // Phase 5.0.2 — Fused features ready for database query
   // Database name matching happens in nameFirstPipeline (leverageDatabaseFilter)
 
@@ -501,6 +516,15 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     imageResultsV3 = await analyzePerImageV3(filteredImageFiles, filteredInput.imageCount);
     console.log("Phase 5.0.2 — STEP 3 COMPLETE: Image traits extracted");
     console.log("PER-IMAGE RESULTS V3:", imageResultsV3);
+    
+    // Phase 4.9.1 — Attach visual signatures to image results
+    imageResultsV3 = imageResultsV3.map((result, idx) => {
+      const wiki = result.wikiResult || wikiResults[idx];
+      if (wiki && visualSignatures[idx]) {
+        (result as any).visualSignature = visualSignatures[idx];
+      }
+      return result;
+    });
     
     // Phase 4.0.1 — Check image distinctiveness
     const imageFingerprints = imageResultsV3
