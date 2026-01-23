@@ -9,7 +9,7 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
   const ratio = result.ratio ?? null; // Optional section
 
   return (
-    <div className="max-w-[680px] mx-auto px-4">
+    <div className="w-full max-w-[720px] mx-auto px-4">
       {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
       
       {/* Phase 4.9 — 1. Name display rules (LOCKED): Primary strain name MUST render large, first, above all other content */}
@@ -27,7 +27,7 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
                 <div className="text-3xl md:text-4xl font-extrabold">
                   {result.nameFirstDisplay?.confidencePercent < 70 ? (
                     <>
-                      <span className="opacity-70">Closest Match: </span>
+                      <span className="opacity-70">Closest Known Cultivar: </span>
                       {primaryName}
                     </>
                   ) : (
@@ -125,13 +125,6 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
                 </div>
               );
             })()}
-          {/* Phase 4.8 — 5. Free-tier note (if applicable) */}
-          {(result as any).isFreeTier && (result.nameFirstDisplay?.confidencePercent ?? 0) >= 94 && (
-            <div className="mt-2 text-xs opacity-60 italic">
-              Confidence improves with more images or higher tiers
-            </div>
-          )}
-          
           {/* Phase 5.2 — 7. Explanation: Generate short explanation */}
           {result.confidenceExplanation && result.confidenceExplanation.explanation && result.confidenceExplanation.explanation.length > 0 && (
             <div className="mt-3 text-sm opacity-70">
@@ -148,7 +141,7 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
           
           {/* Phase 4.3 — 5. User-facing disclaimer (1 line only) */}
           <div className="text-xs opacity-50 mt-4 italic">
-            Based on visual analysis and reference data — not lab testing.
+            Visual analysis with reference guidance — not lab verified.
           </div>
           </section>
         );

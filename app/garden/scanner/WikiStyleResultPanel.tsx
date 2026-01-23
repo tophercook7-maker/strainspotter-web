@@ -67,7 +67,7 @@ export default function WikiStyleResultPanel({
   const strainFamily = getStrainFamily();
 
   return (
-    <section className="max-w-[680px] mx-auto rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-6 sm:p-8 space-y-8 max-h-[85vh] overflow-y-auto">
+    <section className="w-full max-w-[720px] mx-auto rounded-2xl border border-white/12 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/20 p-5 sm:p-7 space-y-6">
       {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
       {/* Phase 15.5.5 — Make strain name + confidence feel real */}
       {/* Phase 4.1 — UI NEVER EMPTY: nameFirstDisplay is guaranteed */}
@@ -78,7 +78,7 @@ export default function WikiStyleResultPanel({
         {/* Rule: The NAME is the anchor. Everything else supports it. */}
         <div>
           {/* Primary Header: Strain Name + Confidence Badge */}
-          <div className="mb-6">
+          <div className="mb-5">
             {/* Phase 5.3.5 — NAME-FIRST FEEL (CRITICAL) */}
             {/* Strain Name — Large, Bold, Primary Anchor (THE HERO) */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-4">
@@ -268,7 +268,7 @@ export default function WikiStyleResultPanel({
                   {familyName} family
                 </p>
                 <p className="text-xs text-white/50 italic mt-1">
-                  Genetic lineage identified from 35,000+ strain database
+                  Lineage alignment confirmed in reference catalog
                 </p>
                 
                 {/* Phase 4.6.3 — Related cultivars (collapsible, optional) */}
@@ -298,15 +298,13 @@ export default function WikiStyleResultPanel({
                 if (familyFirst?.familyName) {
                   return (
                     <p className="text-xs text-white/50 leading-relaxed mb-4">
-                      Genetic lineage confirmed through visual analysis and 35,000+ strain database.
-                      Exact cultivar within {familyFirst.familyName} family may vary, but genetic heritage is clear.
+                      {familyFirst.familyName} lineage confirmed. Exact cultivar may vary within family.
                     </p>
                   );
                 }
                 return (
                   <p className="text-xs text-white/50 leading-relaxed mb-4">
-                    Selected as the closest overall match after comparing visual structure,
-                    bud density, coloration, and known cultivar traits from 35,000+ strain database.
+                    Closest match based on visual structure, bud density, and documented cultivar traits.
                   </p>
                 );
               })()}
@@ -395,7 +393,7 @@ export default function WikiStyleResultPanel({
                   if (isFallback) {
                     return (
                       <div className="text-sm text-white/60 font-medium">
-                        Best available match from 35,000+ strain database
+                        Best available match from reference catalog
                       </div>
                     );
                   }
@@ -417,7 +415,7 @@ export default function WikiStyleResultPanel({
                     // confidence < 80 OR status === "partial"
                     return (
                       <div className="text-sm text-white/60 font-medium">
-                        Closest known cultivar based on available visual data
+                        Closest known cultivar based on current visual data
                       </div>
                     );
                   }
@@ -645,13 +643,13 @@ export default function WikiStyleResultPanel({
                       ))}
                     </div>
                     <p className="text-xs text-white/60 italic mt-2">
-                      These strains were also considered. The primary match above showed the strongest overall alignment.
+                      Primary match showed strongest overall alignment.
                     </p>
                   </div>
                 )}
                 
                 {/* Phase 5.1.6 — FREE vs PAID LINE (PSYCHOLOGICAL) */}
-                <div className="pt-4 border-t border-white/10">
+                <div className="pt-3 border-t border-white/10">
                   <p className="text-xs text-white/50 text-center italic">
                     Deeper breakdown available in Pro
                   </p>
@@ -908,53 +906,53 @@ export default function WikiStyleResultPanel({
               
               const explanations: string[] = [];
               
-              // Phase 4.3 — Expert-driven confidence foundation
+              // Phase 4.3 — Confidence foundation (removed "Expert analysis" repetition)
               if (confidence >= 85) {
-                explanations.push("Expert analysis determined strong alignment between observed traits and documented cultivar characteristics.");
+                explanations.push("Strong alignment between observed traits and documented characteristics.");
               } else if (confidence >= 70) {
-                explanations.push("Expert analysis indicates good alignment with known cultivar traits, with some expected variation.");
+                explanations.push("Good alignment with known cultivar traits, with some expected variation.");
               } else {
-                explanations.push("Expert analysis identified the closest available match based on systematic comparison of visual and genetic data.");
+                explanations.push("Closest available match based on systematic comparison of visual and genetic data.");
               }
               
               // Image count explanation
               if (imageCount === 1) {
                 explanations.push("Single-image analysis limits perspective — multiple angles improve accuracy.");
               } else if (imageCount >= 3) {
-                explanations.push(`Multiple angles (${imageCount} images) showed consistent traits across expert analysis.`);
+                explanations.push(`Multiple angles (${imageCount} images) showed consistent traits.`);
               } else if (imageCount === 2) {
-                explanations.push("Two images provided cross-validation of key characteristics through expert comparison.");
+                explanations.push("Two images provided cross-validation of key characteristics.");
               }
               
               // Diversity note explanation
               if (hasDiversityNote || hasSamePlantNote) {
                 if (hasSamePlantNote) {
-                  explanations.push("Images appear to be of the same plant — different angles would strengthen expert confidence.");
+                  explanations.push("Images appear to be of the same plant — different angles would strengthen confidence.");
                 } else {
-                  explanations.push("Limited image diversity reduced certainty in expert analysis.");
+                  explanations.push("Limited image diversity reduced certainty.");
                 }
               }
               
               // Confidence level explanation (enhanced)
               if (confidence >= 85) {
-                explanations.push("Strong visual agreement across analyzed images confirmed through expert review.");
+                explanations.push("Strong visual agreement across analyzed images.");
                 if (imageCount >= 2) {
-                  explanations.push("Multiple viewing angles confirmed consistent morphological features in expert assessment.");
+                  explanations.push("Multiple viewing angles confirmed consistent morphological features.");
                 }
               } else if (confidence >= 70) {
-                explanations.push("Most traits aligned in expert analysis, some variation observed.");
+                explanations.push("Most traits aligned, some variation observed.");
                 if (scanStatus === "partial") {
-                  explanations.push("This identification is based on limited visual agreement. Additional images may improve confidence.");
+                  explanations.push("Based on limited visual agreement. Additional images may improve confidence.");
                 }
               } else if (confidence >= 60) {
-                explanations.push("Expert analysis shows moderate alignment — visual traits show some variation.");
+                explanations.push("Moderate alignment — visual traits show some variation.");
                 if (imageCount === 1) {
-                  explanations.push("Single-image analysis limits expert certainty.");
+                  explanations.push("Single-image analysis limits certainty.");
                 }
               } else {
-                explanations.push("Lower confidence in expert analysis — limited visual distinction between similar cultivars.");
+                explanations.push("Lower confidence — limited visual distinction between similar cultivars.");
                 if (imageCount === 1) {
-                  explanations.push("Additional images from different angles would improve expert accuracy.");
+                  explanations.push("Additional images from different angles would improve accuracy.");
                 }
               }
               
@@ -1039,10 +1037,10 @@ export default function WikiStyleResultPanel({
                         </p>
                         <p className="text-xs text-green-200/80 leading-relaxed">
                           {confidence >= 85 
-                            ? "Expert analysis confirms this name is highly stable and unlikely to change with additional images."
+                            ? "Name is highly stable and unlikely to change with additional images."
                             : confidence >= 70
-                            ? "Expert analysis indicates this identification is stable. Additional images may refine confidence but are unlikely to change the primary match determined by expert comparison."
-                            : "This name was selected through expert systematic comparison and represents the best available match."}
+                            ? "Identification is stable. Additional images may refine confidence but are unlikely to change the primary match."
+                            : "Selected through systematic comparison and represents the best available match."}
                         </p>
                       </div>
                     </div>
@@ -1402,7 +1400,7 @@ export default function WikiStyleResultPanel({
                   </div>
                 ))}
                 <p className="text-xs text-white/60 mt-3 italic">
-                  These strains share similar visual characteristics. The primary match above has the strongest alignment across all images.
+                  Primary match shows strongest overall alignment.
                 </p>
               </div>
             </CollapsibleSection>
@@ -1421,20 +1419,18 @@ export default function WikiStyleResultPanel({
                  (viewModel.nameFirstDisplay.confidencePercent ?? 0) < 70 ? (
                   <>
                     <p className="text-sm">
-                      This result is based on visible structure, bud density, and leaf morphology
-                      observed across the uploaded images.
+                      Based on visible structure, bud density, and leaf morphology across uploaded images.
                     </p>
                     <p className="text-sm mt-2">
-                      Confidence is lower because the photos appear very similar and do not show
-                      enough contrasting angles to strongly differentiate between cultivars.
+                      Lower confidence due to similar photos lacking contrasting angles to differentiate cultivars.
                     </p>
                     <p className="text-sm mt-3 font-medium">
                       Accuracy improves with:
                     </p>
                     <ul className="text-sm list-disc ml-5 mt-1">
-                      <li>One close-up bud photo</li>
-                      <li>One wider plant or branch photo</li>
-                      <li>A different angle, distance, or lighting condition</li>
+                      <li>Close-up bud photo</li>
+                      <li>Wider plant or branch photo</li>
+                      <li>Different angle, distance, or lighting</li>
                     </ul>
                   </>
                 ) : (
@@ -2458,7 +2454,7 @@ export default function WikiStyleResultPanel({
           return (
             <div className="pt-6 mt-6 border-t border-white/10">
               <p className="text-xs text-white/60 text-center leading-relaxed">
-                Want higher certainty? Add more angles or unlock Pro for deeper analysis.
+                Increase certainty with more angles, or unlock Pro for deeper analysis.
               </p>
             </div>
           );
@@ -2466,7 +2462,7 @@ export default function WikiStyleResultPanel({
         
         // Pro tier: Show pro enhancements
         return (
-          <div className="space-y-6 pt-6 mt-6 border-t border-white/10">
+          <div className="space-y-5 pt-5 mt-5 border-t border-white/10">
             {/* Phase 5.3.7.1 — Detailed Why-This-Name-Won Breakdown */}
             {proEnhancements.detailedWhyThisNameWon && proEnhancements.detailedWhyThisNameWon.length > 0 && (
               <CollapsibleSection

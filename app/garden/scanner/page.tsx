@@ -353,7 +353,7 @@ export default function ScannerPage() {
       <main className="min-h-screen bg-black text-white">
         {/* Phase 5.2.6 — MOBILE-FIRST CONSTRAINTS: Max content width (not edge-to-edge) */}
         {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
-      <div className="mx-auto w-full max-w-[680px] px-4 pb-24 md:pb-16 space-y-6">
+      <div className="mx-auto w-full max-w-[720px] px-4 pb-24 md:pb-16 space-y-6">
         {/* A) Upload + Preview Card */}
         <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 space-y-4">
               {/* Phase 5.2.4 — Improved File Upload UX with Drag and Drop */}
@@ -730,7 +730,7 @@ export default function ScannerPage() {
         {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
         {/* Phase 4.4.1 — Center the result column with intentional containment */}
-        <section className="space-y-6 max-w-[680px] mx-auto px-4">
+        <section className="space-y-6 w-full max-w-[720px] mx-auto px-4">
           {/* FAILURE MESSAGING SOFTENED — User-facing warnings (non-fatal, non-blocking) */}
           {scanError?.reason === "images-too-similar" && (
             <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
