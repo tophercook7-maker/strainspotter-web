@@ -5081,6 +5081,78 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
 
   if (guardResult.status !== "ok") {
+    // CONTRACT VALIDATION — Validate result before returning
+    // Assert result exists, nameFirstDisplay exists, primaryStrainName is non-empty, confidencePercent is number
+    // If any fail: replace with fallback, reduce confidence, add scanWarning
+    
+    let validationWarnings: string[] = [];
+    let needsFallback = false;
+    
+    // Assert result exists
+    if (!viewModel) {
+      console.error("CONTRACT VALIDATION: viewModel is missing");
+      needsFallback = true;
+      validationWarnings.push("Result validation failed — using fallback");
+    }
+    
+    // Assert nameFirstDisplay exists
+    if (!viewModel.nameFirstDisplay) {
+      console.error("CONTRACT VALIDATION: nameFirstDisplay is missing");
+      needsFallback = true;
+      validationWarnings.push("Name display validation failed — using fallback");
+      // Create fallback nameFirstDisplay
+      viewModel.nameFirstDisplay = {
+        primaryStrainName: "Closest Known Cultivar",
+        primaryName: "Closest Known Cultivar",
+        confidencePercent: 70,
+        confidence: 70,
+        confidenceTier: "low",
+        tagline: "Closest known match based on available analysis",
+        explanation: {
+          whyThisNameWon: ["Analysis completed with limited certainty"],
+          whatRuledOutOthers: [],
+          varianceNotes: [],
+        },
+        alternateNames: [],
+      };
+    }
+    
+    // Assert primaryStrainName is non-empty
+    if (!viewModel.nameFirstDisplay.primaryStrainName || 
+        viewModel.nameFirstDisplay.primaryStrainName.trim().length < 3 ||
+        viewModel.nameFirstDisplay.primaryStrainName.toLowerCase() === "unknown" ||
+        viewModel.nameFirstDisplay.primaryStrainName.toLowerCase() === "unidentified") {
+      console.error("CONTRACT VALIDATION: primaryStrainName is invalid:", viewModel.nameFirstDisplay.primaryStrainName);
+      needsFallback = true;
+      validationWarnings.push("Primary strain name validation failed — using fallback");
+      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+      viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+    }
+    
+    // Assert confidencePercent is number
+    if (typeof viewModel.nameFirstDisplay.confidencePercent !== "number" ||
+        isNaN(viewModel.nameFirstDisplay.confidencePercent) ||
+        viewModel.nameFirstDisplay.confidencePercent < 0 ||
+        viewModel.nameFirstDisplay.confidencePercent > 100) {
+      console.error("CONTRACT VALIDATION: confidencePercent is invalid:", viewModel.nameFirstDisplay.confidencePercent);
+      needsFallback = true;
+      validationWarnings.push("Confidence validation failed — using fallback");
+      viewModel.nameFirstDisplay.confidencePercent = 70;
+      viewModel.nameFirstDisplay.confidence = 70;
+    }
+    
+    // If validation failed: reduce confidence and add scanWarning
+    if (needsFallback) {
+      // Reduce confidence
+      viewModel.nameFirstDisplay.confidencePercent = Math.min(70, viewModel.nameFirstDisplay.confidencePercent);
+      viewModel.nameFirstDisplay.confidence = Math.min(70, viewModel.nameFirstDisplay.confidence);
+      viewModel.nameFirstDisplay.confidenceTier = "low";
+      
+      // Add scanWarning
+      const validationWarning = validationWarnings.join("; ");
+      warning = warning ? `${warning}. ${validationWarning}` : validationWarning;
+    }
+    
     const result: ScanResult = {
       status: "partial",
       guard: {
@@ -5088,36 +5160,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         reason: guardResult.status === "low-diversity" || guardResult.status === "low-confidence" ? guardResult.reason : "Analysis completed",
       },
       consensus: finalConsensusResult,
-      confidence: finalConfidence,
+      confidence: viewModel.nameFirstDisplay.confidencePercent,
       result: viewModel, // Backward compatibility
       synthesis, // Backward compatibility
       diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
-      scanWarning: warning || undefined, // Phase 4.0.6 — Backward compatibility
+      scanWarning: warning || undefined, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
       scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
       samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
       meta: scanMeta, // Phase 4.2.6 — Scan metadata
     };
-    // PHASE A FINALIZATION — Final safety check: ensure nameFirstDisplay.primaryStrainName is never empty
-    if (!viewModel.nameFirstDisplay?.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim().length < 3) {
-      console.warn("PHASE A FINALIZATION: Final check - primaryStrainName invalid in partial result, forcing fallback");
-      if (!viewModel.nameFirstDisplay) {
-        viewModel.nameFirstDisplay = {
-          primaryStrainName: "Closest Known Cultivar",
-          primaryName: "Closest Known Cultivar",
-          confidencePercent: Math.min(72, finalConfidence),
-          confidence: Math.min(72, finalConfidence),
-          confidenceTier: "low" as const,
-          tagline: "Low confidence — results may vary",
-          explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
-          alternateNames: [],
-        };
-      } else {
-        viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
-        viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
-      }
-    }
     
-    console.log(`SCAN COMPLETE — status=partial confidence=${finalConfidence}`);
+    console.log(`SCAN COMPLETE — status=partial confidence=${result.confidence}`);
     return result;
   }
 
@@ -5177,21 +5230,93 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
   }
   
+  // CONTRACT VALIDATION — Validate result before returning
+  // Assert result exists, nameFirstDisplay exists, primaryStrainName is non-empty, confidencePercent is number
+  // If any fail: replace with fallback, reduce confidence, add scanWarning
+  
+  let validationWarnings: string[] = [];
+  let needsFallback = false;
+  
+  // Assert result exists
+  if (!viewModel) {
+    console.error("CONTRACT VALIDATION: viewModel is missing");
+    needsFallback = true;
+    validationWarnings.push("Result validation failed — using fallback");
+  }
+  
+  // Assert nameFirstDisplay exists
+  if (!viewModel.nameFirstDisplay) {
+    console.error("CONTRACT VALIDATION: nameFirstDisplay is missing");
+    needsFallback = true;
+    validationWarnings.push("Name display validation failed — using fallback");
+    // Create fallback nameFirstDisplay
+    viewModel.nameFirstDisplay = {
+      primaryStrainName: "Closest Known Cultivar",
+      primaryName: "Closest Known Cultivar",
+      confidencePercent: 70,
+      confidence: 70,
+      confidenceTier: "low",
+      tagline: "Closest known match based on available analysis",
+      explanation: {
+        whyThisNameWon: ["Analysis completed with limited certainty"],
+        whatRuledOutOthers: [],
+        varianceNotes: [],
+      },
+      alternateNames: [],
+    };
+  }
+  
+  // Assert primaryStrainName is non-empty
+  if (!viewModel.nameFirstDisplay.primaryStrainName || 
+      viewModel.nameFirstDisplay.primaryStrainName.trim().length < 3 ||
+      viewModel.nameFirstDisplay.primaryStrainName.toLowerCase() === "unknown" ||
+      viewModel.nameFirstDisplay.primaryStrainName.toLowerCase() === "unidentified") {
+    console.error("CONTRACT VALIDATION: primaryStrainName is invalid:", viewModel.nameFirstDisplay.primaryStrainName);
+    needsFallback = true;
+    validationWarnings.push("Primary strain name validation failed — using fallback");
+    viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+    viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+  }
+  
+  // Assert confidencePercent is number
+  if (typeof viewModel.nameFirstDisplay.confidencePercent !== "number" ||
+      isNaN(viewModel.nameFirstDisplay.confidencePercent) ||
+      viewModel.nameFirstDisplay.confidencePercent < 0 ||
+      viewModel.nameFirstDisplay.confidencePercent > 100) {
+    console.error("CONTRACT VALIDATION: confidencePercent is invalid:", viewModel.nameFirstDisplay.confidencePercent);
+    needsFallback = true;
+    validationWarnings.push("Confidence validation failed — using fallback");
+    viewModel.nameFirstDisplay.confidencePercent = 70;
+    viewModel.nameFirstDisplay.confidence = 70;
+  }
+  
+  // If validation failed: reduce confidence and add scanWarning
+  if (needsFallback) {
+    // Reduce confidence
+    viewModel.nameFirstDisplay.confidencePercent = Math.min(70, viewModel.nameFirstDisplay.confidencePercent);
+    viewModel.nameFirstDisplay.confidence = Math.min(70, viewModel.nameFirstDisplay.confidence);
+    viewModel.nameFirstDisplay.confidenceTier = "low";
+    
+    // Add scanWarning
+    const validationWarning = validationWarnings.join("; ");
+    warning = warning ? `${warning}. ${validationWarning}` : validationWarning;
+  }
+  
   const result: ScanResult = {
-    status: "success",
+    status: needsFallback ? "partial" : "success",
     consensus: finalConsensusResult,
-    confidence: finalConfidence,
+    confidence: viewModel.nameFirstDisplay.confidencePercent,
     result: viewModel, // Backward compatibility
     synthesis, // Backward compatibility
     diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
-    scanWarning: warning || undefined, // Phase 4.0.6 — Backward compatibility
+    scanWarning: warning || undefined, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
     scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
     samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
     meta: scanMeta, // Phase 4.2.6 — Scan metadata
   };
   
   // PHASE A FINALIZATION — Log once at end
-  console.log(`SCAN COMPLETE — status=success confidence=${finalConfidence}`);
+  console.log(`SCAN COMPLETE — status=${result.status} confidence=${result.confidence}`);
   return result;
   } catch (error) {
     // PHASE A FINALIZATION — Catch any unexpected errors and return safe fallback (never throw)
