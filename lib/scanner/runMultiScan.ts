@@ -3213,6 +3213,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Use enhanced detection result if available, otherwise fall back to basic detection
   const samePlantNote = buildSamePlantNote(v403SamePlantLikely);
 
+  // Phase 5.2.4 — SAME-PLANT / SAME-ANGLE DETECTION NOTE
+  // Check if images are similar (high similarity or low angle diversity)
+  // Note: analysisWarnings is defined earlier in the function
+  const hasHighSimilarity = analysisWarnings.includes("HIGH_IMAGE_SIMILARITY");
+  const hasLowAngleDiversity = analysisWarnings.includes("LOW_ANGLE_DIVERSITY");
+  const similarImagesNote = buildSimilarImagesNote(hasHighSimilarity, hasLowAngleDiversity);
+
   // Phase 4.2.0 — attach note to scanNotes array
   const scanNotes: string[] = [];
   scanNotes.push(...[scanNote, samePlantNote].filter(Boolean) as string[]);
