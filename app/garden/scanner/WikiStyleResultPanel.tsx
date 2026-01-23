@@ -80,6 +80,12 @@ export default function WikiStyleResultPanel({
                   : viewModel.nameFirstDisplay.primaryStrainName}
               </h1>
               
+              {/* Phase 4.2 — Inline note below name (always present) */}
+              <p className="text-xs text-white/50 mt-2 leading-relaxed">
+                Selected as the closest overall match after comparing visual structure,
+                bud density, coloration, and known cultivar traits.
+              </p>
+              
               {/* Phase 4.2 — Enhanced subtitle with trust messaging */}
               <div className="mt-2 space-y-1">
                 {(() => {
