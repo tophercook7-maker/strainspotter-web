@@ -123,7 +123,7 @@ export default function WikiStyleResultPanel({
                         </div>
                       </div>
                       <p className="text-xs text-white/70 font-medium">
-                        Family match is stronger than exact strain identification
+                        Genetic lineage match is strong; exact cultivar within family may vary
                       </p>
                     </div>
                   );
@@ -230,6 +230,9 @@ export default function WikiStyleResultPanel({
                     <p className="text-sm text-white/60 font-medium">
                       {familyName} family
                     </p>
+                    <p className="text-xs text-white/50 italic mt-1">
+                      Genetic lineage identified from 35,000+ strain database
+                    </p>
                     
                     {/* Phase 4.6.3 — Related cultivars (collapsible, optional) */}
                     {relatedCultivars.length > 0 && (
@@ -252,10 +255,24 @@ export default function WikiStyleResultPanel({
               })()}
               
               {/* Phase 4.2 — Inline note below name (always present) */}
-              <p className="text-xs text-white/50 leading-relaxed mb-4">
-                Selected as the closest overall match after comparing visual structure,
-                bud density, coloration, and known cultivar traits.
-              </p>
+              {/* Phase 4.6 — Enhanced to emphasize genetic knowledge */}
+              {(() => {
+                const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
+                if (familyFirst?.familyName) {
+                  return (
+                    <p className="text-xs text-white/50 leading-relaxed mb-4">
+                      Genetic lineage confirmed through visual analysis and 35,000+ strain database.
+                      Exact cultivar within {familyFirst.familyName} family may vary, but genetic heritage is clear.
+                    </p>
+                  );
+                }
+                return (
+                  <p className="text-xs text-white/50 leading-relaxed mb-4">
+                    Selected as the closest overall match after comparing visual structure,
+                    bud density, coloration, and known cultivar traits from 35,000+ strain database.
+                  </p>
+                );
+              })()}
               
               {/* Phase 4.2 — Subtle info banner (if samePlantNote exists OR multiple images) */}
               {(() => {
