@@ -9,7 +9,7 @@
 // - Confidence must reflect uncertainty
 // - No inflation
 
-import type { NameFirstMatchingResult } from "./nameFirstMatchingCore";
+import type { NameFirstMatchingResult } from "./nameFirstMatchingEngine";
 
 /**
  * Phase B.2 — Confidence Calibration Result

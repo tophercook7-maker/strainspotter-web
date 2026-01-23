@@ -160,8 +160,8 @@ import { strengthenNameSelectionV53, findStrainByNameOrAlias } from "./nameStren
 import { resolveNameConfidenceV55 } from "./nameConfidenceV55";
 // NAME-FIRST MATCHING (NON-NEGOTIABLE)
 import { selectPrimaryStrainName } from "./selectPrimaryStrainName";
-// Phase B.1 — NAME-FIRST MATCHING CORE (Database first, always)
-import { nameFirstMatchingCore } from "./nameFirstMatchingCore";
+// Phase B.1 — NAME-FIRST MATCHING ENGINE (Database first, always)
+import { nameFirstMatchingEngine } from "./nameFirstMatchingEngine";
 // Phase B.2 — CONFIDENCE CALIBRATION
 import { calibrateConfidenceB2 } from "./confidenceCalibrationB2";
 // Phase 4.1.9 — consensus weight adjustment
@@ -176,7 +176,7 @@ import { fetchWiki } from "./wikiLookup";
 import { generateAIReasoning } from "./aiReasoning";
 import { generateDeepAnalysis } from "./deepAnalysis";
 import { synthesizeWikiInsights } from "./wikiSynthesis";
-import { CULTIVAR_LIBRARY } from "./cultivarLibrary";
+import { CULTIVAR_LIBRARY, type CultivarReference } from "./cultivarLibrary";
 import type { ScannerViewModel } from "./viewModel";
 import type { WikiSynthesis, ScanContext } from "./types";
 import type { NameFirstResultV80 } from "./nameFirstV80";
@@ -3533,10 +3533,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     confidence: currentConfidence,
   });
   
-  // Phase B.1 — NAME-FIRST MATCHING CORE (Database first, always)
+  // Phase B.1 — NAME-FIRST MATCHING ENGINE (Database first, always)
   // Run BEFORE other name matching logic
   // No vision logic yet - database matching only
-  let phaseB1Result: ReturnType<typeof nameFirstMatchingCore> | null = null;
+  let phaseB1Result: ReturnType<typeof nameFirstMatchingEngine> | null = null;
   let candidateNamesForB1: string[] = [];
   
   if (imageResultsV3.length > 0) {
@@ -3553,17 +3553,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Remove duplicates
     candidateNamesForB1 = Array.from(new Set(candidateNamesForB1));
     
-    // Phase B.1 — Run name-first matching core (database only)
+    // Phase B.1 — Run name-first matching engine (database only)
     if (candidateNamesForB1.length > 0) {
       try {
-        phaseB1Result = nameFirstMatchingCore(candidateNamesForB1);
-        console.log("Phase B.1 — NAME-FIRST MATCHING CORE:", {
-          candidates: phaseB1Result.candidates.map(c => `${c.strain.name} (${c.score}%, ${c.matchType})`),
+        phaseB1Result = nameFirstMatchingEngine(candidateNamesForB1);
+        console.log("Phase B.1 — NAME-FIRST MATCHING ENGINE:", {
+          candidates: phaseB1Result.candidates.map(c => `${c.strainName} (${c.score}%, [${c.reasonTags.join(", ")}])`),
           primary: phaseB1Result.primaryStrainName,
           confidence: phaseB1Result.confidence,
         });
       } catch (error) {
-        console.warn("Phase B.1 — Name-first matching core error:", error);
+        console.warn("Phase B.1 — Name-first matching engine error:", error);
         phaseB1Result = null;
       }
     }
@@ -3582,8 +3582,15 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }).filter(name => name && name.trim());
     
     // Phase B.1 — Use Phase B.1 candidates if available (database first)
+    // Need to look up CultivarReference by strainName
     if (phaseB1Result && phaseB1Result.candidates.length > 0) {
-      databaseCandidates = phaseB1Result.candidates.map(c => c.strain);
+      const { findByName } = require("./cultivarLibrary");
+      for (const candidate of phaseB1Result.candidates) {
+        const dbEntry = findByName(candidate.strainName);
+        if (dbEntry && !databaseCandidates.find(c => c.name === dbEntry.name)) {
+          databaseCandidates.push(dbEntry);
+        }
+      }
     }
 
     // Collect database candidates from nameFirstPipelineResult and dbEntry
@@ -3827,6 +3834,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       databaseMatchStrength = 0.8;
     }
     
+    // Phase B.1 — Store reasonTags for reference
+    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
+      (viewModel.nameFirstDisplay as any).phaseB1ReasonTags = phaseB1Result.candidates[0].reasonTags;
+    }
+    
     phaseB2ConfidenceResult = calibrateConfidenceB2({
       imageCount: imageResultsV3.length || filteredInput.imageCount,
       nameMatchingResult: phaseB1Result,
@@ -3902,7 +3914,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Phase B.1 — Attach alternates (ranked, max 3) - Phase B.1 prioritized
     if (phaseB1Result && phaseB1Result.candidates.length > 1) {
       // Use Phase B.1 candidates (top 3 alternates, excluding primary)
-      viewModel.nameFirstDisplay.alternateNames = phaseB1Result.candidates.slice(1, 4).map(c => c.strain.name);
+      viewModel.nameFirstDisplay.alternateNames = phaseB1Result.candidates.slice(1, 4).map(c => c.strainName);
     } else if (nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0) {
       viewModel.nameFirstDisplay.alternateNames = nameConfidenceV55.alternateMatches.map(a => a.name);
     } else if (strengthenedNameV53) {
@@ -3914,10 +3926,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Phase B.1 — Store top 5 candidates if available
     if (phaseB1Result && phaseB1Result.candidates.length > 0) {
       (viewModel.nameFirstDisplay as any).phaseB1Candidates = phaseB1Result.candidates.map(c => ({
-        name: c.strain.name,
+        strainName: c.strainName,
         score: c.score,
-        matchType: c.matchType,
-        matchDetails: c.matchDetails,
+        reasonTags: c.reasonTags,
       }));
     }
     
@@ -3931,7 +3942,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     
     // Phase B.1 — Attach source information (Phase B.1 prioritized)
     if (phaseB1Result && phaseB1Result.candidates.length > 0) {
-      (viewModel.nameFirstDisplay as any).nameSource = phaseB1Result.candidates[0].matchType;
+      const topCandidate = phaseB1Result.candidates[0];
+      // Use first reasonTag as primary source
+      (viewModel.nameFirstDisplay as any).nameSource = topCandidate.reasonTags[0] || "token";
       (viewModel.nameFirstDisplay as any).phaseB1Primary = true;
     } else if (nameFirstMatchingResult) {
       (viewModel.nameFirstDisplay as any).nameSource = nameFirstMatchingResult.source;
@@ -3964,7 +3977,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         varianceNotes: [] 
       },
       alternateNames: phaseB1Result && phaseB1Result.candidates.length > 1
-        ? phaseB1Result.candidates.slice(1, 4).map(c => c.strain.name) // Top 3 alternates from Phase B.1
+        ? phaseB1Result.candidates.slice(1, 4).map(c => c.strainName) // Top 3 alternates from Phase B.1
         : nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0
         ? nameConfidenceV55.alternateMatches.map(a => a.name)
         : strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates || [],
@@ -3975,13 +3988,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
     // Phase B.1 — Attach source information (Phase B.1 prioritized)
     if (phaseB1Result && phaseB1Result.candidates.length > 0) {
-      (viewModel.nameFirstDisplay as any).nameSource = phaseB1Result.candidates[0].matchType;
+      const topCandidate = phaseB1Result.candidates[0];
+      // Use first reasonTag as primary source
+      (viewModel.nameFirstDisplay as any).nameSource = topCandidate.reasonTags[0] || "token";
       (viewModel.nameFirstDisplay as any).phaseB1Primary = true;
       (viewModel.nameFirstDisplay as any).phaseB1Candidates = phaseB1Result.candidates.map(c => ({
-        name: c.strain.name,
+        strainName: c.strainName,
         score: c.score,
-        matchType: c.matchType,
-        matchDetails: c.matchDetails,
+        reasonTags: c.reasonTags,
       }));
     } else if (nameFirstMatchingResult) {
       (viewModel.nameFirstDisplay as any).nameSource = nameFirstMatchingResult.source;
