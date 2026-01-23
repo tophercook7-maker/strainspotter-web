@@ -145,6 +145,8 @@ import {
 } from "./visualSimilarityIndex";
 // Phase 4.9.1 — Visual Feature Extraction (LOCK)
 import { extractVisualSignature, type VisualSignature } from "./visualFeatureExtraction";
+// Phase 4.9.2 — Strain Visual Baselines
+import { getStrainVisualBaseline, checkBaselineMatch, type VisualBaselineRange } from "./strainVisualBaselines";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -4245,11 +4247,45 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         );
         
         if (dbEntryForVisual) {
+          // Phase 4.9.2 — Get visual baseline for strain
+          const visualBaseline = getStrainVisualBaseline(dbEntryForVisual);
+          
           // Calculate visual similarity index
           visualSimilarityResult = calculateVisualSimilarityIndex(fusedFeatures, dbEntryForVisual);
           
-          // Get confidence adjustment based on visual similarity
-          const visualAdjustment = getVisualSimilarityAdjustment(visualSimilarityResult.overallScore);
+          // Phase 4.9.2 — If we have visual signatures, check baseline match for more accurate scoring
+          let baselineAdjustedScore = visualSimilarityResult.overallScore;
+          if (visualSignatures && visualSignatures.length > 0) {
+            // Use the first visual signature (or average if multiple)
+            const primarySignature = visualSignatures[0];
+            const baselineMatch = checkBaselineMatch(primarySignature, visualBaseline);
+            
+            // Blend baseline match with original similarity score (70% original, 30% baseline)
+            baselineAdjustedScore = Math.round(
+              visualSimilarityResult.overallScore * 0.7 +
+              baselineMatch.overallMatch * 0.3
+            );
+            
+            console.log("Phase 4.9.2 — Baseline Match:", {
+              originalScore: visualSimilarityResult.overallScore,
+              baselineMatch: baselineMatch.overallMatch,
+              adjustedScore: baselineAdjustedScore,
+              withinTolerance: baselineMatch.withinTolerance,
+            });
+            
+            // Update visual similarity result with baseline-adjusted score
+            visualSimilarityResult = {
+              ...visualSimilarityResult,
+              overallScore: baselineAdjustedScore,
+              explanation: [
+                ...visualSimilarityResult.explanation,
+                ...baselineMatch.explanation,
+              ],
+            };
+          }
+          
+          // Get confidence adjustment based on visual similarity (use baseline-adjusted score)
+          const visualAdjustment = getVisualSimilarityAdjustment(baselineAdjustedScore);
           
           // Apply adjustment (with caps to prevent going over existing limits)
           visualSimilarityAdjustedConfidence = Math.max(
@@ -4309,6 +4345,18 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         breakdown: visualSimilarityResult.breakdown,
         explanation: visualSimilarityResult.explanation,
       };
+      
+      // Phase 4.9.2 — Store visual baseline if available
+      if (dbEntryForVisual) {
+        const visualBaseline = getStrainVisualBaseline(dbEntryForVisual);
+        (viewModel.nameFirstDisplay as any).visualBaseline = {
+          densityRange: visualBaseline.densityRange,
+          trichomeRange: visualBaseline.trichomeRange,
+          colorBaseline: visualBaseline.colorBaseline,
+          baselineConfidence: visualBaseline.baselineConfidence,
+          source: visualBaseline.source,
+        };
+      }
     }
     
     // Update explanation (clear reason why this name won) - NAME-FIRST MATCHING prioritized
