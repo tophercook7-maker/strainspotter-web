@@ -4,8 +4,9 @@
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 
 export default function ResultPanel({ result }: { result: ScannerViewModel }) {
-  // ratio is at top level of ScannerViewModel, not in nameFirstDisplay
-  const ratio = result.ratio ?? null;
+  // UI CONTRACT ENFORCEMENT — Only read from nameFirstDisplay and optional sections
+  // Never assume: dominance, terpeneExperience, extendedProfile
+  const ratio = result.ratio ?? null; // Optional section
 
   return (
     <div className="max-w-[680px] mx-auto px-4">
@@ -276,11 +277,11 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
         </section>
       )}
 
-      {/* STABILIZATION RESET — REMOVED: dominance fallback (not guaranteed) */}
+      {/* UI CONTRACT ENFORCEMENT — Never assume dominance */}
       {/* Use result.ratio or result.finalRatio only */}
 
       {/* Phase 4.3.2 — render stabilized ratio (legacy fallback - deprecated) */}
-      {!result.finalRatio && !result.dominance && result.stabilizedRatio && (
+      {!result.finalRatio && result.stabilizedRatio && (
         <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-base md:text-lg font-semibold mb-2">

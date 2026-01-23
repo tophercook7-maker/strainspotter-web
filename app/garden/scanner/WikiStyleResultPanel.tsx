@@ -38,6 +38,7 @@ export default function WikiStyleResultPanel({
   const safeGrowthTraits = Array.isArray(viewModel.growthTraits)
     ? viewModel.growthTraits
     : [];
+  // UI CONTRACT ENFORCEMENT — extendedProfile is optional, only use if present
   const extendedProfile = viewModel.extendedProfile;
 
   // Phase 3.6 Part B — Determine strain family from name or lineage
@@ -203,13 +204,13 @@ export default function WikiStyleResultPanel({
             {viewModel.nameFirstDisplay.tagline}
           </p>
 
-          {/* ARCHITECTURE: Dominance/ratio rendering removed - this belongs in WikiReportPanel only */}
-          {/* WikiStyleResultPanel only uses ViewModel fields (genetics.dominance is allowed) */}
+          {/* UI CONTRACT ENFORCEMENT — Never assume dominance, terpeneExperience, extendedProfile */}
+          {/* Only render optional sections if present */}
           
           {/* Phase 4.6 Step 4.6.3 — Ratio display removed (belongs in WikiReportPanel via analysis layer) */}
 
                       {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
-                      {/* UI FIX — No full-width dividers, use cards instead */}
+                      {/* UI CONTRACT ENFORCEMENT — terpeneExperience is optional, only render if present */}
                       {viewModel.terpeneExperience && (
                         <div className="space-y-4 pt-4">
                           {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
@@ -611,20 +612,21 @@ export default function WikiStyleResultPanel({
       >
         <div className="space-y-4">
           {/* Dominance & Lineage */}
-          <div>
-            <h4 className="text-base font-semibold text-white/90 mb-2">
-              Dominance Type
-            </h4>
-            <p className="text-white/80 leading-relaxed">
-              This cultivar is classified as{" "}
-              <strong className="text-white">
-                {viewModel.genetics?.dominance || "Unknown"}
-              </strong>
-              {viewModel.genetics?.dominance !== "Unknown" &&
-                `-dominant, which influences both its physical structure and expected effects. ${viewModel.genetics?.dominance === "Indica" ? "Indica-dominant strains typically produce broad leaves, dense buds, and relaxing body effects." : viewModel.genetics?.dominance === "Sativa" ? "Sativa-dominant strains usually feature narrow leaves, elongated structure, and uplifting cerebral effects." : "Hybrids combine traits from both genetic lineages, offering balanced characteristics."}`
-              }
-            </p>
-          </div>
+          {/* UI CONTRACT ENFORCEMENT — genetics.dominance is optional, only render if present */}
+          {viewModel.genetics?.dominance && (
+            <div>
+              <h4 className="text-base font-semibold text-white/90 mb-2">
+                Dominance Type
+              </h4>
+              <p className="text-white/80 leading-relaxed">
+                This cultivar is classified as{" "}
+                <strong className="text-white">
+                  {viewModel.genetics.dominance}
+                </strong>
+                {`-dominant, which influences both its physical structure and expected effects. ${viewModel.genetics.dominance === "Indica" ? "Indica-dominant strains typically produce broad leaves, dense buds, and relaxing body effects." : viewModel.genetics.dominance === "Sativa" ? "Sativa-dominant strains usually feature narrow leaves, elongated structure, and uplifting cerebral effects." : "Hybrids combine traits from both genetic lineages, offering balanced characteristics."}`}
+              </p>
+            </div>
+          )}
 
           {/* Parent Strains & Family Tree */}
           {(extendedProfile?.genetics.lineage ||
@@ -654,6 +656,7 @@ export default function WikiStyleResultPanel({
               Typical Phenotype Expression
             </h4>
             <p className="text-white/80 leading-relaxed">
+              {/* UI CONTRACT ENFORCEMENT — genetics.dominance is optional */}
               {viewModel.genetics?.dominance === "Indica"
                 ? "Indica-dominant phenotypes typically display compact, bushy growth with dense, resinous flower clusters. Leaves are broad and dark green, with tight internodal spacing. Bud structure is usually dense and heavy, with high trichome production."
                 : viewModel.genetics?.dominance === "Sativa"
@@ -972,9 +975,10 @@ export default function WikiStyleResultPanel({
               </div>
             )}
 
+          {/* UI CONTRACT ENFORCEMENT — extendedProfile is optional, only render if present */}
           {/* Onset & Duration */}
-          {(extendedProfile?.effects.onset ||
-            extendedProfile?.effects.duration) && (
+          {extendedProfile?.effects && (extendedProfile.effects.onset ||
+            extendedProfile.effects.duration) && (
             <div>
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Experience Characteristics
@@ -994,19 +998,22 @@ export default function WikiStyleResultPanel({
             </div>
           )}
 
+          {/* UI CONTRACT ENFORCEMENT — genetics.dominance is optional, only render if present */}
           {/* Phase 3.9 Part E — Mental vs Body Balance */}
-          <div>
-            <h4 className="text-base font-semibold text-white/90 mb-2">
-              Mental vs Body Balance
-            </h4>
-            <p className="text-white/80 leading-relaxed">
-              {viewModel.genetics?.dominance === "Indica"
-                ? "This cultivar tends to produce primarily body-focused effects with a strong physical relaxation component. While some mental effects may be present, the body sensations typically dominate the experience."
-                : viewModel.genetics?.dominance === "Sativa"
-                ? "This cultivar typically produces cerebral, mental effects with energizing qualities. Physical effects are usually minimal, allowing for active engagement and creative thinking."
-                : "This hybrid cultivar offers a balanced combination of mental and body effects. The specific balance can vary between phenotypes, with some leaning more toward cerebral stimulation and others toward physical relaxation."}
-            </p>
-          </div>
+          {viewModel.genetics?.dominance && (
+            <div>
+              <h4 className="text-base font-semibold text-white/90 mb-2">
+                Mental vs Body Balance
+              </h4>
+              <p className="text-white/80 leading-relaxed">
+                {viewModel.genetics.dominance === "Indica"
+                  ? "This cultivar tends to produce primarily body-focused effects with a strong physical relaxation component. While some mental effects may be present, the body sensations typically dominate the experience."
+                  : viewModel.genetics.dominance === "Sativa"
+                  ? "This cultivar typically produces cerebral, mental effects with energizing qualities. Physical effects are usually minimal, allowing for active engagement and creative thinking."
+                  : "This hybrid cultivar offers a balanced combination of mental and body effects. The specific balance can vary between phenotypes, with some leaning more toward cerebral stimulation and others toward physical relaxation."}
+              </p>
+            </div>
+          )}
           
           {/* Phase 3.9 Part E — Variability Notes */}
           <div>
@@ -1043,58 +1050,61 @@ export default function WikiStyleResultPanel({
         icon="📋"
       >
         <div className="space-y-4">
-          {/* Day vs Night Use */}
-          <div>
-            <h4 className="text-base font-semibold text-white/90 mb-2">
-              Day vs Night Use
-            </h4>
-            <p className="text-white/80 leading-relaxed">
-              {viewModel.genetics?.dominance === "Indica"
-                ? "This cultivar is generally best suited for evening or nighttime use due to its relaxing and potentially sedative effects. It may interfere with daytime productivity or alertness."
-                : viewModel.genetics?.dominance === "Sativa"
-                ? "This cultivar is well-suited for daytime use, as it typically provides energizing and uplifting effects without heavy sedation. It can enhance focus and creativity during active hours."
-                : "This hybrid cultivar can work for both day and night use depending on the specific phenotype and individual response. Some may find it suitable for afternoon or early evening, while others may prefer it for relaxed evening activities."}
-            </p>
-          </div>
-          
-          {/* Creativity / Focus / Relaxation */}
-          <div>
-            <h4 className="text-base font-semibold text-white/90 mb-2">
-              Activity Suitability
-            </h4>
-            <div className="space-y-2 text-white/80">
-              {viewModel.genetics?.dominance === "Indica" ? (
-                <>
-                  <p><strong>Creativity:</strong> Lower stimulation may limit creative bursts; better for reflective, contemplative creative work.</p>
-                  <p><strong>Focus:</strong> Not ideal for tasks requiring sharp focus; better for relaxation and stress relief.</p>
-                  <p><strong>Relaxation:</strong> Excellent for unwinding, stress relief, and physical relaxation after activities.</p>
-                </>
-              ) : viewModel.genetics?.dominance === "Sativa" ? (
-                <>
-                  <p><strong>Creativity:</strong> Excellent for stimulating creative thinking, brainstorming, and artistic activities.</p>
-                  <p><strong>Focus:</strong> Can enhance focus and productivity for engaging tasks, though effects vary by individual.</p>
-                  <p><strong>Relaxation:</strong> Mental relaxation possible, but physical relaxation is typically minimal.</p>
-                </>
-              ) : (
-                <>
-                  <p><strong>Creativity:</strong> Moderate creative enhancement depending on phenotype balance.</p>
-                  <p><strong>Focus:</strong> Can support focus for engaging tasks, with effects varying by individual and dosage.</p>
-                  <p><strong>Relaxation:</strong> Balanced relaxation—mental calm with moderate physical relaxation.</p>
-                </>
-              )}
-            </div>
-          </div>
-          
-          {/* Social vs Solo */}
-          <div>
-            <h4 className="text-base font-semibold text-white/90 mb-2">
-              Social vs Solo Contexts
-            </h4>
-            <p className="text-white/80 leading-relaxed">
-              {viewModel.genetics?.dominance === "Indica"
-                ? "This cultivar is typically better suited for solo or small-group settings where relaxation and introspection are desired. Large social gatherings may feel overwhelming."
-                : viewModel.genetics?.dominance === "Sativa"
-                ? "This cultivar can enhance social experiences by promoting conversation, energy, and engagement. It's well-suited for group activities and social gatherings."
+          {/* UI CONTRACT ENFORCEMENT — genetics.dominance is optional, only render sections if present */}
+          {viewModel.genetics?.dominance && (
+            <>
+              {/* Day vs Night Use */}
+              <div>
+                <h4 className="text-base font-semibold text-white/90 mb-2">
+                  Day vs Night Use
+                </h4>
+                <p className="text-white/80 leading-relaxed">
+                  {viewModel.genetics.dominance === "Indica"
+                    ? "This cultivar is generally best suited for evening or nighttime use due to its relaxing and potentially sedative effects. It may interfere with daytime productivity or alertness."
+                    : viewModel.genetics.dominance === "Sativa"
+                    ? "This cultivar is well-suited for daytime use, as it typically provides energizing and uplifting effects without heavy sedation. It can enhance focus and creativity during active hours."
+                    : "This hybrid cultivar can work for both day and night use depending on the specific phenotype and individual response. Some may find it suitable for afternoon or early evening, while others may prefer it for relaxed evening activities."}
+                </p>
+              </div>
+              
+              {/* Creativity / Focus / Relaxation */}
+              <div>
+                <h4 className="text-base font-semibold text-white/90 mb-2">
+                  Activity Suitability
+                </h4>
+                <div className="space-y-2 text-white/80">
+                  {viewModel.genetics.dominance === "Indica" ? (
+                    <>
+                      <p><strong>Creativity:</strong> Lower stimulation may limit creative bursts; better for reflective, contemplative creative work.</p>
+                      <p><strong>Focus:</strong> Not ideal for tasks requiring sharp focus; better for relaxation and stress relief.</p>
+                      <p><strong>Relaxation:</strong> Excellent for unwinding, stress relief, and physical relaxation after activities.</p>
+                    </>
+                  ) : viewModel.genetics.dominance === "Sativa" ? (
+                    <>
+                      <p><strong>Creativity:</strong> Excellent for stimulating creative thinking, brainstorming, and artistic activities.</p>
+                      <p><strong>Focus:</strong> Can enhance focus and productivity for engaging tasks, though effects vary by individual.</p>
+                      <p><strong>Relaxation:</strong> Mental relaxation possible, but physical relaxation is typically minimal.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p><strong>Creativity:</strong> Moderate creative enhancement depending on phenotype balance.</p>
+                      <p><strong>Focus:</strong> Can support focus for engaging tasks, with effects varying by individual and dosage.</p>
+                      <p><strong>Relaxation:</strong> Balanced relaxation—mental calm with moderate physical relaxation.</p>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* Social vs Solo */}
+              <div>
+                <h4 className="text-base font-semibold text-white/90 mb-2">
+                  Social vs Solo Contexts
+                </h4>
+                <p className="text-white/80 leading-relaxed">
+                  {viewModel.genetics.dominance === "Indica"
+                    ? "This cultivar is typically better suited for solo or small-group settings where relaxation and introspection are desired. Large social gatherings may feel overwhelming."
+                    : viewModel.genetics.dominance === "Sativa"
+                    ? "This cultivar can enhance social experiences by promoting conversation, energy, and engagement. It's well-suited for group activities and social gatherings."
                 : "This hybrid cultivar can work in both social and solo contexts, with effects varying based on the specific balance of indica and sativa traits. It offers flexibility for different social situations."}
             </p>
           </div>

@@ -245,11 +245,13 @@ export default function ScannerPage() {
       }
       setAngleHints(angleHintsList);
       
-      // Create FullScanResult with analysis layer (dominance from analysis, not ViewModel)
+      // UI CONTRACT ENFORCEMENT — Never assume dominance
+      // Create FullScanResult - dominance is optional, only include if present
       const dominanceData = (scanResult.result as any).dominance;
-      if (dominanceData) {
-        setAnalysis({
-          result: scanResult.result, // ViewModel
+      setAnalysis({
+        result: scanResult.result, // ViewModel
+        // Only include analysis.dominance if dominanceData exists
+        ...(dominanceData ? {
           analysis: {
             dominance: {
               indica: dominanceData.indica ?? 0,
@@ -260,29 +262,18 @@ export default function ScannerPage() {
                 : "Hybrid" as const,
             },
           },
-          // Phase 4.0.5 — Pass diversity note from scan result
-          diversityNote: scanResult.diversityNote,
-          // Phase 4.0.6 — Pass scan warning from scan result
-          scanWarning: scanResult.scanWarning,
-          // Phase 4.1.7 — Pass scan note from scan result
-          scanNote: scanResult.scanNote,
-          // Phase 4.2.0 — Pass same-plant note from scan result
-          samePlantNote: scanResult.samePlantNote,
-          // Phase 4.2.6 — Pass scan meta from scan result
-          meta: scanResult.meta,
-        });
-      } else {
-        // Still create FullScanResult even without dominance
-        setAnalysis({
-          result: scanResult.result,
-          // Phase 4.0.5 — Pass diversity note from scan result
-          diversityNote: scanResult.diversityNote,
-          // Phase 4.0.6 — Pass scan warning from scan result
-          scanWarning: scanResult.scanWarning,
-          // Phase 4.2.6 — Pass scan meta from scan result
-          meta: scanResult.meta,
-        });
-      }
+        } : {}),
+        // Phase 4.0.5 — Pass diversity note from scan result
+        diversityNote: scanResult.diversityNote,
+        // Phase 4.0.6 — Pass scan warning from scan result
+        scanWarning: scanResult.scanWarning,
+        // Phase 4.1.7 — Pass scan note from scan result
+        scanNote: scanResult.scanNote,
+        // Phase 4.2.0 — Pass same-plant note from scan result
+        samePlantNote: scanResult.samePlantNote,
+        // Phase 4.2.6 — Pass scan meta from scan result
+        meta: scanResult.meta,
+      });
       
       console.log("STEP 5: STATE UPDATED");
     } catch (e) {
