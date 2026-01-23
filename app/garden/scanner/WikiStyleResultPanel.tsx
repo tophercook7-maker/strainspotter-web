@@ -241,6 +241,11 @@ export default function WikiStyleResultPanel({
                       <span>Ensure good lighting and focus</span>
                     </li>
                   </ul>
+                  
+                  {/* Phase 4.1 — Learning expectation note (subtle) */}
+                  <p className="text-xs text-white/50 italic mt-3 pt-2 border-t border-white/10">
+                    If this is the same plant, future scans will become more accurate.
+                  </p>
                 </div>
               </CollapsibleSection>
             );
