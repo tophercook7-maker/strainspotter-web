@@ -622,8 +622,46 @@ export default function WikiStyleResultPanel({
             </CollapsibleSection>
           )}
 
-          {/* Phase 4.5 Step 4.5.2 — SECONDARY CANDIDATES (Optional, Collapsed if confidence < 92%) */}
+          {/* Phase 4.2 — Other Close Matches Considered */}
           {viewModel.nameFirstDisplay.alternateMatches && 
+           viewModel.nameFirstDisplay.alternateMatches.length > 0 && (
+            <CollapsibleSection
+              title="Other Close Matches Considered"
+              defaultExpanded={false}
+              icon="🔍"
+            >
+              <div className="space-y-2 pt-2">
+                {viewModel.nameFirstDisplay.alternateMatches.slice(0, 3).map((alt, idx) => {
+                  // Phase 4.2 — Determine relative closeness based on position/index
+                  const closeness = idx === 0 ? "Very close" : idx === 1 ? "Close" : "Possible";
+                  
+                  return (
+                    <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <p className="text-sm text-white/90 font-medium">
+                          {alt.name}
+                        </p>
+                        <span className="text-xs text-white/60 font-medium">
+                          {closeness}
+                        </span>
+                      </div>
+                      {alt.whyNotPrimary && (
+                        <p className="text-xs text-white/70 leading-relaxed mt-1">
+                          {alt.whyNotPrimary}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+                <p className="text-xs text-white/60 mt-3 italic">
+                  These strains were also considered during analysis. The primary match above showed the strongest alignment across all images.
+                </p>
+              </div>
+            </CollapsibleSection>
+          )}
+          
+          {/* Phase 4.5 Step 4.5.2 — SECONDARY CANDIDATES (Legacy, kept for backward compatibility) */}
+          {false && viewModel.nameFirstDisplay.alternateMatches && 
            viewModel.nameFirstDisplay.alternateMatches.length > 0 && 
            viewModel.nameFirstDisplay.confidencePercent < 92 && (
             <CollapsibleSection
