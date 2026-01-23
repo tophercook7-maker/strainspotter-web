@@ -3986,6 +3986,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 4.6.2 — FAMILY-FIRST CONFIDENCE BOOST
   // If exact strain uncertain but family is strong: lock family, soft-rank strains inside family
   let familyFirstResult: ReturnType<typeof applyFamilyFirstConfidenceBoost> | null = null;
+  let exactStrainConfidenceForUI: number | null = null; // Phase 4.6.4 — Store for dual confidence display
   try {
     // Get candidate strains from Phase B.1 (convert to expected format)
     const candidateStrains = phaseB1Result?.candidates.map(c => ({
@@ -3995,6 +3996,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     
     // Get final confidence after Phase B.2 calibration
     const finalConfidenceForFamilyCheck = phaseB2ConfidenceResult?.confidence ?? finalNameConfidence;
+    exactStrainConfidenceForUI = finalConfidenceForFamilyCheck; // Phase 4.6.4 — Store for UI
     
     familyFirstResult = applyFamilyFirstConfidenceBoost({
       primaryStrainName: finalPrimaryName,
@@ -4127,12 +4129,15 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
     
     // Phase 4.6.2 — Store family-first result if applied
-    if (familyFirstResult?.useFamilyFirst) {
+    // Phase 4.6.4 — Also store original strain confidence for dual confidence display
+    if (familyFirstResult?.useFamilyFirst && exactStrainConfidenceForUI !== null) {
       (viewModel.nameFirstDisplay as any).familyFirst = {
         familyName: familyFirstResult.familyName,
         closestStrainInFamily: familyFirstResult.closestStrainInFamily,
         strainRanking: familyFirstResult.strainRanking,
         displayFormat: familyFirstResult.displayFormat,
+        familyConfidence: familyFirstResult.familyConfidence,
+        exactStrainConfidence: exactStrainConfidenceForUI, // Phase 4.6.4 — Store original strain confidence
       };
     }
     

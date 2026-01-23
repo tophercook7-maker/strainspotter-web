@@ -85,10 +85,51 @@ export default function WikiStyleResultPanel({
               </h1>
               
               {/* Phase 4.4.3 — Confidence badge sits UNDER name, not inline */}
+              {/* Phase 4.6.4 — Confidence Distribution: Show dual confidence when family-first is applied */}
               {(() => {
+                const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
                 const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
                 const confidence = Math.min(95, rawConfidence);
                 
+                // Phase 4.6.4 — If family-first is applied and family confidence > strain confidence, show dual confidence
+                if (familyFirst?.familyConfidence && familyFirst?.exactStrainConfidence && 
+                    familyFirst.familyConfidence > familyFirst.exactStrainConfidence) {
+                  const familyConf = Math.round(Math.min(95, familyFirst.familyConfidence));
+                  const strainConf = Math.round(Math.min(95, familyFirst.exactStrainConfidence));
+                  
+                  // Never show fake 99% on weak evidence
+                  const cappedFamilyConf = Math.min(95, familyConf);
+                  const cappedStrainConf = Math.min(95, strainConf);
+                  
+                  // Determine tiers
+                  const familyTier = cappedFamilyConf >= 85 ? "very_high" : cappedFamilyConf >= 70 ? "high" : "moderate";
+                  const strainTier = cappedStrainConf >= 70 ? "high" : cappedStrainConf >= 60 ? "moderate" : "low";
+                  
+                  const familyColor = familyTier === "very_high" || familyTier === "high" ? "bg-green-600" : "bg-yellow-500";
+                  const strainColor = strainTier === "high" ? "bg-green-600" : strainTier === "moderate" ? "bg-yellow-500" : "bg-red-600";
+                  
+                  return (
+                    <div className="mb-4 space-y-2">
+                      <div className="flex flex-col gap-2">
+                        <div className="inline-flex items-center gap-3 flex-wrap">
+                          <span className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${familyColor}`}>
+                            Very high confidence (family) ({cappedFamilyConf}%)
+                          </span>
+                        </div>
+                        <div className="inline-flex items-center gap-3 flex-wrap">
+                          <span className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${strainColor}`}>
+                            High confidence (strain candidate) ({cappedStrainConf}%)
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-white/70 font-medium">
+                        Family match is stronger than exact strain identification
+                      </p>
+                    </div>
+                  );
+                }
+                
+                // Standard single confidence display (when family-first not applied)
                 let confidenceTier: "very_high" | "high" | "moderate" | "low";
                 let confidenceLabel: string;
                 let confidenceColor: string;
