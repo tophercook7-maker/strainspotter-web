@@ -148,7 +148,13 @@ import { extractVisualSignature, type VisualSignature } from "./visualFeatureExt
 // Phase 4.9.2 — Strain Visual Baselines
 import { getStrainVisualBaseline, checkBaselineMatch, type VisualBaselineRange } from "./strainVisualBaselines";
 // Phase 4.9.3 — Image ↔ Strain Match Scoring
-import { calculateImageStrainMatchScore, scoreCandidateStrains, type VisualMatchScoreResult } from "./imageStrainMatchScoring";
+import { 
+  calculateImageStrainMatchScore, 
+  scoreCandidateStrains, 
+  type VisualMatchScoreResult,
+  calculateMultiImageVisualConsensus,
+  type VisualConsensusResult
+} from "./imageStrainMatchScoring";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -3714,35 +3720,72 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
               .filter((item): item is CandidateWithDb => item !== null);
             
             if (candidateStrains.length > 0) {
-              // Use primary visual signature (first image) for scoring
-              const primarySignature = visualSignatures[0];
+              // Phase 4.9.3 — Single image scoring (if only one image)
+              // Phase 4.9.4 — Multi-image consensus (if 2+ images)
+              let scoredCandidates: Array<{
+                candidate: typeof phaseB1Result.candidates[0];
+                visualMatchScore: number;
+                visualMatchResult?: VisualMatchScoreResult;
+                visualConsensusResult?: VisualConsensusResult;
+              }>;
               
-              // Score each candidate strain
-              const scoredCandidates = candidateStrains.map(({ candidate, dbEntry }) => {
-                const matchResult = calculateImageStrainMatchScore(primarySignature, dbEntry);
-                
-                // Boost candidate score based on visual match (visual match contributes up to 20% boost)
-                const visualBoost = matchResult.visualMatchScore * 20; // 0-20 points
-                const adjustedScore = Math.min(100, candidate.score + visualBoost);
-                
-                return {
-                  ...candidate,
-                  score: adjustedScore,
-                  visualMatchScore: matchResult.visualMatchScore, // Store for reference
-                  visualMatchResult: matchResult, // Store detailed result
-                };
-              });
+              if (visualSignatures.length === 1) {
+                // Single image: Use simple visual match scoring
+                const primarySignature = visualSignatures[0];
+                scoredCandidates = candidateStrains.map(({ candidate, dbEntry }) => {
+                  const matchResult = calculateImageStrainMatchScore(primarySignature, dbEntry);
+                  const visualBoost = matchResult.visualMatchScore * 20; // 0-20 points
+                  const adjustedScore = Math.min(100, candidate.score + visualBoost);
+                  
+                  return {
+                    candidate: {
+                      ...candidate,
+                      score: adjustedScore,
+                    },
+                    visualMatchScore: matchResult.visualMatchScore,
+                    visualMatchResult: matchResult,
+                  };
+                });
+              } else {
+                // Multi-image: Use consensus scoring
+                scoredCandidates = candidateStrains.map(({ candidate, dbEntry }) => {
+                  const consensusResult = calculateMultiImageVisualConsensus(visualSignatures, dbEntry);
+                  
+                  // Boost candidate score based on consensus (consensus contributes up to 25% boost for multi-image)
+                  const visualBoost = consensusResult.visualConsensusScore * 25; // 0-25 points
+                  const adjustedScore = Math.min(100, candidate.score + visualBoost);
+                  
+                  return {
+                    candidate: {
+                      ...candidate,
+                      score: adjustedScore,
+                    },
+                    visualMatchScore: consensusResult.visualConsensusScore,
+                    visualConsensusResult: consensusResult,
+                  };
+                });
+              }
               
               // Update phaseB1Result with visual match scores (re-sort by adjusted score)
               phaseB1Result = {
                 ...phaseB1Result,
-                candidates: scoredCandidates.sort((a, b) => b.score - a.score).slice(0, 5), // Re-sort and keep top 5
+                candidates: scoredCandidates
+                  .map(scored => scored.candidate)
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, 5), // Re-sort and keep top 5
               };
               
-              console.log("Phase 4.9.3 — Visual Match Scoring applied:", {
+              // Store visual consensus results for top candidate
+              if (scoredCandidates.length > 0 && scoredCandidates[0].visualConsensusResult) {
+                (phaseB1Result as any).visualConsensus = scoredCandidates[0].visualConsensusResult;
+              }
+              
+              console.log("Phase 4.9.3/4.9.4 — Visual Match Scoring applied:", {
+                imageCount: visualSignatures.length,
                 candidatesScored: scoredCandidates.length,
                 topVisualMatch: scoredCandidates[0]?.visualMatchScore,
-                topScore: scoredCandidates[0]?.score,
+                topScore: scoredCandidates[0]?.candidate.score,
+                consensusNote: scoredCandidates[0]?.visualConsensusResult?.visualConfidenceNote,
               });
             }
           } catch (error) {
@@ -4417,6 +4460,21 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         colorBaseline: visualBaseline.colorBaseline,
         baselineConfidence: visualBaseline.baselineConfidence,
         source: visualBaseline.source,
+      };
+    }
+    
+    // Phase 4.9.4 — Store visual consensus result if available (multi-image)
+    if (phaseB1Result && (phaseB1Result as any).visualConsensus) {
+      const consensusResult = (phaseB1Result as any).visualConsensus as VisualConsensusResult;
+      (viewModel.nameFirstDisplay as any).visualConsensus = {
+        visualConsensusScore: consensusResult.visualConsensusScore,
+        averageMatchScore: consensusResult.averageMatchScore,
+        consistencyBoost: consensusResult.consistencyBoost,
+        contradictionPenalty: consensusResult.contradictionPenalty,
+        consistentFeatures: consensusResult.consistentFeatures,
+        contradictoryFeatures: consensusResult.contradictoryFeatures,
+        visualConfidenceNote: consensusResult.visualConfidenceNote,
+        perImageScores: consensusResult.perImageScores,
       };
     }
     

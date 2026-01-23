@@ -439,3 +439,329 @@ export function scoreCandidateStrains(
   
   return scored;
 }
+
+/**
+ * Phase 4.9.4 — Multi-Image Consensus (VSI)
+ * 
+ * Across 2-5 images:
+ * - Average visualMatchScore
+ * - Boost consistent features
+ * - Flag contradictions
+ * 
+ * Output:
+ * - visualConsensusScore: 0-1, normalized consensus score
+ * - visualConfidenceNote: Human-readable explanation
+ */
+export type VisualConsensusResult = {
+  visualConsensusScore: number; // 0-1, normalized consensus score across images
+  averageMatchScore: number; // 0-1, simple average of all image match scores
+  consistencyBoost: number; // 0-1, boost for consistent features across images
+  contradictionPenalty: number; // 0-1, penalty for contradictory features
+  perImageScores: Array<{
+    imageIndex: number;
+    visualMatchScore: number;
+    featureScores: VisualMatchScoreResult["featureScores"];
+  }>;
+  consistentFeatures: string[]; // Features that match across all images
+  contradictoryFeatures: string[]; // Features that contradict across images
+  visualConfidenceNote: string; // Human-readable explanation
+};
+
+/**
+ * Phase 4.9.4 — Calculate Multi-Image Visual Consensus
+ * 
+ * Takes multiple image signatures and a candidate strain
+ * Returns consensus score with consistency boost and contradiction flags
+ */
+export function calculateMultiImageVisualConsensus(
+  imageSignatures: VisualSignature[],
+  strain: CultivarReference
+): VisualConsensusResult {
+  if (imageSignatures.length === 0) {
+    return {
+      visualConsensusScore: 0,
+      averageMatchScore: 0,
+      consistencyBoost: 0,
+      contradictionPenalty: 0,
+      perImageScores: [],
+      consistentFeatures: [],
+      contradictoryFeatures: [],
+      visualConfidenceNote: "No images available for visual consensus",
+    };
+  }
+  
+  // Phase 4.9.4.1 — Calculate visual match score for each image
+  const perImageScores = imageSignatures.map((signature, idx) => {
+    const matchResult = calculateImageStrainMatchScore(signature, strain);
+    return {
+      imageIndex: idx,
+      visualMatchScore: matchResult.visualMatchScore,
+      featureScores: matchResult.featureScores,
+      fullResult: matchResult, // Store full result for analysis
+    };
+  });
+  
+  // Phase 4.9.4.2 — Calculate average match score
+  const averageMatchScore = perImageScores.reduce((sum, score) => sum + score.visualMatchScore, 0) / perImageScores.length;
+  
+  // Phase 4.9.4.3 — Detect consistent features (features that match across all images)
+  const consistentFeatures = detectConsistentFeatures(perImageScores);
+  
+  // Phase 4.9.4.4 — Detect contradictory features (features that differ significantly)
+  const contradictoryFeatures = detectContradictoryFeatures(perImageScores);
+  
+  // Phase 4.9.4.5 — Calculate consistency boost
+  const consistencyBoost = calculateConsistencyBoost(consistentFeatures, perImageScores.length);
+  
+  // Phase 4.9.4.6 — Calculate contradiction penalty
+  const contradictionPenalty = calculateContradictionPenalty(contradictoryFeatures, perImageScores.length);
+  
+  // Phase 4.9.4.7 — Calculate final consensus score
+  // Base: average match score
+  // Boost: consistency across images
+  // Penalty: contradictions
+  const visualConsensusScore = Math.max(0, Math.min(1,
+    averageMatchScore + consistencyBoost - contradictionPenalty
+  ));
+  
+  // Phase 4.9.4.8 — Generate confidence note
+  const visualConfidenceNote = generateConsensusConfidenceNote(
+    visualConsensusScore,
+    averageMatchScore,
+    consistencyBoost,
+    contradictionPenalty,
+    consistentFeatures,
+    contradictoryFeatures,
+    perImageScores.length
+  );
+  
+  return {
+    visualConsensusScore,
+    averageMatchScore,
+    consistencyBoost,
+    contradictionPenalty,
+    perImageScores: perImageScores.map(({ imageIndex, visualMatchScore, featureScores }) => ({
+      imageIndex,
+      visualMatchScore,
+      featureScores,
+    })),
+    consistentFeatures,
+    contradictoryFeatures,
+    visualConfidenceNote,
+  };
+}
+
+/**
+ * Phase 4.9.4.3 — Detect Consistent Features
+ * Features that match well across all images
+ */
+function detectConsistentFeatures(
+  perImageScores: Array<{
+    imageIndex: number;
+    visualMatchScore: number;
+    featureScores: VisualMatchScoreResult["featureScores"];
+    fullResult: VisualMatchScoreResult;
+  }>
+): string[] {
+  const consistent: string[] = [];
+  
+  if (perImageScores.length < 2) return consistent;
+  
+  // Check if density scores are consistent (within 0.1 of each other)
+  const densityScores = perImageScores.map(s => s.featureScores.density);
+  const densityVariance = calculateVariance(densityScores);
+  if (densityVariance < 0.1) {
+    consistent.push("density");
+  }
+  
+  // Check if trichome scores are consistent
+  const trichomeScores = perImageScores.map(s => s.featureScores.trichome);
+  const trichomeVariance = calculateVariance(trichomeScores);
+  if (trichomeVariance < 0.1) {
+    consistent.push("trichome");
+  }
+  
+  // Check if color scores are consistent
+  const colorScores = perImageScores.map(s => s.featureScores.color);
+  const colorVariance = calculateVariance(colorScores);
+  if (colorVariance < 0.1) {
+    consistent.push("color");
+  }
+  
+  // Check if pistil scores are consistent
+  const pistilScores = perImageScores.map(s => s.featureScores.pistil);
+  const pistilVariance = calculateVariance(pistilScores);
+  if (pistilVariance < 0.1) {
+    consistent.push("pistil");
+  }
+  
+  // Check if all images are within tolerance
+  const allWithinTolerance = perImageScores.every(s => 
+    s.fullResult.withinTolerance.density &&
+    s.fullResult.withinTolerance.trichome &&
+    s.fullResult.withinTolerance.color &&
+    s.fullResult.withinTolerance.pistil
+  );
+  if (allWithinTolerance) {
+    consistent.push("all_features");
+  }
+  
+  return consistent;
+}
+
+/**
+ * Phase 4.9.4.4 — Detect Contradictory Features
+ * Features that differ significantly across images
+ */
+function detectContradictoryFeatures(
+  perImageScores: Array<{
+    imageIndex: number;
+    visualMatchScore: number;
+    featureScores: VisualMatchScoreResult["featureScores"];
+    fullResult: VisualMatchScoreResult;
+  }>
+): string[] {
+  const contradictory: string[] = [];
+  
+  if (perImageScores.length < 2) return contradictory;
+  
+  // Check for high variance in density scores
+  const densityScores = perImageScores.map(s => s.featureScores.density);
+  const densityVariance = calculateVariance(densityScores);
+  if (densityVariance > 0.3) {
+    contradictory.push("density");
+  }
+  
+  // Check for high variance in trichome scores
+  const trichomeScores = perImageScores.map(s => s.featureScores.trichome);
+  const trichomeVariance = calculateVariance(trichomeScores);
+  if (trichomeVariance > 0.3) {
+    contradictory.push("trichome");
+  }
+  
+  // Check for high variance in color scores
+  const colorScores = perImageScores.map(s => s.featureScores.color);
+  const colorVariance = calculateVariance(colorScores);
+  if (colorVariance > 0.3) {
+    contradictory.push("color");
+  }
+  
+  // Check for mixed tolerance results (some within, some outside)
+  const densityToleranceMix = perImageScores.some(s => s.fullResult.withinTolerance.density) &&
+    perImageScores.some(s => !s.fullResult.withinTolerance.density);
+  if (densityToleranceMix) {
+    contradictory.push("density_tolerance");
+  }
+  
+  const trichomeToleranceMix = perImageScores.some(s => s.fullResult.withinTolerance.trichome) &&
+    perImageScores.some(s => !s.fullResult.withinTolerance.trichome);
+  if (trichomeToleranceMix) {
+    contradictory.push("trichome_tolerance");
+  }
+  
+  return contradictory;
+}
+
+/**
+ * Phase 4.9.4.5 — Calculate Consistency Boost
+ * Rewards features that are consistent across images
+ */
+function calculateConsistencyBoost(
+  consistentFeatures: string[],
+  imageCount: number
+): number {
+  if (consistentFeatures.length === 0) return 0;
+  
+  // Base boost per consistent feature
+  const baseBoostPerFeature = 0.05; // 5% per feature
+  let boost = consistentFeatures.length * baseBoostPerFeature;
+  
+  // Extra boost if all features are consistent
+  if (consistentFeatures.includes("all_features")) {
+    boost += 0.1; // Additional 10% boost
+  }
+  
+  // Scale by image count (more images = more impressive consistency)
+  const imageCountMultiplier = Math.min(1.2, 1.0 + (imageCount - 2) * 0.1);
+  boost *= imageCountMultiplier;
+  
+  // Cap boost at 0.2 (20%)
+  return Math.min(0.2, boost);
+}
+
+/**
+ * Phase 4.9.4.6 — Calculate Contradiction Penalty
+ * Penalizes features that contradict across images
+ */
+function calculateContradictionPenalty(
+  contradictoryFeatures: string[],
+  imageCount: number
+): number {
+  if (contradictoryFeatures.length === 0) return 0;
+  
+  // Base penalty per contradictory feature
+  const basePenaltyPerFeature = 0.08; // 8% per feature
+  let penalty = contradictoryFeatures.length * basePenaltyPerFeature;
+  
+  // Extra penalty for tolerance mix (some within, some outside)
+  const toleranceMixCount = contradictoryFeatures.filter(f => f.includes("tolerance")).length;
+  if (toleranceMixCount > 0) {
+    penalty += toleranceMixCount * 0.05; // Additional 5% per tolerance mix
+  }
+  
+  // Scale by image count (more images = more significant contradiction)
+  const imageCountMultiplier = Math.min(1.3, 1.0 + (imageCount - 2) * 0.15);
+  penalty *= imageCountMultiplier;
+  
+  // Cap penalty at 0.3 (30%)
+  return Math.min(0.3, penalty);
+}
+
+/**
+ * Phase 4.9.4.8 — Generate Consensus Confidence Note
+ */
+function generateConsensusConfidenceNote(
+  consensusScore: number,
+  averageScore: number,
+  consistencyBoost: number,
+  contradictionPenalty: number,
+  consistentFeatures: string[],
+  contradictoryFeatures: string[],
+  imageCount: number
+): string {
+  if (consensusScore >= 0.85) {
+    if (consistentFeatures.length >= 3) {
+      return `Strong visual consensus across ${imageCount} images — all key features align with expected strain characteristics`;
+    }
+    return `Strong visual match across ${imageCount} images`;
+  } else if (consensusScore >= 0.70) {
+    if (consistentFeatures.length >= 2) {
+      return `Good visual consensus across ${imageCount} images — most features align consistently`;
+    }
+    return `Good visual match across ${imageCount} images`;
+  } else if (consensusScore >= 0.55) {
+    if (contradictoryFeatures.length > 0) {
+      return `Moderate visual match — some features vary across ${imageCount} images, suggesting phenotype variance or different growth stages`;
+    }
+    return `Moderate visual match across ${imageCount} images`;
+  } else {
+    if (contradictoryFeatures.length > 0) {
+      return `Limited visual consensus — significant feature contradictions across ${imageCount} images suggest this may not be the correct strain`;
+    }
+    return `Limited visual match across ${imageCount} images`;
+  }
+}
+
+/**
+ * Helper: Calculate Variance
+ * Returns variance of an array of numbers (0-1 scale)
+ */
+function calculateVariance(scores: number[]): number {
+  if (scores.length < 2) return 0;
+  
+  const mean = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+  const squaredDiffs = scores.map(s => Math.pow(s - mean, 2));
+  const variance = squaredDiffs.reduce((sum, d) => sum + d, 0) / scores.length;
+  
+  return Math.sqrt(variance); // Return standard deviation (normalized)
+}
