@@ -215,6 +215,34 @@ export default function WikiStyleResultPanel({
             );
           })()}
           
+          {/* Phase 4.3.2 — How confidence is determined (expandable) */}
+          <CollapsibleSection
+            title="How confidence is determined"
+            defaultExpanded={false}
+            icon="📊"
+          >
+            <div className="space-y-2 pt-2">
+              <ul className="space-y-2">
+                <li className="text-sm text-white/80 leading-relaxed flex items-start">
+                  <span className="text-blue-400 mr-2 mt-1">•</span>
+                  <span>Visual structure alignment</span>
+                </li>
+                <li className="text-sm text-white/80 leading-relaxed flex items-start">
+                  <span className="text-blue-400 mr-2 mt-1">•</span>
+                  <span>Cross-image consistency</span>
+                </li>
+                <li className="text-sm text-white/80 leading-relaxed flex items-start">
+                  <span className="text-blue-400 mr-2 mt-1">•</span>
+                  <span>Cultivar database similarity</span>
+                </li>
+                <li className="text-sm text-white/80 leading-relaxed flex items-start">
+                  <span className="text-blue-400 mr-2 mt-1">•</span>
+                  <span>Known phenotype patterns</span>
+                </li>
+              </ul>
+            </div>
+          </CollapsibleSection>
+          
           {/* Phase 4.2 — Name Selection Trust Message */}
           {viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
             <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
