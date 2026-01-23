@@ -583,3 +583,174 @@ function calculateTerpeneOverlap(
   
   return count > 0 ? totalOverlap / count : 0.5;
 }
+
+/**
+ * Phase 4.8.3 — Primary Name Selection Result
+ * Selected primary name and alternates from clone groups
+ */
+export type PrimaryNameSelectionResult = {
+  primaryStrainName: string; // Best canonical name
+  alternateNames: Array<{
+    name: string; // Alternate variant name
+    canonicalName: string; // Canonical name
+    reason: string; // Why this is an alternate
+  }>;
+  selectionReason: string[]; // Why this name was selected
+  cloneGroupId?: string; // Clone group ID if from a clone group
+};
+
+/**
+ * Phase 4.8.3 — Primary Name Selection
+ * 
+ * Rules:
+ * - Highest frequency across images wins
+ * - Boost if appears in ≥2 images
+ * - Boost if matches known family baseline
+ * - Penalize one-off variants
+ * 
+ * Output:
+ * - primaryStrainName
+ * - alternateNames[]
+ */
+export function selectPrimaryNameFromClones(
+  cloneGroups: CloneGroup[],
+  perImageTopNames: string[], // Top candidate name per image
+  imageCount: number
+): PrimaryNameSelectionResult {
+  if (cloneGroups.length === 0) {
+    // No clone groups - fallback to most frequent name
+    const nameFrequency = new Map<string, number>();
+    perImageTopNames.forEach(name => {
+      const normalized = normalizeRootName(name);
+      if (normalized) {
+        nameFrequency.set(normalized, (nameFrequency.get(normalized) || 0) + 1);
+      }
+    });
+    
+    const sortedNames = Array.from(nameFrequency.entries())
+      .sort((a, b) => b[1] - a[1]);
+    
+    const primaryName = sortedNames[0]?.[0] || perImageTopNames[0] || "Unknown";
+    const dbEntry = CULTIVAR_LIBRARY.find(s => 
+      normalizeRootName(s.name) === primaryName ||
+      s.aliases?.some(a => normalizeRootName(a) === primaryName)
+    );
+    
+    return {
+      primaryStrainName: dbEntry?.name || primaryName,
+      alternateNames: [],
+      selectionReason: ["No clone groups detected - selected most frequent name"],
+    };
+  }
+  
+  // Phase 4.8.3 — Score each clone group
+  const scoredGroups = cloneGroups.map(group => {
+    let score = 0;
+    const reasons: string[] = [];
+    
+    // Phase 4.8.3 — Rule 1: Highest frequency across images wins
+    const frequency = perImageTopNames.filter(name => 
+      normalizeRootName(name) === group.rootName
+    ).length;
+    
+    score += frequency * 10; // 10 points per image appearance
+    reasons.push(`Appears in ${frequency} of ${imageCount} images`);
+    
+    // Phase 4.8.3 — Rule 2: Boost if appears in ≥2 images
+    if (frequency >= 2) {
+      score += 15; // Significant boost for multi-image agreement
+      reasons.push(`Multi-image agreement (≥2 images) - boosted`);
+    }
+    
+    // Phase 4.8.3 — Rule 3: Boost if matches known family baseline
+    const family = getStrainFamily(group.canonicalName);
+    if (family && family.familyName) {
+      score += 10; // Boost for known family
+      reasons.push(`Matches known family baseline: ${family.familyName}`);
+    }
+    
+    // Phase 4.8.3 — Rule 4: Penalize one-off variants
+    if (group.variants.length === 1 && frequency === 1) {
+      score -= 5; // Penalty for single variant, single image
+      reasons.push(`One-off variant detected - penalized`);
+    }
+    
+    // Phase 4.8.3 — Boost for high clone confidence
+    score += group.cloneConfidence * 20; // Up to 20 points for clone confidence
+    if (group.cloneConfidence > 0.7) {
+      reasons.push(`High clone confidence (${Math.round(group.cloneConfidence * 100)}%)`);
+    }
+    
+    // Phase 4.8.3 — Boost for strong lineage similarity
+    if (group.similarityScores.lineageSimilarity > 0.7) {
+      score += 5;
+      reasons.push(`Strong lineage similarity (${Math.round(group.similarityScores.lineageSimilarity * 100)}%)`);
+    }
+    
+    return {
+      group,
+      score,
+      frequency,
+      reasons,
+    };
+  });
+  
+  // Phase 4.8.3 — Sort by score (highest first)
+  scoredGroups.sort((a, b) => b.score - a.score);
+  
+  const topGroup = scoredGroups[0];
+  const primaryGroup = topGroup.group;
+  
+  // Phase 4.8.3 — Select primary name (use canonical name from database)
+  const primaryStrainName = primaryGroup.canonicalName;
+  
+  // Phase 4.8.3 — Build alternate names (other variants in top group, or other groups)
+  const alternateNames: Array<{
+    name: string;
+    canonicalName: string;
+    reason: string;
+  }> = [];
+  
+  // Add other variants from the primary group (excluding the canonical name)
+  primaryGroup.variants.forEach(variant => {
+    if (variant.name.toLowerCase() !== primaryStrainName.toLowerCase() &&
+        variant.canonicalName.toLowerCase() !== primaryStrainName.toLowerCase()) {
+      alternateNames.push({
+        name: variant.name,
+        canonicalName: variant.canonicalName,
+        reason: `Same clone group (${primaryGroup.cloneGroupId}) - ${variant.evidence.join(", ")}`,
+      });
+    }
+  });
+  
+  // Add variants from other high-scoring groups (if close in score)
+  if (scoredGroups.length > 1) {
+    const topScore = scoredGroups[0].score;
+    scoredGroups.slice(1).forEach(scored => {
+      // Only include if within 20 points of top score
+      if (topScore - scored.score <= 20) {
+        scored.group.variants.forEach(variant => {
+          alternateNames.push({
+            name: variant.name,
+            canonicalName: variant.canonicalName,
+            reason: `Alternative clone group (${scored.group.cloneGroupId}) - score ${Math.round(scored.score)} vs ${Math.round(topScore)}`,
+          });
+        });
+      }
+    });
+  }
+  
+  // Phase 4.8.3 — Limit alternates to top 5
+  const limitedAlternates = alternateNames.slice(0, 5);
+  
+  return {
+    primaryStrainName,
+    alternateNames: limitedAlternates,
+    selectionReason: [
+      `Selected from ${cloneGroups.length} clone group(s)`,
+      ...topGroup.reasons,
+      `Final score: ${Math.round(topGroup.score)}`,
+    ],
+    cloneGroupId: primaryGroup.cloneGroupId,
+  };
+}
