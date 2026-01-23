@@ -5150,7 +5150,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       
       // Add scanWarning
       const validationWarning = validationWarnings.join("; ");
-      warning = warning ? `${warning}. ${validationWarning}` : validationWarning;
+      // Get existing scanWarning if any
+      const existingWarning = scanWarning || warning || undefined;
+      scanWarning = existingWarning ? `${existingWarning}. ${validationWarning}` : validationWarning;
     }
     
     const result: ScanResult = {
@@ -5164,7 +5166,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       result: viewModel, // Backward compatibility
       synthesis, // Backward compatibility
       diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
-      scanWarning: warning || undefined, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
+      scanWarning: needsFallback 
+        ? (warning ? `${warning}. ${validationWarnings.join("; ")}` : validationWarnings.join("; "))
+        : (warning || undefined), // Phase 4.0.6 — Backward compatibility (includes validation warnings)
       scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
       samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
       meta: scanMeta, // Phase 4.2.6 — Scan metadata
@@ -5297,19 +5301,20 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     viewModel.nameFirstDisplay.confidence = Math.min(70, viewModel.nameFirstDisplay.confidence);
     viewModel.nameFirstDisplay.confidenceTier = "low";
     
-    // Add scanWarning
-    const validationWarning = validationWarnings.join("; ");
-    warning = warning ? `${warning}. ${validationWarning}` : validationWarning;
-  }
-  
-  const result: ScanResult = {
-    status: needsFallback ? "partial" : "success",
-    consensus: finalConsensusResult,
-    confidence: viewModel.nameFirstDisplay.confidencePercent,
-    result: viewModel, // Backward compatibility
-    synthesis, // Backward compatibility
-    diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
-    scanWarning: warning || undefined, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
+      // Add scanWarning (will be added to result.scanWarning)
+      // Validation warnings are already in validationWarnings array
+    }
+    
+    const result: ScanResult = {
+      status: needsFallback ? "partial" : "success",
+      consensus: finalConsensusResult,
+      confidence: viewModel.nameFirstDisplay.confidencePercent,
+      result: viewModel, // Backward compatibility
+      synthesis, // Backward compatibility
+      diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
+      scanWarning: needsFallback 
+        ? (warning ? `${warning}. ${validationWarnings.join("; ")}` : validationWarnings.join("; "))
+        : (warning || undefined), // Phase 4.0.6 — Backward compatibility (includes validation warnings)
     scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
     samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
     meta: scanMeta, // Phase 4.2.6 — Scan metadata
