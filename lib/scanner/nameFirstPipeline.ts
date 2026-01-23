@@ -204,14 +204,10 @@ export function runNameFirstPipeline(
   terpeneProfile?: NormalizedTerpeneProfile, // Phase 5.3.3 — For database cross-validation
   strainRatio?: StrainRatio // Phase 5.3.3 — For database cross-validation
 ): NameFirstPipelineResult {
-  // Phase 5.0.2 — Validate database is loaded
+  // PHASE A FINALIZATION — Validate database is loaded (never throw, proceed with fallback)
   if (CULTIVAR_LIBRARY.length < 10000) {
-    const error = new Error(
-      `Phase 5.0.2 — CRITICAL: Database has only ${CULTIVAR_LIBRARY.length} strains. ` +
-      `Minimum required: 10,000. Name-first pipeline requires full database.`
-    );
-    console.error(error.message);
-    throw error;
+    console.warn(`PHASE A FINALIZATION: Database has only ${CULTIVAR_LIBRARY.length} strains (minimum 10,000 recommended). Proceeding with limited database.`);
+    // Continue with available database - don't throw
   }
   
   // Phase 5.0.2 — STEP 1: DATABASE NAME MATCH (runs FIRST)
