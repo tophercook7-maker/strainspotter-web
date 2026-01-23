@@ -215,6 +215,16 @@ export interface NameFirstDisplay {
   stabilityExplanation?: string[];
 }
 
+// Phase 4.0.5 — Final Strain Ratio (Single Source of Truth)
+export type FinalStrainRatio = {
+  indica: number; // 0–100
+  sativa: number; // 0–100
+  hybrid: number; // 0–100 (computed, not independent)
+  classification: "Indica-dominant" | "Sativa-dominant" | "Balanced Hybrid";
+  confidence: number; // 0–100
+  explanation: string[];
+};
+
 // Re-export ScannerViewModel from the canonical source
 export type { ScannerViewModel } from "./viewModel";
 
@@ -273,6 +283,7 @@ export interface ScanMeta {
 // Phase 4.0.5 — Warning channel (non-fatal)
 // Phase 4.0.6 — Warning enum update
 // Phase 4.0.7 — Warning enum
+// Phase 4.0.8 — Extend warnings
 export type ScanWarning =
   | "LOW_ANGLE_DIVERSITY"
   | "HIGH_IMAGE_SIMILARITY"

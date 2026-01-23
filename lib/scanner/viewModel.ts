@@ -167,6 +167,10 @@ export interface ScannerViewModel {
       source: "visual" | "database" | "consensus";
     }>; // Phase 4.3.4 — Name confidence fusion breakdown
     terpeneExperience?: any;
+    // Phase 4.0.4 — Name Trust & Disambiguation
+    trustLevel?: "Very High" | "High" | "Medium" | "Low";
+    ambiguity?: boolean;
+    alternateNames?: string[]; // Alternate names when ambiguous
   };
   
   // Phase 4.6 Step 4.6.2 — Indica/Sativa/Hybrid Ratio (FREE TIER)
@@ -207,6 +211,9 @@ export interface ScannerViewModel {
     explanation: string[];
   };
   
+  // Phase 4.0.5 — Final Strain Ratio (Single Source of Truth)
+  finalRatio?: import("./types").FinalStrainRatio;
+  
   // Phase 4.3.5 — Indica/Sativa/Hybrid Ratio Normalization
   dominance?: {
     indica: number;
@@ -237,7 +244,7 @@ export interface ScannerViewModel {
     explanation: string[];
   };
   
-  // Phase 4.7.0 — Name-First Disambiguation
+  // Phase 4.7.0 — Name-First Disambiguation (legacy)
   nameDisambiguation?: {
     primary: {
       name: string;
@@ -250,6 +257,17 @@ export interface ScannerViewModel {
       whyNotChosen: string[];
     }[];
   };
+  
+  // Phase 4.0.7 — Name Disambiguation & Ratio Surfacing
+  // Simplified disambiguation structure (conditional display)
+  nameDisambiguationV407?: {
+    primary: string;
+    alternates: { name: string; confidence: number }[];
+    note: string;
+  };
+  
+  // Phase 4.0.7 — Surface indica/sativa/hybrid ratio (clean format)
+  // NOTE: ratio is already defined above (line 182) - this duplicate is removed
   
   // Phase 4.3.3 — Visual Trait Anchoring (stable traits across multiple images)
   visualAnchors?: Array<{

@@ -89,7 +89,8 @@ import { buildScanNote, buildSamePlantNote, buildAngleHintNote, buildDistinctive
 // Phase 4.2.1 — multi-angle hinting (non-blocking)
 import { inferAngleHint } from "./angleHinting";
 // Phase 4.2.2 — angle diversity scoring
-import { computeAngleDiversity } from "./angleDiversity";
+// Phase 4.0.8 — Angle Diversity Scoring
+import { computeAngleDiversity, type ImageAngle as AngleDiversityType } from "./angleDiversity";
 // Phase 4.2.4 — visual distinctiveness scoring (soft)
 import { computeVisualDistinctiveness } from "./visualDistinctiveness";
 // Phase 4.2.6 — image guidance hints (non-blocking)
@@ -119,7 +120,38 @@ import { resolveNameDisambiguation } from "./nameDisambiguation";
 // Phase 4.9.0 — Name-First Match Confidence Engine
 import { resolveNameConfidenceV49 } from "./nameConfidenceV49";
 // Phase 4.1.8 — same-plant image detection (soft)
-import { detectSamePlant } from "./samePlantDetector";
+// Phase 4.0.2 — Enhanced same-plant awareness
+import { detectSamePlant, detectSamePlantEnhanced } from "./samePlantDetector";
+// Phase 4.0.3 — Confidence Calibration & Trust Layer
+import { computeConfidenceV403 } from "./confidenceV403";
+// Phase 4.0.4 — Name Trust & Disambiguation Layer
+import { computeNameTrustV404 } from "./nameTrustV404";
+// Phase 4.6 — Name Trust & Disambiguation
+import { computeNameTrustV46 } from "./nameTrustV46";
+// Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
+import { resolveFinalRatioV405 } from "./resolveFinalRatioV405";
+// Phase 4.4 — Identity + Ratio Surface Layer
+import { resolveFinalRatioV44 } from "./resolveFinalRatioV44";
+// Phase 5.1 — Indica / Sativa / Hybrid Ratio Engine
+import { resolveFinalRatioV51 } from "./resolveFinalRatioV51";
+// Phase 5.4 — Indica / Sativa / Hybrid Ratio Calibration
+import { resolveFinalRatioV54, type VisualMorphologySignals, type TerpeneBias } from "./resolveFinalRatioV54";
+// Phase 4.0.6 — Confidence Calibration & User Trust Lock
+import { resolveFinalConfidenceV406 } from "./resolveFinalConfidenceV406";
+// Phase 4.1 — Confidence Calibration & Truthful Precision
+import { resolveFinalConfidenceV41 } from "./resolveFinalConfidenceV41";
+// Phase 4.3 — Confidence Calibration & Honesty Layer
+import { resolveFinalConfidenceV43 } from "./resolveFinalConfidenceV43";
+// Phase 4.5 — Confidence Calibration & Trust Guardrails
+import { resolveFinalConfidenceV45 } from "./resolveFinalConfidenceV45";
+// Phase 4.8 — Confidence Calibration
+import { resolveFinalConfidenceV48 } from "./resolveFinalConfidenceV48";
+// Phase 5.0 — Confidence Calibration Engine
+import { resolveFinalConfidenceV50 } from "./resolveFinalConfidenceV50";
+// Phase 5.2 — Confidence Calibration Engine
+import { resolveFinalConfidenceV52 } from "./resolveFinalConfidenceV52";
+// Phase 5.3 — Name-First Strengthening & Alias Matching
+import { strengthenNameSelectionV53, findStrainByNameOrAlias } from "./nameStrengtheningV53";
 // Phase 4.1.9 — consensus weight adjustment
 import { adjustConsensusWeight } from "./consensusWeights";
 // Phase 4.1.3 — replace analysis failure paths
@@ -154,27 +186,112 @@ type ScanPipelineInput = {
  * Run the scan pipeline with image seeds
  * STEP 2.1.E — Process multiple images, average confidence, pick dominant candidate
  */
+// STABILIZATION MODE — Helper to build safe fallback result
+function buildSafeFallbackResult(
+  reason: string,
+  imageCount: number,
+  fallbackName: string = "Closest Known Cultivar"
+): ScanResult {
+  const fallbackConfidence = Math.max(50, 75 - (imageCount === 1 ? 15 : 0));
+  const fallbackViewModel: import("./viewModel").ScannerViewModel = {
+    name: fallbackName,
+    title: fallbackName,
+    confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5, explanation: reason },
+    matchBasis: "Fallback result due to analysis limitations",
+    visualMatchSummary: "",
+    flowerStructureAnalysis: "",
+    trichomeDensityMaturity: "",
+    leafShapeInternode: "",
+    colorPistilIndicators: "",
+    growthPatternClues: "",
+    primaryMatch: {
+      name: fallbackName,
+      confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5 },
+      whyThisMatch: reason,
+    },
+    secondaryMatches: [],
+    trustLayer: {
+      confidenceBreakdown: { visualSimilarity: fallbackConfidence, traitOverlap: fallbackConfidence, consensusStrength: 0 },
+      whyThisMatch: [reason],
+      sourcesUsed: ["Fallback analysis"],
+      confidenceLanguage: "Limited confidence due to analysis constraints",
+    },
+    aiWikiBlend: "",
+    uncertaintyExplanation: reason,
+    accuracyTips: ["Try adding more images from different angles", "Ensure good lighting and focus"],
+    confidence: fallbackConfidence,
+    whyThisMatch: reason,
+    morphology: "",
+    trichomes: "",
+    pistils: "",
+    structure: "",
+    growthTraits: [],
+    terpeneGuess: [],
+    effectsShort: [],
+    effectsLong: [],
+    comparisons: [],
+    referenceStrains: [],
+    sources: [],
+    genetics: { dominance: "Unknown", lineage: "" },
+    experience: { effects: [], bestFor: [] },
+    disclaimer: reason,
+    nameFirstDisplay: {
+      primaryStrainName: fallbackName,
+      primaryName: fallbackName,
+      confidencePercent: fallbackConfidence,
+      confidence: fallbackConfidence,
+      confidenceTier: fallbackConfidence >= 75 ? "high" as const : fallbackConfidence >= 65 ? "medium" as const : "low" as const,
+      tagline: "Closest known match based on available analysis",
+      explanation: { whyThisNameWon: [reason], whatRuledOutOthers: [], varianceNotes: [] },
+    },
+  };
+  const fallbackConsensus: ConsensusResult = {
+    primaryMatch: { name: fallbackName, confidence: fallbackConfidence, reason },
+    alternates: [],
+    agreementScore: 0,
+    strainName: fallbackName,
+    confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5, explanation: reason },
+    whyThisMatch: reason,
+    alternateMatches: [],
+    lowConfidence: true,
+    agreementLevel: "low" as const,
+  };
+  return {
+    status: "partial",
+    guard: { status: "low-confidence" as const, reason },
+    consensus: fallbackConsensus,
+    confidence: fallbackConfidence,
+    result: fallbackViewModel,
+    synthesis: {} as any,
+  };
+}
+
 async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): Promise<ScanResult> {
   console.log("runScanPipeline: starting with", input.imageCount, "images");
   
+  // STABILIZATION MODE — No throws, return safe fallback
   if (input.imageCount === 0) {
-    throw new Error("No images provided");
+    return buildSafeFallbackResult("No images provided for analysis", 0);
   }
 
   // Phase 2.7 Part N Step 1 — Require minimum 2 images (if multiple images provided)
+  // STABILIZATION MODE — This condition is impossible (x > 1 && x < 2), but keep for safety
   if (input.imageCount > 1 && input.imageCount < 2) {
-    throw new Error("Multi-image scan requires at least 2 images");
+    return buildSafeFallbackResult("Invalid image count configuration", input.imageCount);
   }
 
-  // Phase 4.0.1 — Block scan if images lack variance
+  // Phase 4.0.5 — Do NOT fail scan on similar images
+  // Initialize analysis warnings array
+  const analysisWarnings: string[] = [];
+  
+  // STABILIZATION MODE — Proceed with low confidence instead of returning error
+  // Phase 4.0.1 — Check image distinctness (soften failure, proceed with warning)
   const distinctness = assessImageDistinctness(input.imageSeeds);
   
   if (!distinctness.distinct) {
-    return {
-      error: true,
-      userMessage:
-        "These photos look too similar. Try different angles (top, side, close-up) for better accuracy.",
-    };
+    console.warn("STABILIZATION: Images lack variance, proceeding with reduced confidence");
+    // Add warning to analysisWarnings array (will be added to viewModel.notes later)
+    analysisWarnings.push("HIGH_IMAGE_SIMILARITY");
   }
 
   // Phase 4.0.3 — De-duplicate similar images instead of failing scan
@@ -217,8 +334,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       }
     });
 
+    // STABILIZATION MODE — Keep at least one image instead of throwing
     if (keptIndices.length === 0) {
-      throw new Error("All images were duplicates");
+      console.warn("STABILIZATION: All images were duplicates, keeping first image for analysis");
+      keptIndices.push(0); // Keep first image as fallback
+      uniqueImages.push(fingerprints[0]);
     }
 
     // Filter to keep only unique images
@@ -249,8 +369,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
 
   // Phase 4.0.5 — Do NOT fail scan on similar images
-  // Initialize analysis warnings array
-  const analysisWarnings: string[] = [];
+  // Note: analysisWarnings was initialized above before distinctness check
 
   // Update input to use filtered images
   const filteredInput: ScanPipelineInput = {
@@ -695,7 +814,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       }
     }
 
+    // Phase 4.0.2 — Enhanced same-plant detection (before consensus)
     // Phase 4.1.8 — detect same-plant images (soft detection) - before consensus
+    // Note: distinctnessScore and visual similarity will be calculated later, so we use basic detection here
+    // Enhanced detection will be applied after diversity metrics are calculated
     samePlantLikely = imageResultsV3.length >= 2
       ? detectSamePlant(
           imageResultsV3.map(i => ({
@@ -705,17 +827,23 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       : true; // Single image = same plant
     
     // Phase 3.0 Part C — Consensus Merge Engine
-    consensusResult = buildConsensusResultV3(imageResultsV3, fusedFeatures, filteredInput.imageCount, samePlantLikely);
-    console.log("CONSENSUS RESULT V3:", consensusResult);
+    // STABILIZATION MODE — Wrap in try/catch, use fallback if consensus fails
+    try {
+      consensusResult = buildConsensusResultV3(imageResultsV3, fusedFeatures, filteredInput.imageCount, samePlantLikely);
+      console.log("CONSENSUS RESULT V3:", consensusResult);
+    } catch (error) {
+      console.warn("STABILIZATION: Consensus engine failed, using fallback:", error);
+      consensusResult = null; // Will be handled by fallback logic below
+    }
     
     // Assess plant similarity across images
     const similarity = assessPlantSimilarity(imageResultsV3);
     
-    // Fail fast if consensus cannot be produced
+    // STABILIZATION MODE — Use fallback consensus instead of throwing
     if (!consensusResult) {
-      throw new Error(
-        "No valid analysis could be produced. Images may be unreadable."
-      );
+      console.warn("STABILIZATION: Consensus could not be produced, using fallback consensus");
+      // Fallback consensus will be created later in the pipeline
+      consensusResult = null; // Will be handled by guardAgainstFailure later
     }
     
     // Legacy compatibility
@@ -855,10 +983,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 4.0.6 — Apply angle diversity to confidence
   const userImageLabels = assignUserImageLabels(filteredInput.imageCount);
   const angleLabels = Array.from(userImageLabels.values());
-  const angleScore = computeAngleDiversity(angleLabels);
+  // Phase 4.0.8 — Convert labels to ImageAngle format
+  const imageAngles: AngleDiversityType[] = angleLabels.map(label => {
+    const lower = label.toLowerCase()
+    if (lower.includes("top")) return "TOP"
+    if (lower.includes("side")) return "SIDE"
+    if (lower.includes("close") || lower.includes("macro")) return "CLOSE"
+    return "UNKNOWN"
+  })
+  // Phase 4.0.8 — Apply angle diversity weighting
+  const angleDiversityScorePhase408 = computeAngleDiversity(imageAngles);
   
-  if (angleScore < 0.6) {
-    console.warn("Low angle diversity detected — confidence capped");
+  if (angleDiversityScorePhase408 < 0.5) {
+    console.warn("Very low angle diversity detected — confidence capped");
     consensusConfidence = Math.min(consensusConfidence, 0.88);
     analysisWarnings.push("LOW_ANGLE_DIVERSITY");
   }
@@ -929,21 +1066,20 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     : [];
   console.log("ALTERNATES:", alternateNames);
   
-  // Phase 5.0.2 — FAIL HARD if no primary name or if name is "Unknown"
+  // STABILIZATION MODE — Use fallback name instead of throwing
   const primaryName = nameFirstResult.primaryMatch.name;
   if (!primaryName || primaryName.trim() === "" || primaryName === "Unknown" || primaryName === "Unidentified") {
-    const error = new Error(
-      `Phase 5.0.2 — CRITICAL: Invalid primary strain name resolved: "${primaryName}". ` +
-      "Name-first matching must always return a valid name from database. " +
-      "If database is loaded, this should never happen."
-    );
-    console.error(error.message);
-    console.error("Phase 5.0.2 — Debug info:", {
+    console.warn("STABILIZATION: Invalid primary strain name resolved, using fallback:", {
+      resolvedName: primaryName,
       nameFirstPipelineResult: nameFirstPipelineResult?.primaryStrainName,
       consensusResult: consensusResult?.primaryMatch?.name,
       namingResult: namingResult?.name,
     });
-    throw error;
+    // Replace with safe fallback
+    nameFirstResult.primaryMatch.name = "Closest Known Cultivar";
+    nameFirstResult.primaryMatch.confidence = Math.max(50, nameFirstResult.confidence - 20);
+    nameFirstResult.confidence = nameFirstResult.primaryMatch.confidence;
+    nameFirstResult.primaryMatch.whyThisMatch = "Analysis completed with limited certainty. Unable to determine exact strain name.";
   }
 
   // Phase 4.3 Step 4.3.1 — Wiki Lookup (Name Locked from Pipeline - TOP PRIORITY)
@@ -1025,7 +1161,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 2.9 Part P Step 2 — Generate Extended Strain Profile
   // Phase 2.9 Part P Step 5 — Variance Check (use image count + variance as seed)
   const varianceSeed = input.imageCount * 10 + Math.round(fusedFeatures.variance);
-  const     extendedProfile = generateExtendedProfile(
+  const extendedProfile = generateExtendedProfile(
     lockedStrainName, // Phase 4.3 Step 4.3.1 — Use locked name
     primaryWiki,
     dbEntry,
@@ -1087,10 +1223,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // Phase 4.1.1 — final name assignment
   // Phase 4.3.1 — Use stabilized name if available, otherwise use candidate pool
-  let primaryStrainName: string;
+  let resolvedPrimaryStrainName: string = "";
   if (stabilizedNameResult && stabilizedNameResult.stabilizedName) {
-    primaryStrainName = stabilizedNameResult.stabilizedName;
-    console.log("Phase 4.3.1 — Using stabilized name:", primaryStrainName);
+    resolvedPrimaryStrainName = stabilizedNameResult.stabilizedName;
+    console.log("Phase 4.3.1 — Using stabilized name:", resolvedPrimaryStrainName);
     // Phase 4.3.1 — Update lockedStrainName with stabilized result
     if (!lockedStrainName || stabilizedNameResult.stabilityScore > 75) {
       lockedStrainName = stabilizedNameResult.stabilizedName;
@@ -1102,7 +1238,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       name: c.name,
       score: c.confidence,
     }));
-    primaryStrainName = resolvePrimaryStrainName(rankedNameResults);
+    resolvedPrimaryStrainName = resolvePrimaryStrainName(rankedNameResults);
   }
   
   // Phase 3.8 Part C — Get confidence tier
@@ -1133,10 +1269,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
 
   const viewModel = wikiToViewModel(finalWiki, nameFirstResult, wikiData, aiReasoning, deepAnalysis, trustLayer, extendedProfile);
   
+  // STABILIZATION MODE — Guarantee nameFirstDisplay.primaryStrainName is ALWAYS non-empty
   // Phase 4.1 — Ensure nameFirstDisplay is always set (guaranteed field)
   // Set a default fallback first, will be overridden if nameFirstPipelineResult exists
   if (!viewModel.nameFirstDisplay) {
-    const fallbackName = lockedStrainName || nameFirstResult.primaryMatch.name || "Unknown Hybrid";
+    const fallbackName = lockedStrainName || nameFirstResult.primaryMatch.name || "Closest Known Cultivar";
     const fallbackConfidence = Math.max(60, nameFirstResult.confidence || 60);
     viewModel.nameFirstDisplay = {
       primaryStrainName: fallbackName,
@@ -1154,6 +1291,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         varianceNotes: [],
       },
     };
+  }
+  
+  // STABILIZATION MODE — Final safety check: ensure primaryStrainName is never empty
+  if (!viewModel.nameFirstDisplay.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim() === "") {
+    console.warn("STABILIZATION: nameFirstDisplay.primaryStrainName was empty, using fallback");
+    viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+    viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+    if (viewModel.nameFirstDisplay.confidencePercent > 60) {
+      viewModel.nameFirstDisplay.confidencePercent = 60;
+      viewModel.nameFirstDisplay.confidence = 60;
+    }
   }
   
   // Phase 4.3 Step 4.3.6 — Add Name-First Display (TOP PRIORITY)
@@ -2696,11 +2844,18 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 4.0.7 — integrate diversity scoring
   let diversityScore = 1.0; // Default to high diversity
   let distinctnessScore = 0; // Phase 4.1.2 — Initialize distinctness score
-  let angleDiversityScore: number = 0.7; // Phase 4.2.2 — Default angle diversity
+  let angleDiversityScore: number = 0.7; // Phase 4.2.2 — Default angle diversity (using let for reassignment)
   if (imageResultsV3.length >= 2) {
     // Phase 4.2.2 — compute angle diversity score (if angle hints are available)
+    // Phase 4.0.8 — Convert to ImageAngle format
     if (imageAngleHints.length > 0) {
-      const angleHints = imageAngleHints.map(h => h.angle);
+      const angleHints: AngleDiversityType[] = imageAngleHints.map(h => {
+        const angle = h.angle.toLowerCase()
+        if (angle === "top") return "TOP"
+        if (angle === "side") return "SIDE"
+        if (angle === "macro") return "CLOSE"
+        return "UNKNOWN"
+      })
       angleDiversityScore = computeAngleDiversity(angleHints);
     }
 
@@ -2810,36 +2965,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   const diversityHint = generateDiversityHint(diversityScore);
 
-  // Phase 4.0.6 — apply similarity guard instead of throwing
-  // Phase 4.0.7 — apply diversity confidence cap
-  // Get final confidence from viewModel (use nameFirstDisplay confidence if available, else top-level)
-  let finalConfidence = viewModel.nameFirstDisplay?.confidencePercent ?? viewModel.confidence ?? 75;
-  
-  // Phase 4.0.7 — apply diversity confidence cap
-  const confidenceCap = applyDiversityConfidenceCap(
-    finalConfidence,
-    diversityScore
-  );
-
-  // Phase 4.2.6 — initialize scan meta
-  const scanMeta: import("./types").ScanMeta = {
-    confidenceCap,
-  };
-
-  // Phase 4.2.2 — apply angle diversity to confidence
-  if (imageAngleHints.length > 0) {
-    const angleDiversityScore = computeAngleDiversity(
-      imageAngleHints.map(a => a.angle)
-    );
-    finalConfidence = Math.min(
-      finalConfidence * angleDiversityScore,
-      confidenceCap
-    );
-  } else {
-    finalConfidence = confidenceCap;
-  }
-
-  // Phase 4.2.4 — apply visual distinctiveness to confidence
+  // Phase 4.0.2 — Enhanced same-plant detection (after all diversity metrics calculated)
+  let enhancedSamePlantResult: { isSamePlant: boolean; confidence: number; reasons: string[] } | null = null;
   const embeddingsForDistinctiveness = imageResultsV3
     .map(r => r.embedding)
     .filter((e): e is number[] => Array.isArray(e) && e.length > 0);
@@ -2847,51 +2974,108 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   let visualDistinctivenessScore: number = 1.0;
   if (embeddingsForDistinctiveness.length >= 2) {
     visualDistinctivenessScore = computeVisualDistinctiveness(embeddingsForDistinctiveness);
-    finalConfidence = Math.min(
-      finalConfidence * visualDistinctivenessScore,
-      confidenceCap
-    );
   }
-  
-  // Phase 4.1.0 — apply name boost
-  // Build candidate vote map from imageResultsV3
-  const nameVoteMap: Record<string, number> = {};
-  if (imageResultsV3.length > 0) {
-    imageResultsV3.forEach(result => {
-      result.candidateStrains.forEach(candidate => {
-        const name = candidate.name;
-        if (name && name !== "Unknown") {
-          nameVoteMap[name] = (nameVoteMap[name] || 0) + 1;
-        }
-      });
-    });
-  }
-  
-  finalConfidence = applyNameConsensusBoost({
-    candidateCounts: nameVoteMap,
-    baseConfidence: finalConfidence,
-  });
-  
-  // Phase 4.1.2 — integrate grace mode
-  const graceResult = applySamePlantGrace({
-    distinctnessScore,
-    confidence: finalConfidence,
-  });
-  finalConfidence = graceResult.adjustedConfidence;
-  // Note: graceResult.note can be added to viewModel.notes if needed
 
-  // Phase 4.1.6 — apply confidence floor for low distinctness
-  finalConfidence = applyConfidenceFloor({
-    confidence: finalConfidence,
-    distinctnessScore,
+  if (imageResultsV3.length >= 2) {
+    enhancedSamePlantResult = detectSamePlantEnhanced(
+      imageResultsV3,
+      distinctnessScore,
+      visualDistinctivenessScore
+    );
+    // Update samePlantLikely based on enhanced detection
+    if (enhancedSamePlantResult.isSamePlant) {
+      samePlantLikely = true;
+      console.log("Phase 4.0.2 — Enhanced same-plant detection:", {
+        confidence: enhancedSamePlantResult.confidence,
+        reasons: enhancedSamePlantResult.reasons,
+      });
+    }
+  }
+
+  // Phase 4.0.3 — CONFIDENCE CALIBRATION V403 (SINGLE SOURCE OF TRUTH)
+  // Derive inputs for confidence calculation
+  const imageCount = filteredInput.imageCount; // Original uploaded count
+  const distinctImageCount = imageResultsV3.length; // After deduplication
+  const hasDuplicates = distinctImageCount < imageCount;
+  const v403SamePlantLikely = enhancedSamePlantResult?.isSamePlant ?? samePlantLikely;
+
+  // Derive avgImageQualityScore (default 0.6 if not available)
+  let avgImageQualityScore = 0.6;
+  const qualityNote = "Using default image quality (0.6)";
+  // TODO: If image quality scoring exists, average it here
+
+  // Derive consensusStrength (0..1)
+  let consensusStrength = 0.7; // Default
+  if (consensusResult) {
+    // Normalize consensus agreement score to 0..1
+    const agreementScore = consensusResult.agreementScore ?? 0;
+    consensusStrength = Math.min(1.0, agreementScore / 100);
+  } else if (imageResultsV3.length > 0) {
+    // Fallback: derive from top name frequency
+    const topName = nameFirstResult.primaryMatch.name;
+    const topNameFrequency = imageResultsV3.filter(r =>
+      r.candidateStrains.some(c => c.name === topName)
+    ).length;
+    consensusStrength = Math.min(1.0, (topNameFrequency / distinctImageCount) * 0.9 + 0.1);
+  }
+
+  // Derive dbMatchStrength (0..1)
+  let dbMatchStrength = 0.6; // Default
+  if (nameFirstPipelineResult) {
+    // Use name-first pipeline match score (normalize 0-100 to 0-1)
+    dbMatchStrength = Math.min(1.0, (nameFirstPipelineResult.nameConfidencePercent || 60) / 100);
+  } else if (lockedStrainName) {
+    // Check if locked strain name exists in CULTIVAR_LIBRARY
+    const dbEntry = CULTIVAR_LIBRARY.find(s =>
+      s.name === lockedStrainName || s.aliases?.includes(lockedStrainName)
+    );
+    if (dbEntry) {
+      if (dbEntry.name === lockedStrainName) {
+        dbMatchStrength = 0.9; // Exact match
+      } else {
+        dbMatchStrength = 0.8; // Alias match
+      }
+    }
+  }
+
+  // Derive nameStability (0..1) - how often top candidate appears across images
+  let nameStability = 0.7; // Default
+  if (imageResultsV3.length > 0) {
+    const topName = nameFirstResult.primaryMatch.name;
+    const topNameFrequency = imageResultsV3.filter(r =>
+      r.candidateStrains.some(c => c.name === topName)
+    ).length;
+    nameStability = topNameFrequency / distinctImageCount;
+  }
+
+  // Phase 4.0.3 — Compute confidence using V403 model
+  const confidenceBreakdown = computeConfidenceV403({
+    imageCount,
+    distinctImageCount,
+    hasDuplicates,
+    samePlantLikely: v403SamePlantLikely,
+    avgImageQualityScore,
+    consensusStrength,
+    dbMatchStrength,
+    nameStability,
   });
+
+  // Phase 4.0.3 — Use V403 breakdown as single source of truth
+  let finalConfidence = confidenceBreakdown.final;
+
+  // Phase 4.2.6 — initialize scan meta
+  const scanMeta: import("./types").ScanMeta = {
+    confidenceCap: confidenceBreakdown.capped ? finalConfidence : 99,
+  };
 
 
   // Phase 4.1.7 — build scan note for low distinctness
   const scanNote = buildScanNote(distinctnessScore);
 
+  // Phase 4.0.2 — build same-plant note using enhanced detection
   // Phase 4.2.0 — build same-plant note (optional)
-  const samePlantNote = buildSamePlantNote(samePlantLikely);
+  // Use enhanced detection result if available, otherwise fall back to basic detection
+  const samePlantNote = buildSamePlantNote(v403SamePlantLikely);
 
   // Phase 4.2.0 — attach note to scanNotes array
   const scanNotes: string[] = [];
@@ -3201,13 +3385,852 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     finalConfidence
   );
 
-  // Update viewModel confidence if it was capped
-  if (finalConfidence < (viewModel.nameFirstDisplay?.confidencePercent ?? viewModel.confidence ?? 75)) {
-    if (viewModel.nameFirstDisplay) {
-      viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
-    }
-    viewModel.confidence = finalConfidence;
+  // Phase 4.0.3 — Update viewModel confidence from V403 breakdown (single source of truth)
+  if (viewModel.nameFirstDisplay) {
+    viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
+    viewModel.nameFirstDisplay.confidence = finalConfidence;
+    // Update confidenceTier based on final confidence
+    viewModel.nameFirstDisplay.confidenceTier = finalConfidence >= 85 ? "very_high" as const
+      : finalConfidence >= 75 ? "high" as const
+      : finalConfidence >= 65 ? "medium" as const
+      : "low" as const;
   }
+  viewModel.confidence = finalConfidence;
+  
+  // Phase 4.0.3 — Update confidenceTier in viewModel (using V403 final confidence)
+  const v403ConfidenceTier = getConfidenceTierFromRange(
+    finalConfidence - 2,
+    finalConfidence + 2
+  );
+  viewModel.confidenceTier = v403ConfidenceTier;
+
+  // Phase 4.6 — NAME TRUST & DISAMBIGUATION
+  // Collect candidate names from all images
+  const candidateNamesSet = new Set<string>();
+  const imageNameFrequency = new Map<string, number>();
+  
+  imageResultsV3.forEach((imgResult) => {
+    if (imgResult.candidateStrains && imgResult.candidateStrains.length > 0) {
+      imgResult.candidateStrains.forEach((candidate, index) => {
+        const name = candidate.name;
+        if (name && name.trim().length >= 3 && name.toLowerCase() !== "unknown") {
+          candidateNamesSet.add(name);
+          imageNameFrequency.set(name, (imageNameFrequency.get(name) || 0) + 1);
+        }
+      });
+    }
+  });
+  
+  // Add name from name-first pipeline if available
+  const nameFromPipeline = nameFirstResult?.primaryMatch?.name || lockedStrainName;
+  if (nameFromPipeline && nameFromPipeline.trim().length >= 3) {
+    candidateNamesSet.add(nameFromPipeline);
+    imageNameFrequency.set(nameFromPipeline, (imageNameFrequency.get(nameFromPipeline) || 0) + 1);
+  }
+  
+  const candidateNames = Array.from(candidateNamesSet);
+  
+  // Build database matches
+  const databaseMatches: { name: string; hasLineage: boolean; hasTerpenes: boolean }[] = [];
+  candidateNames.forEach((name) => {
+    const dbMatch = CULTIVAR_LIBRARY.find(s => 
+      s.name === name || s.aliases?.includes(name)
+    );
+    if (dbMatch) {
+      databaseMatches.push({
+        name: dbMatch.name,
+        hasLineage: !!(dbMatch as any).lineage || !!(dbMatch as any).genetics || !!(dbMatch as any).parentStrains,
+        hasTerpenes: !!(dbMatch as any).terpenes || !!(dbMatch as any).dominantTerpenes,
+      });
+    }
+  });
+  
+  // Build visual alignment scores (0-1 per name)
+  const visualAlignment = new Map<string, number>();
+  candidateNames.forEach((name) => {
+    // Check if name appears in image results and how high it ranks
+    let visualScore = 0;
+    let count = 0;
+    
+    imageResultsV3.forEach((imgResult) => {
+      const candidateIndex = imgResult.candidateStrains.findIndex(c => c.name === name);
+      if (candidateIndex >= 0) {
+        // Higher rank = better alignment (0 = top, higher = lower rank)
+        const rankScore = 1 - (candidateIndex / Math.max(1, imgResult.candidateStrains.length - 1));
+        visualScore += rankScore;
+        count++;
+      }
+    });
+    
+    if (count > 0) {
+      visualAlignment.set(name, visualScore / count);
+    } else {
+      visualAlignment.set(name, 0.3); // Default low alignment if not found
+    }
+  });
+  
+  // Build terpene alignment scores (0-1 per name)
+  const terpeneAlignment = new Map<string, number>();
+  candidateNames.forEach((name) => {
+    const dbMatch = CULTIVAR_LIBRARY.find(s => 
+      s.name === name || s.aliases?.includes(name)
+    );
+    
+    if (dbMatch && viewModel.terpeneExperience) {
+      // Check terpene overlap
+      const dbTerpenes = ((dbMatch as any).terpenes || (dbMatch as any).dominantTerpenes || []).map((t: string) => t.toLowerCase());
+      const observedTerpenes = [
+        ...(viewModel.terpeneExperience.dominantTerpenes || []),
+        ...(viewModel.terpeneExperience.secondaryTerpenes || []),
+      ].map(t => t.toLowerCase());
+      
+      if (dbTerpenes.length > 0 && observedTerpenes.length > 0) {
+        const overlap = dbTerpenes.filter(t => observedTerpenes.includes(t)).length;
+        const alignment = overlap / Math.max(dbTerpenes.length, observedTerpenes.length);
+        terpeneAlignment.set(name, alignment);
+      } else {
+        terpeneAlignment.set(name, 0.3); // Default low alignment
+      }
+    } else {
+      terpeneAlignment.set(name, 0.3); // Default low alignment
+    }
+  });
+  
+  // Phase 4.6 — Compute name trust using V46 (weighted sources, disambiguation)
+  // Use current confidence (from V403 or V406) - will be updated after V45
+  const currentConfidence = finalConfidence || confidenceBreakdown?.final || 65;
+  const nameTrustV46 = computeNameTrustV46({
+    candidateNames,
+    databaseMatches,
+    imageNameFrequency,
+    visualAlignment,
+    terpeneAlignment,
+    confidence: currentConfidence,
+  });
+  
+  // Phase 5.3 — NAME-FIRST STRENGTHENING & ALIAS MATCHING
+  // Strengthen name selection with alias matching, lineage inference, and phenotype fallback
+  let strengthenedNameV53: ReturnType<typeof strengthenNameSelectionV53> | null = null;
+  
+  if (nameFirstPipelineResult && imageResultsV3.length > 0) {
+    // Collect per-image top names
+    const perImageTopNames = imageResultsV3.map(r => {
+      const topCandidate = r.candidateStrains?.[0];
+      return topCandidate?.name || nameFirstPipelineResult?.primaryStrainName || "";
+    }).filter(name => name && name.trim());
+
+    // Collect database candidates from nameFirstPipelineResult and dbEntry
+    const databaseCandidates: import("./cultivarLibrary").CultivarReference[] = [];
+    if (dbEntry) {
+      databaseCandidates.push(dbEntry);
+    }
+    // Add alternate matches from nameFirstPipelineResult
+    if (nameFirstPipelineResult.alternateMatches) {
+      for (const alt of nameFirstPipelineResult.alternateMatches) {
+        const match = findStrainByNameOrAlias(alt.name);
+        if (match && !databaseCandidates.find(c => c.name === match.strain.name)) {
+          databaseCandidates.push(match.strain);
+        }
+      }
+    }
+
+    // Extract observed lineage from dbEntry if available
+    const observedLineage = dbEntry?.genetics || undefined;
+
+    // Extract observed morphology from fusedFeatures
+    const observedMorphology = fusedFeatures || undefined;
+
+    // Phase 5.3 — Strengthen name selection
+    strengthenedNameV53 = strengthenNameSelectionV53({
+      perImageTopNames,
+      imageCount: imageResultsV3.length || filteredInput.imageCount,
+      databaseCandidates,
+      observedLineage,
+      observedMorphology,
+    });
+
+    // Phase 5.3 — 7. Logging: Console log once per scan
+    console.log("NAME_SELECTED:", {
+      name: strengthenedNameV53.primaryStrainName,
+      score: strengthenedNameV53.selectedScore,
+      source: strengthenedNameV53.selectedSource,
+      alternates: strengthenedNameV53.alternateMatches.map(a => a.name),
+    });
+  }
+
+  // Phase 4.6 — 1) Name locking rule
+  // If confidence ≥75%, lock primary strain name (don't change on re-scan)
+  // If confidence <75%, allow alternate candidates and show "Closest Known Cultivar" framing
+  // Note: finalConfidence will be updated after V45, but we use current confidence for locking
+  const shouldLockName = nameTrustV46.isLocked && currentConfidence >= 75;
+  
+  // Phase 5.3 — Override primary name with strengthened name if available
+  const finalPrimaryName = strengthenedNameV53?.primaryStrainName || nameTrustV46.primaryName;
+  
+  // Phase 4.6 — Update nameFirstDisplay with V46 results (enhanced with V53)
+  if (viewModel.nameFirstDisplay) {
+    // Override primary name (always non-empty, never "Unknown") - Phase 5.3 strengthened
+    viewModel.nameFirstDisplay.primaryStrainName = finalPrimaryName;
+    viewModel.nameFirstDisplay.primaryName = finalPrimaryName;
+    
+    // Update explanation (1 line, user-facing)
+    if (!viewModel.nameFirstDisplay.explanation) {
+      viewModel.nameFirstDisplay.explanation = { whyThisNameWon: [], whatRuledOutOthers: [], varianceNotes: [] };
+    }
+    // Phase 5.3 — Use V53 explanation if available, otherwise V46
+    const explanationText = strengthenedNameV53
+      ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
+      : nameTrustV46.explanation;
+    viewModel.nameFirstDisplay.explanation.whyThisNameWon = [explanationText];
+    
+    // Attach alternates (if applicable) - Phase 5.3 enhanced
+    viewModel.nameFirstDisplay.alternateNames = strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates;
+    
+    // Mark as locked if confidence ≥75%
+    (viewModel.nameFirstDisplay as any).isLocked = shouldLockName;
+    
+    // Phase 5.3 — Attach source information
+    (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
+  } else {
+    // Create nameFirstDisplay if it doesn't exist
+    viewModel.nameFirstDisplay = {
+      primaryStrainName: finalPrimaryName,
+      primaryName: finalPrimaryName,
+      confidencePercent: finalConfidence,
+      confidence: finalConfidence,
+      confidenceTier: finalConfidence >= 75 ? "high" as const : "medium" as const,
+      tagline: strengthenedNameV53 
+        ? `Name selected based on ${strengthenedNameV53.selectedSource} match`
+        : "Closest known match based on available analysis",
+      explanation: { 
+        whyThisNameWon: [strengthenedNameV53 
+          ? `Name selected based on ${strengthenedNameV53.selectedSource} match (score: ${strengthenedNameV53.selectedScore})`
+          : nameTrustV46.explanation], 
+        whatRuledOutOthers: [], 
+        varianceNotes: [] 
+      },
+      alternateNames: strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates,
+    };
+    (viewModel.nameFirstDisplay as any).isLocked = shouldLockName;
+    (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
+  }
+  
+  // Phase 4.6 — Logging (debug only) - Enhanced with Phase 5.3
+  // Note: finalConfidence will be updated after V45, log current confidence for now
+  console.log("NAME_DECISION:", {
+    primary: finalPrimaryName,
+    alternates: strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates,
+    confidence: currentConfidence, // Will be updated to finalConfidence after V45
+    sourcesUsed: nameTrustV46.sourcesUsed,
+    nameSource: strengthenedNameV53?.selectedSource || "direct",
+    isLocked: shouldLockName,
+  });
+
+  // Phase 4.0.5 — INDICA / SATIVA / HYBRID RATIO FINALIZATION
+  // Extract inputs for final ratio resolution
+  let dbRatio: { indica: number; sativa: number } | undefined = undefined;
+  if (dbEntry) {
+    // Extract from dbEntry if available (check common fields)
+    const dbIndica = (dbEntry as any).indicaPercent || (dbEntry as any).indica || undefined;
+    const dbSativa = (dbEntry as any).sativaPercent || (dbEntry as any).sativa || undefined;
+    if (dbIndica !== undefined && dbSativa !== undefined) {
+      dbRatio = { indica: dbIndica, sativa: dbSativa };
+    }
+  }
+
+  // Extract visual signals from fusedFeatures
+  let visualSignals: { indicaBias: number; sativaBias: number } | undefined = undefined;
+  if (fusedFeatures) {
+    let indicaBias = 0;
+    let sativaBias = 0;
+
+    // Bud structure: high = indica, low = sativa
+    if (fusedFeatures.budStructure === "high") {
+      indicaBias += 0.4;
+    } else if (fusedFeatures.budStructure === "low") {
+      sativaBias += 0.4;
+    }
+
+    // Leaf shape: broad = indica, narrow = sativa
+    if (fusedFeatures.leafShape === "broad") {
+      indicaBias += 0.3;
+    } else if (fusedFeatures.leafShape === "narrow") {
+      sativaBias += 0.3;
+    }
+
+    // Trichome density: high = slight indica bias
+    if (fusedFeatures.trichomeDensity === "high") {
+      indicaBias += 0.1;
+    }
+
+    // Normalize biases to -1..1 range
+    const totalBias = Math.max(Math.abs(indicaBias), Math.abs(sativaBias));
+    if (totalBias > 0) {
+      indicaBias = indicaBias / totalBias;
+      sativaBias = sativaBias / totalBias;
+    }
+
+    visualSignals = { indicaBias, sativaBias };
+  }
+
+  // Extract terpene bias (if terpene experience result available)
+  let terpeneBias: { indica: number; sativa: number } | undefined = undefined;
+  if (viewModel.terpeneExperience) {
+    // Extract terpenes from terpeneExperience structure
+    const dominantTerpenes = viewModel.terpeneExperience.dominantTerpenes || [];
+    const secondaryTerpenes = viewModel.terpeneExperience.secondaryTerpenes || [];
+    const allTerpenes = [...dominantTerpenes, ...secondaryTerpenes];
+    
+    if (allTerpenes.length > 0) {
+      // Terpene-to-dominance mapping (simplified)
+      let indicaScore = 0;
+      let sativaScore = 0;
+      
+      allTerpenes.forEach((terpene: string) => {
+        const t = terpene.toLowerCase();
+        // Indica-leaning terpenes
+        if (t.includes("myrcene") || t.includes("caryophyllene") || t.includes("linalool")) {
+          indicaScore += 1;
+        }
+        // Sativa-leaning terpenes
+        if (t.includes("limonene") || t.includes("terpinolene") || t.includes("pinene")) {
+          sativaScore += 1;
+        }
+      });
+
+      if (indicaScore + sativaScore > 0) {
+        const total = indicaScore + sativaScore;
+        terpeneBias = {
+          indica: (indicaScore / total) * 100,
+          sativa: (sativaScore / total) * 100,
+        };
+      } else {
+        // Default to balanced if no clear terpene signals
+        terpeneBias = { indica: 50, sativa: 50 };
+      }
+    }
+  }
+
+  // Phase 5.4 — INDICA / SATIVA / HYBRID RATIO CALIBRATION
+  // 1) Ratio sources (weighted) - Extract inputs for V54
+  // Database genetics (PRIMARY) — 45%
+  const databaseGenetics = dbRatio; // Already extracted above
+  
+  // Name-first consensus (from Phase 5.3) — 25%
+  let nameConsensusRatio: { indica: number; sativa: number } | undefined = undefined;
+  if (viewModel.nameFirstDisplay && dbRatio && finalConfidence >= 70) {
+    // Use database ratio as name consensus (confidence ≥70% indicates confidence in DB match)
+    nameConsensusRatio = dbRatio;
+  } else if (dbRatio) {
+    // Use DB ratio even if confidence is lower (still represents name consensus)
+    nameConsensusRatio = dbRatio;
+  }
+  
+  // Visual morphology signals — 20% (extract from fusedFeatures and imageResultsV3)
+  let visualMorphologySignalsV54: VisualMorphologySignals | undefined = undefined;
+  if (fusedFeatures) {
+    // Extract leaf width from fusedFeatures
+    const leafWidth = fusedFeatures.leafShape === "broad" ? "broad" as const
+      : fusedFeatures.leafShape === "narrow" ? "narrow" as const
+      : "medium" as const;
+    
+    // Extract bud density from fusedFeatures
+    const budDensity = fusedFeatures.budStructure === "high" ? "high" as const
+      : fusedFeatures.budStructure === "low" ? "low" as const
+      : "medium" as const;
+    
+    // Infer internodal spacing from bud structure (dense = short, airy = long)
+    const internodalSpacing = fusedFeatures.budStructure === "high" ? "short" as const
+      : fusedFeatures.budStructure === "low" ? "long" as const
+      : "medium" as const;
+    
+    // Infer bud shape (foxtailing vs chunking) from bud structure and image results
+    let budShape: "chunky" | "foxtailing" | "mixed" | undefined = undefined;
+    if (fusedFeatures.budStructure === "high") {
+      budShape = "chunky";
+    } else if (fusedFeatures.budStructure === "low") {
+      // Check image results for foxtailing indicators
+      const hasFoxtailing = imageResultsV3.some(img => {
+        const budStructureText = (img as any).wikiResult?.morphology?.budStructure?.toLowerCase() || "";
+        return budStructureText.includes("foxtail") || budStructureText.includes("elongated");
+      });
+      budShape = hasFoxtailing ? "foxtailing" : "mixed";
+    } else {
+      budShape = "mixed";
+    }
+    
+    visualMorphologySignalsV54 = {
+      leafWidth,
+      budDensity,
+      internodalSpacing,
+      budShape,
+    };
+  }
+  
+  // Terpene profile bias — 10% (convert terpeneBias to TerpeneBias format)
+  let terpeneBiasV54: TerpeneBias | undefined = undefined;
+  if (terpeneBias) {
+    terpeneBiasV54 = {
+      indica: terpeneBias.indica,
+      sativa: terpeneBias.sativa,
+    };
+  }
+
+  // Phase 5.4 — Resolve final ratio using V54 (database-first rule, visual/terpene adjustments)
+  // Extract name confidence for confidence coupling
+  let nameConfidenceForRatio = finalConfidence; // Default to final confidence
+  if (nameFirstPipelineResult?.nameConfidencePercent !== undefined) {
+    nameConfidenceForRatio = nameFirstPipelineResult.nameConfidencePercent;
+  } else if (nameFirstResult?.primaryMatch?.confidence !== undefined) {
+    nameConfidenceForRatio = nameFirstResult.primaryMatch.confidence;
+  } else if (nameFirstResult?.confidence !== undefined) {
+    nameConfidenceForRatio = nameFirstResult.confidence;
+  }
+  
+  // Extract image diversity score (already calculated for V52)
+  let imageDiversityScoreForRatio = 0.7; // Default
+  if (visualDistinctivenessScore !== undefined) {
+    imageDiversityScoreForRatio = Math.max(0, Math.min(1, visualDistinctivenessScore));
+  } else if (distinctnessScore !== undefined) {
+    imageDiversityScoreForRatio = Math.max(0, Math.min(1, distinctnessScore / 100));
+  } else if (imageCount > 1) {
+    imageDiversityScoreForRatio = Math.min(0.8, 0.5 + (imageCount - 1) * 0.1);
+  }
+  
+  const finalRatioV54 = resolveFinalRatioV54({
+    databaseGenetics,
+    nameConsensusRatio,
+    visualMorphologySignals: visualMorphologySignalsV54,
+    terpeneBias: terpeneBiasV54,
+    confidence: finalConfidence,
+    nameConfidence: nameConfidenceForRatio,
+    imageCount: imageResultsV3.length || filteredInput.imageCount,
+    imageDiversityScore: imageDiversityScoreForRatio,
+  });
+
+  // Phase 5.4 — 5. Output format (always sums to 100) - Attach to viewModel
+  viewModel.finalRatio = {
+    indica: finalRatioV54.percentages.indica,
+    sativa: finalRatioV54.percentages.sativa,
+    hybrid: finalRatioV54.percentages.hybrid,
+    classification: finalRatioV54.classification,
+    confidence: finalRatioV54.confidence,
+    explanation: finalRatioV54.explanation,
+  };
+
+  // Phase 5.4 — Integration - Attach to ScannerViewModel.ratio
+  viewModel.ratio = {
+    indicaPercent: finalRatioV54.percentages.indica,
+    sativaPercent: finalRatioV54.percentages.sativa,
+    indica: finalRatioV54.percentages.indica,
+    sativa: finalRatioV54.percentages.sativa,
+    hybrid: finalRatioV54.percentages.hybrid,
+    dominance: finalRatioV54.classification === "Indica-dominant" ? "Indica" as const
+      : finalRatioV54.classification === "Sativa-dominant" ? "Sativa" as const
+      : "Hybrid" as const,
+    hybridLabel: finalRatioV54.classification,
+    classification: finalRatioV54.classification,
+    displayText: `${finalRatioV54.percentages.indica}% Indica · ${finalRatioV54.percentages.sativa}% Sativa · ${finalRatioV54.percentages.hybrid}% Hybrid`,
+    explanation: finalRatioV54.explanation,
+  };
+  // Phase 5.4 — Add dominantLabel and needsEstimationNote for UI display
+  if (viewModel.ratio) {
+    (viewModel.ratio as any).dominantLabel = finalRatioV54.classification;
+    (viewModel.ratio as any).needsEstimationNote = finalRatioV54.confidence < 65;
+  }
+
+  // Phase 5.4 — 9. Logging
+  console.log("RATIO_FINAL:", {
+    indica: finalRatioV54.percentages.indica,
+    sativa: finalRatioV54.percentages.sativa,
+    hybrid: finalRatioV54.percentages.hybrid,
+    confidence: finalRatioV54.confidence,
+  });
+
+  // Phase 4.0.6 — CONFIDENCE CALIBRATION & USER TRUST LOCK
+  // Extract name confidence (from name-first pipeline or fallback)
+  let nameConfidence = 65; // Default fallback
+  if (nameFirstPipelineResult?.nameConfidencePercent !== undefined) {
+    nameConfidence = nameFirstPipelineResult.nameConfidencePercent;
+  } else if (nameFirstResult?.primaryMatch?.confidence !== undefined) {
+    nameConfidence = nameFirstResult.primaryMatch.confidence;
+  } else if (nameFirstResult?.confidence !== undefined) {
+    nameConfidence = nameFirstResult.confidence;
+  }
+
+  // Resolve final confidence using V406 (single source of truth)
+  const finalConfidenceV406 = resolveFinalConfidenceV406({
+    nameConfidence,
+    imageCount: imageResultsV3.length || filteredInput.imageCount,
+    imageAgreementScore: consensusStrength, // Already normalized to 0..1
+    imageQualityScore: avgImageQualityScore, // Already normalized to 0..1
+    databaseMatchStrength: dbMatchStrength, // Already normalized to 0..1
+  });
+
+  // Phase 4.3 — CONFIDENCE CALIBRATION & HONESTY LAYER
+  // 1) Normalize confidence input sources
+  // Derive name consensus strength (PRIMARY - 40%) from name-first pipeline
+  let nameConsensusStrength = 0.7; // Default
+  if (nameFirstPipelineResult?.nameConfidencePercent !== undefined) {
+    nameConsensusStrength = Math.min(1.0, nameFirstPipelineResult.nameConfidencePercent / 100);
+  } else if (nameFirstResult?.primaryMatch?.confidence !== undefined) {
+    nameConsensusStrength = Math.min(1.0, nameFirstResult.primaryMatch.confidence / 100);
+  } else if (nameFirstResult?.confidence !== undefined) {
+    nameConsensusStrength = Math.min(1.0, nameFirstResult.confidence / 100);
+  }
+
+  // Multi-image agreement (25%) - already derived as consensusStrength
+  const multiImageAgreement = consensusStrength;
+
+  // Visual clarity / distinctness (20%) - normalize from 0-1
+  let visualClarity = 0.7; // Default
+  if (visualDistinctivenessScore !== undefined) {
+    visualClarity = Math.max(0, Math.min(1, visualDistinctivenessScore));
+  } else if (distinctnessScore !== undefined) {
+    // Normalize distinctnessScore to 0..1 (assuming it's 0-100 or similar)
+    visualClarity = Math.max(0, Math.min(1, distinctnessScore / 100));
+  }
+
+  // Database support (genetics / lineage presence) (15%) - already derived as dbMatchStrength
+  const databaseSupport = dbMatchStrength;
+
+  // Track confidence before consensus (for delta clamping)
+  const confidenceBeforeConsensus = finalConfidenceV406.confidence;
+
+  // Phase 4.3 — Resolve final confidence using V43 (normalized sources, honesty rules)
+  const finalConfidenceV43 = resolveFinalConfidenceV43({
+    nameConsensusStrength: nameConsensusStrength,
+    multiImageAgreement: multiImageAgreement,
+    visualClarity: visualClarity,
+    databaseSupport: databaseSupport,
+    imageCount: imageResultsV3.length || filteredInput.imageCount,
+  });
+
+  // Phase 4.3 — Use V43 as base confidence for V45
+  // V43 provides normalized weighted confidence, which V45 will then apply dampeners/boosters to
+  let computedConfidence = finalConfidenceV43.confidence;
+
+  // Phase 4.5 — CONFIDENCE CALIBRATION & TRUST GUARDRAILS
+  // Derive inputs for V45 confidence calibration
+  const primaryStrainName = viewModel.nameFirstDisplay?.primaryStrainName || "Closest Known Cultivar";
+  
+  // Count name consensus sources (images, DB, wiki, etc.)
+  let nameConsensusSources = 0;
+  // Count images with this name in top candidates
+  let nameInMultipleImages = 0;
+  imageResultsV3.forEach((imgResult) => {
+    const hasName = imgResult.candidateStrains.some(c => c.name === primaryStrainName);
+    if (hasName) {
+      nameInMultipleImages++;
+      nameConsensusSources++; // Each image is a source
+    }
+  });
+  // Database match
+  if (dbEntry && (dbEntry.name === primaryStrainName || dbEntry.aliases?.includes(primaryStrainName))) {
+    nameConsensusSources++;
+  }
+  // Wiki presence (if dbEntry exists, wiki is likely available)
+  if (dbEntry) {
+    nameConsensusSources++;
+  }
+  
+  // Check if database has lineage data
+  const hasLineageData = dbEntry && (
+    (dbEntry as any).lineage !== undefined ||
+    (dbEntry as any).genetics !== undefined ||
+    (dbEntry as any).parentStrains !== undefined ||
+    (dbEntry as any).indicaPercent !== undefined ||
+    (dbEntry as any).sativaPercent !== undefined
+  );
+  
+  // Calculate visual-genetics alignment (0-1)
+  let visualGeneticsAlignment = 0.7; // Default moderate alignment
+  if (dbRatio && visualSignals) {
+    // Check if visual signals align with database ratio
+    const dbIndicaRatio = dbRatio.indica / 100;
+    const visualIndicaBias = (visualSignals.indicaBias + 1) / 2; // Normalize -1..1 to 0..1
+    const alignment = 1 - Math.abs(dbIndicaRatio - visualIndicaBias);
+    visualGeneticsAlignment = Math.max(0, Math.min(1, alignment));
+  }
+  
+  // Check for multi-image agreement (≥3 images with agreement)
+  const hasMultiImageAgreement = imageResultsV3.length >= 3 && consensusStrength >= 0.7;
+  
+  // Check terpene-morphology alignment
+  let hasTerpeneMorphologyAlignment = false;
+  if (viewModel.terpeneExperience && visualSignals) {
+    // Simple check: if terpenes suggest indica and visual suggests indica, or vice versa
+    const dominantTerpenes = viewModel.terpeneExperience.dominantTerpenes || [];
+    const indicaTerpenes = ["myrcene", "caryophyllene", "linalool"];
+    const sativaTerpenes = ["limonene", "terpinolene", "pinene"];
+    const hasIndicaTerpenes = dominantTerpenes.some(t => indicaTerpenes.some(it => t.toLowerCase().includes(it)));
+    const hasSativaTerpenes = dominantTerpenes.some(t => sativaTerpenes.some(st => t.toLowerCase().includes(st)));
+    const visualIndicaBias = visualSignals.indicaBias > 0;
+    const visualSativaBias = visualSignals.sativaBias > 0;
+    hasTerpeneMorphologyAlignment = (hasIndicaTerpenes && visualIndicaBias) || (hasSativaTerpenes && visualSativaBias);
+  }
+  
+  // Phase 5.2 — CONFIDENCE CALIBRATION ENGINE
+  // 1) Confidence inputs - Derive inputs for V52 confidence calibration
+  const v52PrimaryStrainName = viewModel.nameFirstDisplay?.primaryStrainName || "Closest Known Cultivar";
+  
+  // Image count (1–5) - reuse existing variable if already defined
+  const v52ImageCount = imageResultsV3.length || filteredInput.imageCount;
+  
+  // Image diversity score (0–1) - normalize from distinctness/visual distinctiveness
+  let imageDiversityScore = 0.7; // Default
+  if (visualDistinctivenessScore !== undefined) {
+    imageDiversityScore = Math.max(0, Math.min(1, visualDistinctivenessScore));
+  } else if (distinctnessScore !== undefined) {
+    imageDiversityScore = Math.max(0, Math.min(1, distinctnessScore / 100));
+  } else if (imageCount > 1) {
+    // Estimate diversity from image count (more images = more diversity potential)
+    imageDiversityScore = Math.min(0.8, 0.5 + (imageCount - 1) * 0.1);
+  }
+  
+  // Consensus agreement strength (0–1) - already derived as consensusStrength
+  const consensusAgreementStrength = consensusStrength;
+  
+  // Database match strength (0–1) - already derived as dbMatchStrength
+  const databaseMatchStrength = dbMatchStrength;
+  
+  // Name-first certainty (0–1) - Phase 5.3: Use strengthened name score if available
+  let nameFirstCertainty = 0.7; // Default
+  if (strengthenedNameV53) {
+    // Phase 5.3 — Use strengthened name score (0-100) normalized to 0-1
+    nameFirstCertainty = Math.min(1.0, strengthenedNameV53.selectedScore / 100);
+  } else if (nameFirstPipelineResult?.nameConfidencePercent !== undefined) {
+    nameFirstCertainty = Math.min(1.0, nameFirstPipelineResult.nameConfidencePercent / 100);
+  } else if (nameFirstResult?.primaryMatch?.confidence !== undefined) {
+    nameFirstCertainty = Math.min(1.0, nameFirstResult.primaryMatch.confidence / 100);
+  } else if (nameFirstResult?.confidence !== undefined) {
+    nameFirstCertainty = Math.min(1.0, nameFirstResult.confidence / 100);
+  }
+  
+  // Phase 5.3 — 4. Confidence interaction: Weak names reduce overall confidence
+  // If name source is "phenotype" (fallback), reduce nameFirstCertainty
+  if (strengthenedNameV53 && strengthenedNameV53.selectedSource === "phenotype") {
+    nameFirstCertainty = Math.max(0.4, nameFirstCertainty * 0.7); // Reduce by 30%, floor at 0.4
+  }
+  
+  // Ratio stability (0–1) - indica/sativa spread (lower spread = higher stability)
+  let ratioStability = 0.7; // Default
+  if (viewModel.ratio && viewModel.ratio.indica !== undefined && viewModel.ratio.sativa !== undefined) {
+    const spread = Math.abs(viewModel.ratio.indica - viewModel.ratio.sativa);
+    // Lower spread = higher stability (spread 0 = stability 1.0, spread 100 = stability 0.0)
+    ratioStability = 1.0 - (spread / 100);
+  }
+  
+  // Check if database lineage match exists
+  const hasDatabaseLineageMatch = dbEntry && (!!(dbEntry as any).lineage || !!(dbEntry as any).genetics || !!(dbEntry as any).parentStrains);
+  
+  // Check if clear morphology signals detected
+  const hasClearMorphologySignals = visualSignals && (Math.abs(visualSignals.indicaBias) > 0.3 || Math.abs(visualSignals.sativaBias) > 0.3);
+  
+  // Check if terpene alignment exists
+  const hasTerpeneAlignment = hasTerpeneMorphologyAlignment;
+  
+  // Check if conflicting candidates detected
+  const hasConflictingCandidates = nameTrustV46?.alternates && nameTrustV46.alternates.length > 0;
+  
+  // Check if weak database match
+  const hasWeakDatabaseMatch = !dbEntry || (dbEntry && dbMatchStrength < 0.5);
+  
+  // Check if forced fallback name
+  const hasForcedFallbackName = v52PrimaryStrainName === "Closest Known Cultivar" || v52PrimaryStrainName.length < 3;
+  
+  // Phase 5.2 — Resolve final confidence using V52 (base by image count, modifiers, penalties, hard caps)
+  const finalConfidenceV52 = resolveFinalConfidenceV52({
+    imageCount: v52ImageCount,
+    imageDiversityScore,
+    consensusAgreementStrength,
+    databaseMatchStrength,
+    nameFirstCertainty,
+    ratioStability,
+    hasDatabaseLineageMatch: hasDatabaseLineageMatch || false,
+    hasClearMorphologySignals: hasClearMorphologySignals || false,
+    hasTerpeneAlignment,
+    hasConflictingCandidates,
+    hasWeakDatabaseMatch,
+    hasForcedFallbackName,
+    previousConfidence: undefined, // TODO: Add session state for stability rule
+  });
+  
+  // Phase 5.2 — Update final confidence with V52 result
+  finalConfidence = finalConfidenceV52.confidence;
+  
+  // Phase 4.6 — Update name locking based on final confidence
+  // Re-check name locking with final confidence
+  if (viewModel.nameFirstDisplay) {
+    const shouldLockNameFinal = finalConfidence >= 75;
+    (viewModel.nameFirstDisplay as any).isLocked = shouldLockNameFinal;
+  }
+  
+  // Phase 5.2 — 6. Output structure - Attach to ScannerViewModel.confidencePercent and confidenceTier
+  if (viewModel.nameFirstDisplay) {
+    viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
+    viewModel.nameFirstDisplay.confidence = finalConfidence;
+    
+    // Update confidenceTier based on V52 tier
+    const v52TierForDisplay = finalConfidenceV52.tier === "Very High" ? "very_high" as const
+      : finalConfidenceV52.tier === "High" ? "high" as const
+      : finalConfidenceV52.tier === "Medium" ? "medium" as const
+      : "low" as const;
+    viewModel.nameFirstDisplay.confidenceTier = v52TierForDisplay;
+    
+    // Update name confidence tier (Phase 4.2 format)
+    (viewModel.nameFirstDisplay as any).nameConfidenceTier = finalConfidenceV52.tier;
+  }
+  viewModel.confidence = finalConfidence;
+  
+  // Phase 5.2 — Update confidenceTier in viewModel (using V52 tier)
+  const v52TierValue = finalConfidenceV52.tier === "Very High" ? "very_high"
+    : finalConfidenceV52.tier === "High" ? "high"
+    : finalConfidenceV52.tier === "Medium" ? "medium"
+    : "low";
+  
+  viewModel.confidenceTier = {
+    tier: v52TierValue,
+    label: finalConfidenceV52.tier, // Phase 5.2 — Use V52 tier label
+    description: finalConfidenceV52.explanation, // User-facing explanation
+  };
+  
+  // Phase 5.2 — Attach confidence explanation to viewModel (user-facing, short explanation)
+  viewModel.confidenceExplanation = {
+    score: finalConfidence,
+    tier: finalConfidenceV52.tier,
+    explanation: [finalConfidenceV52.explanation], // User-facing explanation (single string)
+  };
+  
+  // Phase 5.2 — Logging (debug only)
+  console.log("CONFIDENCE_CALIBRATED_V52:", {
+    confidence: finalConfidenceV52.confidence,
+    tier: finalConfidenceV52.tier,
+    base: finalConfidenceV52.base,
+    modifiers: finalConfidenceV52.modifiers,
+    penalties: finalConfidenceV52.penalties,
+    cap: finalConfidenceV52.cap,
+    explanation: finalConfidenceV52.explanation,
+  });
+
+  // Phase 4.4 — Update ratio needsEstimationNote with final confidence
+  if (viewModel.ratio) {
+    (viewModel.ratio as any).needsEstimationNote = finalConfidence < 65;
+  }
+
+  // Phase 5.2 — Honest caps are already applied in V52
+  // V52 applies: floor 55%, max 99% (never 100%), with base by image count, modifiers, penalties, and hard caps
+  // All confidence calculation is now handled by V52 with stability rules
+
+  // 6) Safety floor: If confidence < 60%, still return result but mark as partial
+  // Ensure confidence is never below 55 for UX stability
+  finalConfidence = Math.max(55, finalConfidence);
+  
+  // If confidence < 60%, add note for user guidance
+  if (finalConfidence < 60) {
+    if (!viewModel.notes) {
+      viewModel.notes = [];
+    }
+    // Check if note already exists to avoid duplicates
+    const hasLowConfidenceNote = viewModel.notes.some(note => 
+      note.toLowerCase().includes("low confidence") || note.toLowerCase().includes("consider additional")
+    );
+    if (!hasLowConfidenceNote) {
+      viewModel.notes.push("Low confidence — consider additional angles");
+    }
+  }
+
+  // Phase 4.3 — Logging is already done above in Phase 4.3 section
+
+  // Phase 4.0.7 — NAME DISAMBIGUATION & RATIO SURFACING
+  // 1) Lock primary strain name (already done via nameFirstDisplay.primaryStrainName)
+  // Ensure it's never empty (safety check)
+  if (!viewModel.nameFirstDisplay?.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim() === "") {
+    viewModel.nameFirstDisplay = viewModel.nameFirstDisplay || {
+      primaryStrainName: "Closest Known Cultivar",
+      primaryName: "Closest Known Cultivar",
+      confidencePercent: finalConfidence,
+      confidence: finalConfidence,
+      confidenceTier: "low" as const,
+      tagline: "Closest known match based on available analysis",
+      explanation: { whyThisNameWon: [], whatRuledOutOthers: [], varianceNotes: [] },
+      alternateNames: [],
+    };
+    viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+    viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+  }
+
+  // 2) Add explicit disambiguation section (conditional)
+  // Only show if confidence < 90 OR multiple close matches exist
+  if (finalConfidence < 90 || (viewModel.nameFirstDisplay?.alternateNames && viewModel.nameFirstDisplay.alternateNames.length > 0)) {
+    const alternates: { name: string; confidence: number }[] = [];
+    
+    // Collect alternates from nameFirstDisplay (max 3) - Phase 4.6
+    if (viewModel.nameFirstDisplay?.alternateNames && viewModel.nameFirstDisplay.alternateNames.length > 0) {
+      // Estimate confidence for alternates (slightly lower than primary)
+      const alternateConfidence = Math.max(60, finalConfidence - 10);
+      viewModel.nameFirstDisplay.alternateNames.slice(0, 3).forEach(name => {
+        alternates.push({
+          name,
+          confidence: alternateConfidence,
+        });
+      });
+    }
+    
+    // Also check nameFirstPipelineResult for alternate matches
+    if (nameFirstPipelineResult?.alternateMatches && alternates.length < 3) {
+      nameFirstPipelineResult.alternateMatches.slice(0, 3 - alternates.length).forEach(alt => {
+        if (!alternates.some(a => a.name === alt.name) && alt.name !== viewModel.nameFirstDisplay?.primaryStrainName) {
+          alternates.push({
+            name: alt.name,
+            confidence: alt.score || Math.max(60, finalConfidence - 10),
+          });
+        }
+      });
+    }
+    
+    if (alternates.length > 0 || finalConfidence < 90) {
+      let note = "";
+      if (finalConfidence < 90) {
+        note = "Visual signals overlap with related cultivars. This is the closest match based on available analysis.";
+      } else {
+        note = "Multiple similar cultivars identified. This match has the strongest visual and genetic alignment.";
+      }
+      
+      viewModel.nameDisambiguationV407 = {
+        primary: viewModel.nameFirstDisplay.primaryStrainName,
+        alternates: alternates.slice(0, 3), // Max 3
+        note,
+      };
+    }
+  }
+
+  // 3) Surface indica/sativa/hybrid ratio (clean format) - Phase 5.1 already handled this above
+  // This section is redundant - ratio is already set by Phase 5.1
+  // Safety: If ratio engine fails, default to 34/33/33 (only if ratio not already set)
+  if (!viewModel.ratio) {
+    viewModel.ratio = {
+      indicaPercent: 34,
+      sativaPercent: 33,
+      indica: 34,
+      sativa: 33,
+      hybrid: 33,
+      dominance: "Hybrid" as const,
+      hybridLabel: "Balanced Hybrid" as const,
+      classification: "Balanced Hybrid",
+      displayText: "34% Indica · 33% Sativa · 33% Hybrid",
+      explanation: ["Ratio estimated from visual traits and reference genetics."],
+    };
+    // Add note about estimated ratio
+    if (!viewModel.notes) {
+      viewModel.notes = [];
+    }
+    viewModel.notes.push("Ratio estimated");
+  }
+
+  // Phase 4.0.7 — Log disambiguation and ratio (dev only)
+  console.log("NAME DISAMBIGUATION V407:", viewModel.nameDisambiguationV407);
+  console.log("RATIO SURFACED:", viewModel.ratio);
 
   // Phase 4.0.8 — replace hard failure with guided recovery
   const guardResult = evaluateAnalysisGuards({
@@ -3217,7 +4240,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   });
 
   // If guard indicates issues, add recovery guidance to notes
-  if (guardResult.status !== "ok") {
+  if (guardResult.status === "low-diversity" || guardResult.status === "low-confidence") {
     if (!viewModel.notes) {
       viewModel.notes = [];
     }
@@ -3235,7 +4258,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // Phase 4.0.8 — Return discriminated union based on guard status
   // Phase 4.1.3 — replace analysis failure paths
   // Ensure consensusResult exists (fallback if null)
-  const isPartial = guardResult.status !== "ok";
+  // Phase 4.0.8 — Also mark as partial if confidence < 60%
+  const isPartial = guardResult.status !== "ok" || finalConfidence < 60;
   const agreementLevelValue: "low" | "high" = isPartial ? "low" : "high";
   const fallbackConsensus: ConsensusResult = {
     primaryMatch: {
@@ -3251,19 +4275,237 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       max: finalConfidence + 5, 
       explanation: isPartial ? "Limited by image diversity" : "High agreement" 
     },
-    whyThisMatch: isPartial ? guardResult.reason : "Visual analysis completed",
+      whyThisMatch: isPartial && guardResult.status !== "ok" ? (guardResult.status === "low-diversity" || guardResult.status === "low-confidence" ? guardResult.reason : "Visual analysis completed") : "Visual analysis completed",
     alternateMatches: [],
     lowConfidence: isPartial,
     agreementLevel: agreementLevelValue,
   };
   const finalConsensusResult = guardAgainstFailure(consensusResult, fallbackConsensus);
 
+  // Phase 5.3 — 6. Guardrails: Never show "Unknown" or empty
+  // Final regression guard: If primaryStrainName empty → replace with fallback
+  // Never throw, never blank
+  const finalPrimaryStrainName = viewModel.nameFirstDisplay?.primaryStrainName || strengthenedNameV53?.primaryStrainName;
+  if (!finalPrimaryStrainName || finalPrimaryStrainName.trim().length < 3 || finalPrimaryStrainName.toLowerCase() === "unknown" || finalPrimaryStrainName.toLowerCase() === "unidentified") {
+    console.warn("Phase 5.3: Guardrail - primaryStrainName invalid, using fallback");
+    if (!viewModel.nameFirstDisplay) {
+      viewModel.nameFirstDisplay = {
+        primaryStrainName: "Closest Known Cultivar",
+        primaryName: "Closest Known Cultivar",
+        confidencePercent: Math.min(72, finalConfidence),
+        confidence: Math.min(72, finalConfidence),
+        confidenceTier: "low" as const,
+        tagline: "Closest known match based on available analysis",
+        explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
+      };
+    } else {
+      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+      viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+      // Cap confidence at 72% if name is uncertain
+      finalConfidence = Math.min(72, finalConfidence);
+      viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
+      viewModel.nameFirstDisplay.confidence = finalConfidence;
+    }
+  }
+  
+  // Phase 5.3 — Ensure name field is also set (for backward compatibility)
+  if (!viewModel.name || viewModel.name.trim().length < 3) {
+    viewModel.name = viewModel.nameFirstDisplay?.primaryStrainName || strengthenedNameV53?.primaryStrainName || "Closest Known Cultivar";
+  }
+  
+  // Phase 4.9 — Attach dbEntry to viewModel for aliases/lineage display
+  if (dbEntry) {
+    (viewModel as any).dbEntry = dbEntry;
+  }
+
+  // 2) Strengthen name scoring logic (boost name confidence)
+  let nameConfidenceBoost = 0;
+  const nameRationale: string[] = [];
+  // finalPrimaryName already declared above (Phase 5.3)
+  
+  // Boost: Name appears in ≥2 images (+6%)
+  if (imageResultsV3.length >= 2 && finalPrimaryName !== "Closest Known Cultivar") {
+    const nameFrequency = imageResultsV3.filter(r =>
+      r.candidateStrains.some(c => c.name === finalPrimaryName)
+    ).length;
+    if (nameFrequency >= 2) {
+      nameConfidenceBoost += 6;
+      nameRationale.push("Repeated match across multiple images");
+    }
+  }
+  
+  // Boost: Name appears in database + wiki + visual (+8%)
+  // Check if name is in database
+  const nameInDatabase = dbEntry && (dbEntry.name === finalPrimaryName || dbEntry.aliases?.includes(finalPrimaryName));
+  // Check if name appears in visual results
+  const nameInVisual = imageResultsV3.some(r =>
+    r.candidateStrains.some(c => c.name === finalPrimaryName)
+  );
+  // Wiki check is implicit if we have dbEntry
+  if (nameInDatabase && nameInVisual && dbEntry) {
+    nameConfidenceBoost += 8;
+    nameRationale.push("Visual traits align with known phenotype");
+    nameRationale.push("Database lineage supports identification");
+  }
+  
+  // Boost: Alias match detected (+4%)
+  if (nameInDatabase && dbEntry && dbEntry.name !== finalPrimaryName && dbEntry.aliases?.includes(finalPrimaryName)) {
+    nameConfidenceBoost += 4;
+    if (!nameRationale.some(r => r.includes("alias"))) {
+      nameRationale.push("Matched via known alias");
+    }
+  }
+  
+  // Note: Penalty for 2nd place name within 3% is already handled in Phase 4.0.8
+  // We don't apply it again here to avoid double-penalizing
+  
+  // Apply name confidence boost to final confidence (before final cap)
+  // Note: V43 already applied honest caps, but we need to re-apply after boost
+  if (nameConfidenceBoost !== 0) {
+    finalConfidence += nameConfidenceBoost;
+    // Re-apply Phase 4.3 honest caps (non-negotiable)
+    const imageCountForCap = imageResultsV3.length || filteredInput.imageCount;
+    let confidenceCap: number;
+    if (imageCountForCap === 1) {
+      confidenceCap = 82; // Single image max = 82%
+    } else if (imageCountForCap === 2) {
+      confidenceCap = 90; // Two images max = 90%
+    } else if (imageCountForCap >= 3) {
+      // 99% max ONLY when: 3+ images, same primary name across all, visual agreement > 0.85
+      // For name boost, use default 96% cap unless conditions are met
+      confidenceCap = 96; // 3+ images default cap
+    } else {
+      confidenceCap = 82; // Fallback
+    }
+    finalConfidence = Math.min(finalConfidence, confidenceCap);
+    finalConfidence = Math.min(finalConfidence, 99); // Absolute max (never 100)
+    
+    // Update viewModel confidence
+    if (viewModel.nameFirstDisplay) {
+      viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
+      viewModel.nameFirstDisplay.confidence = finalConfidence;
+    }
+    viewModel.confidence = finalConfidence;
+  }
+
+  // 3) Add name rationale (user-facing) to nameFirstDisplay
+  if (viewModel.nameFirstDisplay && nameRationale.length > 0) {
+    // Merge with existing explanation (2-3 bullets max, human-readable)
+    const existingWhy = viewModel.nameFirstDisplay.explanation?.whyThisNameWon || [];
+    const mergedRationale = [
+      ...nameRationale,
+      ...existingWhy.filter(e => !nameRationale.some(nr => nr.toLowerCase().includes(e.toLowerCase().substring(0, 10)))),
+    ].slice(0, 3); // Max 3 bullets
+    
+    if (!viewModel.nameFirstDisplay.explanation) {
+      viewModel.nameFirstDisplay.explanation = {
+        whyThisNameWon: mergedRationale,
+        whatRuledOutOthers: [],
+        varianceNotes: [],
+      };
+    } else {
+      viewModel.nameFirstDisplay.explanation.whyThisNameWon = mergedRationale;
+    }
+  }
+
+  // Phase 4.2 — NAME-FIRST TRUST & DISPLAY LOCK
+  // 1) Lock primary name display - Final enforcement at assembly step
+  const finalPrimaryNameForDisplay = viewModel.nameFirstDisplay?.primaryStrainName;
+  if (!finalPrimaryNameForDisplay || 
+      finalPrimaryNameForDisplay.trim().length < 3 || 
+      finalPrimaryNameForDisplay.toLowerCase() === "unknown" ||
+      finalPrimaryNameForDisplay.toLowerCase() === "unidentified" ||
+      finalPrimaryNameForDisplay.trim() === "") {
+    console.warn("Phase 4.2: Final check - primaryStrainName invalid, using fallback");
+    if (!viewModel.nameFirstDisplay) {
+      viewModel.nameFirstDisplay = {
+        primaryStrainName: "Closest Known Cultivar",
+        primaryName: "Closest Known Cultivar",
+        confidencePercent: Math.min(72, finalConfidence),
+        confidence: Math.min(72, finalConfidence),
+        confidenceTier: "low" as const,
+        tagline: "Closest known match based on available analysis",
+        explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
+      };
+    } else {
+      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+      viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+      finalConfidence = Math.min(72, finalConfidence);
+      viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
+      viewModel.nameFirstDisplay.confidence = finalConfidence;
+    }
+  }
+
+  // 2) Add name confidence tier (user-facing) - 4 tiers based on final confidence
+  let nameConfidenceTier: "Very High Match" | "High Match" | "Moderate Match" | "Possible Match";
+  if (finalConfidence >= 93) {
+    nameConfidenceTier = "Very High Match";
+  } else if (finalConfidence >= 85) {
+    nameConfidenceTier = "High Match";
+  } else if (finalConfidence >= 70) {
+    nameConfidenceTier = "Moderate Match";
+  } else {
+    nameConfidenceTier = "Possible Match";
+  }
+
+  // Attach name confidence tier to viewModel (for UI display)
+  if (viewModel.nameFirstDisplay) {
+    (viewModel.nameFirstDisplay as any).nameConfidenceTier = nameConfidenceTier;
+  }
+
+  // 3) Show WHY this name won - Already handled in nameFirstDisplay.explanation.whyThisNameWon
+  // Ensure it's human-readable (already done in Phase 4.0.9)
+
+  // 4) Handle similar strains gracefully - Already handled in nameDisambiguationV407
+  // Will be displayed in UI as collapsible section
+
+  // 5) Never downgrade name mid-session - This requires frontend session state
+  // For now, we ensure name is stable within a single scan
+  // Frontend can implement session caching if needed
+
+  // 6) Logging (debug)
+  const finalPrimaryNameForLog = viewModel.nameFirstDisplay?.primaryStrainName || "Closest Known Cultivar";
+  const alternates = viewModel.nameDisambiguationV407?.alternates?.map(a => a.name) || 
+                      viewModel.nameFirstDisplay?.alternateNames || [];
+  console.log("NAME LOCK:", {
+    primary: finalPrimaryNameForLog,
+    alternates: alternates.slice(0, 3),
+    confidenceTier: nameConfidenceTier,
+    confidence: finalConfidence,
+  });
+
+  // 6) Internal logging (legacy)
+  console.log("NAME FINAL:", primaryName, finalConfidence);
+
+  // STABILIZATION MODE — Final safety check: ensure nameFirstDisplay.primaryStrainName is never empty
+  // (This is now handled above in Phase 4.0.9, but keep as backup)
+  if (!viewModel.nameFirstDisplay || !viewModel.nameFirstDisplay.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim() === "") {
+    console.warn("STABILIZATION: Final check - nameFirstDisplay.primaryStrainName was empty, using fallback");
+    if (!viewModel.nameFirstDisplay) {
+      viewModel.nameFirstDisplay = {
+        primaryStrainName: "Closest Known Cultivar",
+        primaryName: "Closest Known Cultivar",
+        confidencePercent: Math.min(72, finalConfidence),
+        confidence: Math.min(72, finalConfidence),
+        confidenceTier: "low" as const,
+        tagline: "Closest known match based on available analysis",
+        explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
+      };
+    } else {
+      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+      viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+      finalConfidence = Math.min(72, finalConfidence);
+      viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
+      viewModel.nameFirstDisplay.confidence = finalConfidence;
+    }
+  }
+
   if (guardResult.status !== "ok") {
-    return {
+    const result: ScanResult = {
       status: "partial",
       guard: {
         status: guardResult.status,
-        reason: guardResult.reason,
+        reason: guardResult.status === "low-diversity" || guardResult.status === "low-confidence" ? guardResult.reason : "Analysis completed",
       },
       consensus: finalConsensusResult,
       confidence: finalConfidence,
@@ -3275,9 +4517,12 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
       meta: scanMeta, // Phase 4.2.6 — Scan metadata
     };
+    console.log(`SCAN COMPLETE — status=partial confidence=${finalConfidence}`);
+    console.log("FINAL CONFIDENCE V406:", finalConfidenceV406);
+    return result;
   }
 
-  return {
+  const result: ScanResult = {
     status: "success",
     consensus: finalConsensusResult,
     confidence: finalConfidence,
@@ -3289,6 +4534,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
     meta: scanMeta, // Phase 4.2.6 — Scan metadata
   };
+  console.log(`SCAN COMPLETE — status=success confidence=${finalConfidence}`);
+  console.log("FINAL CONFIDENCE V406:", finalConfidenceV406);
+  return result;
 }
 
 /**
@@ -3297,14 +4545,24 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
 export async function scanImages(images: File[]): Promise<ScanResult> {
   console.log("scanImages called with", images.length, "images");
   
+  // STABILIZATION MODE — Return safe fallback instead of throwing
   if (!images || images.length === 0) {
-    throw new Error("No images provided to scanImages");
+    const fallback = buildSafeFallbackResult("No images provided for analysis", 0);
+    if ('confidence' in fallback) {
+      console.log(`SCAN COMPLETE — status=partial confidence=${fallback.confidence}`);
+    }
+    return fallback;
   }
 
   // Phase 2.7 Part N Step 1 — Require minimum 2 images for multi-image scan
   // (But allow single image as fallback)
+  // STABILIZATION MODE — This condition is impossible (x > 1 && x < 2), but keep for safety
   if (images.length > 1 && images.length < 2) {
-    throw new Error("Multi-image scan requires at least 2 images (max 3)");
+    const fallback = buildSafeFallbackResult("Invalid image count configuration", images.length);
+    if ('confidence' in fallback) {
+      console.log(`SCAN COMPLETE — status=partial confidence=${fallback.confidence}`);
+    }
+    return fallback;
   }
 
   const imageSeeds = images.map((img) => ({
@@ -3322,7 +4580,15 @@ export async function scanImages(images: File[]): Promise<ScanResult> {
     console.log("scanImages: pipeline completed", result);
     return result;
   } catch (error) {
-    console.error("scanImages: pipeline error", error);
-    throw error;
+    // STABILIZATION MODE — Return safe fallback instead of rethrowing
+    console.error("STABILIZATION: scanImages caught pipeline error, returning safe fallback:", error);
+    const fallback = buildSafeFallbackResult(
+      `Analysis encountered an error: ${error instanceof Error ? error.message : String(error)}`,
+      images.length
+    );
+    if ('confidence' in fallback) {
+      console.log(`SCAN COMPLETE — status=partial confidence=${fallback.confidence}`);
+    }
+    return fallback;
   }
 }

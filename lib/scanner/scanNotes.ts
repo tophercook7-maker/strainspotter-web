@@ -8,10 +8,11 @@ export function buildScanNote(distinctnessScore: number): string | null {
   return null
 }
 
+// Phase 4.0.2 — SAME-PLANT AWARENESS NOTE
 // Phase 4.2.0 — USER-FACING NOTE (OPTIONAL)
 export function buildSamePlantNote(samePlantLikely: boolean): string | null {
   if (samePlantLikely) {
-    return "Photos appear to be the same plant. Results focus on stable, shared traits."
+    return "Images appear to be the same plant. Confidence is based on limited visual variance."
   }
   return null
 }

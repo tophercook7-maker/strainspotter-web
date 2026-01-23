@@ -288,7 +288,7 @@ export default function ScannerPage() {
       const message =
         e instanceof Error
           ? e.message
-          : "Analysis failed due to image similarity.";
+          : "Confidence is limited — results may overlap similar cultivars.";
 
       alert(
         message +
@@ -319,7 +319,8 @@ export default function ScannerPage() {
       
       {/* Phase 15.5.1 — Content Well Wrapper */}
       <main className="min-h-screen bg-black text-white">
-        <div className="mx-auto w-full max-w-[780px] px-4 pb-16 space-y-6">
+        {/* Phase 4.7 — 1. Constrain width: max-w-3xl, mx-auto, px-4 */}
+      <div className="mx-auto w-full max-w-3xl px-4 pb-16 space-y-6">
         {/* A) Upload + Preview Card */}
         <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 space-y-4">
               {/* FILE PICKER */}
@@ -395,6 +396,13 @@ export default function ScannerPage() {
                 </div>
               )}
 
+              {/* Phase 4.0.8 — Angle diversity warning */}
+              {result?.notes && result.notes.includes("LOW_ANGLE_DIVERSITY") && (
+                <div className="mb-3 rounded-md border border-orange-500/30 bg-orange-500/10 p-2 text-xs text-orange-300">
+                  Photos are from similar angles. Add top + side views for stronger matches.
+                </div>
+              )}
+
               {/* Phase 4.0 Part A — IMAGE PREVIEWS with Labels */}
               {images.length > 0 && (() => {
                 const imageLabels = assignUserImageLabels(images.length);
@@ -417,7 +425,7 @@ export default function ScannerPage() {
                             <img
                               src={preview.url}
                               alt={`scan-${idx + 1}`}
-                              className="w-full h-full object-contain max-h-64 rounded-xl"
+                              className="w-full h-full object-contain max-h-[280px] md:max-h-[360px] rounded-xl mx-auto"
                             />
                             {/* Phase 4.0.2 — Angle badges on previews */}
                             <span className="absolute bottom-1 right-1 text-xs px-2 py-0.5 rounded bg-black/70">
@@ -479,13 +487,13 @@ export default function ScannerPage() {
             </div>
           )}
           
-          {/* Phase 15.5.2 — Run Scan Button Fix */}
+          {/* Phase 4.7 — 6. Action button: min-height 48px, min-width 200px, centered, rounded-full */}
           <button
             type="button"
             disabled={images.length === 0 || isScanning}
             onClick={handleAnalyzePlant}
             onKeyDown={handleKeyDown}
-            className="w-full rounded-2xl bg-white text-black font-semibold text-base py-4 shadow-lg shadow-white/10 active:scale-[0.99] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 min-h-[56px] flex items-center justify-center gap-2"
+            className="min-h-[48px] min-w-[200px] rounded-full bg-white text-black font-semibold text-base px-8 py-3 shadow-lg shadow-white/10 active:scale-[0.99] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 mx-auto"
             aria-label={isScanning ? "Analyzing plant" : "Analyze plant"}
             aria-busy={isScanning}
           >

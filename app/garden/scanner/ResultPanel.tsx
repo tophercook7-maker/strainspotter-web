@@ -8,37 +8,229 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
   const ratio = result.ratio ?? null;
 
   return (
-    <section className="rounded-xl bg-white/5 p-6">
-      {/* Phase 4.3.4 — render name confidence */}
-      {result.nameFirstDisplay && (
-        <div className="mt-4">
-          <div className="text-2xl font-bold">
-            {result.nameFirstDisplay.primaryStrainName}
-          </div>
-          <div className="text-sm opacity-70">
-            Confidence: {result.nameFirstDisplay.confidencePercent ?? 0}%
-          </div>
-        </div>
-      )}
+    <div className="max-w-3xl mx-auto px-4">
+      {/* Phase 4.7 — 1. Constrain width: max-w-3xl, mx-auto, px-4 */}
       
-      {!result.nameFirstDisplay && (
-        <>
-          <h2 className="text-2xl font-bold">{result.name || result.title || "Unknown Cultivar"}</h2>
+      {/* Phase 4.9 — 1. Name display rules (LOCKED): Primary strain name MUST render large, first, above all other content */}
+      {/* Fallback order: 1. nameFirstDisplay.primaryStrainName, 2. consensus.primaryName, 3. "Closest Known Cultivar" */}
+      {(() => {
+        const primaryName = result.nameFirstDisplay?.primaryStrainName || result.name || result.title || "Closest Known Cultivar";
+        const confidenceTier = result.confidenceTier?.label || (result.nameFirstDisplay as any)?.nameConfidenceTier || "Moderate Confidence";
+        
+        return (
+          <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+            {/* Phase 4.9 — 1. Primary name: Large, first, above all other content */}
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div className="flex-1">
+                <div className="text-3xl md:text-4xl font-extrabold">
+                  {result.nameFirstDisplay?.confidencePercent < 70 ? (
+                    <>
+                      <span className="opacity-70">Closest Match: </span>
+                      {primaryName}
+                    </>
+                  ) : (
+                    primaryName
+                  )}
+                </div>
+                
+                {/* Phase 4.9 — 2. Name confidence badge: Attach directly to name, color-coded but subtle */}
+                <div className="mt-2 inline-flex items-center gap-2">
+                  {confidenceTier === "Very High Confidence" && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300 border border-green-500/40">
+                      Very High
+                    </span>
+                  )}
+                  {confidenceTier === "High Confidence" && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                      High
+                    </span>
+                  )}
+                  {confidenceTier === "Moderate Confidence" && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">
+                      Moderate
+                    </span>
+                  )}
+                  {(confidenceTier === "Low Confidence" || confidenceTier === "Possible Match") && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/40">
+                      {confidenceTier === "Low Confidence" ? "Low" : "Possible"}
+                    </span>
+                  )}
+                  {confidenceTier === "Exploratory Match" && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-300 border border-gray-500/40">
+                      Exploratory
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Phase 4.9 — 3. Alias + lineage support */}
+            {(() => {
+              const dbEntry = (result as any).dbEntry;
+              const aliases = dbEntry?.aliases || [];
+              const lineage = dbEntry?.lineage || dbEntry?.parentStrains || (dbEntry?.genetics as any)?.lineage;
+              
+              if (aliases.length > 0 || lineage) {
+                return (
+                  <div className="mt-3 space-y-2">
+                    {/* Show aliases if available */}
+                    {aliases.length > 0 && (
+                      <div className="text-sm opacity-60">
+                        Also known as: {aliases.slice(0, 3).join(", ")}
+                      </div>
+                    )}
+                    {/* Show lineage if available */}
+                    {lineage && (
+                      <div className="text-sm opacity-60">
+                        Lineage: {typeof lineage === "string" ? lineage : Array.isArray(lineage) ? lineage.join(" × ") : "Unknown"}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            
+            {/* Phase 4.9 — 4. Disambiguation note (ONLY if needed) */}
+            {result.nameFirstDisplay?.alternateNames && result.nameFirstDisplay.alternateNames.length > 0 && (
+              <div className="mt-3 text-sm opacity-60 italic">
+                Most likely among closely related cultivars
+              </div>
+            )}
+            
+            {/* Phase 4.8 — 1. Rename confidence concept: Displayed as "Confidence Level" */}
+            {/* Phase 4.7 — 3. Confidence badge directly below (pill, subtle) */}
+            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20">
+              <span className="text-xs opacity-70">Confidence Level:</span>
+              <span className="text-sm font-medium">
+                {(result.nameFirstDisplay as any)?.confidenceDisplayRange || `${result.nameFirstDisplay?.confidencePercent ?? result.confidence ?? 0}%`}
+              </span>
+              {result.confidenceTier && (
+                <span className="text-xs opacity-70">
+                  {result.confidenceTier.label}
+                </span>
+              )}
+            </div>
+          {/* Phase 4.8 — 5. Free-tier note (if applicable) */}
+          {(result as any).isFreeTier && (result.nameFirstDisplay?.confidencePercent ?? 0) >= 94 && (
+            <div className="mt-2 text-xs opacity-60 italic">
+              Confidence improves with more images or higher tiers
+            </div>
+          )}
+          
+          {/* Phase 5.2 — 7. Explanation: Generate short explanation */}
+          {result.confidenceExplanation && result.confidenceExplanation.explanation && result.confidenceExplanation.explanation.length > 0 && (
+            <div className="mt-3 text-sm opacity-70">
+              {result.confidenceExplanation.explanation[0]}
+            </div>
+          )}
+          
+          {/* Phase 4.7 — 3. One-line explanation under badge */}
+          {result.nameFirstDisplay.explanation?.whyThisNameWon && result.nameFirstDisplay.explanation.whyThisNameWon.length > 0 && (
+            <div className="mt-3 text-base opacity-80">
+              {result.nameFirstDisplay.explanation.whyThisNameWon[0]}
+            </div>
+          )}
+          
+          {/* Phase 4.3 — 5. User-facing disclaimer (1 line only) */}
+          <div className="text-xs opacity-50 mt-4 italic">
+            Based on visual analysis and reference data — not lab testing.
+          </div>
+          </section>
+        );
+      })()}
 
-          <p className="mt-2 text-white/70">
-            Confidence: {result.confidence ?? 0}% ({result.confidenceTier?.label || result.confidenceTier?.tier || "Unknown"})
-          </p>
-        </>
+      {/* Phase 5.1 — 5. Integration: Display near strain name */}
+      {/* Phase 4.4 — 2. Indica / Sativa / Hybrid ratio (REQUIRED) */}
+      {result.ratio && (
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators: section cards, rounded-xl, bg-white/5, border border-white/10 */}
+          <div className="text-lg md:text-xl font-semibold mb-4">
+            Genetic Balance
+          </div>
+          {/* Phase 5.1 — 2. Output format: classification and percentages */}
+          <div className="mb-3">
+            <div className="text-base md:text-lg font-medium mb-2">
+              {(result.ratio as any).dominantLabel || result.ratio.classification || "Hybrid"}
+            </div>
+            {/* Compact pills display */}
+            <div className="flex gap-2 flex-wrap mb-3">
+              <span className="px-4 py-2 rounded-full bg-purple-600/20 text-purple-300 border border-purple-600/40 text-sm md:text-base">
+                Indica: {result.ratio.indica}%
+              </span>
+              <span className="px-4 py-2 rounded-full bg-green-600/20 text-green-300 border border-green-600/40 text-sm md:text-base">
+                Sativa: {result.ratio.sativa}%
+              </span>
+              <span className="px-4 py-2 rounded-full bg-yellow-600/20 text-yellow-300 border border-yellow-600/40 text-sm md:text-base">
+                Hybrid: {result.ratio.hybrid}%
+              </span>
+            </div>
+            {/* Phase 5.1 — Optional mini-bar visualization */}
+            <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+              <div className="flex h-full">
+                <div 
+                  style={{ width: `${result.ratio.indica}%` }} 
+                  className="bg-purple-600" 
+                />
+                <div 
+                  style={{ width: `${result.ratio.sativa}%` }} 
+                  className="bg-green-500" 
+                />
+                <div 
+                  style={{ width: `${result.ratio.hybrid}%` }} 
+                  className="bg-yellow-500" 
+                />
+              </div>
+            </div>
+          </div>
+          {/* Phase 5.1 — 4. User-facing explanation: Generate 2–3 bullets */}
+          {result.finalRatio && result.finalRatio.explanation && result.finalRatio.explanation.length > 0 && (
+            <div className="mt-4 space-y-1">
+              {result.finalRatio.explanation.map((line, i) => (
+                <div key={i} className="text-sm opacity-70">
+                  • {line}
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Phase 4.4 — Confidence note if confidence < 65% */}
+          {(result.ratio as any).needsEstimationNote && (
+            <div className="text-sm opacity-60 mt-3 italic">
+              Ratio estimated from visual traits and reference genetics.
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Phase 4.2 — 4. Handle similar strains gracefully (collapsible, if present) */}
+      {result.nameDisambiguationV407 && result.nameDisambiguationV407.alternates.length > 0 && (
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators: section cards */}
+          <details className="cursor-pointer">
+            <summary className="text-base md:text-lg font-semibold text-yellow-400 hover:text-yellow-300">
+              Similar cultivars considered
+            </summary>
+            <div className="mt-4 space-y-3">
+              <p className="text-base opacity-80">{result.nameDisambiguationV407.note}</p>
+              <ul className="list-disc ml-5 space-y-2 text-sm md:text-base">
+                {result.nameDisambiguationV407.alternates.slice(0, 3).map((alt, i) => (
+                  <li key={i}>{alt.name}</li>
+                ))}
+              </ul>
+            </div>
+          </details>
+        </section>
       )}
 
       {/* Phase 4.0.1 — render graceful fallback UI */}
       {result.softFail && (
-        <div className="mt-6 max-w-md rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4">
-          <div className="font-semibold">Limited Scan Confidence</div>
-          <div className="text-sm mt-1 opacity-80">
+        <section className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators */}
+          <div className="text-base md:text-lg font-semibold">Limited Scan Confidence</div>
+          <div className="text-sm md:text-base mt-2 opacity-80">
             {result.softFail.recommendation}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Phase 4.9.0 — render name confidence display */}
@@ -60,57 +252,85 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
         </div>
       )}
 
-      {/* Phase 4.3.5 — render normalized dominance ratio */}
-      {result.dominance && (
-        <div className="mt-6">
-          <div className="text-lg font-semibold">
+      {/* Phase 4.0.5 — render final ratio (fallback if result.ratio not available) */}
+      {!result.ratio && result.finalRatio && (
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators */}
+          <div className="text-lg md:text-xl font-semibold mb-3">
+            {result.finalRatio.classification}
+          </div>
+          <div className="flex gap-4 text-sm md:text-base mb-3">
+            <span>Indica {result.finalRatio.indica}%</span>
+            <span>Sativa {result.finalRatio.sativa}%</span>
+            <span>Hybrid {result.finalRatio.hybrid}%</span>
+          </div>
+          <div className="text-sm text-white/60 mb-2">
+            Confidence: {result.finalRatio.confidence}%
+          </div>
+          {result.finalRatio.explanation && result.finalRatio.explanation.length > 0 && (
+            <div className="text-sm text-white/50">
+              {result.finalRatio.explanation.join(" · ")}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Phase 4.3.5 — render normalized dominance ratio (legacy fallback - deprecated) */}
+      {!result.finalRatio && result.dominance && (
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators */}
+          <div className="text-lg md:text-xl font-semibold mb-3">
             {result.dominance.classification}
           </div>
-          <div className="flex gap-4 text-sm mt-2">
+          <div className="flex gap-4 text-sm md:text-base">
             <span>Indica {result.dominance.indica}%</span>
             <span>Sativa {result.dominance.sativa}%</span>
             <span>Hybrid {result.dominance.hybrid}%</span>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Phase 4.3.2 — render stabilized ratio (fallback if dominance not available) */}
-      {!result.dominance && result.stabilizedRatio && (
-        <div className="mt-4">
-          <div className="text-sm font-semibold mb-1">
+      {/* Phase 4.3.2 — render stabilized ratio (legacy fallback - deprecated) */}
+      {!result.finalRatio && !result.dominance && result.stabilizedRatio && (
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators */}
+          <div className="text-base md:text-lg font-semibold mb-2">
             Indica / Sativa / Hybrid
           </div>
-          <div className="text-sm">
+          <div className="text-sm md:text-base mb-2">
             {result.stabilizedRatio.indica}% Indica ·{" "}
             {result.stabilizedRatio.sativa}% Sativa ·{" "}
             {result.stabilizedRatio.hybrid}% Hybrid
           </div>
-          <div className="text-xs text-white/60 mt-1">
+          <div className="text-sm text-white/60">
             Confidence: {result.stabilizedRatio.confidence}%
           </div>
-        </div>
+        </section>
       )}
       
       {/* Fallback to existing ratio structure */}
       {!result.stabilizedRatio && ratio && (
-        <div className="mt-3 text-sm text-white/80">
-          <div className="font-semibold">Indica / Sativa / Hybrid</div>
-          <div className="text-white/70">
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators */}
+          <div className="text-base md:text-lg font-semibold mb-2">Indica / Sativa / Hybrid</div>
+          <div className="text-sm md:text-base text-white/70 mb-2">
             {ratio.indicaPercent}% indica · {ratio.sativaPercent}% sativa · {100 - ratio.indicaPercent - ratio.sativaPercent}% hybrid
           </div>
           {ratio.dominance && (
-            <div className="text-white/60 mt-1">{ratio.dominance}</div>
+            <div className="text-sm text-white/60">{ratio.dominance}</div>
           )}
-        </div>
+        </section>
       )}
 
       {/* Phase 4.3.3 — render visual anchors */}
       {result.visualAnchors?.length ? (
-        <div className="mt-4">
-          <div className="text-sm font-semibold mb-2">
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators */}
+          <div className="text-base md:text-lg font-semibold mb-3">
             Key Visual Anchors
           </div>
-          <ul className="text-sm space-y-1">
+          <ul className="text-sm md:text-base space-y-2">
+            {/* Phase 4.7 — 5. Text sizing: bullets text-sm/base */}
             {result.visualAnchors.map(anchor => (
               <li key={anchor.trait}>
                 {anchor.trait} · {anchor.strength}% ·{" "}
@@ -118,39 +338,43 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : null}
 
       {/* Phase 4.3.6 — render confidence explanation */}
       {result.confidenceExplanation && (
-        <div className="mt-6">
-          <div className="text-lg font-semibold">
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators */}
+          <div className="text-lg md:text-xl font-semibold mb-3">
             Confidence: {result.confidenceExplanation.tier} (
             {result.confidenceExplanation.score}%)
           </div>
-          <ul className="mt-2 text-sm list-disc ml-5 space-y-1">
+          <ul className="text-sm md:text-base list-disc ml-5 space-y-2">
+            {/* Phase 4.7 — 5. Text sizing: bullets text-sm/base */}
             {result.confidenceExplanation.explanation.map((line, i) => (
               <li key={i}>{line}</li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
 
       {/* Phase 4.4.0 — render name-first section */}
       {result.nameFirst && (
-        <div className="mt-8">
-          <div className="text-2xl font-bold">
+        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          {/* Phase 4.7 — 4. Section separators */}
+          <div className="text-2xl md:text-3xl font-bold mb-2">
             {result.nameFirst.primaryName}
           </div>
 
-          <div className="text-sm opacity-70 mt-1">
+          <div className="text-sm md:text-base opacity-70 mb-3">
             Name confidence: {result.nameFirst.confidence}%
           </div>
 
           {result.nameFirst.alternateNames.length > 0 && (
-            <div className="mt-3">
-              <div className="text-sm font-semibold">Possible alternatives</div>
-              <ul className="text-sm list-disc ml-5 mt-1 space-y-1">
+            <div className="mb-4">
+              <div className="text-sm md:text-base font-semibold mb-2">Possible alternatives</div>
+              <ul className="text-sm md:text-base list-disc ml-5 space-y-2">
+                {/* Phase 4.7 — 5. Text sizing: bullets text-sm/base */}
                 {result.nameFirst.alternateNames.map((n, i) => (
                   <li key={i}>{n}</li>
                 ))}
@@ -158,12 +382,13 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
             </div>
           )}
 
-          <ul className="mt-4 text-xs list-disc ml-5 space-y-1 opacity-80">
+          <ul className="text-sm md:text-base list-disc ml-5 space-y-2 opacity-80">
+            {/* Phase 4.7 — 5. Text sizing: bullets text-sm/base (not text-xs) */}
             {result.nameFirst.reasoning.map((r, i) => (
               <li key={i}>{r}</li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
 
       {/* Phase 4.5.0 — render ratio display */}
@@ -279,6 +504,6 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
           )}
         </div>
       )}
-    </section>
+    </div>
   );
 }
