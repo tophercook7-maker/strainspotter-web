@@ -597,13 +597,6 @@ export default function WikiStyleResultPanel({
                   </p>
                 </div>
               </div>
-              
-              {/* Phase 5.2.7 — FREE → PRO SOFT NUDGE (After results, non-intrusive) */}
-              <div className="pt-6 mt-6 border-t border-white/10">
-                <p className="text-xs text-white/60 text-center leading-relaxed">
-                  Want higher certainty? Add more angles or unlock Pro for deeper analysis.
-                </p>
-              </div>
             );
           })()}
           
