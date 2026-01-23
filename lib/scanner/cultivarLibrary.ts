@@ -521,6 +521,92 @@ function updateCultivarLibrary(newLibrary: CultivarReference[]): void {
 }
 
 /**
+ * DB AUTHORITY — Find strain by exact name match
+ * 
+ * @param name - Strain name (case-insensitive)
+ * @returns CultivarReference or undefined if not found
+ */
+export function findByName(name: string): CultivarReference | undefined {
+  const library = getCultivarLibrarySync();
+  const normalizedName = name.toLowerCase().trim();
+  return library.find(strain => 
+    strain.name.toLowerCase().trim() === normalizedName
+  );
+}
+
+/**
+ * DB AUTHORITY — Find strain by alias match
+ * 
+ * @param alias - Alias name (case-insensitive)
+ * @returns CultivarReference or undefined if not found
+ */
+export function findByAlias(alias: string): CultivarReference | undefined {
+  const library = getCultivarLibrarySync();
+  const normalizedAlias = alias.toLowerCase().trim();
+  return library.find(strain => 
+    strain.aliases.some(a => a.toLowerCase().trim() === normalizedAlias)
+  );
+}
+
+/**
+ * DB AUTHORITY — Find closest strain by visual traits
+ * 
+ * @param traits - Visual traits to match against
+ * @param limit - Maximum number of results (default: 5)
+ * @returns Array of CultivarReference sorted by similarity
+ */
+export function findClosestByTraits(traits: {
+  leafShape?: "narrow" | "broad";
+  budStructure?: "low" | "medium" | "high";
+  trichomeDensity?: "low" | "medium" | "high";
+  terpenes?: string[];
+  type?: "Indica" | "Sativa" | "Hybrid";
+}, limit: number = 5): CultivarReference[] {
+  const library = getCultivarLibrarySync();
+  
+  // Score each strain based on trait matches
+  const scored = library.map(strain => {
+    let score = 0;
+    
+    // Leaf shape match
+    if (traits.leafShape && strain.visualProfile.leafShape === traits.leafShape) {
+      score += 3;
+    }
+    
+    // Bud structure match
+    if (traits.budStructure && strain.visualProfile.budStructure === traits.budStructure) {
+      score += 3;
+    }
+    
+    // Trichome density match
+    if (traits.trichomeDensity && strain.visualProfile.trichomeDensity === traits.trichomeDensity) {
+      score += 2;
+    }
+    
+    // Type match
+    if (traits.type && strain.type === traits.type) {
+      score += 4;
+    }
+    
+    // Terpene overlap
+    if (traits.terpenes && traits.terpenes.length > 0 && strain.terpeneProfile.length > 0) {
+      const matchingTerpenes = traits.terpenes.filter(t => 
+        strain.terpeneProfile.some(st => st.toLowerCase().includes(t.toLowerCase()))
+      );
+      score += matchingTerpenes.length;
+    }
+    
+    return { strain, score };
+  });
+  
+  // Sort by score (descending) and return top N
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(item => item.strain);
+}
+
+/**
  * Phase 5.0.1 — Async getter for when you need to ensure database is loaded
  */
 export async function getCultivarLibrary(): Promise<CultivarReference[]> {

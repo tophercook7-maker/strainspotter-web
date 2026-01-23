@@ -74,22 +74,25 @@ export async function loadStrainDatabase(): Promise<CultivarReference[]> {
       strains = [];
     }
     
-    // Phase 5.0.1 — Validate count
+    // DB AUTHORITY — Validate count
     const count = strains.length;
     console.log("STRAIN DB SIZE:", count);
     
     if (count < MIN_REQUIRED_STRAINS) {
-      const error = new Error(
-        `Phase 5.0.1 — CRITICAL: Strain database has only ${count} strains. ` +
+      const errorMessage = `DB AUTHORITY — CRITICAL: Strain database has only ${count} strains. ` +
         `Minimum required: ${MIN_REQUIRED_STRAINS}. ` +
         `Scanner accuracy requires full database. ` +
-        `Please ensure lib/data/strains.json contains 35,000+ strains.`
-      );
-      console.error(error.message);
-      throw error;
+        `Please ensure lib/data/strains.json contains 35,000+ strains.`;
+      console.error(errorMessage);
+      // In production, this should throw. For development, log as critical warning.
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(errorMessage);
+      } else {
+        console.warn("DB AUTHORITY — Continuing with reduced database (development mode)");
+      }
     }
     
-    console.log(`Phase 5.0.1 — ✓ Strain database loaded successfully: ${count} strains`);
+    console.log(`DB AUTHORITY — ✓ Strain database loaded successfully: ${count} strains`);
     return strains;
     
   } catch (error) {
@@ -125,6 +128,42 @@ function normalizeStrainData(rawData: any[]): CultivarReference[] {
       const type = ["Indica", "Sativa", "Hybrid"].includes(typeRaw) 
         ? (typeRaw as "Indica" | "Sativa" | "Hybrid")
         : "Hybrid";
+      
+      // Normalize indica/sativa ratio
+      let indicaPercent: number | undefined = undefined;
+      let sativaPercent: number | undefined = undefined;
+      
+      if (item.indicaPercent !== undefined && item.sativaPercent !== undefined) {
+        // Direct ratio provided
+        indicaPercent = Math.max(0, Math.min(100, Number(item.indicaPercent) || 0));
+        sativaPercent = Math.max(0, Math.min(100, Number(item.sativaPercent) || 0));
+      } else if (item.indica !== undefined && item.sativa !== undefined) {
+        // Alternative field names
+        indicaPercent = Math.max(0, Math.min(100, Number(item.indica) || 0));
+        sativaPercent = Math.max(0, Math.min(100, Number(item.sativa) || 0));
+      } else if (type === "Indica") {
+        // Infer from type
+        indicaPercent = 80;
+        sativaPercent = 20;
+      } else if (type === "Sativa") {
+        // Infer from type
+        indicaPercent = 20;
+        sativaPercent = 80;
+      } else {
+        // Hybrid default
+        indicaPercent = 50;
+        sativaPercent = 50;
+      }
+      
+      // Ensure percentages sum to 100
+      const total = indicaPercent + sativaPercent;
+      if (total > 0) {
+        indicaPercent = Math.round((indicaPercent / total) * 100);
+        sativaPercent = Math.round((sativaPercent / total) * 100);
+      } else {
+        indicaPercent = 50;
+        sativaPercent = 50;
+      }
       
       // Normalize visual profile
       const visualProfile = {
@@ -180,7 +219,10 @@ function normalizeStrainData(rawData: any[]): CultivarReference[] {
         commonTerpenes: terpeneProfile, // Backward compat
         effects,
         sources,
-      };
+        // Add indica/sativa ratio (as any to extend type if needed)
+        indicaPercent,
+        sativaPercent,
+      } as any;
       
       // Add optional wikiSummary only if it exists
       if (item.wikiSummary || item.summary || item.description) {
