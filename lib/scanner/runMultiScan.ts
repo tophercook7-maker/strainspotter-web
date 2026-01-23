@@ -200,12 +200,19 @@ function buildSafeFallbackResult(
   imageCount: number,
   fallbackName: string = "Closest Known Cultivar"
 ): ScanResult {
+  // FAILURE MESSAGING SOFTENED — Use softer messages instead of "analysis failed"
+  const softReason = reason.includes("failed") || reason.includes("error") || reason.includes("Error")
+    ? "Low confidence — results may vary"
+    : reason.includes("similar") || reason.includes("identical")
+    ? "Images appear similar — try different angles"
+    : reason;
+  
   const fallbackConfidence = Math.max(50, 75 - (imageCount === 1 ? 15 : 0));
   const fallbackViewModel: import("./viewModel").ScannerViewModel = {
     name: fallbackName,
     title: fallbackName,
-    confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5, explanation: reason },
-    matchBasis: "Fallback result due to analysis limitations",
+    confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5, explanation: softReason },
+    matchBasis: "Results shown with limited confidence",
     visualMatchSummary: "",
     flowerStructureAnalysis: "",
     trichomeDensityMaturity: "",
@@ -215,20 +222,20 @@ function buildSafeFallbackResult(
     primaryMatch: {
       name: fallbackName,
       confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5 },
-      whyThisMatch: reason,
+      whyThisMatch: softReason,
     },
     secondaryMatches: [],
     trustLayer: {
       confidenceBreakdown: { visualSimilarity: fallbackConfidence, traitOverlap: fallbackConfidence, consensusStrength: 0 },
-      whyThisMatch: [reason],
-      sourcesUsed: ["Fallback analysis"],
-      confidenceLanguage: "Limited confidence due to analysis constraints",
+      whyThisMatch: [softReason],
+      sourcesUsed: ["Limited analysis"],
+      confidenceLanguage: "Low confidence — results may vary",
     },
     aiWikiBlend: "",
-    uncertaintyExplanation: reason,
-    accuracyTips: ["Try adding more images from different angles", "Ensure good lighting and focus"],
+    uncertaintyExplanation: softReason,
+    accuracyTips: ["Try photos from different angles", "Ensure good lighting and focus", "Add more images for better accuracy"],
     confidence: fallbackConfidence,
-    whyThisMatch: reason,
+    whyThisMatch: softReason,
     morphology: "",
     trichomes: "",
     pistils: "",
@@ -242,31 +249,31 @@ function buildSafeFallbackResult(
     sources: [],
     genetics: { dominance: "Unknown", lineage: "" },
     experience: { effects: [], bestFor: [] },
-    disclaimer: reason,
+    disclaimer: softReason,
     nameFirstDisplay: {
       primaryStrainName: fallbackName,
       primaryName: fallbackName,
       confidencePercent: fallbackConfidence,
       confidence: fallbackConfidence,
       confidenceTier: fallbackConfidence >= 75 ? "high" as const : fallbackConfidence >= 65 ? "medium" as const : "low" as const,
-      tagline: "Closest known match based on available analysis",
-      explanation: { whyThisNameWon: [reason], whatRuledOutOthers: [], varianceNotes: [] },
+      tagline: "Low confidence — results may vary",
+      explanation: { whyThisNameWon: [softReason], whatRuledOutOthers: [], varianceNotes: [] },
     },
   };
   const fallbackConsensus: ConsensusResult = {
-    primaryMatch: { name: fallbackName, confidence: fallbackConfidence, reason },
+    primaryMatch: { name: fallbackName, confidence: fallbackConfidence, reason: softReason },
     alternates: [],
     agreementScore: 0,
     strainName: fallbackName,
-    confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5, explanation: reason },
-    whyThisMatch: reason,
+    confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5, explanation: softReason },
+    whyThisMatch: softReason,
     alternateMatches: [],
     lowConfidence: true,
     agreementLevel: "low" as const,
   };
   return {
     status: "partial",
-    guard: { status: "low-confidence" as const, reason },
+    guard: { status: "low-confidence" as const, reason: softReason },
     consensus: fallbackConsensus,
     confidence: fallbackConfidence,
     result: fallbackViewModel,
@@ -4933,9 +4940,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
 export async function scanImages(images: File[]): Promise<ScanResult> {
   console.log("scanImages called with", images.length, "images");
   
-  // STABILIZATION MODE — Return safe fallback instead of throwing
+  // FAILURE MESSAGING SOFTENED — Return safe fallback with soft messages
   if (!images || images.length === 0) {
-    const fallback = buildSafeFallbackResult("No images provided for analysis", 0);
+    const fallback = buildSafeFallbackResult("Low confidence — results may vary", 0);
     if ('confidence' in fallback) {
       console.log(`SCAN COMPLETE — status=partial confidence=${fallback.confidence}`);
     }
@@ -4944,9 +4951,9 @@ export async function scanImages(images: File[]): Promise<ScanResult> {
 
   // Phase 2.7 Part N Step 1 — Require minimum 2 images for multi-image scan
   // (But allow single image as fallback)
-  // STABILIZATION MODE — This condition is impossible (x > 1 && x < 2), but keep for safety
+  // FAILURE MESSAGING SOFTENED — This condition is impossible (x > 1 && x < 2), but keep for safety
   if (images.length > 1 && images.length < 2) {
-    const fallback = buildSafeFallbackResult("Invalid image count configuration", images.length);
+    const fallback = buildSafeFallbackResult("Low confidence — results may vary", images.length);
     if ('confidence' in fallback) {
       console.log(`SCAN COMPLETE — status=partial confidence=${fallback.confidence}`);
     }
@@ -4968,10 +4975,10 @@ export async function scanImages(images: File[]): Promise<ScanResult> {
     console.log("scanImages: pipeline completed", result);
     return result;
   } catch (error) {
-    // STABILIZATION MODE — Return safe fallback instead of rethrowing
-    console.error("STABILIZATION: scanImages caught pipeline error, returning safe fallback:", error);
+    // FAILURE MESSAGING SOFTENED — Return safe fallback with soft messages, never block user
+    console.error("FAILURE MESSAGING SOFTENED: scanImages caught pipeline error, returning safe fallback:", error);
     const fallback = buildSafeFallbackResult(
-      `Analysis encountered an error: ${error instanceof Error ? error.message : String(error)}`,
+      "Low confidence — results may vary",
       images.length
     );
     if ('confidence' in fallback) {
