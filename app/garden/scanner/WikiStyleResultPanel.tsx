@@ -381,12 +381,93 @@ export default function WikiStyleResultPanel({
               </div>
             </div>
             
-            {/* Phase 4.2 — Trust indicator badge */}
-            {/* Phase 4.4 — Visual Authority Upgrade: Enhanced badge styling */}
-            {viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
-              <div className="mt-2">
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-500/30 shadow-sm">
-                  <span className="mr-1.5 text-sm">✓</span>
+              {/* Phase 4.9.6 — Visual Match Confidence (FREE TIER) */}
+              {(() => {
+                // Extract visual consensus score from Phase 4.9.4/4.9.5
+                const visualConsensus = (viewModel.nameFirstDisplay as any)?.visualConsensus;
+                const visualIntegration = (viewModel.nameFirstDisplay as any)?.visualIntegration;
+                
+                // Get visual consensus score (0-1)
+                const visualConsensusScore = visualConsensus?.visualConsensusScore ?? 
+                                            visualIntegration?.visualConsensusScore ?? 
+                                            null;
+                
+                // Skip if no visual consensus data available
+                if (visualConsensusScore === null || visualConsensusScore === undefined) {
+                  return null;
+                }
+                
+                // Map score to High/Medium/Low
+                const visualMatchTier: "High" | "Medium" | "Low" = 
+                  visualConsensusScore >= 0.8 ? "High" :
+                  visualConsensusScore >= 0.6 ? "Medium" : "Low";
+                
+                // Get consistent features for explanation
+                const consistentFeatures = visualConsensus?.consistentFeatures || [];
+                const primaryStrainName = viewModel.nameFirstDisplay.primaryStrainName;
+                
+                // Generate short explanation
+                let explanation = "";
+                if (consistentFeatures.length > 0) {
+                  // Use consistent features to build explanation
+                  const features = consistentFeatures.slice(0, 2); // Use top 2 features
+                  const featureNames = features.map((f: string) => {
+                    if (f.toLowerCase().includes("density")) return "bud structure";
+                    if (f.toLowerCase().includes("trichome")) return "trichome density";
+                    if (f.toLowerCase().includes("color")) return "coloration";
+                    if (f.toLowerCase().includes("pistil")) return "pistil profile";
+                    if (f.toLowerCase().includes("calyx")) return "calyx shape";
+                    return f.toLowerCase();
+                  });
+                  
+                  // Get family name if available
+                  const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
+                  const familyName = familyFirst?.familyName || 
+                                    (primaryStrainName.toLowerCase().includes("kush") ? "Kush" :
+                                     primaryStrainName.toLowerCase().includes("haze") ? "Haze" :
+                                     primaryStrainName.toLowerCase().includes("cookies") ? "Cookies" :
+                                     primaryStrainName.toLowerCase().includes("og") ? "OG" : null);
+                  
+                  const targetName = familyName ? `${familyName} family` : primaryStrainName;
+                  
+                  explanation = `${featureNames.join(" and ")} align with ${targetName}`;
+                } else {
+                  // Fallback explanation
+                  const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
+                  const familyName = familyFirst?.familyName || 
+                                    (primaryStrainName.toLowerCase().includes("kush") ? "Kush" :
+                                     primaryStrainName.toLowerCase().includes("haze") ? "Haze" :
+                                     primaryStrainName.toLowerCase().includes("cookies") ? "Cookies" :
+                                     primaryStrainName.toLowerCase().includes("og") ? "OG" : null);
+                  
+                  const targetName = familyName ? `${familyName} family` : primaryStrainName;
+                  explanation = `Bud structure and trichome density align with ${targetName}`;
+                }
+                
+                // Color coding for tier
+                const tierColor = visualMatchTier === "High" ? "bg-green-600" :
+                                 visualMatchTier === "Medium" ? "bg-yellow-500" : "bg-orange-500";
+                
+                return (
+                  <div className="mt-3 space-y-1">
+                    <div className="inline-flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${tierColor}`}>
+                        Visual match confidence: {visualMatchTier}
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/70 leading-relaxed">
+                      {explanation}
+                    </p>
+                  </div>
+                );
+              })()}
+              
+              {/* Phase 4.2 — Trust indicator badge */}
+              {/* Phase 4.4 — Visual Authority Upgrade: Enhanced badge styling */}
+              {viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
+                <div className="mt-2">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-500/30 shadow-sm">
+                    <span className="mr-1.5 text-sm">✓</span>
                   Database Match
                 </span>
               </div>
