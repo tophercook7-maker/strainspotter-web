@@ -4237,11 +4237,12 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Calculate visual similarity between observed features and database strain profile
     let visualSimilarityResult: VisualSimilarityIndexResult | null = null;
     let visualSimilarityAdjustedConfidence = stabilityAdjustedConfidence;
+    let dbEntryForVisual: CultivarReference | undefined = undefined;
     
     if (fusedFeatures && finalPrimaryName && finalPrimaryName !== "Closest Known Cultivar") {
       try {
         // Find database entry for primary strain
-        const dbEntryForVisual = CULTIVAR_LIBRARY.find(s => 
+        dbEntryForVisual = CULTIVAR_LIBRARY.find(s => 
           s.name.toLowerCase() === finalPrimaryName.toLowerCase() ||
           s.aliases?.some(a => a.toLowerCase() === finalPrimaryName.toLowerCase())
         );
@@ -4345,18 +4346,18 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         breakdown: visualSimilarityResult.breakdown,
         explanation: visualSimilarityResult.explanation,
       };
-      
-      // Phase 4.9.2 — Store visual baseline if available
-      if (dbEntryForVisual) {
-        const visualBaseline = getStrainVisualBaseline(dbEntryForVisual);
-        (viewModel.nameFirstDisplay as any).visualBaseline = {
-          densityRange: visualBaseline.densityRange,
-          trichomeRange: visualBaseline.trichomeRange,
-          colorBaseline: visualBaseline.colorBaseline,
-          baselineConfidence: visualBaseline.baselineConfidence,
-          source: visualBaseline.source,
-        };
-      }
+    }
+    
+    // Phase 4.9.2 — Store visual baseline if available
+    if (dbEntryForVisual) {
+      const visualBaseline = getStrainVisualBaseline(dbEntryForVisual);
+      (viewModel.nameFirstDisplay as any).visualBaseline = {
+        densityRange: visualBaseline.densityRange,
+        trichomeRange: visualBaseline.trichomeRange,
+        colorBaseline: visualBaseline.colorBaseline,
+        baselineConfidence: visualBaseline.baselineConfidence,
+        source: visualBaseline.source,
+      };
     }
     
     // Update explanation (clear reason why this name won) - NAME-FIRST MATCHING prioritized
