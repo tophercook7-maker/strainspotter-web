@@ -69,7 +69,8 @@ export default function WikiStyleResultPanel({
       {/* Phase 15.5.5 — Make strain name + confidence feel real */}
       {/* Phase 4.1 — UI NEVER EMPTY: nameFirstDisplay is guaranteed */}
       {/* Phase 4.4 — Visual Authority Upgrade: Improved spacing and containment */}
-      <div className="space-y-6 pb-8 border-b border-white/10">
+      {/* Phase 4.4.2 — Remove full-width dividers, use spacing instead */}
+      <div className="space-y-6 pb-8">
         {/* Phase 15.5.5 — Large Strain Name */}
         {/* Phase 4.2 — Name Stability & Trust Messaging */}
         {/* Phase 4.4 — Visual Authority Upgrade: Enhanced typography and spacing */}
@@ -409,7 +410,8 @@ export default function WikiStyleResultPanel({
                   </ul>
                   
                   {/* Phase 4.1 — Learning expectation note (subtle) */}
-                  <p className="text-xs text-white/50 italic mt-3 pt-2 border-t border-white/10">
+                  {/* Phase 4.4.2 — Remove full-width divider, use spacing instead */}
+                  <p className="text-xs text-white/50 italic mt-4">
                     If this is the same plant, future scans will become more accurate.
                   </p>
                 </div>
