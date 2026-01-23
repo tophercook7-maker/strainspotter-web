@@ -138,7 +138,19 @@ export default function ScannerPage() {
   }
   
   // Phase 2.4 Part J Step 4 — Guaranteed event fire
+  // Phase 5.2.5 — Prevent double-clicks and ghost clicks
   async function handleAnalyzePlant() {
+    // Phase 5.2.5 — Guard against double-clicks
+    if (isScanning) {
+      console.log("Scan already in progress, ignoring click");
+      return;
+    }
+    
+    if (images.length === 0) {
+      console.log("No images to scan");
+      return;
+    }
+    
     // Step 4.1 — Log immediately
     console.log("ANALYZE CLICKED");
     
@@ -627,60 +639,74 @@ export default function ScannerPage() {
               })()}
         </div>
 
+        {/* Phase 5.2.5 — SCAN CTA BEHAVIOR (FIX) */}
         {/* B) Big Scan Button Card */}
-        {/* Phase 15.5.2 — Fix the Analyze/Run Scan button (big + forgiving + not finicky) */}
-        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 flex flex-col items-center">
+        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6">
           {/* Phase 4.0 Part A — Multi-image validation warning */}
           {images.length > 0 && images.length < 2 && !singleImageConfirmed && (
-            <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md">
+            <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md mx-auto">
               💡 For best accuracy, add at least one more image from a different angle
             </div>
           )}
           {images.length === 2 && (
-            <div className="mb-4 p-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-200 text-sm text-center max-w-md">
+            <div className="mb-4 p-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-200 text-sm text-center max-w-md mx-auto">
               ✓ 2 images selected. For best accuracy, 3–5 images are recommended.
             </div>
           )}
           
-          {/* Phase 4.7 — 6. Action button: min-height 48px, min-width 200px, centered, rounded-full */}
-          {/* Phase 4.4.6 — Run scan button hit target: proper sizing, contrast, cursor, no nested traps */}
-          <button
-            type="button"
-            disabled={images.length === 0 || isScanning}
-            onClick={handleAnalyzePlant}
-            onKeyDown={handleKeyDown}
-            className="min-h-[48px] min-w-[200px] rounded-full bg-white text-black font-semibold text-base px-8 py-3 shadow-lg shadow-white/10 active:scale-[0.99] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 mx-auto cursor-pointer"
-            aria-label={isScanning ? "Analyzing plant" : "Analyze plant"}
-            aria-busy={isScanning}
-          >
-            {isScanning ? (
-              <>
-                <svg
-                  className="animate-spin h-5 w-5 text-black"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span>Analyzing…</span>
-              </>
-            ) : (
-              "Analyze Plant"
-            )}
-          </button>
+          {/* Phase 5.2.5 — Run Scan Button: Full-width capped (max-w-md), height ≥ 52px, single click, disabled only while scanning */}
+          <div className="w-full max-w-md mx-auto">
+            <button
+              type="button"
+              disabled={isScanning}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isScanning && images.length > 0) {
+                  handleAnalyzePlant();
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  if (!isScanning && images.length > 0) {
+                    handleAnalyzePlant();
+                  }
+                }
+              }}
+              className="w-full h-[52px] rounded-full bg-white text-black font-semibold text-base shadow-lg shadow-white/10 active:scale-[0.98] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 transition-all"
+              aria-label={isScanning ? "Analyzing plant" : "Run scan"}
+              aria-busy={isScanning}
+            >
+              {isScanning ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 text-black"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  <span>Analyzing plant…</span>
+                </>
+              ) : (
+                "Run Scan"
+              )}
+            </button>
+          </div>
         </div>
 
         {/* UI FIX — Results Card(s) — Wrapped in container, cards not lines */}
