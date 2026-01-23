@@ -125,10 +125,10 @@ export default function WikiStyleResultPanel({
                 
                 return (
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm ${familyColor}`}>
+                    <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${familyColor}`}>
                       Very High (family)
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm ${strainColor}`}>
+                    <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${strainColor}`}>
                       High (strain)
                     </span>
                   </div>
@@ -136,12 +136,13 @@ export default function WikiStyleResultPanel({
               }
               
               // Standard single confidence badge
+              // Phase 5.1.7 — Text hierarchy: Confidence (text-base) > Reasons (text-base heading, text-sm content)
               return (
                 <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm ${confidenceColor}`}>
+                  <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${confidenceColor}`}>
                     {confidenceLabel}
                   </span>
-                  <span className="text-xs text-white/60">
+                  <span className="text-base text-white/60">
                     {confidence}%
                   </span>
                 </div>
