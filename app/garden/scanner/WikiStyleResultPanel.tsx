@@ -64,24 +64,26 @@ export default function WikiStyleResultPanel({
   const strainFamily = getStrainFamily();
 
   return (
-    <section className="max-w-[680px] mx-auto rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 space-y-6 max-h-[85vh] overflow-y-auto">
+    <section className="max-w-[680px] mx-auto rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-6 sm:p-8 space-y-8 max-h-[85vh] overflow-y-auto">
       {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
       {/* Phase 15.5.5 — Make strain name + confidence feel real */}
       {/* Phase 4.1 — UI NEVER EMPTY: nameFirstDisplay is guaranteed */}
-      <div className="mb-6 space-y-4 pb-6">
+      {/* Phase 4.4 — Visual Authority Upgrade: Improved spacing and containment */}
+      <div className="space-y-6 pb-8 border-b border-white/10">
         {/* Phase 15.5.5 — Large Strain Name */}
         {/* Phase 4.2 — Name Stability & Trust Messaging */}
-        <div className="mb-4">
-          <div className="flex items-start gap-3">
+        {/* Phase 4.4 — Visual Authority Upgrade: Enhanced typography and spacing */}
+        <div>
+          <div className="flex items-start gap-4">
             <div className="flex-1">
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight mb-3">
                 {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
                   ? "Unidentified Hybrid Phenotype"
                   : viewModel.nameFirstDisplay.primaryStrainName}
               </h1>
               
               {/* Phase 4.2 — Inline note below name (always present) */}
-              <p className="text-xs text-white/50 mt-2 leading-relaxed">
+              <p className="text-xs text-white/50 leading-relaxed mb-4">
                 Selected as the closest overall match after comparing visual structure,
                 bud density, coloration, and known cultivar traits.
               </p>
@@ -107,7 +109,8 @@ export default function WikiStyleResultPanel({
               })()}
               
               {/* Phase 4.2 — Enhanced subtitle with trust messaging */}
-              <div className="mt-2 space-y-1">
+              {/* Phase 4.4 — Visual Authority Upgrade: Improved spacing */}
+              <div className="mt-3 space-y-1">
                 {(() => {
                   const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
                   const scanStatus = (result as any).status || "success";
@@ -115,7 +118,7 @@ export default function WikiStyleResultPanel({
                   
                   if (isFallback) {
                     return (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-white/60 font-medium">
                         Best available match from 35,000+ strain database
                       </div>
                     );
@@ -124,20 +127,20 @@ export default function WikiStyleResultPanel({
                   // Phase 4.2 — Updated primary name header copy
                   if (confidence >= 90) {
                     return (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-white/60 font-medium">
                         Strong visual and database agreement
                       </div>
                     );
                   } else if (confidence >= 80 && confidence < 90 && scanStatus !== "partial") {
                     return (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-white/60 font-medium">
                         Best match based on visible traits and known cultivars
                       </div>
                     );
                   } else {
                     // confidence < 80 OR status === "partial"
                     return (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-white/60 font-medium">
                         Closest known cultivar based on available visual data
                       </div>
                     );
@@ -147,10 +150,11 @@ export default function WikiStyleResultPanel({
             </div>
             
             {/* Phase 4.2 — Trust indicator badge */}
+            {/* Phase 4.4 — Visual Authority Upgrade: Enhanced badge styling */}
             {viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
-              <div className="mt-1">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                  <span className="mr-1.5">✓</span>
+              <div className="mt-2">
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-500/30 shadow-sm">
+                  <span className="mr-1.5 text-sm">✓</span>
                   Database Match
                 </span>
               </div>
@@ -198,21 +202,23 @@ export default function WikiStyleResultPanel({
               : "Expert analysis suggests closest available match";
             
             return (
-              <div className="mt-2 space-y-2">
-                <div className="inline-flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${confidenceColor}`}>
+              <div className="mt-4 space-y-3">
+                {/* Phase 4.4 — Visual Authority Upgrade: Enhanced badge container */}
+                <div className="inline-flex items-center gap-3 flex-wrap">
+                  <span className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${confidenceColor}`}>
                     {confidenceLabel} ({confidence}%)
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-white/70 font-medium">
                     {confidenceExplanation}
                   </span>
                 </div>
                 {/* Phase 4.3 — Confidence foundation explanation */}
+                {/* Phase 4.4 — Visual Authority Upgrade: Improved typography */}
                 <p className="text-xs text-white/60 leading-relaxed">
                   Confidence calculated from systematic comparison of visual structure, bud morphology, and database alignment across {viewModel.multiImageInfo?.imageCountText?.match(/\d+/)?.[0] || "1"} image{viewModel.multiImageInfo?.imageCountText?.match(/\d+/)?.[0] !== "1" ? "s" : ""}.
                 </p>
                 {/* Phase 4.3.4 — Confidence stability note (legal + expectation safety) */}
-                <p className="text-xs text-white/40 italic mt-1">
+                <p className="text-xs text-white/40 italic leading-relaxed">
                   Confidence reflects overall match quality, not certainty of genetics.
                 </p>
               </div>
@@ -248,9 +254,10 @@ export default function WikiStyleResultPanel({
           </CollapsibleSection>
           
           {/* Phase 4.2 — Name Selection Trust Message */}
+          {/* Phase 4.4 — Visual Authority Upgrade: Enhanced containment */}
           {viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
-            <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
-              <p className="text-xs text-white/70 leading-relaxed">
+            <div className="mt-6 rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <p className="text-sm text-white/75 leading-relaxed">
                 <span className="font-semibold text-white/90">Name Selection:</span>{" "}
                 This strain name was selected through systematic analysis comparing your images against a database of 35,000+ documented cultivars. The identification is based on visual morphology, genetic lineage, and known cultivar characteristics.
               </p>
@@ -258,22 +265,23 @@ export default function WikiStyleResultPanel({
           )}
           
           {/* Phase 4.1 — Why This Looks Like {Primary Strain Name} */}
-          <div className="mt-4 space-y-2">
-            <h3 className="text-base font-semibold text-white/90">
+          {/* Phase 4.4 — Visual Authority Upgrade: Enhanced section spacing and typography */}
+          <div className="mt-8 space-y-3">
+            <h3 className="text-lg font-semibold text-white/95 tracking-tight">
               Why This Looks Like {viewModel.nameFirstDisplay.primaryStrainName}
             </h3>
             {viewModel.nameFirstDisplay.explanation?.whyThisNameWon && 
              viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0 ? (
-              <ul className="space-y-1.5">
+              <ul className="space-y-2.5">
                 {viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 6).map((reason, idx) => (
                   <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
-                    <span className="text-green-400 mr-2 mt-1">•</span>
+                    <span className="text-green-400 mr-2.5 mt-0.5 text-base">•</span>
                     <span>{reason}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-white/70 italic">
+              <p className="text-sm text-white/70 italic leading-relaxed">
                 Matched based on overall visual similarity and known cultivar traits.
               </p>
             )}
@@ -353,7 +361,7 @@ export default function WikiStyleResultPanel({
               }
               
               return (
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   {explanations.map((explanation, idx) => (
                     <p key={idx} className="text-sm text-white/80 leading-relaxed">
                       {explanation}

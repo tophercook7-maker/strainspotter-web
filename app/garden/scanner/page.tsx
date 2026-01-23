@@ -535,7 +535,8 @@ export default function ScannerPage() {
         {/* UI FIX — Results Card(s) — Wrapped in container, cards not lines */}
         {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
-        <section className="space-y-6 max-w-[680px] mx-auto">
+        {/* Phase 4.4.1 — Center the result column with intentional containment */}
+        <section className="space-y-6 max-w-3xl mx-auto px-4">
           {/* FAILURE MESSAGING SOFTENED — User-facing warnings (non-fatal, non-blocking) */}
           {scanError?.reason === "images-too-similar" && (
             <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
