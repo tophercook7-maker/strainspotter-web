@@ -85,7 +85,7 @@ import { applySamePlantGrace } from "./graceMode";
 // Phase 4.1.6 — confidence floor for low distinctness
 import { applyConfidenceFloor } from "./confidenceFloor";
 // Phase 4.1.7 — UI message (non-blocking)
-import { buildScanNote, buildSamePlantNote, buildAngleHintNote, buildDistinctivenessNote } from "./scanNotes";
+import { buildScanNote, buildSamePlantNote, buildAngleHintNote, buildDistinctivenessNote, buildSimilarImagesNote } from "./scanNotes";
 // Phase 4.2.1 — multi-angle hinting (non-blocking)
 import { inferAngleHint } from "./angleHinting";
 // Phase 4.2.2 — angle diversity scoring
@@ -5940,6 +5940,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         : (warning || undefined), // Phase 4.0.6 — Backward compatibility (includes validation warnings)
       scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
       samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
+      similarImagesNote: similarImagesNote || undefined, // Phase 5.2.4 — User-facing note when images are similar
       meta: scanMeta, // Phase 4.2.6 — Scan metadata
     };
     
@@ -6124,6 +6125,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           scanWarning: finalScanWarning, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
           scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
           samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
+          similarImagesNote: similarImagesNote || undefined, // Phase 5.2.4 — User-facing note when images are similar
           meta: scanMeta, // Phase 4.2.6 — Scan metadata
         }
       : {
@@ -6136,6 +6138,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           scanWarning: finalScanWarning, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
           scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
           samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
+          similarImagesNote: similarImagesNote || undefined, // Phase 5.2.4 — User-facing note when images are similar
           meta: scanMeta, // Phase 4.2.6 — Scan metadata
         };
   

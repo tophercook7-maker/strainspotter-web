@@ -283,8 +283,19 @@ export default function WikiStyleResultPanel({
               })()}
               
               {/* Phase 5.1.5 — SAME-PLANT DETECTION MESSAGE (TRANSPARENT) */}
+              {/* Phase 5.2.4 — SAME-PLANT / SAME-ANGLE DETECTION NOTE */}
               {(() => {
                 const hasSamePlantNote = !!(result as any).samePlantNote;
+                const hasSimilarImagesNote = !!(result as any).similarImagesNote;
+                
+                // Phase 5.2.4 — Show similar images note (preferred over same-plant note)
+                if (hasSimilarImagesNote) {
+                  return (
+                    <div className="mt-3 text-xs text-white/60 leading-relaxed">
+                      {(result as any).similarImagesNote}
+                    </div>
+                  );
+                }
                 
                 // Only show if same-plant is explicitly detected (not just multiple images)
                 if (hasSamePlantNote) {

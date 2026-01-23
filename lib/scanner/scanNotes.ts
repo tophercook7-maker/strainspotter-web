@@ -33,3 +33,15 @@ export function buildDistinctivenessNote(score: number): string | null {
   }
   return null
 }
+
+// Phase 5.2.4 — SAME-PLANT / SAME-ANGLE DETECTION NOTE
+// Shows passive note when images are similar (same plant or same angle)
+export function buildSimilarImagesNote(
+  hasHighSimilarity: boolean,
+  hasLowAngleDiversity: boolean
+): string | null {
+  if (hasHighSimilarity || hasLowAngleDiversity) {
+    return "These photos appear very similar. Additional angles may improve confidence."
+  }
+  return null
+}

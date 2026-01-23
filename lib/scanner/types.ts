@@ -204,6 +204,7 @@ export interface FullScanResult {
   scanWarning?: string | null; // Phase 4.0.6 — Warning when similarity limits confidence
   scanNote?: string | null; // Phase 4.1.7 — Non-blocking UI message for low distinctness
   samePlantNote?: string | null; // Phase 4.2.0 — User-facing note when same-plant detected
+  similarImagesNote?: string | null; // Phase 5.2.4 — User-facing note when images are similar (same plant/angle)
   meta?: ScanMeta; // Phase 4.2.6 — Scan metadata (confidence cap, distinctiveness, guidance hints)
   warnings?: string[]; // Phase 4.0.5 — Warning channel (non-fatal)
 }
@@ -241,6 +242,7 @@ export type ScanResult =
       scanWarning?: string | null // Phase 4.0.6 — Backward compatibility
       scanNote?: string | null // Phase 4.1.7 — Non-blocking UI message for low distinctness
       samePlantNote?: string | null // Phase 4.2.0 — User-facing note when same-plant detected
+      similarImagesNote?: string | null // Phase 5.2.4 — User-facing note when images are similar (same plant/angle)
       meta?: ScanMeta // Phase 4.2.6 — Scan metadata
     }
   | {
@@ -257,6 +259,7 @@ export type ScanResult =
       scanWarning?: string | null // Phase 4.0.6 — Backward compatibility
       scanNote?: string | null // Phase 4.1.7 — Non-blocking UI message for low distinctness
       samePlantNote?: string | null // Phase 4.2.0 — User-facing note when same-plant detected
+      similarImagesNote?: string | null // Phase 5.2.4 — User-facing note when images are similar (same plant/angle)
       meta?: ScanMeta // Phase 4.2.6 — Scan metadata
     }
   | {
