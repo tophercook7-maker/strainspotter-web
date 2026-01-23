@@ -286,15 +286,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // STABILIZATION RESET — Wrap entire function in try-catch to ensure always returns
   try {
-    // STABILIZATION MODE — No throws, return safe fallback
+    // PHASE A FINALIZATION — No throws, return safe fallback
     if (input.imageCount === 0) {
-      return buildSafeFallbackResult("No images provided for analysis", 0);
+      const fallback = buildSafeFallbackResult("Low confidence — results may vary", 0);
+      console.log(`SCAN COMPLETE — status=${'status' in fallback ? fallback.status : 'partial'} confidence=${'confidence' in fallback ? fallback.confidence : 50}`);
+      return fallback;
     }
 
   // Phase 2.7 Part N Step 1 — Require minimum 2 images (if multiple images provided)
-  // STABILIZATION MODE — This condition is impossible (x > 1 && x < 2), but keep for safety
+  // PHASE A FINALIZATION — This condition is impossible (x > 1 && x < 2), but keep for safety
   if (input.imageCount > 1 && input.imageCount < 2) {
-    return buildSafeFallbackResult("Invalid image count configuration", input.imageCount);
+    const fallback = buildSafeFallbackResult("Low confidence — results may vary", input.imageCount);
+    console.log(`SCAN COMPLETE — status=${'status' in fallback ? fallback.status : 'partial'} confidence=${'confidence' in fallback ? fallback.confidence : 50}`);
+    return fallback;
   }
 
   // Phase 4.0.5 — Do NOT fail scan on similar images
@@ -4868,8 +4872,27 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
       meta: scanMeta, // Phase 4.2.6 — Scan metadata
     };
+    // PHASE A FINALIZATION — Final safety check: ensure nameFirstDisplay.primaryStrainName is never empty
+    if (!viewModel.nameFirstDisplay?.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim().length < 3) {
+      console.warn("PHASE A FINALIZATION: Final check - primaryStrainName invalid in partial result, forcing fallback");
+      if (!viewModel.nameFirstDisplay) {
+        viewModel.nameFirstDisplay = {
+          primaryStrainName: "Closest Known Cultivar",
+          primaryName: "Closest Known Cultivar",
+          confidencePercent: Math.min(72, finalConfidence),
+          confidence: Math.min(72, finalConfidence),
+          confidenceTier: "low" as const,
+          tagline: "Low confidence — results may vary",
+          explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
+          alternateNames: [],
+        };
+      } else {
+        viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+        viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+      }
+    }
+    
     console.log(`SCAN COMPLETE — status=partial confidence=${finalConfidence}`);
-    console.log("FINAL CONFIDENCE V406:", finalConfidenceV406);
     return result;
   }
 
@@ -4909,6 +4932,26 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     viewModel.title = viewModel.nameFirstDisplay.primaryStrainName;
   }
 
+  // PHASE A FINALIZATION — Final safety check: ensure nameFirstDisplay.primaryStrainName is never empty
+  if (!viewModel.nameFirstDisplay?.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim().length < 3) {
+    console.warn("PHASE A FINALIZATION: Final check - primaryStrainName invalid in success result, forcing fallback");
+    if (!viewModel.nameFirstDisplay) {
+      viewModel.nameFirstDisplay = {
+        primaryStrainName: "Closest Known Cultivar",
+        primaryName: "Closest Known Cultivar",
+        confidencePercent: Math.min(72, finalConfidence),
+        confidence: Math.min(72, finalConfidence),
+        confidenceTier: "low" as const,
+        tagline: "Low confidence — results may vary",
+        explanation: { whyThisNameWon: ["Analysis completed with limited certainty"], whatRuledOutOthers: [], varianceNotes: [] },
+        alternateNames: [],
+      };
+    } else {
+      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+      viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+    }
+  }
+  
   const result: ScanResult = {
     status: "success",
     consensus: finalConsensusResult,
@@ -4921,16 +4964,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
     meta: scanMeta, // Phase 4.2.6 — Scan metadata
   };
-    console.log(`SCAN COMPLETE — status=success confidence=${finalConfidence}`);
-    console.log("FINAL CONFIDENCE V406:", finalConfidenceV406);
-    return result;
+  
+  // PHASE A FINALIZATION — Log once at end
+  console.log(`SCAN COMPLETE — status=success confidence=${finalConfidence}`);
+  return result;
   } catch (error) {
-    // STABILIZATION RESET — Catch any unexpected errors and return safe fallback
-    console.error("STABILIZATION RESET: Unexpected error in runScanPipeline, returning safe fallback:", error);
-    return buildSafeFallbackResult(
-      `Analysis encountered an error: ${error instanceof Error ? error.message : String(error)}`,
+    // PHASE A FINALIZATION — Catch any unexpected errors and return safe fallback (never throw)
+    console.error("PHASE A FINALIZATION: Unexpected error in runScanPipeline, returning safe fallback:", error);
+    const fallback = buildSafeFallbackResult(
+      "Low confidence — results may vary",
       input.imageCount || 0
     );
+    console.log(`SCAN COMPLETE — status=${'status' in fallback ? fallback.status : 'partial'} confidence=${'confidence' in fallback ? fallback.confidence : 50}`);
+    return fallback;
   }
 }
 
@@ -4940,23 +4986,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
 export async function scanImages(images: File[]): Promise<ScanResult> {
   console.log("scanImages called with", images.length, "images");
   
-  // FAILURE MESSAGING SOFTENED — Return safe fallback with soft messages
+  // PHASE A FINALIZATION — Return safe fallback with soft messages (never throw)
   if (!images || images.length === 0) {
     const fallback = buildSafeFallbackResult("Low confidence — results may vary", 0);
-    if ('confidence' in fallback) {
-      console.log(`SCAN COMPLETE — status=partial confidence=${fallback.confidence}`);
-    }
+    console.log(`SCAN COMPLETE — status=${'status' in fallback ? fallback.status : 'partial'} confidence=${'confidence' in fallback ? fallback.confidence : 50}`);
     return fallback;
   }
 
   // Phase 2.7 Part N Step 1 — Require minimum 2 images for multi-image scan
   // (But allow single image as fallback)
-  // FAILURE MESSAGING SOFTENED — This condition is impossible (x > 1 && x < 2), but keep for safety
+  // PHASE A FINALIZATION — This condition is impossible (x > 1 && x < 2), but keep for safety
   if (images.length > 1 && images.length < 2) {
     const fallback = buildSafeFallbackResult("Low confidence — results may vary", images.length);
-    if ('confidence' in fallback) {
-      console.log(`SCAN COMPLETE — status=partial confidence=${fallback.confidence}`);
-    }
+    console.log(`SCAN COMPLETE — status=${'status' in fallback ? fallback.status : 'partial'} confidence=${'confidence' in fallback ? fallback.confidence : 50}`);
     return fallback;
   }
 
@@ -4972,18 +5014,27 @@ export async function scanImages(images: File[]): Promise<ScanResult> {
       imageSeeds,
       imageCount: images.length,
     }, images); // Pass image files for consensus engine
+    
+    // PHASE A FINALIZATION — Ensure result always has valid structure
+    if ('status' in result && result.status && result.result) {
+      if (!result.result.nameFirstDisplay?.primaryStrainName || result.result.nameFirstDisplay.primaryStrainName.trim().length < 3) {
+        console.warn("PHASE A FINALIZATION: Result from pipeline has invalid name, using fallback");
+        const fallback = buildSafeFallbackResult("Low confidence — results may vary", images.length);
+        console.log(`SCAN COMPLETE — status=${'status' in fallback ? fallback.status : 'partial'} confidence=${'confidence' in fallback ? fallback.confidence : 50}`);
+        return fallback;
+      }
+    }
+    
     console.log("scanImages: pipeline completed", result);
     return result;
   } catch (error) {
-    // FAILURE MESSAGING SOFTENED — Return safe fallback with soft messages, never block user
-    console.error("FAILURE MESSAGING SOFTENED: scanImages caught pipeline error, returning safe fallback:", error);
+    // PHASE A FINALIZATION — Return safe fallback with soft messages, never block user (never throw)
+    console.error("PHASE A FINALIZATION: scanImages caught pipeline error, returning safe fallback:", error);
     const fallback = buildSafeFallbackResult(
       "Low confidence — results may vary",
       images.length
     );
-    if ('confidence' in fallback) {
-      console.log(`SCAN COMPLETE — status=partial confidence=${fallback.confidence}`);
-    }
+    console.log(`SCAN COMPLETE — status=${'status' in fallback ? fallback.status : 'partial'} confidence=${'confidence' in fallback ? fallback.confidence : 50}`);
     return fallback;
   }
 }

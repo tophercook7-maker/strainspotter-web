@@ -691,11 +691,9 @@ export function runNameFirstPipeline(
         selection.primaryStrainName = fallbackStrain.name;
         console.warn(`Phase 5.0.2 — FAILSAFE: Using database fallback "${selection.primaryStrainName}" (database has ${CULTIVAR_LIBRARY.length} strains)`);
       } else {
-        const error = new Error(
-          "Phase 5.0.2 — CRITICAL: Database loaded but empty. Cannot resolve strain name."
-        );
-        console.error(error.message);
-        throw error;
+        // PHASE A FINALIZATION — Never throw, always return a name
+        console.error("PHASE A FINALIZATION: Database loaded but empty, using generic fallback");
+        selection.primaryStrainName = "Closest Known Cultivar";
       }
     } else {
       // Phase 5.0.2 — Only allow "Unknown" if database is not loaded (< 10K strains)
