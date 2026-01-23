@@ -108,6 +108,28 @@ export default function WikiStyleResultPanel({
               </div>
             );
           })()}
+          
+          {/* Phase 4.1 — Why This Looks Like {Primary Strain Name} */}
+          <div className="mt-4 space-y-2">
+            <h3 className="text-base font-semibold text-white/90">
+              Why This Looks Like {viewModel.nameFirstDisplay.primaryStrainName}
+            </h3>
+            {viewModel.nameFirstDisplay.explanation?.whyThisNameWon && 
+             viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0 ? (
+              <ul className="space-y-1.5">
+                {viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 6).map((reason, idx) => (
+                  <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
+                    <span className="text-green-400 mr-2 mt-1">•</span>
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-white/70 italic">
+                Matched based on overall visual similarity and known cultivar traits.
+              </p>
+            )}
+          </div>
             
             {/* Phase 4.3.1 — render name stability */}
             {viewModel.nameFirstDisplay?.nameStabilityScore && (
