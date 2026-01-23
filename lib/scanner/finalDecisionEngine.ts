@@ -243,32 +243,124 @@ export function makeFinalDecision(
   const selected = scoredCandidates[0];
   const primaryCandidate = selected.candidate;
   
-  // Phase 5.0.5.4 — Calculate final confidence
-  // Confidence reflects evidence strength:
-  // - Base: fingerprint score (0-100)
-  // - Boost: cross-image agreement (+0-20 points)
-  // - Penalty: contradictions (-0-15 points)
-  let confidence = Math.round(primaryCandidate.overallScore * 100);
+  // Phase 5.0.6 — CONFIDENCE CALIBRATION (REALISTIC)
+  // Confidence is based on:
+  // - Fingerprint separation (gap to #2)
+  // - Multi-image agreement
+  // - Visual + genetic alignment
   
-  // Cross-image agreement boost
-  const agreementBoost = Math.round(selected.crossImageAgreement * 20);
-  confidence = Math.min(100, confidence + agreementBoost);
+  const imageCount = imageResults?.length || 1;
   
-  // Contradiction penalty
-  const contradictionPenalty = Math.round(selected.contradictionScore * 15);
-  confidence = Math.max(50, confidence - contradictionPenalty); // Never below 50%
+  // Phase 5.0.6.1 — Calculate fingerprint separation (gap to #2 candidate)
+  const fingerprintSeparation = scoredCandidates.length > 1
+    ? selected.fingerprintScore - scoredCandidates[1].fingerprintScore
+    : selected.fingerprintScore; // If only one candidate, use full score as separation
+  
+  // Phase 5.0.6.2 — Calculate visual + genetic alignment
+  const visualAlignment = primaryCandidate.channelScores.visual;
+  const geneticAlignment = primaryCandidate.channelScores.genetics;
+  const alignmentScore = (visualAlignment + geneticAlignment) / 2; // Average alignment
+  
+  // Phase 5.0.6.3 — Base confidence calculation
+  // Start with fingerprint score
+  let confidence = selected.fingerprintScore * 100;
+  
+  // Boost for fingerprint separation (clear winner)
+  // Large gap (>0.15) = +5%, Medium gap (0.10-0.15) = +3%, Small gap (<0.10) = +1%
+  if (fingerprintSeparation > 0.15) {
+    confidence += 5;
+  } else if (fingerprintSeparation > 0.10) {
+    confidence += 3;
+  } else if (fingerprintSeparation > 0.05) {
+    confidence += 1;
+  }
+  
+  // Boost for multi-image agreement
+  if (imageCount > 1) {
+    const agreementBoost = Math.round(selected.crossImageAgreement * 15); // Up to +15 points
+    confidence += agreementBoost;
+  }
+  
+  // Boost for visual + genetic alignment
+  const alignmentBoost = Math.round(alignmentScore * 10); // Up to +10 points
+  confidence += alignmentBoost;
+  
+  // Penalty for contradictions
+  const contradictionPenalty = Math.round(selected.contradictionScore * 15); // Up to -15 points
+  confidence -= contradictionPenalty;
+  
+  // Phase 5.0.6.4 — Apply image count caps
+  // Rules:
+  // - 1 image → cap ~82%
+  // - 2 images → cap ~90%
+  // - 3–5 images → up to 97–99%
+  // - Never show 100%
+  let imageCountCap: number;
+  if (imageCount === 1) {
+    imageCountCap = 82;
+  } else if (imageCount === 2) {
+    imageCountCap = 90;
+  } else if (imageCount >= 3 && imageCount <= 5) {
+    // 3-5 images: up to 97-99% based on evidence strength
+    if (selected.fingerprintScore >= 0.9 && 
+        selected.crossImageAgreement >= 0.9 && 
+        selected.contradictionScore < 0.1) {
+      imageCountCap = 99; // Very strong evidence
+    } else if (selected.fingerprintScore >= 0.85 && 
+               selected.crossImageAgreement >= 0.85 && 
+               selected.contradictionScore < 0.2) {
+      imageCountCap = 97; // Strong evidence
+    } else {
+      imageCountCap = 95; // Good evidence
+    }
+  } else {
+    // 6+ images: same as 3-5
+    imageCountCap = 97;
+  }
+  
+  // Apply cap
+  confidence = Math.min(confidence, imageCountCap);
+  
+  // Phase 5.0.6.5 — Never show 100%
+  confidence = Math.min(confidence, 99);
+  
+  // Phase 5.0.6.6 — Floor: never below 50% for valid scans
+  confidence = Math.max(50, confidence);
+  
+  // Round to integer
+  confidence = Math.round(confidence);
   
   // Phase 5.0.5.5 — Build reasoning
   const reasoning: string[] = [];
   reasoning.push(`Fingerprint match: ${Math.round(selected.fingerprintScore * 100)}%`);
+  
+  // Add fingerprint separation note
+  if (fingerprintSeparation > 0.15) {
+    reasoning.push(`Clear winner (${Math.round(fingerprintSeparation * 100)}% above #2 candidate)`);
+  } else if (fingerprintSeparation > 0.05) {
+    reasoning.push(`Moderate separation (${Math.round(fingerprintSeparation * 100)}% above #2 candidate)`);
+  } else if (scoredCandidates.length > 1) {
+    reasoning.push(`Close match (${Math.round(fingerprintSeparation * 100)}% above #2 candidate)`);
+  }
+  
   reasoning.push(`Cross-image agreement: ${Math.round(selected.crossImageAgreement * 100)}%`);
+  reasoning.push(`Visual + genetic alignment: ${Math.round(alignmentScore * 100)}%`);
   reasoning.push(`Contradiction score: ${Math.round(selected.contradictionScore * 100)}% (lower is better)`);
+  
+  // Add image count cap note
+  if (imageCount === 1) {
+    reasoning.push(`Single image analysis — confidence capped at 82%`);
+  } else if (imageCount === 2) {
+    reasoning.push(`Two images analyzed — confidence capped at 90%`);
+  } else if (imageCount >= 3) {
+    reasoning.push(`${imageCount} images analyzed — confidence capped at ${imageCountCap}%`);
+  }
   
   if (selected.crossImageAgreement >= 0.8) {
     reasoning.push("Strong agreement across multiple images");
   } else if (selected.crossImageAgreement >= 0.6) {
     reasoning.push("Good agreement across images");
-  } else if (imageResults && imageResults.length > 1) {
+  } else if (imageCount > 1) {
     reasoning.push("Some variation in image agreement");
   }
   
@@ -335,32 +427,13 @@ export function makeFinalDecision(
     reasoning.push("Using fallback name — no valid match found in database");
   }
   
-  // Phase 5.0.5.9 — Final confidence calibration
-  // Ensure confidence reflects evidence strength
-  // - High evidence (score > 0.8, agreement > 0.8, contradiction < 0.2): 85-95%
-  // - Medium evidence (score > 0.6, agreement > 0.6, contradiction < 0.4): 70-85%
-  // - Low evidence (score > 0.4, agreement > 0.4, contradiction < 0.6): 55-70%
-  // - Very low evidence: 50-55%
-  
-  if (selected.fingerprintScore >= 0.8 && 
-      selected.crossImageAgreement >= 0.8 && 
-      selected.contradictionScore < 0.2) {
-    // High evidence
-    confidence = Math.max(85, Math.min(95, confidence));
-  } else if (selected.fingerprintScore >= 0.6 && 
-             selected.crossImageAgreement >= 0.6 && 
-             selected.contradictionScore < 0.4) {
-    // Medium evidence
-    confidence = Math.max(70, Math.min(85, confidence));
-  } else if (selected.fingerprintScore >= 0.4 && 
-             selected.crossImageAgreement >= 0.4 && 
-             selected.contradictionScore < 0.6) {
-    // Low evidence
-    confidence = Math.max(55, Math.min(70, confidence));
-  } else {
-    // Very low evidence
-    confidence = Math.max(50, Math.min(55, confidence));
-  }
+  // Phase 5.0.6 — Confidence already calibrated above with realistic caps
+  // No additional calibration needed — confidence reflects:
+  // - Fingerprint separation
+  // - Multi-image agreement
+  // - Visual + genetic alignment
+  // - Image count caps (1 image = 82%, 2 images = 90%, 3-5 images = 97-99%)
+  // - Never 100%
   
   return {
     primaryStrainName,
