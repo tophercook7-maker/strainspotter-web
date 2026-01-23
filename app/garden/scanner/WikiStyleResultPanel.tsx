@@ -2449,12 +2449,122 @@ export default function WikiStyleResultPanel({
         </div>
       </CollapsibleSection>
       
-      {/* Phase 5.2.7 — FREE → PRO SOFT NUDGE (After results, non-intrusive) */}
-      <div className="pt-6 mt-6 border-t border-white/10">
-        <p className="text-xs text-white/60 text-center leading-relaxed">
-          Want higher certainty? Add more angles or unlock Pro for deeper analysis.
-        </p>
-      </div>
+      {/* Phase 5.3.7 — PRO DIFFERENTIATION (NOT GATING) */}
+      {/* Pro enhancements are displayed as additional sections, never replacing free tier content */}
+      {(() => {
+        const proEnhancements = (result as any)?.proEnhancements;
+        if (!proEnhancements) {
+          // Free tier: Show soft nudge
+          return (
+            <div className="pt-6 mt-6 border-t border-white/10">
+              <p className="text-xs text-white/60 text-center leading-relaxed">
+                Want higher certainty? Add more angles or unlock Pro for deeper analysis.
+              </p>
+            </div>
+          );
+        }
+        
+        // Pro tier: Show pro enhancements
+        return (
+          <div className="space-y-6 pt-6 mt-6 border-t border-white/10">
+            {/* Phase 5.3.7.1 — Detailed Why-This-Name-Won Breakdown */}
+            {proEnhancements.detailedWhyThisNameWon && proEnhancements.detailedWhyThisNameWon.length > 0 && (
+              <CollapsibleSection
+                title="Detailed Match Breakdown"
+                defaultExpanded={false}
+                icon="🔬"
+              >
+                <div className="space-y-2">
+                  {proEnhancements.detailedWhyThisNameWon.map((reason, idx) => (
+                    <p key={idx} className="text-sm text-white/80 leading-relaxed">
+                      • {reason}
+                    </p>
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+            
+            {/* Phase 5.3.7.2 — Clone/Phenotype Explanation */}
+            {proEnhancements.clonePhenotypeExplanation && (
+              <CollapsibleSection
+                title="Clone & Phenotype Information"
+                defaultExpanded={false}
+                icon="🧬"
+              >
+                <p className="text-sm text-white/80 leading-relaxed">
+                  {proEnhancements.clonePhenotypeExplanation}
+                </p>
+              </CollapsibleSection>
+            )}
+            
+            {/* Phase 5.3.7.3 — Per-Image Analysis */}
+            {proEnhancements.perImageAnalysis && proEnhancements.perImageAnalysis.length > 0 && (
+              <CollapsibleSection
+                title="Per-Image Analysis"
+                defaultExpanded={false}
+                icon="📸"
+              >
+                <div className="space-y-4">
+                  {proEnhancements.perImageAnalysis.map((analysis, idx) => (
+                    <div key={idx} className="p-4 rounded-lg border border-white/10 bg-white/5">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold text-white/90">Image {analysis.imageIndex}</h4>
+                        <span className="text-xs text-white/60">{analysis.confidence}% confidence</span>
+                      </div>
+                      <p className="text-sm font-medium text-white/80 mb-2">{analysis.identifiedStrain}</p>
+                      {analysis.keyTraits.length > 0 && (
+                        <div className="mb-2">
+                          <p className="text-xs text-white/60 mb-1">Key traits:</p>
+                          <ul className="list-disc list-inside text-xs text-white/70 ml-2">
+                            {analysis.keyTraits.map((trait, traitIdx) => (
+                              <li key={traitIdx}>{trait}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {analysis.whyThisStrain.length > 0 && (
+                        <div>
+                          <p className="text-xs text-white/60 mb-1">Why this strain:</p>
+                          <ul className="list-disc list-inside text-xs text-white/70 ml-2">
+                            {analysis.whyThisStrain.map((reason, reasonIdx) => (
+                              <li key={reasonIdx}>{reason}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+            
+            {/* Phase 5.3.7.4 — Confidence Delta */}
+            {proEnhancements.confidenceDelta && (
+              <div className="p-4 rounded-lg border border-blue-500/30 bg-blue-500/10">
+                <h4 className="text-sm font-semibold text-blue-200 mb-2">Confidence Improvement Potential</h4>
+                <p className="text-sm text-blue-200/90 leading-relaxed mb-2">
+                  {proEnhancements.confidenceDelta.explanation}
+                </p>
+                <div className="flex items-center gap-4 mt-3">
+                  <div>
+                    <p className="text-xs text-blue-200/70 mb-1">Current</p>
+                    <p className="text-lg font-semibold text-blue-200">{proEnhancements.confidenceDelta.currentConfidence}%</p>
+                  </div>
+                  <div className="text-blue-200/50">→</div>
+                  <div>
+                    <p className="text-xs text-blue-200/70 mb-1">With more images</p>
+                    <p className="text-lg font-semibold text-blue-200">{proEnhancements.confidenceDelta.estimatedConfidenceWithMoreImages}%</p>
+                  </div>
+                  <div className="ml-auto">
+                    <p className="text-xs text-blue-200/70 mb-1">Potential gain</p>
+                    <p className="text-lg font-semibold text-green-400">+{proEnhancements.confidenceDelta.delta}%</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </section>
   );
 }
