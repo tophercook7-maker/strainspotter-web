@@ -102,7 +102,7 @@ export default function WikiStyleResultPanel({
                         Strong visual and database agreement
                       </div>
                     );
-                  } else if (confidence >= 80 && confidence < 90) {
+                  } else if (confidence >= 80 && confidence < 90 && scanStatus !== "partial") {
                     return (
                       <div className="text-sm text-muted-foreground">
                         Best match based on visible traits and known cultivars
