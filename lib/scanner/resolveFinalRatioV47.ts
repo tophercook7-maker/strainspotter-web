@@ -383,7 +383,137 @@ function generateDominanceLabel(
 }
 
 /**
+ * Phase 4.7.2 — Detect data conflicts
+ * Returns true if sources disagree significantly (>30% spread)
+ */
+function detectDataConflicts(
+  genetics: { indica: number; sativa: number },
+  familyBaseline: { indica: number; sativa: number },
+  visualMorphology: { indica: number; sativa: number },
+  terpeneBias: { indica: number; sativa: number },
+  nameConsensus: { indica: number; sativa: number }
+): boolean {
+  const sources = [genetics, familyBaseline, visualMorphology, terpeneBias, nameConsensus];
+  
+  // Calculate spread (max indica - min indica, max sativa - min sativa)
+  const indicaValues = sources.map(s => s.indica);
+  const sativaValues = sources.map(s => s.sativa);
+  
+  const indicaSpread = Math.max(...indicaValues) - Math.min(...indicaValues);
+  const sativaSpread = Math.max(...sativaValues) - Math.min(...sativaValues);
+  
+  // Conflict if spread > 30%
+  return indicaSpread > 30 || sativaSpread > 30;
+}
+
+/**
+ * Phase 4.7.2 — Detect strong lineage
+ * Returns true if genetics source is strong (has DB entry with explicit ratio or high confidence)
+ */
+function detectStrongLineage(
+  genetics: { indica: number; sativa: number },
+  dbEntry?: CultivarReference
+): boolean {
+  if (!dbEntry) return false;
+  
+  const dbEntryAny = dbEntry as any;
+  // Strong if explicit ratio exists (not inferred from type)
+  if (dbEntryAny.indicaPercent !== undefined && dbEntryAny.sativaPercent !== undefined) {
+    return true;
+  }
+  
+  // Strong if genetics ratio is extreme (not balanced 50/50)
+  const spread = Math.abs(genetics.indica - genetics.sativa);
+  return spread >= 40; // At least 40% spread indicates strong lineage signal
+}
+
+/**
+ * Phase 4.7.2 — Compress toward hybrid
+ * Moves ratio toward 50/50 when conflicts detected
+ */
+function compressTowardHybrid(
+  indica: number,
+  sativa: number,
+  compressionFactor: number // 0-1, how much to compress (0.3 = 30% toward 50/50)
+): { indica: number; sativa: number } {
+  const targetIndica = 50;
+  const targetSativa = 50;
+  
+  const compressedIndica = indica + (targetIndica - indica) * compressionFactor;
+  const compressedSativa = sativa + (targetSativa - sativa) * compressionFactor;
+  
+  // Normalize to sum to 100
+  const total = compressedIndica + compressedSativa;
+  if (total > 0) {
+    return {
+      indica: Math.round((compressedIndica / total) * 100),
+      sativa: Math.round((compressedSativa / total) * 100),
+    };
+  }
+  
+  return { indica: 50, sativa: 50 };
+}
+
+/**
+ * Phase 4.7.2 — Apply uncertainty caps
+ * Single image: ±15% uncertainty
+ * Multi-image: ±7% uncertainty
+ */
+function applyUncertaintyCaps(
+  indica: number,
+  sativa: number,
+  imageCount: number,
+  strongLineage: boolean
+): { indica: number; sativa: number } {
+  const uncertaintyCap = imageCount === 1 ? 15 : 7;
+  
+  // Calculate center (50/50)
+  const center = 50;
+  
+  // Calculate distance from center
+  const indicaDistance = Math.abs(indica - center);
+  const sativaDistance = Math.abs(sativa - center);
+  
+  // If strong lineage, allow wider split (no cap)
+  if (strongLineage) {
+    return { indica, sativa };
+  }
+  
+  // Apply cap: don't allow more than ±uncertaintyCap% from center
+  let cappedIndica = indica;
+  let cappedSativa = sativa;
+  
+  if (indicaDistance > uncertaintyCap) {
+    if (indica > center) {
+      cappedIndica = center + uncertaintyCap;
+    } else {
+      cappedIndica = center - uncertaintyCap;
+    }
+  }
+  
+  if (sativaDistance > uncertaintyCap) {
+    if (sativa > center) {
+      cappedSativa = center + uncertaintyCap;
+    } else {
+      cappedSativa = center - uncertaintyCap;
+    }
+  }
+  
+  // Normalize to sum to 100
+  const total = cappedIndica + cappedSativa;
+  if (total > 0) {
+    return {
+      indica: Math.round((cappedIndica / total) * 100),
+      sativa: Math.round((cappedSativa / total) * 100),
+    };
+  }
+  
+  return { indica: 50, sativa: 50 };
+}
+
+/**
  * Phase 4.7.1 — Multi-Source Ratio Engine (Locked)
+ * Phase 4.7.2 — Confidence-Aware Ratio Scoring
  * 
  * Combines multiple sources with weighted approach:
  * - Genetics/lineage (DB): 40%
@@ -391,6 +521,13 @@ function generateDominanceLabel(
  * - Visual morphology: 15%
  * - Terpene profile bias: 15%
  * - Name consensus bias: 10%
+ * 
+ * Phase 4.7.2 Rules:
+ * - Ratios never sum from guesses alone
+ * - If data conflicts → compress toward hybrid
+ * - If lineage strong → allow wider split
+ * - Single image → ±15% uncertainty cap
+ * - Multi-image → ±7% uncertainty cap
  */
 export function resolveFinalRatioV47(args: {
   strainName: string;
@@ -403,6 +540,8 @@ export function resolveFinalRatioV47(args: {
   terpeneProfile?: string[] | Array<{ name: string; likelihood?: string }>;
   candidateStrains?: Array<{ name: string; confidence: number }>;
   overallConfidence?: number; // 0-100
+  imageCount?: number; // Phase 4.7.2 — For uncertainty caps
+  consensusStrength?: number; // Phase 4.7.2 — 0-1, for detecting multi-image consensus
 }): FinalStrainRatioV47 {
   const {
     strainName,
@@ -411,6 +550,8 @@ export function resolveFinalRatioV47(args: {
     terpeneProfile,
     candidateStrains,
     overallConfidence = 75,
+    imageCount = 1, // Phase 4.7.2
+    consensusStrength = 0.5, // Phase 4.7.2
   } = args;
   
   try {
@@ -457,6 +598,44 @@ export function resolveFinalRatioV47(args: {
         finalIndica += remainder;
       } else {
         finalSativa += remainder;
+      }
+    }
+    
+    // Phase 4.7.2 — CONFIDENCE-AWARE RATIO SCORING
+    
+    // Rule 1: Ratios never sum from guesses alone
+    // Check if we have real data (genetics or family baseline with actual data)
+    const hasRealData = dbEntry !== undefined || 
+      (genetics.indica !== 50 || genetics.sativa !== 50) || // Not default balanced
+      (familyBaseline.indica !== 50 || familyBaseline.sativa !== 50); // Not default balanced
+    
+    if (!hasRealData) {
+      // No real data - compress to balanced hybrid
+      console.warn("Phase 4.7.2 — No real data available, compressing to balanced hybrid");
+      finalIndica = 50;
+      finalSativa = 50;
+    } else {
+      // Rule 2: If data conflicts → compress toward hybrid
+      const hasConflicts = detectDataConflicts(genetics, familyBaseline, visualMorphology, terpeneBias, nameConsensus);
+      if (hasConflicts) {
+        console.log("Phase 4.7.2 — Data conflicts detected, compressing toward hybrid");
+        const compressed = compressTowardHybrid(finalIndica, finalSativa, 0.3); // 30% compression
+        finalIndica = compressed.indica;
+        finalSativa = compressed.sativa;
+      }
+      
+      // Rule 3: If lineage strong → allow wider split (no cap)
+      const strongLineage = detectStrongLineage(genetics, dbEntry);
+      
+      // Rule 4: Apply uncertainty caps (unless strong lineage)
+      const capped = applyUncertaintyCaps(finalIndica, finalSativa, imageCount, strongLineage);
+      finalIndica = capped.indica;
+      finalSativa = capped.sativa;
+      
+      if (strongLineage) {
+        console.log("Phase 4.7.2 — Strong lineage detected, allowing wider split");
+      } else {
+        console.log(`Phase 4.7.2 — Applied uncertainty cap: ${imageCount === 1 ? '±15%' : '±7%'}`);
       }
     }
     

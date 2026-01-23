@@ -4484,6 +4484,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
   
   // Phase 4.7.1 — MULTI-SOURCE RATIO ENGINE (LOCKED)
+  // Phase 4.7.2 — CONFIDENCE-AWARE RATIO SCORING
   // Combines: Genetics (40%), Family baseline (20%), Visual (15%), Terpene (15%), Name consensus (10%)
   const finalRatioV47 = resolveFinalRatioV47({
     strainName: finalPrimaryName,
@@ -4499,6 +4500,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       confidence: c.score,
     })),
     overallConfidence: finalConfidence,
+    imageCount: imageResultsV3.length || filteredInput.imageCount, // Phase 4.7.2
+    consensusStrength: consensusStrength, // Phase 4.7.2 — From V403 calculation
   });
 
   // Phase 4.7.1 — Output format (always sums to 100) - Attach to viewModel
