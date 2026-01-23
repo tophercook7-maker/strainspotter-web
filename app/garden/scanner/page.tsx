@@ -8,6 +8,7 @@ import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageL
 import { assessImageDiversity } from "@/lib/scanner/imageDiversity";
 import { inferImageAngleFromBase64 } from "@/lib/scanner/imageAngleHeuristics";
 import { analyzeImageSet } from "@/lib/scanner/multiImageGuidance"; // Phase 5.2.2 — Slot-aware UI
+import { getQualityFeedback } from "@/lib/scanner/qualityFeedback"; // Phase 5.2.3 — Quality feedback
 
 type ScanTier = "basic" | "pro" | "expert";
 import ResultPanel from "./ResultPanel";
@@ -464,6 +465,36 @@ export default function ScannerPage() {
                   <ImageGuidancePanel imagePreviews={imagePreviews} maxImages={MAX_IMAGES} />
                 </div>
               )}
+              
+              {/* Phase 5.2.3 — QUALITY FEEDBACK (PASSIVE) */}
+              {images.length > 0 && (() => {
+                const guidance = analyzeImageSet(imagePreviews, MAX_IMAGES);
+                const qualityFeedback = getQualityFeedback(imagePreviews, images.length, guidance.filledSlots);
+                
+                return (
+                  <div className="mt-4 space-y-2">
+                    {qualityFeedback.messages.map((message, idx) => (
+                      <div
+                        key={idx}
+                        className={`rounded-lg border p-3 text-sm ${
+                          qualityFeedback.overallTone === "positive"
+                            ? "border-green-500/30 bg-green-500/10 text-green-200"
+                            : qualityFeedback.overallTone === "suggestive"
+                            ? "border-blue-500/30 bg-blue-500/10 text-blue-200"
+                            : "border-white/10 bg-white/5 text-white/70"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="mt-0.5">
+                            {qualityFeedback.overallTone === "positive" ? "✓" : "ℹ️"}
+                          </span>
+                          <span>{message}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               
               {/* Phase 5.2.2 — SLOT-AWARE UI (FREE TIER) */}
               {/* Phase 4.0 Part A — IMAGE PREVIEWS with Slot Labels */}
