@@ -159,22 +159,39 @@ export default function WikiStyleResultPanel({
           
           {/* Phase 4.0.3.1 — Confidence badge (always visible) */}
           {/* Phase 4.3 — Enhanced with expert-driven messaging */}
+          {/* Phase 4.3.1 — Normalized badge tiers and visual capping */}
           {(() => {
-            const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
-            const confidenceTier =
-              confidence >= 85 ? "high" :
-              confidence >= 70 ? "medium" : "low";
-            const confidenceLabel =
-              confidenceTier === "high" ? "High Confidence" :
-              confidenceTier === "medium" ? "Medium Confidence" :
-              "Low Confidence";
-            const confidenceColor =
-              confidenceTier === "high" ? "bg-green-600" :
-              confidenceTier === "medium" ? "bg-yellow-500" :
-              "bg-red-600";
+            const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+            // Phase 4.3.1 — Cap displayed confidence visually at 95% (logic unchanged)
+            const confidence = Math.min(95, rawConfidence);
             
-            // Phase 4.3 — Expert-driven confidence explanation
-            const confidenceExplanation = confidence >= 85
+            // Phase 4.3.1 — Normalized badge tiers
+            let confidenceTier: "very_high" | "high" | "moderate" | "low";
+            let confidenceLabel: string;
+            let confidenceColor: string;
+            
+            if (confidence >= 93) {
+              confidenceTier = "very_high";
+              confidenceLabel = "Very High Confidence";
+              confidenceColor = "bg-green-600";
+            } else if (confidence >= 85) {
+              confidenceTier = "high";
+              confidenceLabel = "High Confidence";
+              confidenceColor = "bg-green-600";
+            } else if (confidence >= 70) {
+              confidenceTier = "moderate";
+              confidenceLabel = "Moderate Confidence";
+              confidenceColor = "bg-yellow-500";
+            } else {
+              confidenceTier = "low";
+              confidenceLabel = "Low Confidence";
+              confidenceColor = "bg-red-600";
+            }
+            
+            // Phase 4.3 — Expert-driven confidence explanation (updated for new tiers)
+            const confidenceExplanation = confidence >= 93
+              ? "Expert analysis confirms strong match"
+              : confidence >= 85
               ? "Expert analysis confirms strong match"
               : confidence >= 70
               ? "Expert analysis indicates likely match"
