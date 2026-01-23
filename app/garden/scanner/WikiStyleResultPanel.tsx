@@ -5,6 +5,7 @@
 
 import type { FullScanResult } from "@/lib/scanner/types";
 import CollapsibleSection from "./CollapsibleSection";
+import { generateWhyThisMatchReasons } from "@/lib/scanner/whyThisMatchEngine";
 
 export default function WikiStyleResultPanel({
   result,
@@ -458,48 +459,38 @@ export default function WikiStyleResultPanel({
               return null;
             }
             
-            // Get "Why this match" reasons (3 bullets max)
-            // Tone: Educational, confident, not absolute
-            const whyThisMatch: string[] = [];
-            
-            // Try to get from final decision reasoning if available
+            // Phase 5.1.2 — Generate exactly 3 clear reasons using "WHY THIS MATCH" ENGINE
             const finalDecision = (viewModel.nameFirstDisplay as any)?.finalDecision;
-            if (finalDecision?.reasoning && finalDecision.reasoning.length > 0) {
-              // Format reasoning points for educational tone
-              finalDecision.reasoning.slice(0, 3).forEach(reason => {
-                // Make tone educational and confident but not absolute
-                let formatted = reason;
-                
-                // Remove absolute language, add educational framing
-                formatted = formatted.replace(/exact|perfect|guaranteed|certain/gi, "strong");
-                formatted = formatted.replace(/match found/gi, "match identified");
-                formatted = formatted.replace(/confirms/gi, "suggests");
-                
-                // Ensure educational tone
-                if (!formatted.toLowerCase().includes("suggest") && 
-                    !formatted.toLowerCase().includes("indicate") &&
-                    !formatted.toLowerCase().includes("align")) {
-                  formatted = formatted.replace(/matches/gi, "aligns with");
-                }
-                
-                whyThisMatch.push(formatted);
-              });
-            } else if (viewModel.nameFirstDisplay.explanation?.whyThisNameWon && viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0) {
-              // Fallback to existing explanation (format for educational tone)
-              viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 3).forEach(reason => {
-                let formatted = reason;
-                formatted = formatted.replace(/exact|perfect|guaranteed|certain/gi, "strong");
-                formatted = formatted.replace(/confirms/gi, "suggests");
-                whyThisMatch.push(formatted);
-              });
-            } else {
-              // Default educational reasons (confident but not absolute)
-              whyThisMatch.push(
-                "Visual characteristics align with known cultivar traits in our database",
-                "Database match identified from 35,000+ strain library",
-                "Multi-image analysis supports this identification"
-              );
-            }
+            const primaryCandidate = finalDecision ? {
+              channelScores: {
+                visual: (finalDecision as any).channelScores?.visual || 0.7,
+                genetics: (finalDecision as any).channelScores?.genetics || 0.7,
+                terpenes: (finalDecision as any).channelScores?.terpenes || 0.6,
+                effects: (finalDecision as any).channelScores?.effects || 0.6,
+              }
+            } : undefined;
+            
+            // Try to get fusedFeatures from result if available
+            const fusedFeatures = (result as any).fusedFeatures || 
+                                 (viewModel as any).fusedFeatures || 
+                                 undefined;
+            
+            // Generate exactly 3 clear reasons
+            const whyThisMatch = generateWhyThisMatchReasons(
+              finalDecision || {
+                primaryStrainName: primaryName,
+                confidence: confidence,
+                contradictionScore: 0,
+                crossImageAgreement: 0.7,
+                fingerprintScore: 0.7,
+                reasoning: [],
+                alternates: [],
+                rejectedButClose: [],
+              },
+              primaryCandidate,
+              fusedFeatures,
+              imageCount
+            );
             
             // Get alternates (2-3 closest)
             const alternates: Array<{ name: string; whyNotPrimary: string }> = [];

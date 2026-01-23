@@ -5,7 +5,7 @@ import type { CandidateSet, CandidateMatch } from "./topKCandidateSelection";
 import type { FingerprintMatchScore } from "./fingerprintMatching";
 import type { ObservedFingerprint } from "./observedFingerprint";
 import type { VisualSignature } from "./visualFeatureExtraction";
-import type { ImageResult } from "./types";
+import type { ImageResult } from "./consensusEngine";
 
 /**
  * Phase 5.0.5 — Final Decision Result
