@@ -71,188 +71,161 @@ export default function WikiStyleResultPanel({
       {/* Phase 4.4 — Visual Authority Upgrade: Improved spacing and containment */}
       {/* Phase 4.4.2 — Remove full-width dividers, use spacing instead */}
       <div className="space-y-6 pb-8">
-        {/* Phase 15.5.5 — Large Strain Name */}
-        {/* Phase 4.2 — Name Stability & Trust Messaging */}
-        {/* Phase 4.4 — Visual Authority Upgrade: Enhanced typography and spacing */}
+        {/* Phase 5.1.1 — NAME-FIRST PRESENTATION (LOCK) */}
+        {/* Rule: The NAME is the anchor. Everything else supports it. */}
         <div>
-          <div className="flex items-start gap-4">
-            <div className="flex-1">
-              {/* Phase 4.4.3 — Promote strain name visually: larger size, name-first authority */}
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight mb-4">
-                {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
-                  ? "Unidentified Hybrid Phenotype"
-                  : viewModel.nameFirstDisplay.primaryStrainName}
-              </h1>
+          {/* Primary Header: Strain Name + Confidence Badge */}
+          <div className="mb-6">
+            {/* Strain Name — Large, Bold, Primary Anchor */}
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-3">
+              {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
+                ? "Unidentified Hybrid Phenotype"
+                : viewModel.nameFirstDisplay.primaryStrainName}
+            </h1>
+            
+            {/* Confidence Badge — Immediately below name, supports the name */}
+            {(() => {
+              const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
+              const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+              const confidence = Math.min(95, rawConfidence);
               
-              {/* Phase 4.4.3 — Confidence badge sits UNDER name, not inline */}
-              {/* Phase 4.6.4 — Confidence Distribution: Show dual confidence when family-first is applied */}
-              {(() => {
-                const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
-                const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
-                const confidence = Math.min(95, rawConfidence);
+              // Phase 5.1.1 — Simplified confidence tiers: Very High / High / Medium
+              let confidenceTier: "very_high" | "high" | "medium";
+              let confidenceLabel: string;
+              let confidenceColor: string;
+              
+              if (confidence >= 85) {
+                confidenceTier = "very_high";
+                confidenceLabel = "Very High";
+                confidenceColor = "bg-green-600";
+              } else if (confidence >= 70) {
+                confidenceTier = "high";
+                confidenceLabel = "High";
+                confidenceColor = "bg-green-600";
+              } else {
+                confidenceTier = "medium";
+                confidenceLabel = "Medium";
+                confidenceColor = "bg-yellow-500";
+              }
+              
+              // Phase 4.6.4 — Dual confidence display (if family-first applied)
+              if (familyFirst?.familyConfidence && familyFirst?.exactStrainConfidence && 
+                  familyFirst.familyConfidence > familyFirst.exactStrainConfidence) {
+                const familyConf = Math.round(Math.min(95, familyFirst.familyConfidence));
+                const strainConf = Math.round(Math.min(95, familyFirst.exactStrainConfidence));
                 
-                // Phase 4.6.4 — If family-first is applied and family confidence > strain confidence, show dual confidence
-                if (familyFirst?.familyConfidence && familyFirst?.exactStrainConfidence && 
-                    familyFirst.familyConfidence > familyFirst.exactStrainConfidence) {
-                  const familyConf = Math.round(Math.min(95, familyFirst.familyConfidence));
-                  const strainConf = Math.round(Math.min(95, familyFirst.exactStrainConfidence));
-                  
-                  // Never show fake 99% on weak evidence
-                  const cappedFamilyConf = Math.min(95, familyConf);
-                  const cappedStrainConf = Math.min(95, strainConf);
-                  
-                  // Determine tiers
-                  const familyTier = cappedFamilyConf >= 85 ? "very_high" : cappedFamilyConf >= 70 ? "high" : "moderate";
-                  const strainTier = cappedStrainConf >= 70 ? "high" : cappedStrainConf >= 60 ? "moderate" : "low";
-                  
-                  const familyColor = familyTier === "very_high" || familyTier === "high" ? "bg-green-600" : "bg-yellow-500";
-                  const strainColor = strainTier === "high" ? "bg-green-600" : strainTier === "moderate" ? "bg-yellow-500" : "bg-red-600";
-                  
-                  return (
-                    <div className="mb-4 space-y-2">
-                      <div className="flex flex-col gap-2">
-                        <div className="inline-flex items-center gap-3 flex-wrap">
-                          <span className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${familyColor}`}>
-                            Very high confidence (family) ({cappedFamilyConf}%)
-                          </span>
-                        </div>
-                        <div className="inline-flex items-center gap-3 flex-wrap">
-                          <span className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${strainColor}`}>
-                            High confidence (strain candidate) ({cappedStrainConf}%)
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-white/70 font-medium">
-                        Genetic lineage match is strong; exact cultivar within family may vary
-                      </p>
-                    </div>
-                  );
-                }
+                const familyTier = familyConf >= 85 ? "very_high" : familyConf >= 70 ? "high" : "medium";
+                const strainTier = strainConf >= 70 ? "high" : "medium";
                 
-                // Standard single confidence display (when family-first not applied)
-                let confidenceTier: "very_high" | "high" | "moderate" | "low";
-                let confidenceLabel: string;
-                let confidenceColor: string;
-                
-                if (confidence >= 93) {
-                  confidenceTier = "very_high";
-                  confidenceLabel = "Very High Confidence";
-                  confidenceColor = "bg-green-600";
-                } else if (confidence >= 85) {
-                  confidenceTier = "high";
-                  confidenceLabel = "High Confidence";
-                  confidenceColor = "bg-green-600";
-                } else if (confidence >= 70) {
-                  confidenceTier = "moderate";
-                  confidenceLabel = "Moderate Confidence";
-                  confidenceColor = "bg-yellow-500";
-                } else {
-                  confidenceTier = "low";
-                  confidenceLabel = "Low Confidence";
-                  confidenceColor = "bg-red-600";
-                }
-                
-                const confidenceExplanation = confidence >= 93
-                  ? "Expert analysis confirms strong match"
-                  : confidence >= 85
-                  ? "Expert analysis confirms strong match"
-                  : confidence >= 70
-                  ? "Expert analysis indicates likely match"
-                  : "Expert analysis suggests closest available match";
+                const familyColor = familyTier === "very_high" || familyTier === "high" ? "bg-green-600" : "bg-yellow-500";
+                const strainColor = strainTier === "high" ? "bg-green-600" : "bg-yellow-500";
                 
                 return (
-                  <div className="mb-4 space-y-2">
-                    <div className="inline-flex items-center gap-3 flex-wrap">
-                      <span className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${confidenceColor}`}>
-                        {confidenceLabel} ({confidence}%)
-                      </span>
-                      <span className="text-xs text-white/70 font-medium">
-                        {confidenceExplanation}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm ${familyColor}`}>
+                      Very High (family)
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm ${strainColor}`}>
+                      High (strain)
+                    </span>
                   </div>
                 );
-              })()}
+              }
               
-              {/* Phase 4.6.3 — Family context (subtle) */}
-              {(() => {
-                const primaryStrainName = viewModel.nameFirstDisplay.primaryStrainName;
+              // Standard single confidence badge
+              return (
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm ${confidenceColor}`}>
+                    {confidenceLabel}
+                  </span>
+                  <span className="text-xs text-white/60">
+                    {confidence}%
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+              
+          {/* Phase 5.1.1 — Supporting Information (everything else supports the name) */}
+          {/* Family context (subtle, supports name) */}
+          {(() => {
+            const primaryStrainName = viewModel.nameFirstDisplay.primaryStrainName;
+            
+            // Skip if fallback name
+            if (primaryStrainName === "Closest Known Cultivar" || !primaryStrainName) {
+              return null;
+            }
+            
+            // Get family info from family-first result if available
+            const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
+            let familyName: string | null = null;
+            let relatedCultivars: string[] = [];
+            
+            if (familyFirst?.familyName) {
+              // Use family-first data (most accurate)
+              familyName = familyFirst.familyName;
+              // Get top 3-5 related cultivars from strain ranking (excluding primary)
+              relatedCultivars = familyFirst.strainRanking
+                ?.filter((s: any) => s.name !== primaryStrainName && s.name !== familyFirst.closestStrainInFamily)
+                .slice(0, 5)
+                .map((s: any) => s.name) || [];
+              
+              // Add closest strain if different from primary
+              if (familyFirst.closestStrainInFamily && familyFirst.closestStrainInFamily !== primaryStrainName) {
+                relatedCultivars.unshift(familyFirst.closestStrainInFamily);
+              }
+            } else {
+              // Simple heuristic: extract family from strain name
+              // This is a fallback when family-first wasn't applied
+              const nameLower = primaryStrainName.toLowerCase();
+              if (nameLower.includes("og kush") || (nameLower.includes("og") && nameLower.includes("kush"))) {
+                familyName = "OG Kush";
+              } else if (nameLower.includes("haze")) {
+                familyName = "Haze";
+              } else if (nameLower.includes("cookies") || nameLower.includes("gsc")) {
+                familyName = "Cookies";
+              } else if (nameLower.includes("kush")) {
+                familyName = "Kush";
+              } else if (nameLower.includes("purple")) {
+                familyName = "Purple";
+              } else if (nameLower.includes("blue")) {
+                familyName = "Blue";
+              }
+              // Note: relatedCultivars will be empty for heuristic-based families
+            }
+            
+            if (!familyName) {
+              return null;
+            }
+            
+            return (
+              <div className="mb-4">
+                <p className="text-sm text-white/60 font-medium">
+                  {familyName} family
+                </p>
+                <p className="text-xs text-white/50 italic mt-1">
+                  Genetic lineage identified from 35,000+ strain database
+                </p>
                 
-                // Skip if fallback name
-                if (primaryStrainName === "Closest Known Cultivar" || !primaryStrainName) {
-                  return null;
-                }
-                
-                // Get family info from family-first result if available
-                const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
-                let familyName: string | null = null;
-                let relatedCultivars: string[] = [];
-                
-                if (familyFirst?.familyName) {
-                  // Use family-first data (most accurate)
-                  familyName = familyFirst.familyName;
-                  // Get top 3-5 related cultivars from strain ranking (excluding primary)
-                  relatedCultivars = familyFirst.strainRanking
-                    ?.filter((s: any) => s.name !== primaryStrainName && s.name !== familyFirst.closestStrainInFamily)
-                    .slice(0, 5)
-                    .map((s: any) => s.name) || [];
-                  
-                  // Add closest strain if different from primary
-                  if (familyFirst.closestStrainInFamily && familyFirst.closestStrainInFamily !== primaryStrainName) {
-                    relatedCultivars.unshift(familyFirst.closestStrainInFamily);
-                  }
-                } else {
-                  // Simple heuristic: extract family from strain name
-                  // This is a fallback when family-first wasn't applied
-                  const nameLower = primaryStrainName.toLowerCase();
-                  if (nameLower.includes("og kush") || (nameLower.includes("og") && nameLower.includes("kush"))) {
-                    familyName = "OG Kush";
-                  } else if (nameLower.includes("haze")) {
-                    familyName = "Haze";
-                  } else if (nameLower.includes("cookies") || nameLower.includes("gsc")) {
-                    familyName = "Cookies";
-                  } else if (nameLower.includes("kush")) {
-                    familyName = "Kush";
-                  } else if (nameLower.includes("purple")) {
-                    familyName = "Purple";
-                  } else if (nameLower.includes("blue")) {
-                    familyName = "Blue";
-                  }
-                  // Note: relatedCultivars will be empty for heuristic-based families
-                }
-                
-                if (!familyName) {
-                  return null;
-                }
-                
-                return (
-                  <div className="mb-4">
-                    <p className="text-sm text-white/60 font-medium">
-                      {familyName} family
-                    </p>
-                    <p className="text-xs text-white/50 italic mt-1">
-                      Genetic lineage identified from 35,000+ strain database
-                    </p>
-                    
-                    {/* Phase 4.6.3 — Related cultivars (collapsible, optional) */}
-                    {relatedCultivars.length > 0 && (
-                      <div className="mt-2">
-                        <CollapsibleSection
-                          title="Related cultivars"
-                          defaultExpanded={false}
-                          icon=""
-                        >
-                          <div className="pt-2">
-                            <p className="text-sm text-white/80 leading-relaxed">
-                              {relatedCultivars.join(", ")}
-                            </p>
-                          </div>
-                        </CollapsibleSection>
+                {/* Phase 4.6.3 — Related cultivars (collapsible, optional) */}
+                {relatedCultivars.length > 0 && (
+                  <div className="mt-2">
+                    <CollapsibleSection
+                      title="Related cultivars"
+                      defaultExpanded={false}
+                      icon=""
+                    >
+                      <div className="pt-2">
+                        <p className="text-sm text-white/80 leading-relaxed">
+                          {relatedCultivars.join(", ")}
+                        </p>
                       </div>
-                    )}
+                    </CollapsibleSection>
                   </div>
-                );
-              })()}
+                )}
+              </div>
+            );
+          })()}
               
               {/* Phase 4.2 — Inline note below name (always present) */}
               {/* Phase 4.6 — Enhanced to emphasize genetic knowledge */}
@@ -274,8 +247,8 @@ export default function WikiStyleResultPanel({
                 );
               })()}
               
-              {/* Phase 4.8.4 — User-Facing Disambiguation Copy */}
-              {(() => {
+            {/* Phase 4.8.4 — User-Facing Disambiguation Copy */}
+            {(() => {
                 const disambiguationCopy = (viewModel.nameFirstDisplay as any)?.disambiguationCopy;
                 if (disambiguationCopy?.hasClones && disambiguationCopy.variantNames.length > 0) {
                   return (
@@ -379,9 +352,8 @@ export default function WikiStyleResultPanel({
                   }
                 })()}
               </div>
-            </div>
             
-              {/* Phase 4.9.6 — Visual Match Confidence (FREE TIER) */}
+            {/* Phase 4.9.6 — Visual Match Confidence (FREE TIER) */}
               {(() => {
                 // Extract visual consensus score from Phase 4.9.4/4.9.5
                 const visualConsensus = (viewModel.nameFirstDisplay as any)?.visualConsensus;
@@ -474,10 +446,10 @@ export default function WikiStyleResultPanel({
             )}
           </div>
           
-          {/* Phase 5.0.7 — User Output (FREE TIER) */}
-          {/* Show: Strain Name, Confidence %, "Why this match" (3 bullets), 2-3 closest alternates (collapsed) */}
-          {/* Tone: Educational, confident, not absolute */}
-          {(() => {
+        {/* Phase 5.0.7 — User Output (FREE TIER) */}
+        {/* Show: Strain Name, Confidence %, "Why this match" (3 bullets), 2-3 closest alternates (collapsed) */}
+        {/* Tone: Educational, confident, not absolute */}
+        {(() => {
             const primaryName = viewModel.nameFirstDisplay.primaryStrainName;
             const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
             
@@ -1051,7 +1023,6 @@ export default function WikiStyleResultPanel({
                 </ul>
               </div>
             ) : null}
-          </div>
           
           {/* Phase 5.5.5 — Also Known As */}
           {viewModel.nameFirstDisplay.alsoKnownAs && viewModel.nameFirstDisplay.alsoKnownAs.length > 0 && (
@@ -1060,179 +1031,152 @@ export default function WikiStyleResultPanel({
             </p>
           )}
           
-          {/* Phase 4.5 Step 4.5.1 — Confidence Badge Next to Name */}
+          {/* Phase 4.5 Step 4.5.1 — Confidence Badge Next to Name (LEGACY - removed, now in Phase 5.1.1 header) */}
           {/* Phase 4.5 Step 4.5.5 — Confidence Honesty: Show tier label, not raw % for high confidence */}
-          <div className="flex flex-wrap items-center gap-3">
-            <span
-              className={`text-sm font-semibold px-4 py-2 rounded-full ${
-                viewModel.nameFirstDisplay.confidenceTier === "very_high"
-                  ? "bg-green-500/30 text-green-200"
-                  : viewModel.nameFirstDisplay.confidenceTier === "high"
-                  ? "bg-green-500/20 text-green-300"
-                  : viewModel.nameFirstDisplay.confidenceTier === "medium"
-                  ? "bg-yellow-500/20 text-yellow-300"
-                  : "bg-orange-500/20 text-orange-300"
-              }`}
-            >
-              {viewModel.nameFirstDisplay.confidenceTier === "very_high"
-                ? "Very High Confidence"
-                : viewModel.nameFirstDisplay.confidenceTier === "high"
-                ? "High Confidence"
-                : viewModel.nameFirstDisplay.confidenceTier === "medium"
-                ? "Medium Confidence"
-                : "Low Confidence"}
-              {viewModel.nameFirstDisplay.confidencePercent < 70 && (
-                <span className="ml-2 opacity-80">({viewModel.nameFirstDisplay.confidencePercent}%)</span>
-              )}
-            </span>
-          {/* Phase 4.5 Step 4.5.1 — Subtext Tagline */}
-          <p className="text-sm text-white/70 italic">
-            {viewModel.nameFirstDisplay.tagline}
-          </p>
+          {/* REMOVED: Confidence badge moved to Phase 5.1.1 name-first header */}
 
           {/* UI CONTRACT ENFORCEMENT — Never assume dominance, terpeneExperience, extendedProfile */}
           {/* Only render optional sections if present */}
           
           {/* Phase 4.6 Step 4.6.3 — Ratio display removed (belongs in WikiReportPanel via analysis layer) */}
 
-                      {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
-                      {/* UI CONTRACT ENFORCEMENT — terpeneExperience is optional, only render if present */}
-                      {viewModel.terpeneExperience && (
-                        <div className="space-y-4 pt-4">
-                          {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
-                          {viewModel.terpeneExperience.dominantTerpenes && viewModel.terpeneExperience.dominantTerpenes.length > 0 && (
-                            <div className="space-y-2">
-                              <h3 className="text-sm font-semibold text-white/90">Dominant Terpenes</h3>
-                              <div className="flex flex-wrap gap-2">
-                                {viewModel.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30"
-                                  >
-                                    {terpene}
-                                  </span>
-                                ))}
-                                {viewModel.terpeneExperience.secondaryTerpenes.length > 0 && (
-                                  <>
-                                    {viewModel.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
-                                      <span
-                                        key={`sec-${idx}`}
-                                        className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20"
-                                      >
-                                        {terpene}
-                                      </span>
-                                    ))}
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )}
+          {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
+          {/* UI CONTRACT ENFORCEMENT — terpeneExperience is optional, only render if present */}
+          {viewModel.terpeneExperience && (
+            <div className="space-y-4 pt-4">
+            {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
+            {viewModel.terpeneExperience.dominantTerpenes && viewModel.terpeneExperience.dominantTerpenes.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-white/90">Dominant Terpenes</h3>
+                <div className="flex flex-wrap gap-2">
+                  {viewModel.terpeneExperience.dominantTerpenes.map((terpene, idx) => (
+                    <span
+                      key={idx}
+                      className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30"
+                    >
+                      {terpene}
+                    </span>
+                  ))}
+                  {viewModel.terpeneExperience.secondaryTerpenes.length > 0 && (
+                    <>
+                      {viewModel.terpeneExperience.secondaryTerpenes.map((terpene, idx) => (
+                        <span
+                          key={`sec-${idx}`}
+                          className="text-sm font-medium px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                        >
+                          {terpene}
+                        </span>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
-                          {/* Phase 5.1 Step 5.1.5 — EXPERIENCE PROFILE */}
-                          <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-white/90">Experience Profile</h3>
-                            <div className="space-y-2.5">
-                              {/* Body Relaxation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Body Relaxation</span>
-                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.bodyRelaxation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-purple-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.terpeneExperience.experience.bodyRelaxation}%` }}
-                                  />
-                                </div>
-                              </div>
+            {/* Phase 5.1 Step 5.1.5 — EXPERIENCE PROFILE */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-white/90">Experience Profile</h3>
+              <div className="space-y-2.5">
+                {/* Body Relaxation */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-white/80">Body Relaxation</span>
+                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.bodyRelaxation}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-purple-500/60 rounded-full transition-all"
+                      style={{ width: `${viewModel.terpeneExperience.experience.bodyRelaxation}%` }}
+                    />
+                  </div>
+                </div>
 
-                              {/* Mental Stimulation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Mental Stimulation</span>
-                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.mentalStimulation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-green-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.terpeneExperience.experience.mentalStimulation}%` }}
-                                  />
-                                </div>
-                              </div>
+                {/* Mental Stimulation */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-white/80">Mental Stimulation</span>
+                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.mentalStimulation}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-green-500/60 rounded-full transition-all"
+                      style={{ width: `${viewModel.terpeneExperience.experience.mentalStimulation}%` }}
+                    />
+                  </div>
+                </div>
 
-                              {/* Mood Elevation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Mood Elevation</span>
-                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.moodElevation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-yellow-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.terpeneExperience.experience.moodElevation}%` }}
-                                  />
-                                </div>
-                              </div>
+                {/* Mood Elevation */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-white/80">Mood Elevation</span>
+                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.moodElevation}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-yellow-500/60 rounded-full transition-all"
+                      style={{ width: `${viewModel.terpeneExperience.experience.moodElevation}%` }}
+                    />
+                  </div>
+                </div>
 
-                              {/* Sedation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Sedation</span>
-                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.sedation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-blue-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.terpeneExperience.experience.sedation}%` }}
-                                  />
-                                </div>
-                              </div>
+                {/* Sedation */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-white/80">Sedation</span>
+                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.sedation}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500/60 rounded-full transition-all"
+                      style={{ width: `${viewModel.terpeneExperience.experience.sedation}%` }}
+                    />
+                  </div>
+                </div>
 
-                              {/* Focus / Clarity */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Focus / Clarity</span>
-                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.focusClarity}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-cyan-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.terpeneExperience.experience.focusClarity}%` }}
-                                  />
-                                </div>
-                              </div>
+                {/* Focus / Clarity */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-white/80">Focus / Clarity</span>
+                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.focusClarity}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-cyan-500/60 rounded-full transition-all"
+                      style={{ width: `${viewModel.terpeneExperience.experience.focusClarity}%` }}
+                    />
+                  </div>
+                </div>
 
-                              {/* Appetite Stimulation */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-xs font-medium text-white/80">Appetite Stimulation</span>
-                                  <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.appetiteStimulation}%</span>
-                                </div>
-                                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-orange-500/60 rounded-full transition-all"
-                                    style={{ width: `${viewModel.terpeneExperience.experience.appetiteStimulation}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
+                {/* Appetite Stimulation */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-white/80">Appetite Stimulation</span>
+                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.appetiteStimulation}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-orange-500/60 rounded-full transition-all"
+                      style={{ width: `${viewModel.terpeneExperience.experience.appetiteStimulation}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
 
-                            {/* Phase 5.1 Step 5.1.5 — Consensus Notes (if available) */}
-                            {/* UI FIX — No full-width dividers, use cards instead */}
-                            {viewModel.terpeneExperience.consensusNotes && 
-                             viewModel.terpeneExperience.consensusNotes.length > 0 && (
-                              <div className="pt-2 mt-2">
-                                <p className="text-xs text-white/60 italic leading-relaxed">
-                                  {viewModel.terpeneExperience.consensusNotes.join(" ")}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+              {/* Phase 5.1 Step 5.1.5 — Consensus Notes (if available) */}
+              {/* UI FIX — No full-width dividers, use cards instead */}
+              {viewModel.terpeneExperience.consensusNotes && 
+               viewModel.terpeneExperience.consensusNotes.length > 0 && (
+                <div className="pt-2 mt-2">
+                  <p className="text-xs text-white/60 italic leading-relaxed">
+                    {viewModel.terpeneExperience.consensusNotes.join(" ")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          )}
 
-                      {/* Phase 4.7 Step 4.7.2 — CLOSELY RELATED VARIANTS (if ambiguous, collapsed) */}
+          {/* Phase 4.7 Step 4.7.2 — CLOSELY RELATED VARIANTS (if ambiguous, collapsed) */}
           {viewModel.closelyRelatedVariants && 
            viewModel.closelyRelatedVariants.length > 0 && 
             viewModel.isAmbiguous && (
@@ -1419,7 +1363,7 @@ export default function WikiStyleResultPanel({
               </div>
             </CollapsibleSection>
           )}
-        </div>
+      </div>
       
       {/* Phase 3.9 Part A — CORE IDENTITY (ABOVE THE FOLD) */}
       {/* Phase 4.1 — nameFirstDisplay is always present, this section is legacy fallback */}
