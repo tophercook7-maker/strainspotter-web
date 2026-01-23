@@ -2,7 +2,7 @@
 // lib/scanner/cloneDetectionV48.ts
 
 import { CULTIVAR_LIBRARY, type CultivarReference } from "./cultivarLibrary";
-import { getStrainFamily } from "./strainFamilyMap";
+import { getStrainFamily, type StrainFamily } from "./strainFamilyMap";
 import type { FusedFeatures } from "./multiImageFusion";
 
 /**
