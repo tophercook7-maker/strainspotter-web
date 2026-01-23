@@ -69,26 +69,70 @@ export default function WikiReportPanel({
       {children}
       
       {/* Phase 15.5.6 — Dominance/Ratio display (ONLY place this is allowed) */}
+      {/* Phase 4.7.4 — UI Presentation (Trust-First) */}
       {analysis?.dominance && (
         <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-5 sm:p-6">
-          <div className="text-lg font-semibold mb-3">Dominance</div>
-          <div className="space-y-3">
-            {[
-              ["Indica", ratio.indica],
-              ["Sativa", ratio.sativa],
-              ["Hybrid", ratio.hybrid],
-            ].map(([label, value]) => (
-              <div key={label} className="flex items-center gap-3">
-                <div className="w-16 text-sm text-white/70">{label}</div>
-                <div className="flex-1 h-3 rounded-full bg-white/10 overflow-hidden">
-                  <div
-                    className="h-3 rounded-full bg-white/60"
-                    style={{ width: `${clampPct(Number(value))}%` }}
+          {/* Phase 4.7.4 — Trust-First Presentation: Visualization first, not raw numbers */}
+          <div className="space-y-4">
+            {/* Label: Dominance label (e.g., "Indica-leaning Hybrid") */}
+            <div className="text-lg md:text-xl font-semibold text-white/95">
+              {ratio.classification || "Balanced Hybrid"}
+            </div>
+            
+            {/* Bar visualization (primary display) */}
+            <div className="space-y-2">
+              <div className="h-4 bg-white/10 rounded-full overflow-hidden">
+                <div className="flex h-full">
+                  <div 
+                    style={{ width: `${clampPct(ratio.indica)}%` }} 
+                    className="bg-purple-600 transition-all" 
+                    title={`Indica: ${clampPct(ratio.indica)}%`}
+                  />
+                  <div 
+                    style={{ width: `${clampPct(ratio.sativa)}%` }} 
+                    className="bg-green-500 transition-all" 
+                    title={`Sativa: ${clampPct(ratio.sativa)}%`}
+                  />
+                  <div 
+                    style={{ width: `${clampPct(ratio.hybrid)}%` }} 
+                    className="bg-yellow-500/60 transition-all" 
+                    title={`Hybrid: ${clampPct(ratio.hybrid)}%`}
                   />
                 </div>
-                <div className="w-12 text-right text-sm text-white/70">{clampPct(Number(value))}%</div>
               </div>
-            ))}
+              
+              {/* Subtext: "Based on genetics + visual structure" */}
+              {/* Phase 4.7.4 — Dynamic subtext (default to genetics + visual) */}
+              <p className="text-xs text-white/60 font-medium">
+                Based on genetics + visual structure
+              </p>
+            </div>
+            
+            {/* Phase 4.7.4 — Expandable exact % breakdown */}
+            <details className="cursor-pointer group">
+              <summary className="text-sm text-white/70 hover:text-white/90 transition-colors list-none">
+                <span className="flex items-center gap-2">
+                  <span>Show exact breakdown</span>
+                  <span className="text-white/50 group-open:rotate-180 transition-transform">▼</span>
+                </span>
+              </summary>
+              <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/80">Indica</span>
+                  <span className="text-white/90 font-medium">{clampPct(ratio.indica)}%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/80">Sativa</span>
+                  <span className="text-white/90 font-medium">{clampPct(ratio.sativa)}%</span>
+                </div>
+                {ratio.hybrid > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/80">Hybrid</span>
+                    <span className="text-white/90 font-medium">{clampPct(ratio.hybrid)}%</span>
+                  </div>
+                )}
+              </div>
+            </details>
           </div>
         </div>
       )}

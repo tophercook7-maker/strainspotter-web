@@ -144,52 +144,101 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
 
       {/* Phase 5.1 — 5. Integration: Display near strain name */}
       {/* Phase 4.4 — 2. Indica / Sativa / Hybrid ratio (REQUIRED) */}
+      {/* Phase 4.7.4 — UI Presentation (Trust-First) */}
       {result.ratio && (
         <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
-          {/* Phase 4.7 — 4. Section separators: section cards, rounded-xl, bg-white/5, border border-white/10 */}
-          <div className="text-lg md:text-xl font-semibold mb-4">
-            Genetic Balance
-          </div>
-          {/* Phase 5.1 — 2. Output format: classification and percentages */}
-          <div className="mb-3">
-            <div className="text-base md:text-lg font-medium mb-2">
-              {(result.ratio as any).dominantLabel || result.ratio.classification || "Hybrid"}
+          {/* Phase 4.7.4 — Trust-First Presentation: Visualization first, not raw numbers */}
+          <div className="space-y-4">
+            {/* Label: Dominance label (e.g., "Indica-leaning Hybrid") */}
+            <div className="text-lg md:text-xl font-semibold text-white/95">
+              {(result.ratio as any).dominantLabel || result.ratio.classification || "Balanced Hybrid"}
             </div>
-            {/* Compact pills display */}
-            <div className="flex gap-2 flex-wrap mb-3">
-              <span className="px-4 py-2 rounded-full bg-purple-600/20 text-purple-300 border border-purple-600/40 text-sm md:text-base">
-                Indica: {result.ratio.indica}%
-              </span>
-              <span className="px-4 py-2 rounded-full bg-green-600/20 text-green-300 border border-green-600/40 text-sm md:text-base">
-                Sativa: {result.ratio.sativa}%
-              </span>
-              <span className="px-4 py-2 rounded-full bg-yellow-600/20 text-yellow-300 border border-yellow-600/40 text-sm md:text-base">
-                Hybrid: {result.ratio.hybrid}%
-              </span>
-            </div>
-            {/* Phase 5.1 — Optional mini-bar visualization */}
-            <div className="h-3 bg-white/10 rounded-full overflow-hidden">
-              <div className="flex h-full">
-                <div 
-                  style={{ width: `${result.ratio.indica}%` }} 
-                  className="bg-purple-600" 
-                />
-                <div 
-                  style={{ width: `${result.ratio.sativa}%` }} 
-                  className="bg-green-500" 
-                />
-                <div 
-                  style={{ width: `${result.ratio.hybrid}%` }} 
-                  className="bg-yellow-500" 
-                />
+            
+            {/* Bar visualization (primary display) */}
+            <div className="space-y-2">
+              <div className="h-4 bg-white/10 rounded-full overflow-hidden">
+                <div className="flex h-full">
+                  <div 
+                    style={{ width: `${result.ratio.indica}%` }} 
+                    className="bg-purple-600 transition-all" 
+                    title={`Indica: ${result.ratio.indica}%`}
+                  />
+                  <div 
+                    style={{ width: `${result.ratio.sativa}%` }} 
+                    className="bg-green-500 transition-all" 
+                    title={`Sativa: ${result.ratio.sativa}%`}
+                  />
+                  <div 
+                    style={{ width: `${result.ratio.hybrid || 0}%` }} 
+                    className="bg-yellow-500/60 transition-all" 
+                    title={`Hybrid: ${result.ratio.hybrid || 0}%`}
+                  />
+                </div>
               </div>
+              
+              {/* Subtext: "Based on genetics + visual structure" */}
+              {/* Phase 4.7.4 — Dynamic subtext based on available sources */}
+              {(() => {
+                const sourceBreakdown = (result.ratio as any)?.sourceBreakdown;
+                const sources: string[] = [];
+                
+                if (sourceBreakdown?.genetics && (sourceBreakdown.genetics.indica !== 50 || sourceBreakdown.genetics.sativa !== 50)) {
+                  sources.push("genetics");
+                }
+                if (sourceBreakdown?.familyBaseline && (sourceBreakdown.familyBaseline.indica !== 50 || sourceBreakdown.familyBaseline.sativa !== 50)) {
+                  sources.push("family baseline");
+                }
+                if (sourceBreakdown?.visualMorphology && (sourceBreakdown.visualMorphology.indica !== 50 || sourceBreakdown.visualMorphology.sativa !== 50)) {
+                  sources.push("visual structure");
+                }
+                if (sourceBreakdown?.terpeneBias && (sourceBreakdown.terpeneBias.indica !== 50 || sourceBreakdown.terpeneBias.sativa !== 50)) {
+                  sources.push("terpene profile");
+                }
+                
+                const subtext = sources.length > 0 
+                  ? `Based on ${sources.join(" + ")}`
+                  : "Based on genetics + visual structure";
+                
+                return (
+                  <p className="text-xs text-white/60 font-medium">
+                    {subtext}
+                  </p>
+                );
+              })()}
             </div>
+            
+            {/* Phase 4.7.4 — Expandable exact % breakdown */}
+            <details className="cursor-pointer group">
+              <summary className="text-sm text-white/70 hover:text-white/90 transition-colors list-none">
+                <span className="flex items-center gap-2">
+                  <span>Show exact breakdown</span>
+                  <span className="text-white/50 group-open:rotate-180 transition-transform">▼</span>
+                </span>
+              </summary>
+              <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/80">Indica</span>
+                  <span className="text-white/90 font-medium">{result.ratio.indica}%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/80">Sativa</span>
+                  <span className="text-white/90 font-medium">{result.ratio.sativa}%</span>
+                </div>
+                {result.ratio.hybrid !== undefined && result.ratio.hybrid > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/80">Hybrid</span>
+                    <span className="text-white/90 font-medium">{result.ratio.hybrid}%</span>
+                  </div>
+                )}
+              </div>
+            </details>
           </div>
-          {/* Phase 5.1 — 4. User-facing explanation: Generate 2–3 bullets */}
+          
+          {/* Phase 5.1 — 4. User-facing explanation: Generate 2–3 bullets (if available) */}
           {result.finalRatio && result.finalRatio.explanation && result.finalRatio.explanation.length > 0 && (
-            <div className="mt-4 space-y-1">
+            <div className="mt-4 pt-4 border-t border-white/10 space-y-1">
               {result.finalRatio.explanation.map((line, i) => (
-                <div key={i} className="text-sm opacity-70">
+                <div key={i} className="text-sm text-white/70">
                   • {line}
                 </div>
               ))}
@@ -197,7 +246,7 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
           )}
           {/* Phase 4.4 — Confidence note if confidence < 65% */}
           {(result.ratio as any).needsEstimationNote && (
-            <div className="text-sm opacity-60 mt-3 italic">
+            <div className="text-xs text-white/50 italic mt-3">
               Ratio estimated from visual traits and reference genetics.
             </div>
           )}
