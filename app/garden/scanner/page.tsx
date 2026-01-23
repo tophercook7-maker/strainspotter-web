@@ -565,6 +565,14 @@ export default function ScannerPage() {
             </div>
           )}
           
+          {/* Phase 4.0.3.1 — Soft "same plant" informational note (if present) */}
+          {analysis?.samePlantNote && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              ℹ️ These images may be of the same plant. Results improve when photos show
+              different angles or perspectives.
+            </div>
+          )}
+          
           {result && <ResultPanel result={result} />}
           {analysis && <WikiReportPanel analysis={analysis.analysis} />}
           {analysis && <WikiStyleResultPanel result={analysis} />}

@@ -72,46 +72,42 @@ export default function WikiStyleResultPanel({
         {/* Phase 15.5.5 — Large Strain Name */}
         <div className="mb-4">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            {viewModel.nameFirstDisplay.primaryStrainName}
+            {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
+              ? "Unidentified Hybrid Phenotype"
+              : viewModel.nameFirstDisplay.primaryStrainName}
           </h1>
           
-          {/* Phase 4.1 — Display explanation */}
-          {viewModel.nameFirstDisplay.explanation && (
-            <p className="text-sm opacity-70 mt-1">
-              {Array.isArray(viewModel.nameFirstDisplay.explanation.whyThisNameWon)
-                ? viewModel.nameFirstDisplay.explanation.whyThisNameWon[0]
-                : typeof viewModel.nameFirstDisplay.explanation === 'string'
-                ? viewModel.nameFirstDisplay.explanation
-                : "Closest visual and genetic match from database"}
-            </p>
-          )}
+          {/* Phase 4.0.3.1 — Subtitle directly under the title */}
+          <div className="text-sm text-muted-foreground mt-1">
+            Closest visual match found in database
+          </div>
+          
+          {/* Phase 4.0.3.1 — Confidence badge (always visible) */}
+          {(() => {
+            const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+            const confidenceTier =
+              confidence >= 85 ? "high" :
+              confidence >= 70 ? "medium" : "low";
+            const confidenceLabel =
+              confidenceTier === "high" ? "High Confidence" :
+              confidenceTier === "medium" ? "Medium Confidence" :
+              "Low Confidence";
+            const confidenceColor =
+              confidenceTier === "high" ? "bg-green-600" :
+              confidenceTier === "medium" ? "bg-yellow-500" :
+              "bg-red-600";
             
-            {/* Phase 15.5.5 — Confidence badge */}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-white/10 border border-white/15 px-3 py-1 text-sm text-white/90">
-                Confidence · {viewModel.nameFirstDisplay?.confidencePercent ?? viewModel.confidence ?? "--"}%
-              </span>
-              
-              {viewModel.nameFirstDisplay.confidenceTier && (
-                <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm ${
-                  viewModel.nameFirstDisplay.confidenceTier === "very_high"
-                    ? "bg-emerald-500/10 border-emerald-400/20 text-emerald-200"
-                    : viewModel.nameFirstDisplay.confidenceTier === "high"
-                    ? "bg-green-500/10 border-green-400/20 text-green-200"
-                    : viewModel.nameFirstDisplay.confidenceTier === "medium"
-                    ? "bg-yellow-500/10 border-yellow-400/20 text-yellow-200"
-                    : "bg-orange-500/10 border-orange-400/20 text-orange-200"
-                }`}>
-                  {viewModel.nameFirstDisplay.confidenceTier === "very_high"
-                    ? "Very High Confidence"
-                    : viewModel.nameFirstDisplay.confidenceTier === "high"
-                    ? "High Confidence"
-                    : viewModel.nameFirstDisplay.confidenceTier === "medium"
-                    ? "Medium Confidence"
-                    : "Low Confidence"}
+            return (
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${confidenceColor}`}>
+                  {confidenceLabel} ({confidence}%)
                 </span>
-              )}
-            </div>
+                <span className="text-xs text-muted-foreground">
+                  Based on visual similarity across uploaded photos
+                </span>
+              </div>
+            );
+          })()}
             
             {/* Phase 4.3.1 — render name stability */}
             {viewModel.nameFirstDisplay?.nameStabilityScore && (
@@ -412,45 +408,70 @@ export default function WikiStyleResultPanel({
               icon="💡"
             >
               <div className="space-y-3 pt-2">
-                {/* Phase 4.5 Step 4.5.3 — Auto-generate 3-5 bullets from explanation */}
-                {viewModel.nameFirstDisplay.explanation.whyThisNameWon && viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-white/90 mb-2">Match Evidence:</h4>
-                    <ul className="space-y-2">
-                      {viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 5).map((reason, idx) => (
-                        <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
-                          <span className="text-green-400 mr-2">•</span>
-                          <span>{reason}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {/* Phase 4.5 Step 4.5.3 — What Ruled Out Others (if available) */}
-                {viewModel.nameFirstDisplay.explanation.whatRuledOutOthers && 
-                 viewModel.nameFirstDisplay.explanation.whatRuledOutOthers.length > 0 && (
-                  <div className="pt-2">
-                    <h4 className="text-sm font-semibold text-white/90 mb-2">Why not other strains?</h4>
-                    <ul className="space-y-2">
-                      {viewModel.nameFirstDisplay.explanation.whatRuledOutOthers.slice(0, 3).map((reason, idx) => (
-                        <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
-                          <span className="text-yellow-400 mr-2">•</span>
-                          <span>{reason}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Phase 4.5 Step 4.5.3 — Variance Notes (if available) */}
-                {viewModel.nameFirstDisplay.explanation.varianceNotes && 
-                 viewModel.nameFirstDisplay.explanation.varianceNotes.length > 0 && (
-                  <div className="pt-2">
-                    <p className="text-xs text-white/70 leading-relaxed italic">
-                      {(viewModel.nameFirstDisplay.explanation.varianceNotes ?? []).join(" ")}
+                {/* Phase 4.0.3.1 — Rewritten content tone */}
+                {viewModel.nameFirstDisplay.tagline?.toLowerCase().includes("low confidence") || 
+                 (viewModel.nameFirstDisplay.confidencePercent ?? 0) < 70 ? (
+                  <>
+                    <p className="text-sm">
+                      This result is based on visible structure, bud density, and leaf morphology
+                      observed across the uploaded images.
                     </p>
-                  </div>
+                    <p className="text-sm mt-2">
+                      Confidence is lower because the photos appear very similar and do not show
+                      enough contrasting angles to strongly differentiate between cultivars.
+                    </p>
+                    <p className="text-sm mt-3 font-medium">
+                      Accuracy improves with:
+                    </p>
+                    <ul className="text-sm list-disc ml-5 mt-1">
+                      <li>One close-up bud photo</li>
+                      <li>One wider plant or branch photo</li>
+                      <li>A different angle, distance, or lighting condition</li>
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    {/* Phase 4.5 Step 4.5.3 — Auto-generate 3-5 bullets from explanation */}
+                    {viewModel.nameFirstDisplay.explanation.whyThisNameWon && viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-white/90 mb-2">Match Evidence:</h4>
+                        <ul className="space-y-2">
+                          {viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 5).map((reason, idx) => (
+                            <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
+                              <span className="text-green-400 mr-2">•</span>
+                              <span>{reason}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {/* Phase 4.5 Step 4.5.3 — What Ruled Out Others (if available) */}
+                    {viewModel.nameFirstDisplay.explanation.whatRuledOutOthers && 
+                     viewModel.nameFirstDisplay.explanation.whatRuledOutOthers.length > 0 && (
+                      <div className="pt-2">
+                        <h4 className="text-sm font-semibold text-white/90 mb-2">Why not other strains?</h4>
+                        <ul className="space-y-2">
+                          {viewModel.nameFirstDisplay.explanation.whatRuledOutOthers.slice(0, 3).map((reason, idx) => (
+                            <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
+                              <span className="text-yellow-400 mr-2">•</span>
+                              <span>{reason}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Phase 4.5 Step 4.5.3 — Variance Notes (if available) */}
+                    {viewModel.nameFirstDisplay.explanation.varianceNotes && 
+                     viewModel.nameFirstDisplay.explanation.varianceNotes.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-xs text-white/70 leading-relaxed italic">
+                          {(viewModel.nameFirstDisplay.explanation.varianceNotes ?? []).join(" ")}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </CollapsibleSection>
