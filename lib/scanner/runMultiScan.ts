@@ -126,6 +126,8 @@ import { detectSamePlant, detectSamePlantEnhanced } from "./samePlantDetector";
 import { computeConfidenceV403 } from "./confidenceV403";
 // Phase 4.0.4 — Name Trust & Disambiguation Layer
 import { computeNameTrustV404 } from "./nameTrustV404";
+// Phase 4.5.1 — Name Memory Cache
+import { getNameMemoryBias, cacheScanResult } from "./nameMemory";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -334,6 +336,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   let filteredImageFiles: File[] | undefined = imageFiles;
   let filteredImageCount: number = input.imageCount;
   let filteredBase64Data: string[] = []; // Phase 4.0.4 — Store base64 for angle classification
+  // Phase 4.5.1 — Store final image fingerprints for name memory
+  let finalImageFingerprints: number[] = [];
 
   if (imageFiles && imageFiles.length > 1) {
     // Convert files to base64 for fingerprinting
@@ -401,6 +405,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         });
       })
     );
+    // Phase 4.5.1 — Store single image fingerprint for name memory
+    finalImageFingerprints = filteredBase64Data.map(imageFingerprint);
   }
 
   // Phase 4.0.5 — Do NOT fail scan on similar images
@@ -3459,6 +3465,43 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     finalConfidence
   );
 
+  // Phase 4.5.2 — Confidence Stability Rule: Apply name memory bias before final confidence assignment
+  let stabilityAdjustedConfidence = finalConfidence;
+  const currentPrimaryName = viewModel.nameFirstDisplay?.primaryStrainName;
+  
+  if (currentPrimaryName && finalImageFingerprints.length > 0) {
+    const cachedBias = getNameMemoryBias(finalImageFingerprints);
+    
+    if (cachedBias) {
+      const nameMatches = cachedBias.name === currentPrimaryName;
+      
+      if (nameMatches) {
+        // If primary strain name matches previous scan: confidence may increase slightly
+        const stabilityBoost = Math.min(3, 95 - finalConfidence); // Max +3%, capped at 95%
+        stabilityAdjustedConfidence = finalConfidence + stabilityBoost;
+        console.log("Phase 4.5.2 — Name matches previous scan, applying stability boost:", {
+          previousName: cachedBias.name,
+          previousConfidence: cachedBias.confidence,
+          currentConfidence: finalConfidence,
+          adjustedConfidence: stabilityAdjustedConfidence,
+          boost: stabilityBoost,
+        });
+      } else {
+        // If name changes: confidence must drop (never jump up)
+        const stabilityPenalty = Math.min(10, finalConfidence - 55); // Max -10%, floor at 55%
+        stabilityAdjustedConfidence = Math.max(55, finalConfidence - stabilityPenalty);
+        console.log("Phase 4.5.2 — Name changed from previous scan, applying stability penalty:", {
+          previousName: cachedBias.name,
+          previousConfidence: cachedBias.confidence,
+          currentName: currentPrimaryName,
+          currentConfidence: finalConfidence,
+          adjustedConfidence: stabilityAdjustedConfidence,
+          penalty: stabilityPenalty,
+        });
+      }
+    }
+  }
+  
   // Phase 4.0.3 — Update viewModel confidence from V403 breakdown (single source of truth)
   if (viewModel.nameFirstDisplay) {
     viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
@@ -3954,11 +3997,51 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       displayConfidence >= 70 ? "medium" : "low"
     );
     
-    viewModel.nameFirstDisplay.confidencePercent = displayConfidence;
-    viewModel.nameFirstDisplay.confidence = displayConfidence;
-    viewModel.nameFirstDisplay.confidenceTier = displayTier === "Very High" ? "very_high" :
-      displayTier === "High" ? "high" :
-      displayTier === "Medium" ? "medium" : "low";
+    // Phase 4.5.2 — Confidence Stability Rule: Apply name memory bias before final confidence assignment
+    let stabilityAdjustedConfidence = displayConfidence;
+    
+    if (finalPrimaryName && finalImageFingerprints.length > 0) {
+      const cachedBias = getNameMemoryBias(finalImageFingerprints);
+      
+      if (cachedBias) {
+        const nameMatches = cachedBias.name === finalPrimaryName;
+        
+        if (nameMatches) {
+          // If primary strain name matches previous scan: confidence may increase slightly
+          const stabilityBoost = Math.min(3, 95 - displayConfidence); // Max +3%, capped at 95%
+          stabilityAdjustedConfidence = displayConfidence + stabilityBoost;
+          console.log("Phase 4.5.2 — Name matches previous scan, applying stability boost:", {
+            previousName: cachedBias.name,
+            previousConfidence: cachedBias.confidence,
+            currentName: finalPrimaryName,
+            currentConfidence: displayConfidence,
+            adjustedConfidence: stabilityAdjustedConfidence,
+            boost: stabilityBoost,
+          });
+        } else {
+          // If name changes: confidence must drop (never jump up)
+          const stabilityPenalty = Math.min(10, displayConfidence - 55); // Max -10%, floor at 55%
+          stabilityAdjustedConfidence = Math.max(55, displayConfidence - stabilityPenalty);
+          console.log("Phase 4.5.2 — Name changed from previous scan, applying stability penalty:", {
+            previousName: cachedBias.name,
+            previousConfidence: cachedBias.confidence,
+            currentName: finalPrimaryName,
+            currentConfidence: displayConfidence,
+            adjustedConfidence: stabilityAdjustedConfidence,
+            penalty: stabilityPenalty,
+          });
+        }
+      }
+    }
+    
+    viewModel.nameFirstDisplay.confidencePercent = stabilityAdjustedConfidence;
+    viewModel.nameFirstDisplay.confidence = stabilityAdjustedConfidence;
+    // Phase 4.5.2 — Use stability-adjusted confidence for tier
+    viewModel.nameFirstDisplay.confidenceTier = stabilityAdjustedConfidence >= 90 ? "very_high" :
+      stabilityAdjustedConfidence >= 80 ? "high" :
+      stabilityAdjustedConfidence >= 70 ? "medium" : "low";
+    // Phase 4.5.2 — Update viewModel confidence to match stability-adjusted value
+    viewModel.confidence = stabilityAdjustedConfidence;
     
     // Update explanation (clear reason why this name won) - NAME-FIRST MATCHING prioritized
     if (!viewModel.nameFirstDisplay.explanation) {
@@ -5468,6 +5551,28 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
           meta: scanMeta, // Phase 4.2.6 — Scan metadata
         };
+  
+  // Phase 4.5.1 — Cache successful scan result for name memory
+  if (result.status === "success" && 
+      viewModel.nameFirstDisplay?.primaryStrainName && 
+      finalImageFingerprints.length > 0 &&
+      viewModel.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar") {
+    try {
+      cacheScanResult(
+        viewModel.nameFirstDisplay.primaryStrainName,
+        viewModel.nameFirstDisplay.confidencePercent,
+        finalImageFingerprints
+      );
+      console.log("Phase 4.5.1 — Cached scan result for name memory:", {
+        name: viewModel.nameFirstDisplay.primaryStrainName,
+        confidence: viewModel.nameFirstDisplay.confidencePercent,
+        fingerprintCount: finalImageFingerprints.length,
+      });
+    } catch (error) {
+      // Don't fail scan if caching fails
+      console.warn("Phase 4.5.1 — Failed to cache scan result:", error);
+    }
+  }
   
   // PHASE A FINALIZATION — Log once at end
   console.log(`SCAN COMPLETE — status=${result.status} confidence=${result.confidence}`);
