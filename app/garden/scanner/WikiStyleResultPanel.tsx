@@ -1105,9 +1105,11 @@ export default function WikiStyleResultPanel({
                     ? "This cultivar is typically better suited for solo or small-group settings where relaxation and introspection are desired. Large social gatherings may feel overwhelming."
                     : viewModel.genetics.dominance === "Sativa"
                     ? "This cultivar can enhance social experiences by promoting conversation, energy, and engagement. It's well-suited for group activities and social gatherings."
-                : "This hybrid cultivar can work in both social and solo contexts, with effects varying based on the specific balance of indica and sativa traits. It offers flexibility for different social situations."}
-            </p>
-          </div>
+                    : "This hybrid cultivar can work in both social and solo contexts, with effects varying based on the specific balance of indica and sativa traits. It offers flexibility for different social situations."}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </CollapsibleSection>
       
