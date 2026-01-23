@@ -155,6 +155,12 @@ import {
   calculateMultiImageVisualConsensus,
   type VisualConsensusResult
 } from "./imageStrainMatchScoring";
+// Phase 4.9.5 — Name-First Integration
+import { 
+  applyVisualIntegrationToNameFirst,
+  integrateNameFirstWithVisual,
+  type IntegratedNameFirstScore
+} from "./nameFirstVisualIntegration";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -3766,13 +3772,52 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 });
               }
               
-              // Update phaseB1Result with visual match scores (re-sort by adjusted score)
+              // Phase 4.9.5 — NAME-FIRST INTEGRATION
+              // Combine name consensus, genetic similarity, terpene overlap, and visual consensus
+              // Extract observed terpenes and genetics for integration
+              let observedTerpenes: string[] | undefined = undefined;
+              if (viewModel.terpeneExperience?.dominantTerpenes || viewModel.terpeneExperience?.secondaryTerpenes) {
+                observedTerpenes = [
+                  ...(viewModel.terpeneExperience.dominantTerpenes || []),
+                  ...(viewModel.terpeneExperience.secondaryTerpenes || []),
+                ].map(t => typeof t === "string" ? t : (t as any).name || "");
+              }
+              
+              let observedGenetics: string | undefined = undefined;
+              if (dbEntry?.genetics) {
+                observedGenetics = dbEntry.genetics;
+              } else if (viewModel.genetics?.lineage) {
+                // lineage is a string in viewModel.genetics
+                observedGenetics = viewModel.genetics.lineage;
+              }
+              
+              // Apply visual integration to name-first results
+              const integratedResult = applyVisualIntegrationToNameFirst(
+                phaseB1Result,
+                visualSignatures,
+                observedTerpenes,
+                observedGenetics
+              );
+              
+              // Update phaseB1Result with integrated scores
               phaseB1Result = {
                 ...phaseB1Result,
-                candidates: scoredCandidates
-                  .map(scored => scored.candidate)
-                  .sort((a, b) => b.score - a.score)
-                  .slice(0, 5), // Re-sort and keep top 5
+                candidates: integratedResult.candidates.map(c => ({
+                  strainName: c.strainName,
+                  score: c.integratedScore, // Use integrated score
+                  reasonTags: c.reasonTags,
+                })),
+                primaryStrainName: integratedResult.primaryStrainName,
+                confidence: integratedResult.confidence,
+                explanation: integratedResult.explanation,
+              };
+              
+              // Store visual integration metadata
+              (phaseB1Result as any).visualIntegration = {
+                visualConsensusScore: integratedResult.candidates[0]?.visualConsensusScore,
+                confidenceCeiling: integratedResult.candidates[0]?.confidenceCeiling,
+                isFalsePositive: integratedResult.candidates[0]?.isFalsePositive,
+                integrationNote: integratedResult.visualIntegrationNote,
               };
               
               // Store visual consensus results for top candidate
@@ -3780,12 +3825,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                 (phaseB1Result as any).visualConsensus = scoredCandidates[0].visualConsensusResult;
               }
               
-              console.log("Phase 4.9.3/4.9.4 — Visual Match Scoring applied:", {
+              console.log("Phase 4.9.5 — Name-First Integration applied:", {
                 imageCount: visualSignatures.length,
-                candidatesScored: scoredCandidates.length,
-                topVisualMatch: scoredCandidates[0]?.visualMatchScore,
-                topScore: scoredCandidates[0]?.candidate.score,
-                consensusNote: scoredCandidates[0]?.visualConsensusResult?.visualConfidenceNote,
+                candidatesScored: integratedResult.candidates.length,
+                topIntegratedScore: integratedResult.candidates[0]?.integratedScore,
+                topVisualConsensus: integratedResult.candidates[0]?.visualConsensusScore,
+                confidenceCeiling: integratedResult.candidates[0]?.confidenceCeiling,
+                isFalsePositive: integratedResult.candidates[0]?.isFalsePositive,
+                integrationNote: integratedResult.visualIntegrationNote,
               });
             }
           } catch (error) {
@@ -4077,7 +4124,21 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     finalPrimaryName = phaseB1Result.primaryStrainName;
     finalNameConfidence = phaseB1Result.confidence;
     finalNameReasons = phaseB1Result.explanation;
-    finalNameIsLocked = phaseB1Result.confidence >= 85;
+    
+    // Phase 4.9.5 — Use confidence ceiling from visual integration if available
+    const visualIntegration = (phaseB1Result as any).visualIntegration;
+    if (visualIntegration?.confidenceCeiling) {
+      // Visual score can increase confidence ceiling
+      finalNameConfidence = Math.min(
+        visualIntegration.confidenceCeiling,
+        Math.max(finalNameConfidence, phaseB1Result.confidence)
+      );
+      if (visualIntegration.confidenceCeiling > phaseB1Result.confidence) {
+        finalNameReasons.push(`Visual consensus increased confidence ceiling to ${visualIntegration.confidenceCeiling}%`);
+      }
+    }
+    
+    finalNameIsLocked = finalNameConfidence >= 85;
     
     // Safety: Never leave primaryStrainName empty
     if (!finalPrimaryName || finalPrimaryName.trim().length < 3) {
