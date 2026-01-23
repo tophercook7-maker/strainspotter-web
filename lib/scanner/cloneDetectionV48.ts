@@ -403,16 +403,27 @@ export function detectCloneRelationships(
       };
     });
   
+  // Phase 4.8 — Convert to CloneGroup format for legacy compatibility
+  const cloneGroup: CloneGroup = {
+    cloneGroupId: bestGroup.rootName.replace(/\s+/g, "-").toLowerCase(),
+    rootName: bestGroup.rootName,
+    canonicalName,
+    variants: detectedClones,
+    cloneConfidence: (geneticSimilarity + visualSimilarity) / 200, // Convert 0-100 to 0-1
+    similarityScores: {
+      rootNameMatch: 1.0,
+      lineageSimilarity: geneticSimilarity / 100,
+      visualMorphologyOverlap: visualSimilarity / 100,
+      terpeneOverlap: 0.5, // Default if not calculated
+    },
+    evidence: [`${bestGroup.variants.length} variants detected with root name "${bestGroup.rootName}"`],
+  };
+  
   return {
     isClone: true,
     primaryName: canonicalName,
     detectedClones,
-    cloneGroup: {
-      rootName: bestGroup.rootName,
-      allVariants: bestGroup.variants.map(v => v.name),
-      geneticSimilarity,
-      visualSimilarity,
-    },
+    cloneGroup,
   };
 }
 
