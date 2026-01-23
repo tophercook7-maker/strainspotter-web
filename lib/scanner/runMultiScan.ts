@@ -3892,6 +3892,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           imageResultsV3.length || filteredInput.imageCount
         );
         
+        // Phase 4.8.6 — Failure Safety: Validate primary name from clone selection
+        if (!primaryNameSelection.primaryStrainName || 
+            primaryNameSelection.primaryStrainName.trim().length < 3 ||
+            primaryNameSelection.primaryStrainName.toLowerCase() === "unknown") {
+          console.warn("Phase 4.8.6 — Clone selection returned unclear name, using fallback");
+          primaryNameSelection.primaryStrainName = "Closest Known Cultivar";
+        }
+        
         // Phase 4.8.4 — Generate user-facing disambiguation copy
         disambiguationCopy = generateDisambiguationCopy(
           primaryNameSelection,
@@ -4043,18 +4051,29 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
   
   
-  // PRIMARY STRAIN SELECTION LOGIC — Final safety check
-  // Never leave primaryStrainName empty
-  // Never throw
-  if (!finalPrimaryName || finalPrimaryName.trim().length < 3) {
-    console.warn("PRIMARY STRAIN SELECTION: Final check — name was empty, forcing fallback");
+  // Phase 4.8.6 — FAILURE SAFETY: Final validation
+  // If name unclear: Use "Closest Known Cultivar"
+  // Still show family + ratio (calculated independently)
+  // Never show empty name
+  if (!finalPrimaryName || 
+      finalPrimaryName.trim().length < 3 || 
+      finalPrimaryName.toLowerCase() === "unknown" ||
+      finalPrimaryName.toLowerCase() === "unidentified") {
+    console.warn("Phase 4.8.6 — PRIMARY STRAIN SELECTION: Final check — name was unclear, forcing fallback");
     finalPrimaryName = "Closest Known Cultivar";
     finalNameConfidence = 70;
-    finalNameReasons = ["Fallback selection due to insufficient data"];
+    finalNameReasons = ["Fallback selection due to unclear name — family and ratio information still available"];
     finalNameIsLocked = false;
   }
   
+  // Phase 4.8.6 — Ensure name is never empty (absolute safety)
+  if (!finalPrimaryName || finalPrimaryName.trim() === "") {
+    finalPrimaryName = "Closest Known Cultivar";
+    console.error("Phase 4.8.6 — CRITICAL: Name was empty, forced fallback");
+  }
+  
   // Phase 4.6.2 — FAMILY-FIRST CONFIDENCE BOOST
+  // Phase 4.8.6 — Still calculate family even if name is unclear (family + ratio shown independently)
   // If exact strain uncertain but family is strong: lock family, soft-rank strains inside family
   let familyFirstResult: ReturnType<typeof applyFamilyFirstConfidenceBoost> | null = null;
   let exactStrainConfidenceForUI: number | null = null; // Phase 4.6.4 — Store for dual confidence display
@@ -4069,8 +4088,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     const finalConfidenceForFamilyCheck = phaseB2ConfidenceResult?.confidence ?? finalNameConfidence;
     exactStrainConfidenceForUI = finalConfidenceForFamilyCheck; // Phase 4.6.4 — Store for UI
     
+    // Phase 4.8.6 — Use finalPrimaryName for family detection (even if "Closest Known Cultivar")
+    // Family detection will attempt to find family from candidates or visual traits
+    const nameForFamilyDetection = finalPrimaryName === "Closest Known Cultivar" && candidateStrains.length > 0
+      ? candidateStrains[0].name // Use top candidate for family detection
+      : finalPrimaryName;
+    
     familyFirstResult = applyFamilyFirstConfidenceBoost({
-      primaryStrainName: finalPrimaryName,
+      primaryStrainName: nameForFamilyDetection,
       exactStrainConfidence: finalConfidenceForFamilyCheck,
       candidateStrains,
       imageCount: imageResultsV3.length || filteredInput.imageCount,
@@ -4274,9 +4299,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       ? finalNameReasons
       : ["Name selected based on available analysis"];
     
+    // Phase 4.8.6 — FAILURE SAFETY: Ensure name is never empty
+    const validatedPrimaryName = safePrimaryName && safePrimaryName.trim().length >= 3
+      ? safePrimaryName
+      : "Closest Known Cultivar";
+    
     viewModel.nameFirstDisplay = {
-      primaryStrainName: safePrimaryName,
-      primaryName: safePrimaryName,
+      primaryStrainName: validatedPrimaryName,
+      primaryName: validatedPrimaryName,
       confidencePercent: finalNameConfidence,
       confidence: finalNameConfidence,
       confidenceTier,
@@ -4290,6 +4320,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         ? phaseB1Result.candidates.slice(1, 4).map(c => c.strainName) // Top 3 alternates from Phase B.1
         : [],
     };
+    
+    // Phase 4.8.6 — Final safety: Never show empty name
+    if (!viewModel.nameFirstDisplay.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim() === "") {
+      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
+      viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
+      console.error("Phase 4.8.6 — CRITICAL: nameFirstDisplay.primaryStrainName was empty, forced fallback");
+    }
     (viewModel.nameFirstDisplay as any).isLocked = finalNameIsLocked || (shouldLockName && finalNameConfidence >= 75);
     if (nameConfidenceV55) {
       (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
@@ -4575,9 +4612,15 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // Phase 4.7.1 — MULTI-SOURCE RATIO ENGINE (LOCKED)
   // Phase 4.7.2 — CONFIDENCE-AWARE RATIO SCORING
+  // Phase 4.8.6 — Still calculate ratio even if name is unclear (ratio shown independently)
   // Combines: Genetics (40%), Family baseline (20%), Visual (15%), Terpene (15%), Name consensus (10%)
+  // Phase 4.8.6 — Use best available name for ratio calculation (even if "Closest Known Cultivar")
+  const nameForRatio = finalPrimaryName === "Closest Known Cultivar" && phaseB1Result?.candidates.length > 0
+    ? phaseB1Result.candidates[0].strainName // Use top candidate for ratio calculation
+    : finalPrimaryName;
+  
   const finalRatioV47 = resolveFinalRatioV47({
-    strainName: finalPrimaryName,
+    strainName: nameForRatio,
     dbEntry,
     visualSignals: fusedFeatures ? {
       leafShape: fusedFeatures.leafShape === "broad" ? "broad" : fusedFeatures.leafShape === "narrow" ? "narrow" : undefined,
