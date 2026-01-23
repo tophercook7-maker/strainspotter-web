@@ -162,6 +162,8 @@ import { resolveNameConfidenceV55 } from "./nameConfidenceV55";
 import { selectPrimaryStrainName } from "./selectPrimaryStrainName";
 // Phase B.1 — NAME-FIRST MATCHING CORE (Database first, always)
 import { nameFirstMatchingCore } from "./nameFirstMatchingCore";
+// Phase B.2 — CONFIDENCE CALIBRATION
+import { calibrateConfidenceB2 } from "./confidenceCalibrationB2";
 // Phase 4.1.9 — consensus weight adjustment
 import { adjustConsensusWeight } from "./consensusWeights";
 // Phase 4.1.3 — replace analysis failure paths
@@ -3796,6 +3798,71 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     finalNameIsLocked = nameTrustV46.isLocked;
   }
   
+  // Phase B.2 — CONFIDENCE CALIBRATION
+  // Apply confidence calibration rules:
+  // - Single image max confidence ≤ 85%
+  // - Multiple images raise confidence gradually
+  // - Never output 100%
+  // - If name confidence < 60%, label as "Closest Known Cultivar"
+  let phaseB2ConfidenceResult: ReturnType<typeof calibrateConfidenceB2> | null = null;
+  try {
+    // Derive image agreement score (0-1)
+    let imageAgreementScore = 0.5; // Default
+    if (imageResultsV3.length >= 2) {
+      // Count how many images agree on the primary name
+      const agreeingCount = imageResultsV3.filter(r => {
+        const topCandidate = r.candidateStrains?.[0];
+        return topCandidate?.name === finalPrimaryName;
+      }).length;
+      imageAgreementScore = agreeingCount / imageResultsV3.length;
+    }
+    
+    // Derive database match strength (0-1)
+    let databaseMatchStrength = 0.5; // Default
+    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
+      // Use Phase B.1 top candidate score as database match strength
+      databaseMatchStrength = Math.min(1.0, phaseB1Result.candidates[0].score / 100);
+    } else if (dbEntry) {
+      // Database entry exists
+      databaseMatchStrength = 0.8;
+    }
+    
+    phaseB2ConfidenceResult = calibrateConfidenceB2({
+      imageCount: imageResultsV3.length || filteredInput.imageCount,
+      nameMatchingResult: phaseB1Result,
+      nameConfidence: finalNameConfidence,
+      imageAgreementScore,
+      databaseMatchStrength,
+      hasSimilarImages: samePlantLikely || false,
+    });
+    
+    // Apply Phase B.2 calibrated confidence
+    finalNameConfidence = phaseB2ConfidenceResult.confidence;
+    
+    // RULE: If name confidence < 60%, label as "Closest Known Cultivar"
+    if (phaseB2ConfidenceResult.shouldUseFallbackName) {
+      finalPrimaryName = "Closest Known Cultivar";
+      finalNameReasons = phaseB2ConfidenceResult.explanation;
+    } else {
+      // Add confidence explanation to reasons
+      finalNameReasons = [
+        ...finalNameReasons,
+        ...phaseB2ConfidenceResult.explanation,
+      ];
+    }
+    
+    console.log("Phase B.2 — CONFIDENCE CALIBRATED:", {
+      confidence: phaseB2ConfidenceResult.confidence,
+      tier: phaseB2ConfidenceResult.tier,
+      shouldUseFallbackName: phaseB2ConfidenceResult.shouldUseFallbackName,
+      explanation: phaseB2ConfidenceResult.explanation,
+    });
+  } catch (error) {
+    console.warn("Phase B.2 — Confidence calibration error:", error);
+    // Continue with existing confidence
+  }
+  
+  
   // Ensure name is never empty (NAME-FIRST MATCHING guarantee)
   if (!finalPrimaryName || finalPrimaryName.length < 3) {
     finalPrimaryName = "Closest Known Cultivar";
@@ -3810,22 +3877,20 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     viewModel.nameFirstDisplay.primaryStrainName = finalPrimaryName;
     viewModel.nameFirstDisplay.primaryName = finalPrimaryName;
     
-    // Update confidence from name-first matching
-    viewModel.nameFirstDisplay.confidencePercent = finalNameConfidence;
-    viewModel.nameFirstDisplay.confidence = finalNameConfidence;
+    // Phase B.2 — Update confidence from Phase B.2 calibration (if available)
+    // Otherwise use name-first matching confidence
+    const displayConfidence = phaseB2ConfidenceResult?.confidence ?? finalNameConfidence;
+    const displayTier = phaseB2ConfidenceResult?.tier ?? (
+      displayConfidence >= 90 ? "very_high" :
+      displayConfidence >= 80 ? "high" :
+      displayConfidence >= 70 ? "medium" : "low"
+    );
     
-    // Determine confidence tier
-    let confidenceTier: "very_high" | "high" | "medium" | "low";
-    if (finalNameConfidence >= 90) {
-      confidenceTier = "very_high";
-    } else if (finalNameConfidence >= 80) {
-      confidenceTier = "high";
-    } else if (finalNameConfidence >= 70) {
-      confidenceTier = "medium";
-    } else {
-      confidenceTier = "low";
-    }
-    viewModel.nameFirstDisplay.confidenceTier = confidenceTier;
+    viewModel.nameFirstDisplay.confidencePercent = displayConfidence;
+    viewModel.nameFirstDisplay.confidence = displayConfidence;
+    viewModel.nameFirstDisplay.confidenceTier = displayTier === "Very High" ? "very_high" :
+      displayTier === "High" ? "high" :
+      displayTier === "Medium" ? "medium" : "low";
     
     // Update explanation (clear reason why this name won) - NAME-FIRST MATCHING prioritized
     if (!viewModel.nameFirstDisplay.explanation) {
