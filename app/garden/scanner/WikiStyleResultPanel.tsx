@@ -577,6 +577,13 @@ export default function WikiStyleResultPanel({
                     </p>
                   </div>
                 )}
+                
+                {/* Phase 5.1.6 — FREE vs PAID LINE (PSYCHOLOGICAL) */}
+                <div className="pt-4 border-t border-white/10">
+                  <p className="text-xs text-white/50 text-center italic">
+                    Deeper breakdown available in Pro
+                  </p>
+                </div>
               </div>
             );
           })()}
