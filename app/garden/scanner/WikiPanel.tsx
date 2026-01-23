@@ -14,6 +14,9 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
   // Default: collapsed on mobile, open on desktop
   const [isOpen, setIsOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  // Phase 4.4.4 — Summary text rebalance: expandable state
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+  const [isWhyMattersExpanded, setIsWhyMattersExpanded] = useState(false);
 
   useEffect(() => {
     // Check initial screen size
@@ -65,21 +68,37 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
           </section>
 
           {/* Why This Matters - multiple paragraphs */}
+          {/* Phase 4.4.4 — Summary text rebalance: larger text, limited visible lines, expandable */}
           <section className="py-5">
             <div className="flex items-start gap-3">
               <span className="text-white/30 text-xs font-mono mt-1.5 leading-none">§</span>
               <div className="flex-1">
                 <h4 className="text-lg md:text-xl font-semibold mb-2">Why This Matters</h4>
                 <div className="space-y-2.5">
-                  {synthesis.whyThisMatters.map((paragraph, index) => (
-                    <p key={index} className="text-base md:text-lg leading-relaxed text-white/90">{paragraph}</p>
-                  ))}
+                  {synthesis.whyThisMatters.map((paragraph, index) => {
+                    // Show first 3-4 paragraphs by default, rest on expand
+                    const shouldShow = isWhyMattersExpanded || index < 3;
+                    if (!shouldShow) return null;
+                    
+                    return (
+                      <p key={index} className="text-lg leading-relaxed text-white/90">{paragraph}</p>
+                    );
+                  })}
+                  {synthesis.whyThisMatters.length > 3 && (
+                    <button
+                      onClick={() => setIsWhyMattersExpanded(!isWhyMattersExpanded)}
+                      className="text-sm text-blue-400 hover:text-blue-300 font-medium mt-2"
+                    >
+                      {isWhyMattersExpanded ? "Read less" : "Read more"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           </section>
 
           {/* Uncertainty Explanation - multiple paragraphs */}
+          {/* Phase 4.4.4 — Summary text rebalance: larger text */}
           <section className="py-5">
             <div className="flex items-start gap-3">
               <span className="text-white/30 text-xs font-mono mt-1.5 leading-none">§</span>
@@ -87,7 +106,7 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
                 <h4 className="text-lg md:text-xl font-semibold mb-2">Uncertainty & Confidence</h4>
                 <div className="space-y-2.5">
                   {synthesis.uncertaintyExplanation.map((paragraph, index) => (
-                    <p key={index} className="text-base sm:text-lg leading-relaxed text-white/90">{paragraph}</p>
+                    <p key={index} className="text-lg leading-relaxed text-white/90">{paragraph}</p>
                   ))}
                 </div>
               </div>
