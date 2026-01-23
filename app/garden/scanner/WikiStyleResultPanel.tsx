@@ -130,6 +130,80 @@ export default function WikiStyleResultPanel({
               </p>
             )}
           </div>
+          
+          {/* Phase 4.1 — How Confident Is This Match? */}
+          <div className="mt-6 space-y-2">
+            <h3 className="text-base font-semibold text-white/90">
+              How Confident Is This Match?
+            </h3>
+            {(() => {
+              const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+              const imageCount = viewModel.multiImageInfo?.imageCountText 
+                ? parseInt(viewModel.multiImageInfo.imageCountText.match(/\d+/)?.[0] || "1")
+                : 1;
+              const scanStatus = result.status || "success";
+              const hasSamePlantNote = !!result.samePlantNote;
+              const hasDiversityNote = !!result.diversityNote;
+              
+              const explanations: string[] = [];
+              
+              // Image count explanation
+              if (imageCount === 1) {
+                explanations.push("Single-image analysis limits perspective — multiple angles improve accuracy.");
+              } else if (imageCount >= 3) {
+                explanations.push(`Multiple angles (${imageCount} images) showed consistent traits.`);
+              } else if (imageCount === 2) {
+                explanations.push("Two images provided cross-validation of key characteristics.");
+              }
+              
+              // Diversity note explanation
+              if (hasDiversityNote || hasSamePlantNote) {
+                if (hasSamePlantNote) {
+                  explanations.push("Images appear to be of the same plant — different angles would strengthen confidence.");
+                } else {
+                  explanations.push("Limited image diversity reduced certainty.");
+                }
+              }
+              
+              // Confidence level explanation
+              if (confidence >= 85) {
+                explanations.push("Strong visual agreement across analyzed images.");
+                if (imageCount >= 2) {
+                  explanations.push("Multiple viewing angles confirmed consistent morphological features.");
+                }
+              } else if (confidence >= 70) {
+                explanations.push("Most traits aligned, some variation observed.");
+                if (scanStatus === "partial") {
+                  explanations.push("Partial analysis — additional images would improve confidence.");
+                }
+              } else if (confidence >= 60) {
+                explanations.push("Moderate alignment — visual traits show some variation.");
+                if (imageCount === 1) {
+                  explanations.push("Single-image analysis limits certainty.");
+                }
+              } else {
+                explanations.push("Lower confidence — limited visual distinction between similar cultivars.");
+                if (imageCount === 1) {
+                  explanations.push("Additional images from different angles would improve accuracy.");
+                }
+              }
+              
+              // Visual agreement note
+              if (imageCount >= 2 && !hasDiversityNote && !hasSamePlantNote) {
+                explanations.push("Visual features showed good agreement across images.");
+              }
+              
+              return (
+                <div className="space-y-1.5">
+                  {explanations.map((explanation, idx) => (
+                    <p key={idx} className="text-sm text-white/80 leading-relaxed">
+                      {explanation}
+                    </p>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
             
             {/* Phase 4.3.1 — render name stability */}
             {viewModel.nameFirstDisplay?.nameStabilityScore && (
