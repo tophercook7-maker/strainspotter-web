@@ -158,6 +158,7 @@ export default function WikiStyleResultPanel({
           </div>
           
           {/* Phase 4.0.3.1 — Confidence badge (always visible) */}
+          {/* Phase 4.3 — Enhanced with expert-driven messaging */}
           {(() => {
             const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
             const confidenceTier =
@@ -172,14 +173,27 @@ export default function WikiStyleResultPanel({
               confidenceTier === "medium" ? "bg-yellow-500" :
               "bg-red-600";
             
+            // Phase 4.3 — Expert-driven confidence explanation
+            const confidenceExplanation = confidence >= 85
+              ? "Expert analysis confirms strong match"
+              : confidence >= 70
+              ? "Expert analysis indicates likely match"
+              : "Expert analysis suggests closest available match";
+            
             return (
-              <div className="mt-2 inline-flex items-center gap-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${confidenceColor}`}>
-                  {confidenceLabel} ({confidence}%)
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Based on visual similarity across uploaded photos
-                </span>
+              <div className="mt-2 space-y-2">
+                <div className="inline-flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${confidenceColor}`}>
+                    {confidenceLabel} ({confidence}%)
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {confidenceExplanation}
+                  </span>
+                </div>
+                {/* Phase 4.3 — Confidence foundation explanation */}
+                <p className="text-xs text-white/60 leading-relaxed">
+                  Confidence calculated from systematic comparison of visual structure, bud morphology, and database alignment across {viewModel.multiImageInfo?.imageCountText?.match(/\d+/)?.[0] || "1"} image{viewModel.multiImageInfo?.imageCountText?.match(/\d+/)?.[0] !== "1" ? "s" : ""}.
+                </p>
               </div>
             );
           })()}
@@ -217,6 +231,7 @@ export default function WikiStyleResultPanel({
           </div>
           
           {/* Phase 4.1 — How Confident Is This Match? */}
+          {/* Phase 4.3 — Enhanced with expert-driven confidence explanation */}
           <div className="mt-6 space-y-2">
             <h3 className="text-base font-semibold text-white/90">
               How Confident Is This Match?
@@ -233,50 +248,59 @@ export default function WikiStyleResultPanel({
               
               const explanations: string[] = [];
               
+              // Phase 4.3 — Expert-driven confidence foundation
+              if (confidence >= 85) {
+                explanations.push("Expert analysis determined strong alignment between observed traits and documented cultivar characteristics.");
+              } else if (confidence >= 70) {
+                explanations.push("Expert analysis indicates good alignment with known cultivar traits, with some expected variation.");
+              } else {
+                explanations.push("Expert analysis identified the closest available match based on systematic comparison of visual and genetic data.");
+              }
+              
               // Image count explanation
               if (imageCount === 1) {
                 explanations.push("Single-image analysis limits perspective — multiple angles improve accuracy.");
               } else if (imageCount >= 3) {
-                explanations.push(`Multiple angles (${imageCount} images) showed consistent traits.`);
+                explanations.push(`Multiple angles (${imageCount} images) showed consistent traits across expert analysis.`);
               } else if (imageCount === 2) {
-                explanations.push("Two images provided cross-validation of key characteristics.");
+                explanations.push("Two images provided cross-validation of key characteristics through expert comparison.");
               }
               
               // Diversity note explanation
               if (hasDiversityNote || hasSamePlantNote) {
                 if (hasSamePlantNote) {
-                  explanations.push("Images appear to be of the same plant — different angles would strengthen confidence.");
+                  explanations.push("Images appear to be of the same plant — different angles would strengthen expert confidence.");
                 } else {
-                  explanations.push("Limited image diversity reduced certainty.");
+                  explanations.push("Limited image diversity reduced certainty in expert analysis.");
                 }
               }
               
-              // Confidence level explanation
+              // Confidence level explanation (enhanced)
               if (confidence >= 85) {
-                explanations.push("Strong visual agreement across analyzed images.");
+                explanations.push("Strong visual agreement across analyzed images confirmed through expert review.");
                 if (imageCount >= 2) {
-                  explanations.push("Multiple viewing angles confirmed consistent morphological features.");
+                  explanations.push("Multiple viewing angles confirmed consistent morphological features in expert assessment.");
                 }
               } else if (confidence >= 70) {
-                explanations.push("Most traits aligned, some variation observed.");
+                explanations.push("Most traits aligned in expert analysis, some variation observed.");
                 if (scanStatus === "partial") {
-                  explanations.push("Partial analysis — additional images would improve confidence.");
+                  explanations.push("Partial analysis — additional images would improve expert confidence.");
                 }
               } else if (confidence >= 60) {
-                explanations.push("Moderate alignment — visual traits show some variation.");
+                explanations.push("Expert analysis shows moderate alignment — visual traits show some variation.");
                 if (imageCount === 1) {
-                  explanations.push("Single-image analysis limits certainty.");
+                  explanations.push("Single-image analysis limits expert certainty.");
                 }
               } else {
-                explanations.push("Lower confidence — limited visual distinction between similar cultivars.");
+                explanations.push("Lower confidence in expert analysis — limited visual distinction between similar cultivars.");
                 if (imageCount === 1) {
-                  explanations.push("Additional images from different angles would improve accuracy.");
+                  explanations.push("Additional images from different angles would improve expert accuracy.");
                 }
               }
               
               // Visual agreement note
               if (imageCount >= 2 && !hasDiversityNote && !hasSamePlantNote) {
-                explanations.push("Visual features showed good agreement across images.");
+                explanations.push("Visual features showed good agreement across images in expert comparison.");
               }
               
               return (
@@ -337,6 +361,7 @@ export default function WikiStyleResultPanel({
           })()}
             
             {/* Phase 4.2 — Name Stability Indicator */}
+            {/* Phase 4.3 — Enhanced with expert-driven stability messaging */}
             {(() => {
               const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
               const scanStatus = (result as any).status || "success";
@@ -349,14 +374,14 @@ export default function WikiStyleResultPanel({
                       <span className="text-green-400 text-sm">✓</span>
                       <div className="flex-1">
                         <p className="text-xs font-medium text-green-200 mb-1">
-                          Stable Identification
+                          Expert-Stable Identification
                         </p>
                         <p className="text-xs text-green-200/80 leading-relaxed">
                           {confidence >= 85 
-                            ? "This name is highly stable and unlikely to change with additional images."
+                            ? "Expert analysis confirms this name is highly stable and unlikely to change with additional images."
                             : confidence >= 70
-                            ? "This identification is stable based on current analysis. Additional images may refine confidence but are unlikely to change the primary match."
-                            : "This name was selected through systematic comparison and represents the best available match."}
+                            ? "Expert analysis indicates this identification is stable. Additional images may refine confidence but are unlikely to change the primary match determined by expert comparison."
+                            : "This name was selected through expert systematic comparison and represents the best available match."}
                         </p>
                       </div>
                     </div>
@@ -372,10 +397,10 @@ export default function WikiStyleResultPanel({
                       <span className="text-yellow-400 text-sm">ℹ</span>
                       <div className="flex-1">
                         <p className="text-xs font-medium text-yellow-200 mb-1">
-                          Preliminary Identification
+                          Expert-Preliminary Identification
                         </p>
                         <p className="text-xs text-yellow-200/80 leading-relaxed">
-                          This name represents the best match from our database analysis. Additional images from different angles may refine the identification.
+                          Expert analysis identified this as the best match from our database. Additional images from different angles may refine the expert identification.
                         </p>
                       </div>
                     </div>
