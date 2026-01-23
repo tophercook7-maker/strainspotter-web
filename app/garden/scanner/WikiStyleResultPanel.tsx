@@ -63,7 +63,7 @@ export default function WikiStyleResultPanel({
   const strainFamily = getStrainFamily();
 
   return (
-    <section className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 space-y-6 max-h-[85vh] overflow-y-auto">
+    <section className="max-w-[680px] mx-auto rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 space-y-6 max-h-[85vh] overflow-y-auto">
       {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
       {/* Phase 15.5.5 — Make strain name + confidence feel real */}
       {/* Phase 4.1 — UI NEVER EMPTY: nameFirstDisplay is guaranteed */}
@@ -209,8 +209,9 @@ export default function WikiStyleResultPanel({
           {/* Phase 4.6 Step 4.6.3 — Ratio display removed (belongs in WikiReportPanel via analysis layer) */}
 
                       {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
+                      {/* UI FIX — No full-width dividers, use cards instead */}
                       {viewModel.terpeneExperience && (
-                        <div className="space-y-4 pt-4 border-t border-white/10">
+                        <div className="space-y-4 pt-4">
                           {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
                           {viewModel.terpeneExperience.dominantTerpenes && viewModel.terpeneExperience.dominantTerpenes.length > 0 && (
                             <div className="space-y-2">
@@ -330,9 +331,10 @@ export default function WikiStyleResultPanel({
                             </div>
 
                             {/* Phase 5.1 Step 5.1.5 — Consensus Notes (if available) */}
+                            {/* UI FIX — No full-width dividers, use cards instead */}
                             {viewModel.terpeneExperience.consensusNotes && 
                              viewModel.terpeneExperience.consensusNotes.length > 0 && (
-                              <div className="pt-2 mt-2 border-t border-white/10">
+                              <div className="pt-2 mt-2">
                                 <p className="text-xs text-white/60 italic leading-relaxed">
                                   {viewModel.terpeneExperience.consensusNotes.join(" ")}
                                 </p>

@@ -8,8 +8,8 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
   const ratio = result.ratio ?? null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4">
-      {/* Phase 4.7 — 1. Constrain width: max-w-3xl, mx-auto, px-4 */}
+    <div className="max-w-[680px] mx-auto px-4">
+      {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
       
       {/* Phase 4.9 — 1. Name display rules (LOCKED): Primary strain name MUST render large, first, above all other content */}
       {/* STABILIZATION RESET — READ ONLY from nameFirstDisplay and confidence */}

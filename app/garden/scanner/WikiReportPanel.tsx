@@ -65,7 +65,7 @@ export default function WikiReportPanel({
   };
 
   return (
-    <section className="space-y-6">
+    <section className="max-w-[680px] mx-auto space-y-6">
       {children}
       
       {/* Phase 15.5.6 — Dominance/Ratio display (ONLY place this is allowed) */}

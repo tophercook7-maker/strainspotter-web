@@ -317,10 +317,10 @@ export default function ScannerPage() {
     <>
       <TopNav title="Scanner" showBack />
       
-      {/* Phase 15.5.1 — Content Well Wrapper */}
+      {/* UI FIX — Content Well Wrapper */}
       <main className="min-h-screen bg-black text-white">
-        {/* Phase 4.7 — 1. Constrain width: max-w-3xl, mx-auto, px-4 */}
-      <div className="mx-auto w-full max-w-3xl px-4 pb-16 space-y-6">
+        {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
+      <div className="mx-auto w-full max-w-[680px] px-4 pb-16 space-y-6">
         {/* A) Upload + Preview Card */}
         <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 space-y-4">
               {/* FILE PICKER */}
@@ -422,10 +422,11 @@ export default function ScannerPage() {
                             className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group"
                           >
                             {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
+                            {/* UI FIX — Reduce image size (not viewport) */}
                             <img
                               src={preview.url}
                               alt={`scan-${idx + 1}`}
-                              className="w-full h-full object-contain max-h-[280px] md:max-h-[360px] rounded-xl mx-auto"
+                              className="w-full h-full object-contain max-h-[200px] md:max-h-[240px] rounded-xl mx-auto"
                             />
                             {/* Phase 4.0.2 — Angle badges on previews */}
                             <span className="absolute bottom-1 right-1 text-xs px-2 py-0.5 rounded bg-black/70">
@@ -527,10 +528,10 @@ export default function ScannerPage() {
           </button>
         </div>
 
-        {/* C) Results Card(s) */}
+        {/* UI FIX — Results Card(s) — Wrapped in container, cards not lines */}
         {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
-        <section className="space-y-6">
+        <section className="space-y-6 max-w-[680px] mx-auto">
           {/* Phase 4.0.1 — User-facing warning (non-fatal UI) */}
           {scanError?.reason === "images-too-similar" && (
             <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
