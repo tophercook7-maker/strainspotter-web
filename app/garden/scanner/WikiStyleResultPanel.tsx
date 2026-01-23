@@ -159,6 +159,21 @@ export default function WikiStyleResultPanel({
                 return null;
               })()}
               
+              {/* Phase 4.5.3 — Same-plant detection copy (subtle, intelligent) */}
+              {(() => {
+                const nameMemoryMatch = (result as any).meta?.nameMemoryMatch;
+                
+                if (nameMemoryMatch) {
+                  return (
+                    <div className="mt-2 text-xs text-white/50 italic">
+                      This appears consistent with a previous scan.
+                    </div>
+                  );
+                }
+                
+                return null;
+              })()}
+              
               {/* Phase 4.2 — Enhanced subtitle with trust messaging */}
               {/* Phase 4.4 — Visual Authority Upgrade: Improved spacing */}
               <div className="mt-3 space-y-1">

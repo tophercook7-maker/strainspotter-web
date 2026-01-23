@@ -3999,6 +3999,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     
     // Phase 4.5.2 — Confidence Stability Rule: Apply name memory bias before final confidence assignment
     let stabilityAdjustedConfidence = displayConfidence;
+    let nameMemoryMatch = false; // Phase 4.5.3 — Track if name matches previous scan
     
     if (finalPrimaryName && finalImageFingerprints.length > 0) {
       const cachedBias = getNameMemoryBias(finalImageFingerprints);
@@ -4007,6 +4008,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         const nameMatches = cachedBias.name === finalPrimaryName;
         
         if (nameMatches) {
+          // Phase 4.5.3 — Mark that name memory found a match
+          nameMemoryMatch = true;
+          
           // If primary strain name matches previous scan: confidence may increase slightly
           const stabilityBoost = Math.min(3, 95 - displayConfidence); // Max +3%, capped at 95%
           stabilityAdjustedConfidence = displayConfidence + stabilityBoost;
@@ -4042,6 +4046,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       stabilityAdjustedConfidence >= 70 ? "medium" : "low";
     // Phase 4.5.2 — Update viewModel confidence to match stability-adjusted value
     viewModel.confidence = stabilityAdjustedConfidence;
+    // Phase 4.5.3 — Store name memory match in scanMeta for UI display
+    scanMeta.nameMemoryMatch = nameMemoryMatch;
     
     // Update explanation (clear reason why this name won) - NAME-FIRST MATCHING prioritized
     if (!viewModel.nameFirstDisplay.explanation) {

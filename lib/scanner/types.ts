@@ -278,6 +278,7 @@ export interface ScanMeta {
   confidenceCap: number
   visualDistinctivenessScore?: number
   guidanceHints?: string[]
+  nameMemoryMatch?: boolean // Phase 4.5.3 — Indicates if name matches previous scan
 }
 
 // Phase 4.0.5 — Warning channel (non-fatal)
