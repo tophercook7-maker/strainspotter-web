@@ -136,6 +136,8 @@ import { resolveFinalRatioV44 } from "./resolveFinalRatioV44";
 import { resolveFinalRatioV51 } from "./resolveFinalRatioV51";
 // Phase 5.4 — Indica / Sativa / Hybrid Ratio Calibration
 import { resolveFinalRatioV54, type VisualMorphologySignals, type TerpeneBias } from "./resolveFinalRatioV54";
+// RATIO ENGINE V1 (SIMPLE & BELIEVABLE)
+import { resolveFinalRatioV1 } from "./resolveFinalRatioV1";
 // Phase 4.0.6 — Confidence Calibration & User Trust Lock
 import { resolveFinalConfidenceV406 } from "./resolveFinalConfidenceV406";
 // Phase 4.1 — Confidence Calibration & Truthful Precision
@@ -4015,54 +4017,132 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     imageDiversityScoreForRatio = Math.min(0.8, 0.5 + (imageCount - 1) * 0.1);
   }
   
-  const finalRatioV54 = resolveFinalRatioV54({
+  // RATIO ENGINE V1 — Derive inputs for simple & believable ratio
+  // Name classification (25%) - from strain name/type
+  let nameClassification: { indica: number; sativa: number } | undefined = undefined;
+  if (dbEntry) {
+    // Use database type if available
+    const dbType = (dbEntry as any).type || dbEntry.type;
+    if (dbType === "Indica") {
+      nameClassification = { indica: 80, sativa: 20 };
+    } else if (dbType === "Sativa") {
+      nameClassification = { indica: 20, sativa: 80 };
+    } else if (dbType === "Hybrid") {
+      nameClassification = { indica: 50, sativa: 50 };
+    } else if (nameConsensusRatio) {
+      // Fallback to name consensus ratio
+      nameClassification = nameConsensusRatio;
+    }
+  } else if (nameConsensusRatio) {
+    nameClassification = nameConsensusRatio;
+  }
+  
+  // Visual traits (15%) - from visual morphology signals
+  let visualTraits: { indica: number; sativa: number } | undefined = undefined;
+  if (visualMorphologySignalsV54) {
+    let visualIndica = 50;
+    let visualSativa = 50;
+    
+    // Leaf width (broad → indica, narrow → sativa)
+    if (visualMorphologySignalsV54.leafWidth === "broad") {
+      visualIndica += 20;
+      visualSativa -= 20;
+    } else if (visualMorphologySignalsV54.leafWidth === "narrow") {
+      visualIndica -= 20;
+      visualSativa += 20;
+    }
+    
+    // Bud density (high → indica, low → sativa)
+    if (visualMorphologySignalsV54.budDensity === "high") {
+      visualIndica += 15;
+      visualSativa -= 15;
+    } else if (visualMorphologySignalsV54.budDensity === "low") {
+      visualIndica -= 15;
+      visualSativa += 15;
+    }
+    
+    // Internodal spacing (short → indica, long → sativa)
+    if (visualMorphologySignalsV54.internodalSpacing === "short") {
+      visualIndica += 10;
+      visualSativa -= 10;
+    } else if (visualMorphologySignalsV54.internodalSpacing === "long") {
+      visualIndica -= 10;
+      visualSativa += 10;
+    }
+    
+    // Normalize to 0-100
+    visualIndica = Math.max(0, Math.min(100, visualIndica));
+    visualSativa = Math.max(0, Math.min(100, visualSativa));
+    
+    // Normalize to sum to 100
+    const visualTotal = visualIndica + visualSativa;
+    if (visualTotal > 0) {
+      visualIndica = (visualIndica / visualTotal) * 100;
+      visualSativa = (visualSativa / visualTotal) * 100;
+    }
+    
+    visualTraits = {
+      indica: Math.round(visualIndica),
+      sativa: Math.round(visualSativa),
+    };
+  }
+  
+  // Terpenes (10%) - from terpene profile bias
+  let terpenes: { indica: number; sativa: number } | undefined = undefined;
+  if (terpeneBiasV54) {
+    terpenes = {
+      indica: terpeneBiasV54.indica,
+      sativa: terpeneBiasV54.sativa,
+    };
+  }
+  
+  // RATIO ENGINE V1 — Resolve final ratio (simple & believable)
+  const finalRatioV1 = resolveFinalRatioV1({
     databaseGenetics,
-    nameConsensusRatio,
-    visualMorphologySignals: visualMorphologySignalsV54,
-    terpeneBias: terpeneBiasV54,
+    nameClassification,
+    visualTraits,
+    terpenes,
     confidence: finalConfidence,
-    nameConfidence: nameConfidenceForRatio,
-    imageCount: imageResultsV3.length || filteredInput.imageCount,
-    imageDiversityScore: imageDiversityScoreForRatio,
   });
 
-  // Phase 5.4 — 5. Output format (always sums to 100) - Attach to viewModel
+  // RATIO ENGINE V1 — Output format (always sums to 100) - Attach to viewModel
   viewModel.finalRatio = {
-    indica: finalRatioV54.percentages.indica,
-    sativa: finalRatioV54.percentages.sativa,
-    hybrid: finalRatioV54.percentages.hybrid,
-    classification: finalRatioV54.classification,
-    confidence: finalRatioV54.confidence,
-    explanation: finalRatioV54.explanation,
+    indica: finalRatioV1.dominance.indica,
+    sativa: finalRatioV1.dominance.sativa,
+    hybrid: finalRatioV1.dominance.hybrid,
+    classification: finalRatioV1.dominance.classification,
+    confidence: finalRatioV1.dominance.confidence,
+    explanation: [], // V1 doesn't provide explanation bullets
   };
 
-  // Phase 5.4 — Integration - Attach to ScannerViewModel.ratio
+  // RATIO ENGINE V1 — Integration - Attach to ScannerViewModel.ratio
   viewModel.ratio = {
-    indicaPercent: finalRatioV54.percentages.indica,
-    sativaPercent: finalRatioV54.percentages.sativa,
-    indica: finalRatioV54.percentages.indica,
-    sativa: finalRatioV54.percentages.sativa,
-    hybrid: finalRatioV54.percentages.hybrid,
-    dominance: finalRatioV54.classification === "Indica-dominant" ? "Indica" as const
-      : finalRatioV54.classification === "Sativa-dominant" ? "Sativa" as const
+    indicaPercent: finalRatioV1.dominance.indica,
+    sativaPercent: finalRatioV1.dominance.sativa,
+    indica: finalRatioV1.dominance.indica,
+    sativa: finalRatioV1.dominance.sativa,
+    hybrid: finalRatioV1.dominance.hybrid,
+    dominance: finalRatioV1.dominance.classification === "Indica-dominant" ? "Indica" as const
+      : finalRatioV1.dominance.classification === "Sativa-dominant" ? "Sativa" as const
       : "Hybrid" as const,
-    hybridLabel: finalRatioV54.classification,
-    classification: finalRatioV54.classification,
-    displayText: `${finalRatioV54.percentages.indica}% Indica · ${finalRatioV54.percentages.sativa}% Sativa · ${finalRatioV54.percentages.hybrid}% Hybrid`,
-    explanation: finalRatioV54.explanation,
+    hybridLabel: finalRatioV1.dominance.classification,
+    classification: finalRatioV1.dominance.classification,
+    displayText: `${finalRatioV1.dominance.indica}% Indica · ${finalRatioV1.dominance.sativa}% Sativa · ${finalRatioV1.dominance.hybrid}% Hybrid`,
+    explanation: [], // V1 doesn't provide explanation bullets
   };
-  // Phase 5.4 — Add dominantLabel and needsEstimationNote for UI display
+  // RATIO ENGINE V1 — Add dominantLabel and needsEstimationNote for UI display
   if (viewModel.ratio) {
-    (viewModel.ratio as any).dominantLabel = finalRatioV54.classification;
-    (viewModel.ratio as any).needsEstimationNote = finalRatioV54.confidence < 65;
+    (viewModel.ratio as any).dominantLabel = finalRatioV1.dominance.classification;
+    (viewModel.ratio as any).needsEstimationNote = finalRatioV1.dominance.confidence < 65;
   }
 
-  // Phase 5.4 — 9. Logging
+  // RATIO ENGINE V1 — Logging
   console.log("RATIO_FINAL:", {
-    indica: finalRatioV54.percentages.indica,
-    sativa: finalRatioV54.percentages.sativa,
-    hybrid: finalRatioV54.percentages.hybrid,
-    confidence: finalRatioV54.confidence,
+    indica: finalRatioV1.dominance.indica,
+    sativa: finalRatioV1.dominance.sativa,
+    hybrid: finalRatioV1.dominance.hybrid,
+    classification: finalRatioV1.dominance.classification,
+    confidence: finalRatioV1.dominance.confidence,
   });
 
   // Phase 4.0.6 — CONFIDENCE CALIBRATION & USER TRUST LOCK
