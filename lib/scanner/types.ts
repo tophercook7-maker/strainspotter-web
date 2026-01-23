@@ -207,6 +207,7 @@ export interface FullScanResult {
   similarImagesNote?: string | null; // Phase 5.2.4 — User-facing note when images are similar (same plant/angle)
   meta?: ScanMeta; // Phase 4.2.6 — Scan metadata (confidence cap, distinctiveness, guidance hints)
   warnings?: string[]; // Phase 4.0.5 — Warning channel (non-fatal)
+  proEnhancements?: import("./proEnhancements").ProEnhancements | null; // Phase 5.3.7 — Pro-only enhancements (never downgrades free tier)
 }
 
 // Phase 4.3.1 — Name Confidence Stabilization
@@ -244,6 +245,7 @@ export type ScanResult =
       samePlantNote?: string | null // Phase 4.2.0 — User-facing note when same-plant detected
       similarImagesNote?: string | null // Phase 5.2.4 — User-facing note when images are similar (same plant/angle)
       meta?: ScanMeta // Phase 4.2.6 — Scan metadata
+      proEnhancements?: import("./proEnhancements").ProEnhancements | null // Phase 5.3.7 — Pro-only enhancements (never downgrades free tier)
     }
   | {
       status: "partial"
@@ -261,6 +263,7 @@ export type ScanResult =
       samePlantNote?: string | null // Phase 4.2.0 — User-facing note when same-plant detected
       similarImagesNote?: string | null // Phase 5.2.4 — User-facing note when images are similar (same plant/angle)
       meta?: ScanMeta // Phase 4.2.6 — Scan metadata
+      proEnhancements?: import("./proEnhancements").ProEnhancements | null // Phase 5.3.7 — Pro-only enhancements (never downgrades free tier)
     }
   | {
       error: true // Phase 4.0.1 — Block scan if images lack variance

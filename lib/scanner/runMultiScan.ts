@@ -13,6 +13,9 @@ import { generateExtendedProfile } from "./extendedProfile";
 import { checkConsistency } from "./freeTierDepth";
 // Phase 5.3.6 — FREE TIER OPTIMIZATION
 import { ensureFreeTierFeatures } from "./freeTierOptimization";
+// Phase 5.3.7 — PRO DIFFERENTIATION (NOT GATING)
+import { generateProEnhancements } from "./proEnhancements";
+import { getTier } from "@/lib/monetization/guard";
 import { generateConfidenceExplanation } from "./confidenceExplanation";
 import { assignImageLabels } from "./imageIntakeLabels";
 import { determineStrainName } from "./namingHierarchy";
@@ -5941,6 +5944,35 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Ensure all core features are always available (no "crippled" feel)
     const optimizedViewModel = ensureFreeTierFeatures(viewModel);
     
+    // Phase 5.3.7 — PRO DIFFERENTIATION (NOT GATING)
+    // Generate pro-only enhancements (never downgrades free tier)
+    const isProTier = getTier() === "pro";
+    const finalDecision = (optimizedViewModel.nameFirstDisplay as any)?.finalDecision;
+    const primaryCandidate = finalDecision ? {
+      strainName: finalDecision.primaryStrainName,
+      overallScore: finalDecision.fingerprintScore,
+      channelScores: (finalDecision as any).channelScores || {
+        visual: 0.7,
+        genetics: 0.7,
+        terpenes: 0.6,
+        effects: 0.6,
+      },
+      isClone: (finalDecision as any).isClone || false,
+      groupId: (finalDecision as any).groupId,
+      groupMembers: (finalDecision as any).groupMembers || [],
+    } : null;
+    
+    const proEnhancements = isProTier && finalDecision && primaryCandidate
+      ? generateProEnhancements({
+          finalDecision,
+          primaryCandidate: primaryCandidate as any,
+          imageResults: imageResultsV3,
+          imageCount: filteredInput.imageCount,
+          imageDiversityScore: diversityScore,
+          isProTier: true,
+        })
+      : null;
+    
     const result: ScanResult = {
       status: "partial",
       guard: {
@@ -5959,6 +5991,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
       similarImagesNote: similarImagesNote || samePlantPenaltyNote || undefined, // Phase 5.2.4 — User-facing note when images are similar, Phase 5.3.4 — Same-plant penalty note
       meta: scanMeta, // Phase 4.2.6 — Scan metadata
+      proEnhancements: proEnhancements || undefined, // Phase 5.3.7 — Pro-only enhancements (never downgrades free tier)
     };
     
     console.log(`SCAN COMPLETE — status=partial confidence=${result.confidence}`);
@@ -6130,6 +6163,35 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Ensure all core features are always available (no "crippled" feel)
     const optimizedViewModel = ensureFreeTierFeatures(viewModel);
     
+    // Phase 5.3.7 — PRO DIFFERENTIATION (NOT GATING)
+    // Generate pro-only enhancements (never downgrades free tier)
+    const isProTier = getTier() === "pro";
+    const finalDecision = (optimizedViewModel.nameFirstDisplay as any)?.finalDecision;
+    const primaryCandidate = finalDecision ? {
+      strainName: finalDecision.primaryStrainName,
+      overallScore: finalDecision.fingerprintScore,
+      channelScores: (finalDecision as any).channelScores || {
+        visual: 0.7,
+        genetics: 0.7,
+        terpenes: 0.6,
+        effects: 0.6,
+      },
+      isClone: (finalDecision as any).isClone || false,
+      groupId: (finalDecision as any).groupId,
+      groupMembers: (finalDecision as any).groupMembers || [],
+    } : null;
+    
+    const proEnhancements = isProTier && finalDecision && primaryCandidate
+      ? generateProEnhancements({
+          finalDecision,
+          primaryCandidate: primaryCandidate as any,
+          imageResults: imageResultsV3,
+          imageCount: filteredInput.imageCount,
+          imageDiversityScore: diversityScore,
+          isProTier: true,
+        })
+      : null;
+    
     // Create result based on status (discriminated union: "partial" requires guard, "success" does not)
     const result: ScanResult = needsFallback
       ? {
@@ -6148,6 +6210,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
           similarImagesNote: similarImagesNote || samePlantPenaltyNote || undefined, // Phase 5.2.4 — User-facing note when images are similar, Phase 5.3.4 — Same-plant penalty note
           meta: scanMeta, // Phase 4.2.6 — Scan metadata
+          proEnhancements: proEnhancements || undefined, // Phase 5.3.7 — Pro-only enhancements (never downgrades free tier)
         }
       : {
           status: "success",
@@ -6161,6 +6224,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
           similarImagesNote: similarImagesNote || samePlantPenaltyNote || undefined, // Phase 5.2.4 — User-facing note when images are similar, Phase 5.3.4 — Same-plant penalty note
           meta: scanMeta, // Phase 4.2.6 — Scan metadata
+          proEnhancements: proEnhancements || undefined, // Phase 5.3.7 — Pro-only enhancements (never downgrades free tier)
         };
   
   // Phase 4.5.1 — Cache successful scan result for name memory
