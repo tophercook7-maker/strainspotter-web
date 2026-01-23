@@ -128,6 +128,7 @@ import { computeConfidenceV403 } from "./confidenceV403";
 import { computeNameTrustV404 } from "./nameTrustV404";
 // Phase 4.5.1 — Name Memory Cache
 import { getNameMemoryBias, cacheScanResult } from "./nameMemory";
+import { applyFamilyFirstConfidenceBoost } from "./familyFirstBoost";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -3982,6 +3983,51 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     finalNameIsLocked = false;
   }
   
+  // Phase 4.6.2 — FAMILY-FIRST CONFIDENCE BOOST
+  // If exact strain uncertain but family is strong: lock family, soft-rank strains inside family
+  let familyFirstResult: ReturnType<typeof applyFamilyFirstConfidenceBoost> | null = null;
+  try {
+    // Get candidate strains from Phase B.1 (convert to expected format)
+    const candidateStrains = phaseB1Result?.candidates.map(c => ({
+      name: c.strainName,
+      confidence: c.score,
+    })) || [];
+    
+    // Get final confidence after Phase B.2 calibration
+    const finalConfidenceForFamilyCheck = phaseB2ConfidenceResult?.confidence ?? finalNameConfidence;
+    
+    familyFirstResult = applyFamilyFirstConfidenceBoost({
+      primaryStrainName: finalPrimaryName,
+      exactStrainConfidence: finalConfidenceForFamilyCheck,
+      candidateStrains,
+      imageCount: imageResultsV3.length || filteredInput.imageCount,
+    });
+    
+    // If family-first is recommended, apply it
+    if (familyFirstResult.useFamilyFirst) {
+      console.log("Phase 4.6.2 — Applying family-first confidence boost:", {
+        familyName: familyFirstResult.familyName,
+        exactStrainConfidence: finalConfidenceForFamilyCheck,
+        familyConfidence: familyFirstResult.familyConfidence,
+        closestStrainInFamily: familyFirstResult.closestStrainInFamily,
+        displayFormat: familyFirstResult.displayFormat,
+      });
+      
+      // Update primary name to use family-first display format
+      finalPrimaryName = familyFirstResult.displayFormat;
+      // Use family confidence (higher than exact strain confidence)
+      finalNameConfidence = familyFirstResult.familyConfidence;
+      // Update reasons to include family-first explanation
+      finalNameReasons = [
+        ...finalNameReasons,
+        ...familyFirstResult.explanation,
+      ];
+    }
+  } catch (error) {
+    console.warn("Phase 4.6.2 — Family-first boost error:", error);
+    // Continue with exact strain name if family-first fails
+  }
+  
   // NAME-FIRST MATCHING — Update nameFirstDisplay with name-first result (NON-NEGOTIABLE)
   if (viewModel.nameFirstDisplay) {
     // Override primary name (always non-empty, never "Unknown") - NAME-FIRST MATCHING prioritized
@@ -3990,7 +4036,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     
     // Phase B.2 — Update confidence from Phase B.2 calibration (if available)
     // Otherwise use name-first matching confidence
-    const displayConfidence = phaseB2ConfidenceResult?.confidence ?? finalNameConfidence;
+    // Phase 4.6.2 — If family-first is applied, use family confidence instead
+    const displayConfidence = familyFirstResult?.useFamilyFirst 
+      ? familyFirstResult.familyConfidence 
+      : (phaseB2ConfidenceResult?.confidence ?? finalNameConfidence);
     const displayTier = phaseB2ConfidenceResult?.tier ?? (
       displayConfidence >= 90 ? "very_high" :
       displayConfidence >= 80 ? "high" :
@@ -4075,6 +4124,16 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         score: c.score,
         reasonTags: c.reasonTags,
       }));
+    }
+    
+    // Phase 4.6.2 — Store family-first result if applied
+    if (familyFirstResult?.useFamilyFirst) {
+      (viewModel.nameFirstDisplay as any).familyFirst = {
+        familyName: familyFirstResult.familyName,
+        closestStrainInFamily: familyFirstResult.closestStrainInFamily,
+        strainRanking: familyFirstResult.strainRanking,
+        displayFormat: familyFirstResult.displayFormat,
+      };
     }
     
     // NAME-FIRST MATCHING — Mark as locked if DB confidence >= 85% OR name-first result says locked
