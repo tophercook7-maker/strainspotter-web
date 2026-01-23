@@ -555,12 +555,12 @@ export default function ScannerPage() {
             </div>
           )}
 
-          {/* FAILURE MESSAGING SOFTENED — Partial status (non-blocking, helpful) */}
+          {/* Phase 4.3.3 — Partial status reframing (neutral, authoritative) */}
           {scanResult && 'status' in scanResult && scanResult.status === "partial" && (
-            <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">
-              <strong>Low confidence — results may vary</strong>
-              <p className="mt-1 opacity-80">
-                {scanResult.guard?.reason || "Limited data available. Try different angles for better accuracy."}
+            <div className="mt-4 rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-white/80">
+              <p className="leading-relaxed">
+                This identification is based on limited visual agreement.
+                Additional images may improve confidence.
               </p>
             </div>
           )}

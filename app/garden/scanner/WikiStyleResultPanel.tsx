@@ -329,7 +329,7 @@ export default function WikiStyleResultPanel({
               } else if (confidence >= 70) {
                 explanations.push("Most traits aligned in expert analysis, some variation observed.");
                 if (scanStatus === "partial") {
-                  explanations.push("Partial analysis — additional images would improve expert confidence.");
+                  explanations.push("This identification is based on limited visual agreement. Additional images may improve confidence.");
                 }
               } else if (confidence >= 60) {
                 explanations.push("Expert analysis shows moderate alignment — visual traits show some variation.");
@@ -435,7 +435,24 @@ export default function WikiStyleResultPanel({
               }
               
               // For lower confidence, show a different message
-              if (confidence < 70 || scanStatus === "partial") {
+              // Phase 4.3.3 — Partial status reframing (neutral, authoritative)
+              if (scanStatus === "partial") {
+                return (
+                  <div className="mt-3 rounded-lg border border-white/15 bg-white/5 p-2.5">
+                    <div className="flex items-start gap-2">
+                      <span className="text-white/60 text-sm">ℹ</span>
+                      <div className="flex-1">
+                        <p className="text-xs text-white/80 leading-relaxed">
+                          This identification is based on limited visual agreement.
+                          Additional images may improve confidence.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              if (confidence < 70) {
                 return (
                   <div className="mt-3 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-2.5">
                     <div className="flex items-start gap-2">
