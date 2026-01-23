@@ -3811,15 +3811,20 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // - If name confidence < 60%, label as "Closest Known Cultivar"
   let phaseB2ConfidenceResult: ReturnType<typeof calibrateConfidenceB2> | null = null;
   try {
-    // Derive image agreement score (0-1)
+    // Phase B.2 — Derive image agreement score (0-1) and agreeing image count
     let imageAgreementScore = 0.5; // Default
+    let agreeingImageCount = 0;
     if (imageResultsV3.length >= 2) {
       // Count how many images agree on the primary name
-      const agreeingCount = imageResultsV3.filter(r => {
+      agreeingImageCount = imageResultsV3.filter(r => {
         const topCandidate = r.candidateStrains?.[0];
         return topCandidate?.name === finalPrimaryName;
       }).length;
-      imageAgreementScore = agreeingCount / imageResultsV3.length;
+      imageAgreementScore = agreeingImageCount / imageResultsV3.length;
+    } else if (imageResultsV3.length === 1) {
+      // Single image: count as 1 agreeing image
+      agreeingImageCount = 1;
+      imageAgreementScore = 1.0;
     }
     
     // Derive database match strength (0-1)
@@ -3840,10 +3845,11 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     phaseB2ConfidenceResult = calibrateConfidenceB2({
       imageCount: imageResultsV3.length || filteredInput.imageCount,
       nameMatchingResult: phaseB1Result,
-      nameConfidence: finalNameConfidence,
+      nameConfidence: finalNameConfidence, // Base confidence from name score (Phase B.1)
       imageAgreementScore,
       databaseMatchStrength,
       hasSimilarImages: samePlantLikely || false,
+      agreeingImageCount, // Number of images that agree on primary name
     });
     
     // Apply Phase B.2 calibrated confidence
