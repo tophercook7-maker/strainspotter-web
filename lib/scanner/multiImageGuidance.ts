@@ -9,6 +9,86 @@
 export type ImageAngleType = "top" | "side" | "macro" | "unknown";
 
 /**
+ * Phase 5.2.1 — Image Slot Model
+ * 
+ * Defines 5 structured slots for image capture:
+ * 1. Whole plant (structure) - Required
+ * 2. Flower close-up (trichomes) - Recommended
+ * 3. Side angle (bud shape) - Recommended
+ * 4. Optional detail
+ * 5. Optional detail
+ */
+export type ImageSlotType = 
+  | "whole_plant"      // Slot 1: Whole plant (structure) - Required
+  | "flower_closeup"   // Slot 2: Flower close-up (trichomes) - Recommended
+  | "side_angle"       // Slot 3: Side angle (bud shape) - Recommended
+  | "optional_detail"; // Slots 4-5: Optional detail
+
+/**
+ * Phase 5.2.1 — Image Slot Definition
+ * 
+ * Defines each slot with its purpose, requirement level, and description.
+ */
+export type ImageSlot = {
+  slotNumber: 1 | 2 | 3 | 4 | 5;
+  type: ImageSlotType;
+  label: string;
+  description: string;
+  requirement: "required" | "recommended" | "optional";
+  icon: string;
+  filled: boolean;
+  imageIndex?: number; // Which image (0-based) fills this slot
+};
+
+/**
+ * Phase 5.2.1 — Image Slot Model Configuration
+ * 
+ * Defines all 5 slots with their properties.
+ */
+export const IMAGE_SLOT_MODEL: Omit<ImageSlot, "filled" | "imageIndex">[] = [
+  {
+    slotNumber: 1,
+    type: "whole_plant",
+    label: "Whole Plant",
+    description: "Shows overall structure and plant form",
+    requirement: "required",
+    icon: "🌿",
+  },
+  {
+    slotNumber: 2,
+    type: "flower_closeup",
+    label: "Flower Close-up",
+    description: "Shows trichomes and bud detail",
+    requirement: "recommended",
+    icon: "🔍",
+  },
+  {
+    slotNumber: 3,
+    type: "side_angle",
+    label: "Side Angle",
+    description: "Shows bud shape and structure",
+    requirement: "recommended",
+    icon: "↔️",
+  },
+  {
+    slotNumber: 4,
+    type: "optional_detail",
+    label: "Optional Detail",
+    description: "Additional detail or different angle",
+    requirement: "optional",
+    icon: "📸",
+  },
+  {
+    slotNumber: 5,
+    type: "optional_detail",
+    label: "Optional Detail",
+    description: "Additional detail or different angle",
+    requirement: "optional",
+    icon: "📸",
+  },
+];
+
+/**
  * Phase 5.2 — Angle Status
  * 
  * Tracks which angles have been captured and which are still needed.
@@ -32,6 +112,12 @@ export type MultiImageGuidance = {
   missingAngles: ImageAngleType[];
   angleStatuses: AngleStatus[];
   
+  // Phase 5.2.1 — Slot Model
+  slots: ImageSlot[];
+  filledSlots: number;
+  requiredSlotsFilled: boolean; // Slot 1 (whole plant) is filled
+  recommendedSlotsFilled: number; // How many of slots 2-3 are filled
+  
   // Guidance messages
   primaryMessage: string;
   actionableTips: string[];
@@ -39,6 +125,7 @@ export type MultiImageGuidance = {
   
   // Visual indicators
   recommendedNextAngle: ImageAngleType | null;
+  recommendedNextSlot: ImageSlot | null; // Phase 5.2.1 — Next slot to fill
   diversityScore: number; // 0-1, how diverse current images are
   
   // Quality feedback
@@ -48,6 +135,39 @@ export type MultiImageGuidance = {
     severity: "low" | "medium" | "high";
   }>;
 };
+
+/**
+ * Phase 5.2.1 — Map Angle to Slot Type
+ * 
+ * Maps detected angle to appropriate slot type.
+ */
+function mapAngleToSlotType(angleType: ImageAngleType, imageIndex: number): ImageSlotType {
+  // Slot 1: Whole plant (structure) - typically top or side view showing full plant
+  if (imageIndex === 0) {
+    return "whole_plant";
+  }
+  
+  // Slot 2: Flower close-up (trichomes) - typically macro
+  if (angleType === "macro" && imageIndex === 1) {
+    return "flower_closeup";
+  }
+  
+  // Slot 3: Side angle (bud shape) - typically side view
+  if (angleType === "side" && imageIndex === 2) {
+    return "side_angle";
+  }
+  
+  // If angle matches slot 2 or 3 but wrong index, still assign if slot not filled
+  if (angleType === "macro") {
+    return "flower_closeup";
+  }
+  if (angleType === "side") {
+    return "side_angle";
+  }
+  
+  // Default: optional detail
+  return "optional_detail";
+}
 
 /**
  * Phase 5.2.1 — Analyze Current Image Set
@@ -66,7 +186,13 @@ export function analyzeImageSet(
     { angle: "macro", captured: false, quality: "unknown" },
   ];
   
-  // Analyze each image's angle
+  // Phase 5.2.1 — Initialize slots
+  const slots: ImageSlot[] = IMAGE_SLOT_MODEL.map(slot => ({
+    ...slot,
+    filled: false,
+  }));
+  
+  // Analyze each image's angle and assign to slots
   imagePreviews.forEach((preview, idx) => {
     const angleLabel = preview.angleLabel.toLowerCase();
     let angleType: ImageAngleType = "unknown";
@@ -88,7 +214,81 @@ export function analyzeImageSet(
         status.quality = "good"; // Default, could be enhanced with image analysis
       }
     }
+    
+    // Phase 5.2.1 — Assign image to slot based on slot model
+    // Slot 1 (required): First image always goes here (whole plant)
+    if (idx === 0) {
+      slots[0].filled = true;
+      slots[0].imageIndex = idx;
+    }
+    // Slot 2 (recommended): Flower close-up (macro angle)
+    else if (idx === 1 && angleType === "macro") {
+      slots[1].filled = true;
+      slots[1].imageIndex = idx;
+    }
+    // Slot 3 (recommended): Side angle
+    else if (idx === 1 && angleType === "side") {
+      slots[2].filled = true;
+      slots[2].imageIndex = idx;
+    }
+    // If second image doesn't match slot 2 or 3, try to assign based on type
+    else if (idx === 1) {
+      // If it's a macro, assign to slot 2; if side, assign to slot 3
+      if (angleType === "macro" && !slots[1].filled) {
+        slots[1].filled = true;
+        slots[1].imageIndex = idx;
+      } else if (angleType === "side" && !slots[2].filled) {
+        slots[2].filled = true;
+        slots[2].imageIndex = idx;
+      } else {
+        // Fallback: assign to first available recommended slot
+        if (!slots[1].filled) {
+          slots[1].filled = true;
+          slots[1].imageIndex = idx;
+        } else if (!slots[2].filled) {
+          slots[2].filled = true;
+          slots[2].imageIndex = idx;
+        }
+      }
+    }
+    // Third image: Fill remaining recommended slot or optional
+    else if (idx === 2) {
+      if (angleType === "side" && !slots[2].filled) {
+        slots[2].filled = true;
+        slots[2].imageIndex = idx;
+      } else if (angleType === "macro" && !slots[1].filled) {
+        slots[1].filled = true;
+        slots[1].imageIndex = idx;
+      } else {
+        // Fill first available recommended slot, then optional
+        if (!slots[1].filled) {
+          slots[1].filled = true;
+          slots[1].imageIndex = idx;
+        } else if (!slots[2].filled) {
+          slots[2].filled = true;
+          slots[2].imageIndex = idx;
+        } else if (!slots[3].filled) {
+          slots[3].filled = true;
+          slots[3].imageIndex = idx;
+        }
+      }
+    }
+    // Images 4-5: Fill optional slots
+    else {
+      if (!slots[3].filled) {
+        slots[3].filled = true;
+        slots[3].imageIndex = idx;
+      } else if (!slots[4].filled) {
+        slots[4].filled = true;
+        slots[4].imageIndex = idx;
+      }
+    }
   });
+  
+  // Phase 5.2.1 — Calculate slot statistics
+  const filledSlots = slots.filter(s => s.filled).length;
+  const requiredSlotsFilled = slots[0].filled; // Slot 1 (whole plant) is required
+  const recommendedSlotsFilled = slots.slice(1, 3).filter(s => s.filled).length; // Slots 2-3
   
   // Determine missing angles
   const allAngles: ImageAngleType[] = ["top", "side", "macro"];
@@ -98,7 +298,21 @@ export function analyzeImageSet(
   const uniqueAngles = new Set(capturedAngles).size;
   const diversityScore = imageCount === 0 ? 0 : uniqueAngles / Math.max(3, imageCount);
   
-  // Determine recommended next angle
+  // Phase 5.2.1 — Determine recommended next slot
+  let recommendedNextSlot: ImageSlot | null = null;
+  if (!slots[0].filled) {
+    recommendedNextSlot = slots[0]; // Slot 1 (whole plant) is required
+  } else if (!slots[1].filled) {
+    recommendedNextSlot = slots[1]; // Slot 2 (flower close-up) is recommended
+  } else if (!slots[2].filled) {
+    recommendedNextSlot = slots[2]; // Slot 3 (side angle) is recommended
+  } else if (!slots[3].filled) {
+    recommendedNextSlot = slots[3]; // Slot 4 (optional)
+  } else if (!slots[4].filled) {
+    recommendedNextSlot = slots[4]; // Slot 5 (optional)
+  }
+  
+  // Determine recommended next angle (for backward compatibility)
   let recommendedNextAngle: ImageAngleType | null = null;
   if (missingAngles.length > 0) {
     // Prioritize: side > macro > top (side view shows structure best)
@@ -111,18 +325,22 @@ export function analyzeImageSet(
     }
   }
   
-  // Generate primary message
+  // Phase 5.2.1 — Generate primary message based on slot model
   let primaryMessage = "";
   if (imageCount === 0) {
-    primaryMessage = "Upload 1-5 photos of the same plant from different angles";
+    primaryMessage = "Upload at least 1 photo (whole plant view recommended)";
+  } else if (!requiredSlotsFilled) {
+    primaryMessage = "Add a whole plant view showing overall structure";
   } else if (imageCount === 1) {
-    primaryMessage = "Add 1-2 more photos from different angles for better accuracy";
+    primaryMessage = "Add 1-2 more photos (flower close-up and side angle recommended)";
+  } else if (recommendedSlotsFilled === 0) {
+    primaryMessage = "Add flower close-up and side angle views for better accuracy";
+  } else if (recommendedSlotsFilled === 1) {
+    primaryMessage = recommendedNextSlot ? `Add ${recommendedNextSlot.label.toLowerCase()} for best results` : "Add one more recommended view";
   } else if (missingAngles.length === 0) {
     primaryMessage = "Great! You have diverse angles. Ready to scan.";
-  } else if (missingAngles.length === 1) {
-    primaryMessage = `Add a ${recommendedNextAngle} view for best results`;
   } else {
-    primaryMessage = `Add ${missingAngles.length} more angles (${missingAngles.join(", ")}) for optimal accuracy`;
+    primaryMessage = `Add ${missingAngles.length} more angle${missingAngles.length > 1 ? "s" : ""} for optimal accuracy`;
   }
   
   // Generate actionable tips
@@ -211,10 +429,16 @@ export function analyzeImageSet(
     capturedAngles,
     missingAngles,
     angleStatuses,
+    // Phase 5.2.1 — Slot Model
+    slots,
+    filledSlots,
+    requiredSlotsFilled,
+    recommendedSlotsFilled,
     primaryMessage,
     actionableTips,
     confidenceImpact,
     recommendedNextAngle,
+    recommendedNextSlot, // Phase 5.2.1 — Next slot to fill
     diversityScore,
     qualityIssues,
   };

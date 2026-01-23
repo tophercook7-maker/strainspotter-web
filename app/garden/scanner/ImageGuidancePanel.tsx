@@ -35,7 +35,76 @@ export default function ImageGuidancePanel({
         )}
       </div>
       
-      {/* Angle Status Indicators */}
+      {/* Phase 5.2.1 — Image Slot Model Display */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+          Image Slots ({guidance.filledSlots}/5)
+        </h4>
+        <div className="grid grid-cols-5 gap-2">
+          {guidance.slots.map((slot) => {
+            const isRecommended = guidance.recommendedNextSlot?.slotNumber === slot.slotNumber;
+            const isRequired = slot.requirement === "required";
+            const isRecommendedSlot = slot.requirement === "recommended";
+            
+            return (
+              <div
+                key={slot.slotNumber}
+                className={`rounded-lg border p-2 text-center transition-all ${
+                  slot.filled
+                    ? "border-green-500/30 bg-green-500/10"
+                    : isRecommended
+                    ? "border-yellow-500/40 bg-yellow-500/15 border-2"
+                    : isRequired
+                    ? "border-orange-500/30 bg-orange-500/10"
+                    : "border-white/10 bg-white/5"
+                }`}
+              >
+                <div className="text-lg mb-1">
+                  {slot.icon}
+                </div>
+                <div className="text-[10px] font-semibold mb-0.5">
+                  Slot {slot.slotNumber}
+                </div>
+                <div
+                  className={`text-[10px] font-medium mb-1 leading-tight ${
+                    slot.filled
+                      ? "text-green-300"
+                      : isRecommended
+                      ? "text-yellow-300"
+                      : isRequired
+                      ? "text-orange-300"
+                      : "text-white/50"
+                  }`}
+                >
+                  {slot.label}
+                </div>
+                <div className="text-[9px] text-white/40 mb-1">
+                  {slot.requirement === "required" && (
+                    <span className="text-orange-400">Required</span>
+                  )}
+                  {slot.requirement === "recommended" && (
+                    <span className={slot.filled ? "text-green-400" : "text-yellow-400"}>
+                      {slot.filled ? "✓" : "Recommended"}
+                    </span>
+                  )}
+                  {slot.requirement === "optional" && (
+                    <span className={slot.filled ? "text-green-400" : "text-white/30"}>
+                      {slot.filled ? "✓" : "Optional"}
+                    </span>
+                  )}
+                </div>
+                {!slot.filled && (
+                  <div className="text-[9px] text-white/50 leading-tight">
+                    {slot.description}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* Angle Status Indicators (kept for backward compatibility) */}
       {guidance.imageCount > 0 && (
         <div className="space-y-3">
           <h4 className="text-xs font-semibold text-white/70 uppercase tracking-wide">
