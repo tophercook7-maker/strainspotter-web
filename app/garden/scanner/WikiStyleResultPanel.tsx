@@ -205,6 +205,46 @@ export default function WikiStyleResultPanel({
               );
             })()}
           </div>
+          
+          {/* Phase 4.1 — How to Improve This Scan (Collapsible) */}
+          {(() => {
+            const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+            const scanStatus = (result as any).status || "success";
+            
+            // Show only if confidence < 90 OR status === "partial"
+            if (confidence >= 90 && scanStatus !== "partial") {
+              return null;
+            }
+            
+            return (
+              <CollapsibleSection
+                title="How to Improve This Scan"
+                defaultExpanded={false}
+                icon="💡"
+              >
+                <div className="space-y-2 pt-2">
+                  <ul className="space-y-2">
+                    <li className="text-sm text-white/80 leading-relaxed flex items-start">
+                      <span className="text-blue-400 mr-2 mt-1">•</span>
+                      <span>Add a close-up of the bud structure</span>
+                    </li>
+                    <li className="text-sm text-white/80 leading-relaxed flex items-start">
+                      <span className="text-blue-400 mr-2 mt-1">•</span>
+                      <span>Add a side profile of the flower</span>
+                    </li>
+                    <li className="text-sm text-white/80 leading-relaxed flex items-start">
+                      <span className="text-blue-400 mr-2 mt-1">•</span>
+                      <span>Avoid duplicate angles</span>
+                    </li>
+                    <li className="text-sm text-white/80 leading-relaxed flex items-start">
+                      <span className="text-blue-400 mr-2 mt-1">•</span>
+                      <span>Ensure good lighting and focus</span>
+                    </li>
+                  </ul>
+                </div>
+              </CollapsibleSection>
+            );
+          })()}
             
             {/* Phase 4.3.1 — render name stability */}
             {viewModel.nameFirstDisplay?.nameStabilityScore && (
