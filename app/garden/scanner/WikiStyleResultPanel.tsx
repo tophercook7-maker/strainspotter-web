@@ -110,17 +110,9 @@ export default function WikiStyleResultPanel({
                     );
                   } else {
                     // confidence < 80 OR status === "partial"
-                    if (scanStatus === "partial" || confidence < 80) {
-                      return (
-                        <div className="text-sm text-muted-foreground">
-                          Closest known cultivar based on available visual data
-                        </div>
-                      );
-                    }
-                    // Fallback (shouldn't happen, but safety)
                     return (
                       <div className="text-sm text-muted-foreground">
-                        Best match based on visible traits and known cultivars
+                        Closest known cultivar based on available visual data
                       </div>
                     );
                   }
