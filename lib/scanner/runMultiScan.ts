@@ -133,10 +133,16 @@ import { applyFamilyFirstConfidenceBoost } from "./familyFirstBoost";
 import { 
   groupClones, 
   selectPrimaryNameFromClones, 
-  generateDisambiguationCopy,
-  type CloneGroup,
+  generateDisambiguationCopy, 
+  type CloneGroup, 
   type PrimaryNameSelectionResult 
 } from "./cloneDetectionV48";
+// Phase 4.9 — Visual Similarity Index (bud/leaf scoring)
+import { 
+  calculateVisualSimilarityIndex, 
+  getVisualSimilarityAdjustment, 
+  type VisualSimilarityIndexResult 
+} from "./visualSimilarityIndex";
 // Phase 4.6 — Name Trust & Disambiguation
 import { computeNameTrustV46 } from "./nameTrustV46";
 // Phase 4.0.5 — Indica / Sativa / Hybrid Ratio Finalization
@@ -4201,16 +4207,85 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       }
     }
     
-    viewModel.nameFirstDisplay.confidencePercent = stabilityAdjustedConfidence;
-    viewModel.nameFirstDisplay.confidence = stabilityAdjustedConfidence;
-    // Phase 4.5.2 — Use stability-adjusted confidence for tier
-    viewModel.nameFirstDisplay.confidenceTier = stabilityAdjustedConfidence >= 90 ? "very_high" :
-      stabilityAdjustedConfidence >= 80 ? "high" :
-      stabilityAdjustedConfidence >= 70 ? "medium" : "low";
-    // Phase 4.5.2 — Update viewModel confidence to match stability-adjusted value
-    viewModel.confidence = stabilityAdjustedConfidence;
+    // Phase 4.9 — VISUAL SIMILARITY INDEX (bud/leaf scoring)
+    // Calculate visual similarity between observed features and database strain profile
+    let visualSimilarityResult: VisualSimilarityIndexResult | null = null;
+    let visualSimilarityAdjustedConfidence = stabilityAdjustedConfidence;
+    
+    if (fusedFeatures && finalPrimaryName && finalPrimaryName !== "Closest Known Cultivar") {
+      try {
+        // Find database entry for primary strain
+        const dbEntryForVisual = CULTIVAR_LIBRARY.find(s => 
+          s.name.toLowerCase() === finalPrimaryName.toLowerCase() ||
+          s.aliases?.some(a => a.toLowerCase() === finalPrimaryName.toLowerCase())
+        );
+        
+        if (dbEntryForVisual) {
+          // Calculate visual similarity index
+          visualSimilarityResult = calculateVisualSimilarityIndex(fusedFeatures, dbEntryForVisual);
+          
+          // Get confidence adjustment based on visual similarity
+          const visualAdjustment = getVisualSimilarityAdjustment(visualSimilarityResult.overallScore);
+          
+          // Apply adjustment (with caps to prevent going over existing limits)
+          visualSimilarityAdjustedConfidence = Math.max(
+            50, // Floor
+            Math.min(
+              stabilityAdjustedConfidence + visualAdjustment.adjustment, // Apply adjustment
+              stabilityAdjustedConfidence >= 85 ? 95 : stabilityAdjustedConfidence >= 70 ? 90 : 85 // Respect existing caps
+            )
+          );
+          
+          // Round to integer
+          visualSimilarityAdjustedConfidence = Math.round(visualSimilarityAdjustedConfidence);
+          
+          // Add visual similarity explanation to reasons
+          if (visualAdjustment.adjustment > 0) {
+            finalNameReasons.push(visualAdjustment.explanation);
+          } else if (visualAdjustment.adjustment < 0) {
+            finalNameReasons.push(visualAdjustment.explanation);
+          }
+          
+          console.log("Phase 4.9 — Visual Similarity Index:", {
+            overallScore: visualSimilarityResult.overallScore,
+            budScore: visualSimilarityResult.budScore,
+            leafScore: visualSimilarityResult.leafScore,
+            trichomeScore: visualSimilarityResult.trichomeScore,
+            pistilScore: visualSimilarityResult.pistilScore,
+            adjustment: visualAdjustment.adjustment,
+            confidenceBefore: stabilityAdjustedConfidence,
+            confidenceAfter: visualSimilarityAdjustedConfidence,
+          });
+        }
+      } catch (error) {
+        console.warn("Phase 4.9 — Visual similarity calculation error:", error);
+        // Continue without visual similarity adjustment
+      }
+    }
+    
+    viewModel.nameFirstDisplay.confidencePercent = visualSimilarityAdjustedConfidence;
+    viewModel.nameFirstDisplay.confidence = visualSimilarityAdjustedConfidence;
+    // Phase 4.5.2 — Use visual similarity-adjusted confidence for tier
+    viewModel.nameFirstDisplay.confidenceTier = visualSimilarityAdjustedConfidence >= 90 ? "very_high" :
+      visualSimilarityAdjustedConfidence >= 80 ? "high" :
+      visualSimilarityAdjustedConfidence >= 70 ? "medium" : "low";
+    // Phase 4.5.2 — Update viewModel confidence to match visual similarity-adjusted value
+    viewModel.confidence = visualSimilarityAdjustedConfidence;
     // Phase 4.5.3 — Store name memory match in scanMeta for UI display
     scanMeta.nameMemoryMatch = nameMemoryMatch;
+    
+    // Phase 4.9 — Store visual similarity result in viewModel for UI display
+    if (visualSimilarityResult) {
+      (viewModel.nameFirstDisplay as any).visualSimilarity = {
+        overallScore: visualSimilarityResult.overallScore,
+        budScore: visualSimilarityResult.budScore,
+        leafScore: visualSimilarityResult.leafScore,
+        trichomeScore: visualSimilarityResult.trichomeScore,
+        pistilScore: visualSimilarityResult.pistilScore,
+        breakdown: visualSimilarityResult.breakdown,
+        explanation: visualSimilarityResult.explanation,
+      };
+    }
     
     // Update explanation (clear reason why this name won) - NAME-FIRST MATCHING prioritized
     if (!viewModel.nameFirstDisplay.explanation) {
