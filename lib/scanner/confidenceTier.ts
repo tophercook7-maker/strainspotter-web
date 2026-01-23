@@ -19,51 +19,51 @@ export type ConfidenceTierLabel = {
 /**
  * Phase 4.0 Part D — Determine confidence tier from confidence value
  * Phase 4.9 Step 4.9.4 — CONFIDENCE BANDING
+ * Phase 5.3.1 — CONFIDENCE BANDS (LOCK)
  * 
  * Assign Name Confidence Tier:
- * - Very High (93–99%)
- * - High (85–92%)
- * - Medium (70–84%)
- * - Low (55–69%)
+ * - Very High (90–99%)
+ * - High (75–89%)
+ * - Moderate (60–74%)
+ * - Low (0–59%)
  * 
  * Never show 100%.
+ * Never imply lab certainty.
  * 
  * Rules:
- * - Very High Confidence: 93–99%
- * - High Confidence: 85–92%
- * - Medium Confidence: 70–84%
- * - Low Confidence: 55–69%
- * - Never display below 55%
+ * - Very High Confidence: 90–99%
+ * - High Confidence: 75–89%
+ * - Moderate Confidence: 60–74%
+ * - Low Confidence: 0–59%
  */
 export function getConfidenceTier(confidence: number): ConfidenceTierLabel {
-  // Phase 4.0 Part D — Ensure confidence is at least 55%, cap at 99% (never 100%)
-  // Phase 4.9 Step 4.9.4 — Explicit confidence banding
-  const clampedConfidence = Math.max(55, Math.min(99, confidence));
+  // Phase 5.3.1 — Cap at 99% (never 100%), no floor (allow 0-59% for low confidence)
+  const clampedConfidence = Math.max(0, Math.min(99, confidence));
 
-  // Phase 4.9 Step 4.9.4 — Explicit confidence banding ranges
-  if (clampedConfidence >= 93 && clampedConfidence <= 99) {
+  // Phase 5.3.1 — Explicit confidence banding ranges (LOCK)
+  if (clampedConfidence >= 90 && clampedConfidence <= 99) {
     return {
       tier: "very_high",
       label: "Very High Confidence",
       color: "green",
       description: "Excellent visual match with strong multi-image agreement and trait consistency",
     };
-  } else if (clampedConfidence >= 85 && clampedConfidence <= 92) {
+  } else if (clampedConfidence >= 75 && clampedConfidence <= 89) {
     return {
       tier: "high",
       label: "High Confidence",
       color: "green",
       description: "Strong visual match with high agreement across images and traits",
     };
-  } else if (clampedConfidence >= 70 && clampedConfidence <= 84) {
+  } else if (clampedConfidence >= 60 && clampedConfidence <= 74) {
     return {
       tier: "medium",
-      label: "Medium Confidence",
+      label: "Moderate Confidence",
       color: "yellow",
       description: "Good visual match with some variation or limited image perspectives",
     };
   } else {
-    // 55-69
+    // 0-59
     return {
       tier: "low",
       label: "Low Confidence",

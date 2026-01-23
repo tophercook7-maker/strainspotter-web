@@ -92,44 +92,61 @@ export default function WikiStyleResultPanel({
               const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
               const confidence = Math.min(95, rawConfidence);
               
-              // Phase 5.1.1 — Simplified confidence tiers: Very High / High / Medium
-              let confidenceTier: "very_high" | "high" | "medium";
+              // Phase 5.3.1 — CONFIDENCE BANDS (LOCK)
+              // 0–59% → Low Confidence
+              // 60–74% → Moderate Confidence
+              // 75–89% → High Confidence
+              // 90–99% → Very High Confidence
+              // Never show 100%. Never imply lab certainty.
+              let confidenceTier: "very_high" | "high" | "medium" | "low";
               let confidenceLabel: string;
               let confidenceColor: string;
               
-              if (confidence >= 85) {
+              // Ensure confidence is capped at 99% (never 100%)
+              const clampedConfidence = Math.min(99, confidence);
+              
+              if (clampedConfidence >= 90) {
                 confidenceTier = "very_high";
                 confidenceLabel = "Very High";
                 confidenceColor = "bg-green-600";
-              } else if (confidence >= 70) {
+              } else if (clampedConfidence >= 75) {
                 confidenceTier = "high";
                 confidenceLabel = "High";
                 confidenceColor = "bg-green-600";
-              } else {
+              } else if (clampedConfidence >= 60) {
                 confidenceTier = "medium";
-                confidenceLabel = "Medium";
+                confidenceLabel = "Moderate";
                 confidenceColor = "bg-yellow-500";
+              } else {
+                confidenceTier = "low";
+                confidenceLabel = "Low";
+                confidenceColor = "bg-orange-500";
               }
               
               // Phase 4.6.4 — Dual confidence display (if family-first applied)
+              // Phase 5.3.1 — Use new confidence bands
               if (familyFirst?.familyConfidence && familyFirst?.exactStrainConfidence && 
                   familyFirst.familyConfidence > familyFirst.exactStrainConfidence) {
-                const familyConf = Math.round(Math.min(95, familyFirst.familyConfidence));
-                const strainConf = Math.round(Math.min(95, familyFirst.exactStrainConfidence));
+                const familyConf = Math.round(Math.min(99, familyFirst.familyConfidence)); // Never 100%
+                const strainConf = Math.round(Math.min(99, familyFirst.exactStrainConfidence)); // Never 100%
                 
-                const familyTier = familyConf >= 85 ? "very_high" : familyConf >= 70 ? "high" : "medium";
-                const strainTier = strainConf >= 70 ? "high" : "medium";
+                // Phase 5.3.1 — New confidence bands
+                const familyTier = familyConf >= 90 ? "very_high" : familyConf >= 75 ? "high" : familyConf >= 60 ? "medium" : "low";
+                const strainTier = strainConf >= 90 ? "very_high" : strainConf >= 75 ? "high" : strainConf >= 60 ? "medium" : "low";
                 
-                const familyColor = familyTier === "very_high" || familyTier === "high" ? "bg-green-600" : "bg-yellow-500";
-                const strainColor = strainTier === "high" ? "bg-green-600" : "bg-yellow-500";
+                const familyLabel = familyTier === "very_high" ? "Very High" : familyTier === "high" ? "High" : familyTier === "medium" ? "Moderate" : "Low";
+                const strainLabel = strainTier === "very_high" ? "Very High" : strainTier === "high" ? "High" : strainTier === "medium" ? "Moderate" : "Low";
+                
+                const familyColor = familyTier === "very_high" || familyTier === "high" ? "bg-green-600" : familyTier === "medium" ? "bg-yellow-500" : "bg-orange-500";
+                const strainColor = strainTier === "very_high" || strainTier === "high" ? "bg-green-600" : strainTier === "medium" ? "bg-yellow-500" : "bg-orange-500";
                 
                 return (
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${familyColor}`}>
-                      Very High (family)
+                      {familyLabel} (family)
                     </span>
                     <span className={`px-3 py-1.5 rounded-full text-base font-semibold text-white shadow-sm ${strainColor}`}>
-                      High (strain)
+                      {strainLabel} (strain)
                     </span>
                   </div>
                 );
@@ -149,17 +166,23 @@ export default function WikiStyleResultPanel({
                     </span>
                   </div>
                   {/* Phase 5.3.5 — Confidence expectation subtitle */}
-                  {confidence >= 85 && (
+                  {/* Phase 5.3.1 — Never imply lab certainty */}
+                  {clampedConfidence >= 90 && (
                     <p className="text-xs text-white/50 italic">
                       Strong evidence from multiple sources
                     </p>
                   )}
-                  {confidence >= 70 && confidence < 85 && (
+                  {clampedConfidence >= 75 && clampedConfidence < 90 && (
                     <p className="text-xs text-white/50 italic">
                       Good evidence with some uncertainty
                     </p>
                   )}
-                  {confidence < 70 && (
+                  {clampedConfidence >= 60 && clampedConfidence < 75 && (
+                    <p className="text-xs text-white/50 italic">
+                      Reasonable evidence with some uncertainty
+                    </p>
+                  )}
+                  {clampedConfidence < 60 && (
                     <p className="text-xs text-white/50 italic">
                       Best available match based on limited evidence
                     </p>

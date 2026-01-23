@@ -433,11 +433,12 @@ export function makeFinalDecision(
   // Apply cap
   confidence = Math.min(confidence, imageCountCap);
   
-  // Phase 5.0.6.5 — Never show 100%
+  // Phase 5.3.1 — Never show 100%
   confidence = Math.min(confidence, 99);
   
-  // Phase 5.0.6.6 — Floor: never below 50% for valid scans
-  confidence = Math.max(50, confidence);
+  // Phase 5.3.1 — No floor (allow 0-59% for Low Confidence band)
+  // Confidence can be as low as needed to reflect evidence strength
+  confidence = Math.max(0, confidence);
   
   // Round to integer
   confidence = Math.round(confidence);

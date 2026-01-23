@@ -25,10 +25,21 @@ export type ConfidenceExpectation = {
  * 
  * Defines realistic expectations for each confidence tier.
  */
+/**
+ * Phase 5.3.1 — CONFIDENCE BANDS (LOCK)
+ * 
+ * 0–59%   → Low Confidence  
+ * 60–74%  → Moderate Confidence  
+ * 75–89%  → High Confidence  
+ * 90–99%  → Very High Confidence  
+ * 
+ * Never show 100%.
+ * Never imply lab certainty.
+ */
 export const CONFIDENCE_EXPECTATIONS: ConfidenceExpectation[] = [
   {
     tier: "very_high",
-    minPercent: 93,
+    minPercent: 90,
     maxPercent: 99,
     label: "Very High Confidence",
     description: "Multiple strong signals align with high certainty",
@@ -43,8 +54,8 @@ export const CONFIDENCE_EXPECTATIONS: ConfidenceExpectation[] = [
   },
   {
     tier: "high",
-    minPercent: 85,
-    maxPercent: 92,
+    minPercent: 75,
+    maxPercent: 89,
     label: "High Confidence",
     description: "Strong evidence from multiple sources",
     requiredEvidence: [
@@ -57,8 +68,8 @@ export const CONFIDENCE_EXPECTATIONS: ConfidenceExpectation[] = [
   },
   {
     tier: "medium",
-    minPercent: 70,
-    maxPercent: 84,
+    minPercent: 60,
+    maxPercent: 74,
     label: "Moderate Confidence",
     description: "Reasonable evidence with some uncertainty",
     requiredEvidence: [
@@ -70,8 +81,8 @@ export const CONFIDENCE_EXPECTATIONS: ConfidenceExpectation[] = [
   },
   {
     tier: "low",
-    minPercent: 50,
-    maxPercent: 69,
+    minPercent: 0,
+    maxPercent: 59,
     label: "Low Confidence",
     description: "Limited evidence, best available match",
     requiredEvidence: [
@@ -87,14 +98,18 @@ export const CONFIDENCE_EXPECTATIONS: ConfidenceExpectation[] = [
  * Phase 5.3.2 — Get Confidence Expectation
  * 
  * Returns the expectation guide for a given confidence level.
+ * Phase 5.3.1 — Uses new confidence bands: 0-59% Low, 60-74% Moderate, 75-89% High, 90-99% Very High
  */
 export function getConfidenceExpectation(confidence: number): ConfidenceExpectation {
+  // Phase 5.3.1 — Cap at 99% (never 100%)
+  const clampedConfidence = Math.min(99, Math.max(0, confidence));
+  
   const expectation = CONFIDENCE_EXPECTATIONS.find(
-    exp => confidence >= exp.minPercent && confidence <= exp.maxPercent
+    exp => clampedConfidence >= exp.minPercent && clampedConfidence <= exp.maxPercent
   );
   
-  // Fallback to medium if not found
-  return expectation || CONFIDENCE_EXPECTATIONS[2];
+  // Fallback to low if not found (shouldn't happen with proper bands)
+  return expectation || CONFIDENCE_EXPECTATIONS[3];
 }
 
 /**
