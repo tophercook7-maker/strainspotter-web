@@ -440,12 +440,31 @@ export function makeFinalDecision(
   // Confidence can be as low as needed to reflect evidence strength
   confidence = Math.max(0, confidence);
   
+  // Phase 5.3.4 — SAME-PLANT PENALTY (SOFT)
+  // If images are likely same angle/plant, cap confidence at 82%
+  let samePlantPenaltyApplied = false;
+  if (imageCount >= 2 && imageResults) {
+    // Detect same plant/angle: check for low angle diversity or high similarity
+    const uniqueAngles = new Set(imageResults.map(r => r.inferredAngle || "unknown")).size;
+    const angleDiversityRatio = uniqueAngles / imageCount;
+    
+    // If only 1 unique angle across multiple images, likely same angle/plant
+    if (uniqueAngles === 1 && imageCount >= 2) {
+      confidence = Math.min(confidence, 82);
+      samePlantPenaltyApplied = true;
+    } else if (angleDiversityRatio < 0.5 && imageCount >= 2) {
+      // Low angle diversity (less than 50% unique angles)
+      confidence = Math.min(confidence, 82);
+      samePlantPenaltyApplied = true;
+    }
+  }
+  
   // Phase 5.3.2 — CONFIDENCE SOURCES (INTERNAL)
   // Calculate confidence sources and apply "lowest signal caps final score" rule
   const { calculateConfidenceSources } = require("./confidenceSources");
   
   // Gather inputs for confidence sources (imageCount already declared above)
-  const uniqueAngles = imageResults ? new Set(imageResults.map(r => r.inferredAngle || "unknown")).size : 1;
+  const uniqueAnglesForSources = imageResults ? new Set(imageResults.map(r => r.inferredAngle || "unknown")).size : 1;
   const imagesWithNameCount = imageResults?.filter(r => 
     r.candidateStrains?.some(c => c.name === primaryCandidate.strainName)
   ).length ?? imageCount;
@@ -453,7 +472,7 @@ export function makeFinalDecision(
   // Calculate confidence sources
   const confidenceSources = calculateConfidenceSources({
     imageCount,
-    uniqueAngles,
+    uniqueAngles: uniqueAnglesForSources,
     visualAlignment: visualAlignment,
     geneticAlignment: geneticAlignment,
     hasDatabaseMatch: primaryCandidate.channelScores.genetics >= 0.5,
@@ -464,6 +483,12 @@ export function makeFinalDecision(
   
   // Apply lowest signal cap
   confidence = Math.min(confidence, confidenceSources.cappedConfidence);
+  
+  // Phase 5.3.4 — SAME-PLANT PENALTY (SOFT)
+  // If same-plant penalty was applied, ensure it's still capped at 82%
+  if (samePlantPenaltyApplied) {
+    confidence = Math.min(confidence, 82);
+  }
   
   // Round to integer
   confidence = Math.round(confidence);

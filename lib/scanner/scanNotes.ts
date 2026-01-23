@@ -45,3 +45,15 @@ export function buildSimilarImagesNote(
   }
   return null
 }
+
+// Phase 5.3.4 — SAME-PLANT PENALTY NOTE (SOFT)
+// Note shown when same-plant penalty is applied (confidence capped at 82%)
+export function buildSamePlantPenaltyNote(
+  samePlantLikely: boolean,
+  hasLowAngleDiversity: boolean
+): string | null {
+  if (samePlantLikely || hasLowAngleDiversity) {
+    return "Additional angles could improve certainty."
+  }
+  return null
+}

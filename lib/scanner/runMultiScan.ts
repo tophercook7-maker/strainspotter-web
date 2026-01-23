@@ -85,7 +85,7 @@ import { applySamePlantGrace } from "./graceMode";
 // Phase 4.1.6 — confidence floor for low distinctness
 import { applyConfidenceFloor } from "./confidenceFloor";
 // Phase 4.1.7 — UI message (non-blocking)
-import { buildScanNote, buildSamePlantNote, buildAngleHintNote, buildDistinctivenessNote, buildSimilarImagesNote } from "./scanNotes";
+import { buildScanNote, buildSamePlantNote, buildAngleHintNote, buildDistinctivenessNote, buildSimilarImagesNote, buildSamePlantPenaltyNote } from "./scanNotes";
 // Phase 4.2.1 — multi-angle hinting (non-blocking)
 import { inferAngleHint } from "./angleHinting";
 // Phase 4.2.2 — angle diversity scoring
@@ -3219,6 +3219,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   const hasHighSimilarity = analysisWarnings.includes("HIGH_IMAGE_SIMILARITY");
   const hasLowAngleDiversity = analysisWarnings.includes("LOW_ANGLE_DIVERSITY");
   const similarImagesNote = buildSimilarImagesNote(hasHighSimilarity, hasLowAngleDiversity);
+  
+  // Phase 5.3.4 — SAME-PLANT PENALTY NOTE (SOFT)
+  // Add note when same-plant penalty is applied (confidence capped at 82%)
+  const samePlantPenaltyNote = buildSamePlantPenaltyNote(v403SamePlantLikely, hasLowAngleDiversity);
 
   // Phase 4.2.0 — attach note to scanNotes array
   const scanNotes: string[] = [];
@@ -5947,7 +5951,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         : (warning || undefined), // Phase 4.0.6 — Backward compatibility (includes validation warnings)
       scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
       samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
-      similarImagesNote: similarImagesNote || undefined, // Phase 5.2.4 — User-facing note when images are similar
+      similarImagesNote: similarImagesNote || samePlantPenaltyNote || undefined, // Phase 5.2.4 — User-facing note when images are similar, Phase 5.3.4 — Same-plant penalty note
       meta: scanMeta, // Phase 4.2.6 — Scan metadata
     };
     
