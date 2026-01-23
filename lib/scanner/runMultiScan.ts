@@ -5301,20 +5301,42 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       // Validation warnings are already in validationWarnings array
     }
     
-    const result: ScanResult = {
-      status: (needsFallback ? "partial" : "success") as "partial" | "success",
-      consensus: finalConsensusResult,
-      confidence: viewModel.nameFirstDisplay.confidencePercent,
-      result: viewModel, // Backward compatibility
-      synthesis, // Backward compatibility
-      diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
-      scanWarning: needsFallback 
-        ? (warning ? `${warning}. ${validationWarnings.join("; ")}` : validationWarnings.join("; "))
-        : (warning || undefined), // Phase 4.0.6 — Backward compatibility (includes validation warnings)
-    scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
-    samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
-    meta: scanMeta, // Phase 4.2.6 — Scan metadata
-  };
+    // Build scanWarning from validation warnings and existing warning
+    const validationWarningText = validationWarnings.length > 0 ? validationWarnings.join("; ") : undefined;
+    const finalScanWarning = needsFallback && validationWarningText
+      ? (warning ? `${warning}. ${validationWarningText}` : validationWarningText)
+      : (warning || undefined);
+    
+    // Create result based on status (discriminated union: "partial" requires guard, "success" does not)
+    const result: ScanResult = needsFallback
+      ? {
+          status: "partial",
+          guard: {
+            status: "low-confidence",
+            reason: validationWarningText || "Contract validation failed",
+          },
+          consensus: finalConsensusResult,
+          confidence: viewModel.nameFirstDisplay.confidencePercent,
+          result: viewModel, // Backward compatibility
+          synthesis, // Backward compatibility
+          diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
+          scanWarning: finalScanWarning, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
+          scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
+          samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
+          meta: scanMeta, // Phase 4.2.6 — Scan metadata
+        }
+      : {
+          status: "success",
+          consensus: finalConsensusResult,
+          confidence: viewModel.nameFirstDisplay.confidencePercent,
+          result: viewModel, // Backward compatibility
+          synthesis, // Backward compatibility
+          diversityNote: diversityHint || undefined, // Phase 4.0.5 — Backward compatibility
+          scanWarning: finalScanWarning, // Phase 4.0.6 — Backward compatibility (includes validation warnings)
+          scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
+          samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
+          meta: scanMeta, // Phase 4.2.6 — Scan metadata
+        };
   
   // PHASE A FINALIZATION — Log once at end
   console.log(`SCAN COMPLETE — status=${result.status} confidence=${result.confidence}`);
