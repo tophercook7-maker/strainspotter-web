@@ -492,19 +492,42 @@ export default function WikiStyleResultPanel({
               imageCount
             );
             
-            // Get alternates (2-3 closest)
-            const alternates: Array<{ name: string; whyNotPrimary: string }> = [];
+            // Phase 5.1.3 — Get alternates (2-3 closest) with confidence %
+            const alternates: Array<{ name: string; confidence: number; whyNotPrimary: string }> = [];
+            const primaryConfidence = confidence;
+            const primaryScore = finalDecision?.fingerprintScore || 0.8;
             
             // Try to get from final decision alternates if available
             if (finalDecision?.alternates && finalDecision.alternates.length > 0) {
-              alternates.push(...finalDecision.alternates.slice(0, 3).map(alt => ({
+              alternates.push(...finalDecision.alternates.slice(0, 3).map(alt => {
+                // Convert score (0-1) to confidence % (0-100)
+                // Calculate confidence based on score relative to primary
+                // If primary score is 0.8 and alternate is 0.75, gap is 0.05 = 5%
+                const scoreGap = primaryScore - alt.score;
+                // Convert score gap to confidence reduction (scale appropriately)
+                // A 0.1 score gap ≈ 10-15% confidence reduction
+                const confidenceReduction = Math.min(25, scoreGap * 150); // Cap at 25% reduction
+                const alternateConfidence = Math.max(50, Math.min(95, primaryConfidence - confidenceReduction));
+                
+                return {
+                  name: alt.name,
+                  confidence: Math.round(alternateConfidence),
+                  whyNotPrimary: alt.whyNotPrimary || "Close match with slightly lower confidence",
+                };
+              }));
+            } else if (viewModel.nameFirstDisplay.alternateMatches && viewModel.nameFirstDisplay.alternateMatches.length > 0) {
+              // Fallback to alternate matches (if they have confidence)
+              alternates.push(...viewModel.nameFirstDisplay.alternateMatches.slice(0, 3).map(alt => ({
                 name: alt.name,
+                confidence: alt.confidence || Math.max(50, primaryConfidence - 10),
                 whyNotPrimary: alt.whyNotPrimary || "Close match with slightly lower confidence",
               })));
             } else if (viewModel.nameFirstDisplay.alternateNames && viewModel.nameFirstDisplay.alternateNames.length > 0) {
-              // Fallback to alternate names
-              alternates.push(...viewModel.nameFirstDisplay.alternateNames.slice(0, 3).map(name => ({
+              // Fallback to alternate names (no confidence data, estimate)
+              alternates.push(...viewModel.nameFirstDisplay.alternateNames.slice(0, 3).map((name, idx) => ({
                 name,
+                // Stagger confidence: first alternate -10%, second -15%, third -20%
+                confidence: Math.max(50, primaryConfidence - 10 - (idx * 5)),
                 whyNotPrimary: "Close match with slightly lower confidence",
               })));
             }
@@ -526,24 +549,35 @@ export default function WikiStyleResultPanel({
                   </ul>
                 </div>
                 
-                {/* Closest Alternates (collapsed) */}
+                {/* Phase 5.1.3 — CLOSE ALTERNATES (CONTROLLED DOUBT) */}
                 {alternates.length > 0 && (
-                  <CollapsibleSection
-                    title={`${alternates.length} close alternative${alternates.length > 1 ? 's' : ''} considered`}
-                    defaultExpanded={false}
-                    icon=""
-                  >
-                    <div className="pt-2 space-y-2">
-                      {alternates.map((alt, idx) => (
-                        <div key={idx} className="text-sm text-white/75">
-                          <span className="font-medium text-white/90">{alt.name}</span>
-                          {alt.whyNotPrimary && (
-                            <span className="text-white/60 ml-2">— {alt.whyNotPrimary}</span>
-                          )}
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold text-white/90">
+                      Also similar to:
+                    </h3>
+                    <div className="space-y-2.5">
+                      {alternates.slice(0, 3).map((alt, idx) => (
+                        <div key={idx} className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-white/90 text-sm">{alt.name}</span>
+                              <span className="text-xs text-white/60 font-medium">
+                                {alt.confidence}% confidence
+                              </span>
+                            </div>
+                            {alt.whyNotPrimary && (
+                              <p className="text-xs text-white/70 leading-relaxed">
+                                {alt.whyNotPrimary}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
-                  </CollapsibleSection>
+                    <p className="text-xs text-white/60 italic mt-2">
+                      These strains were also considered. The primary match above showed the strongest overall alignment.
+                    </p>
+                  </div>
                 )}
               </div>
             );
