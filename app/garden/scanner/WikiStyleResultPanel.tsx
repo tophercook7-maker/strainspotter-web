@@ -77,11 +77,61 @@ export default function WikiStyleResultPanel({
         <div>
           <div className="flex items-start gap-4">
             <div className="flex-1">
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight mb-3">
+              {/* Phase 4.4.3 — Promote strain name visually: larger size, name-first authority */}
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight mb-4">
                 {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
                   ? "Unidentified Hybrid Phenotype"
                   : viewModel.nameFirstDisplay.primaryStrainName}
               </h1>
+              
+              {/* Phase 4.4.3 — Confidence badge sits UNDER name, not inline */}
+              {(() => {
+                const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+                const confidence = Math.min(95, rawConfidence);
+                
+                let confidenceTier: "very_high" | "high" | "moderate" | "low";
+                let confidenceLabel: string;
+                let confidenceColor: string;
+                
+                if (confidence >= 93) {
+                  confidenceTier = "very_high";
+                  confidenceLabel = "Very High Confidence";
+                  confidenceColor = "bg-green-600";
+                } else if (confidence >= 85) {
+                  confidenceTier = "high";
+                  confidenceLabel = "High Confidence";
+                  confidenceColor = "bg-green-600";
+                } else if (confidence >= 70) {
+                  confidenceTier = "moderate";
+                  confidenceLabel = "Moderate Confidence";
+                  confidenceColor = "bg-yellow-500";
+                } else {
+                  confidenceTier = "low";
+                  confidenceLabel = "Low Confidence";
+                  confidenceColor = "bg-red-600";
+                }
+                
+                const confidenceExplanation = confidence >= 93
+                  ? "Expert analysis confirms strong match"
+                  : confidence >= 85
+                  ? "Expert analysis confirms strong match"
+                  : confidence >= 70
+                  ? "Expert analysis indicates likely match"
+                  : "Expert analysis suggests closest available match";
+                
+                return (
+                  <div className="mb-4 space-y-2">
+                    <div className="inline-flex items-center gap-3 flex-wrap">
+                      <span className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${confidenceColor}`}>
+                        {confidenceLabel} ({confidence}%)
+                      </span>
+                      <span className="text-xs text-white/70 font-medium">
+                        {confidenceExplanation}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
               
               {/* Phase 4.2 — Inline note below name (always present) */}
               <p className="text-xs text-white/50 leading-relaxed mb-4">
@@ -162,71 +212,8 @@ export default function WikiStyleResultPanel({
             )}
           </div>
           
-          {/* Phase 4.0.3.1 — Confidence badge (always visible) */}
-          {/* Phase 4.3 — Enhanced with expert-driven messaging */}
-          {/* Phase 4.3.1 — Normalized badge tiers and visual capping */}
-          {(() => {
-            const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
-            // Phase 4.3.1 — Cap displayed confidence visually at 95% (logic unchanged)
-            const confidence = Math.min(95, rawConfidence);
-            
-            // Phase 4.3.1 — Normalized badge tiers
-            let confidenceTier: "very_high" | "high" | "moderate" | "low";
-            let confidenceLabel: string;
-            let confidenceColor: string;
-            
-            if (confidence >= 93) {
-              confidenceTier = "very_high";
-              confidenceLabel = "Very High Confidence";
-              confidenceColor = "bg-green-600";
-            } else if (confidence >= 85) {
-              confidenceTier = "high";
-              confidenceLabel = "High Confidence";
-              confidenceColor = "bg-green-600";
-            } else if (confidence >= 70) {
-              confidenceTier = "moderate";
-              confidenceLabel = "Moderate Confidence";
-              confidenceColor = "bg-yellow-500";
-            } else {
-              confidenceTier = "low";
-              confidenceLabel = "Low Confidence";
-              confidenceColor = "bg-red-600";
-            }
-            
-            // Phase 4.3 — Expert-driven confidence explanation (updated for new tiers)
-            const confidenceExplanation = confidence >= 93
-              ? "Expert analysis confirms strong match"
-              : confidence >= 85
-              ? "Expert analysis confirms strong match"
-              : confidence >= 70
-              ? "Expert analysis indicates likely match"
-              : "Expert analysis suggests closest available match";
-            
-            return (
-              <div className="mt-4 space-y-3">
-                {/* Phase 4.4 — Visual Authority Upgrade: Enhanced badge container */}
-                <div className="inline-flex items-center gap-3 flex-wrap">
-                  <span className={`px-4 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm ${confidenceColor}`}>
-                    {confidenceLabel} ({confidence}%)
-                  </span>
-                  <span className="text-xs text-white/70 font-medium">
-                    {confidenceExplanation}
-                  </span>
-                </div>
-                {/* Phase 4.3 — Confidence foundation explanation */}
-                {/* Phase 4.4 — Visual Authority Upgrade: Improved typography */}
-                <p className="text-xs text-white/60 leading-relaxed">
-                  Confidence calculated from systematic comparison of visual structure, bud morphology, and database alignment across {viewModel.multiImageInfo?.imageCountText?.match(/\d+/)?.[0] || "1"} image{viewModel.multiImageInfo?.imageCountText?.match(/\d+/)?.[0] !== "1" ? "s" : ""}.
-                </p>
-                {/* Phase 4.3.4 — Confidence stability note (legal + expectation safety) */}
-                <p className="text-xs text-white/40 italic leading-relaxed">
-                  Confidence reflects overall match quality, not certainty of genetics.
-                </p>
-              </div>
-            );
-          })()}
-          
           {/* Phase 4.3.2 — How confidence is determined (expandable) */}
+          {/* Phase 4.4.3 — Confidence badge moved to sit directly under strain name */}
           <CollapsibleSection
             title="How confidence is determined"
             defaultExpanded={false}
