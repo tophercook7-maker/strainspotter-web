@@ -141,9 +141,10 @@ export default function WikiStyleResultPanel({
               const imageCount = viewModel.multiImageInfo?.imageCountText 
                 ? parseInt(viewModel.multiImageInfo.imageCountText.match(/\d+/)?.[0] || "1")
                 : 1;
-              const scanStatus = result.status || "success";
-              const hasSamePlantNote = !!result.samePlantNote;
-              const hasDiversityNote = !!result.diversityNote;
+              // Phase 4.1 — Check scan status from result (FullScanResult may not have status directly)
+              const scanStatus = (result as any).status || "success";
+              const hasSamePlantNote = !!(result as any).samePlantNote;
+              const hasDiversityNote = !!(result as any).diversityNote;
               
               const explanations: string[] = [];
               
