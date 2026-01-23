@@ -440,11 +440,41 @@ export function makeFinalDecision(
   // Confidence can be as low as needed to reflect evidence strength
   confidence = Math.max(0, confidence);
   
+  // Phase 5.3.2 — CONFIDENCE SOURCES (INTERNAL)
+  // Calculate confidence sources and apply "lowest signal caps final score" rule
+  const { calculateConfidenceSources } = require("./confidenceSources");
+  
+  // Gather inputs for confidence sources (imageCount already declared above)
+  const uniqueAngles = imageResults ? new Set(imageResults.map(r => r.inferredAngle || "unknown")).size : 1;
+  const imagesWithNameCount = imageResults?.filter(r => 
+    r.candidateStrains?.some(c => c.name === primaryCandidate.strainName)
+  ).length ?? imageCount;
+  
+  // Calculate confidence sources
+  const confidenceSources = calculateConfidenceSources({
+    imageCount,
+    uniqueAngles,
+    visualAlignment: visualAlignment,
+    geneticAlignment: geneticAlignment,
+    hasDatabaseMatch: primaryCandidate.channelScores.genetics >= 0.5,
+    hasLineageData: primaryCandidate.channelScores.genetics >= 0.5,
+    imagesWithName: imagesWithNameCount,
+    currentConfidence: confidence,
+  });
+  
+  // Apply lowest signal cap
+  confidence = Math.min(confidence, confidenceSources.cappedConfidence);
+  
   // Round to integer
   confidence = Math.round(confidence);
   
   // Phase 5.0.5.5 — Build reasoning
   const reasoning: string[] = [];
+  
+  // Add confidence source explanation
+  if (confidenceSources.lowestSignal < 0.8) {
+    reasoning.push(confidenceSources.explanation);
+  }
   
   // Phase 5.3.3 — Evidence threshold check for 85%+ confidence
   // Require strong evidence before allowing 85%+
