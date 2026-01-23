@@ -133,6 +133,83 @@ export default function WikiStyleResultPanel({
                 );
               })()}
               
+              {/* Phase 4.6.3 — Family context (subtle) */}
+              {(() => {
+                const primaryStrainName = viewModel.nameFirstDisplay.primaryStrainName;
+                
+                // Skip if fallback name
+                if (primaryStrainName === "Closest Known Cultivar" || !primaryStrainName) {
+                  return null;
+                }
+                
+                // Get family info from family-first result if available
+                const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
+                let familyName: string | null = null;
+                let relatedCultivars: string[] = [];
+                
+                if (familyFirst?.familyName) {
+                  // Use family-first data (most accurate)
+                  familyName = familyFirst.familyName;
+                  // Get top 3-5 related cultivars from strain ranking (excluding primary)
+                  relatedCultivars = familyFirst.strainRanking
+                    ?.filter((s: any) => s.name !== primaryStrainName && s.name !== familyFirst.closestStrainInFamily)
+                    .slice(0, 5)
+                    .map((s: any) => s.name) || [];
+                  
+                  // Add closest strain if different from primary
+                  if (familyFirst.closestStrainInFamily && familyFirst.closestStrainInFamily !== primaryStrainName) {
+                    relatedCultivars.unshift(familyFirst.closestStrainInFamily);
+                  }
+                } else {
+                  // Simple heuristic: extract family from strain name
+                  // This is a fallback when family-first wasn't applied
+                  const nameLower = primaryStrainName.toLowerCase();
+                  if (nameLower.includes("og kush") || (nameLower.includes("og") && nameLower.includes("kush"))) {
+                    familyName = "OG Kush";
+                  } else if (nameLower.includes("haze")) {
+                    familyName = "Haze";
+                  } else if (nameLower.includes("cookies") || nameLower.includes("gsc")) {
+                    familyName = "Cookies";
+                  } else if (nameLower.includes("kush")) {
+                    familyName = "Kush";
+                  } else if (nameLower.includes("purple")) {
+                    familyName = "Purple";
+                  } else if (nameLower.includes("blue")) {
+                    familyName = "Blue";
+                  }
+                  // Note: relatedCultivars will be empty for heuristic-based families
+                }
+                
+                if (!familyName) {
+                  return null;
+                }
+                
+                return (
+                  <div className="mb-4">
+                    <p className="text-sm text-white/60 font-medium">
+                      {familyName} family
+                    </p>
+                    
+                    {/* Phase 4.6.3 — Related cultivars (collapsible, optional) */}
+                    {relatedCultivars.length > 0 && (
+                      <div className="mt-2">
+                        <CollapsibleSection
+                          title="Related cultivars"
+                          defaultExpanded={false}
+                          icon=""
+                        >
+                          <div className="pt-2">
+                            <p className="text-sm text-white/80 leading-relaxed">
+                              {relatedCultivars.join(", ")}
+                            </p>
+                          </div>
+                        </CollapsibleSection>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+              
               {/* Phase 4.2 — Inline note below name (always present) */}
               <p className="text-xs text-white/50 leading-relaxed mb-4">
                 Selected as the closest overall match after comparing visual structure,
