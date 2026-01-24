@@ -634,7 +634,7 @@ export default function WikiStyleResultPanel({
                 
                 {/* Phase 5.1.6 — FREE vs PAID LINE (PSYCHOLOGICAL) */}
                 <div className="mt-5 pt-5">
-                  <p className="text-xs text-white/50 text-center italic">
+                  <p className="text-sm text-white/60 text-center">
                     Deeper breakdown available in Pro
                   </p>
                 </div>
