@@ -349,7 +349,7 @@ export default function WikiStyleResultPanel({
                             <span className="text-white/50 group-open:rotate-180 transition-transform">▼</span>
                           </span>
                         </summary>
-                        <div className="mt-2 pt-2 border-t border-white/10">
+                        <div className="mt-3 pt-3">
                           <p className="text-xs text-white/80 leading-relaxed">
                             {disambiguationCopy.variantNames.join(", ")}
                           </p>
@@ -587,11 +587,11 @@ export default function WikiStyleResultPanel({
             return (
               <div className="mt-6 space-y-4">
                 {/* Why This Match — 3 bullet reasons */}
-                <div className="space-y-2">
-                  <h3 className="text-base font-semibold text-white/90">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-white/95 tracking-tight">
                     Why this match
                   </h3>
-                  <ul className="space-y-2">
+                  <ul className="space-y-2.5">
                     {whyThisMatch.slice(0, 3).map((reason, idx) => (
                       <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
                         <span className="text-blue-400 mr-2.5 mt-0.5 text-base">•</span>
@@ -603,9 +603,9 @@ export default function WikiStyleResultPanel({
                 
                 {/* Phase 5.1.3 — CLOSE ALTERNATES (CONTROLLED DOUBT) */}
                 {alternates.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="text-base font-semibold text-white/90">
-                      Also similar to:
+                  <div className="space-y-3 mt-5">
+                    <h3 className="text-lg font-semibold text-white/95 tracking-tight">
+                      Also similar to
                     </h3>
                     <div className="space-y-2.5">
                       {alternates.slice(0, 3).map((alt, idx) => (
@@ -633,7 +633,7 @@ export default function WikiStyleResultPanel({
                 )}
                 
                 {/* Phase 5.1.6 — FREE vs PAID LINE (PSYCHOLOGICAL) */}
-                <div className="pt-3 border-t border-white/10">
+                <div className="mt-5 pt-5">
                   <p className="text-xs text-white/50 text-center italic">
                     Deeper breakdown available in Pro
                   </p>
@@ -800,7 +800,7 @@ export default function WikiStyleResultPanel({
                           ))}
                         </ul>
                       </div>
-                      <div className="pt-2 border-t border-white/10">
+                      <div className="pt-3 mt-3">
                         <p className="text-sm text-white/75 leading-relaxed italic">
                           {trustExplanation.educationalContent.whyThisMatters}
                         </p>
@@ -1421,9 +1421,9 @@ export default function WikiStyleResultPanel({
                   <>
                     {/* Phase 4.5 Step 4.5.3 — Auto-generate 3-5 bullets from explanation */}
                     {viewModel.nameFirstDisplay.explanation.whyThisNameWon && viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold text-white/90 mb-2">Match Evidence:</h4>
-                        <ul className="space-y-2">
+                      <div className="space-y-3">
+                        <h4 className="text-base font-semibold text-white/95 tracking-tight">Match Evidence</h4>
+                        <ul className="space-y-2.5">
                           {viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 5).map((reason, idx) => (
                             <li key={idx} className="text-sm text-white/80 leading-relaxed flex items-start">
                               <span className="text-green-400 mr-2">•</span>
@@ -2444,9 +2444,9 @@ export default function WikiStyleResultPanel({
           );
         }
         
-        // Pro tier: Show pro enhancements
+        // Pro tier: Show pro enhancements (soft card boundaries)
         return (
-          <div className="space-y-5 pt-5 mt-5 border-t border-white/10">
+          <div className="space-y-6 pt-8 mt-8">
             {/* Phase 5.3.7.1 — Detailed Why-This-Name-Won Breakdown */}
             {proEnhancements.detailedWhyThisNameWon && proEnhancements.detailedWhyThisNameWon.length > 0 && (
               <CollapsibleSection
