@@ -67,7 +67,7 @@ export default function WikiStyleResultPanel({
   const strainFamily = getStrainFamily();
 
   return (
-    <section className="w-full max-w-[720px] mx-auto rounded-2xl border border-white/12 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/20 p-5 sm:p-7 space-y-6">
+    <section className="w-full max-w-[720px] mx-auto rounded-2xl border border-white/12 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/20 p-5 sm:p-7 space-y-5">
       {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
       {/* Phase 15.5.5 — Make strain name + confidence feel real */}
       {/* Phase 4.1 — UI NEVER EMPTY: nameFirstDisplay is guaranteed */}
@@ -1079,50 +1079,59 @@ export default function WikiStyleResultPanel({
               </div>
             )}
             
-            {/* Phase 4.0.4 — transparent explanation (no scary errors) */}
-            {(result.diversityNote || (viewModel.notes && viewModel.notes.some(n => 
+            {/* STEP 5.4.4 — NOTES & UNCERTAINTY CARD */}
+            {((result.diversityNote || (viewModel.notes && viewModel.notes.some(n => 
               n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
-            ))) && (
-              <div className="text-xs text-yellow-400 mt-2">
-                {result.diversityNote || viewModel.notes?.find(n => 
+            ))) || result.scanWarning || (result.warnings && result.warnings.length > 0) || result.meta?.guidanceHints?.length) && (
+              <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-3">
+                <h3 className="text-base font-semibold text-white/95 tracking-tight mb-3">Notes & Uncertainty</h3>
+                
+                {/* Phase 4.0.4 — transparent explanation (no scary errors) */}
+                {(result.diversityNote || (viewModel.notes && viewModel.notes.some(n => 
                   n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
+                ))) && (
+                  <div className="text-xs text-white/70">
+                    {result.diversityNote || viewModel.notes?.find(n => 
+                      n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-            
-            {/* Phase 4.0.6 — non-blocking scan warning display */}
-            {result.scanWarning && (
-              <div className="mt-3 rounded-lg border border-yellow-400/40 bg-yellow-400/10 p-3 text-xs text-yellow-300">
-                {result.scanWarning}
-              </div>
-            )}
+                
+                {/* Phase 4.0.6 — non-blocking scan warning display */}
+                {result.scanWarning && (
+                  <div className="text-xs text-yellow-300">
+                    {result.scanWarning}
+                  </div>
+                )}
 
-            {/* Phase 4.0.5 — Warning display (non-blocking) */}
-            {result.warnings?.length > 0 && (
-              <div className="mt-4 rounded-lg border border-yellow-400/30 bg-yellow-500/10 p-3 text-sm text-yellow-200">
-                {result.warnings.map((w, i) => (
-                  <div key={i}>⚠️ {w}</div>
-                ))}
+                {/* Phase 4.0.5 — Warning display (non-blocking) */}
+                {result.warnings?.length > 0 && (
+                  <div className="text-sm text-yellow-200">
+                    {result.warnings.map((w, i) => (
+                      <div key={i} className="mb-1">⚠️ {w}</div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Phase 4.2.6 — render guidance hints (collapsed, subtle) */}
+                {result.meta?.guidanceHints?.length ? (
+                  <div className="text-xs text-white/60">
+                    <div className="font-semibold mb-1.5">Improve Scan Accuracy</div>
+                    <ul className="list-disc list-inside space-y-1">
+                      {result.meta.guidanceHints.includes("TRY_DIFFERENT_ANGLE") && (
+                        <li>Try a different angle (side vs top view)</li>
+                      )}
+                      {result.meta.guidanceHints.includes("TRY_DIFFERENT_DISTANCE") && (
+                        <li>Try a closer or farther shot</li>
+                      )}
+                      {result.meta.guidanceHints.includes("TRY_DIFFERENT_LIGHTING") && (
+                        <li>Try brighter or more even lighting</li>
+                      )}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             )}
-
-            {/* Phase 4.2.6 — render guidance hints (collapsed, subtle) */}
-            {result.meta?.guidanceHints?.length ? (
-              <div className="mt-4 text-xs text-white/60">
-                <div className="font-semibold mb-1">Improve Scan Accuracy</div>
-                <ul className="list-disc list-inside space-y-1">
-                  {result.meta.guidanceHints.includes("TRY_DIFFERENT_ANGLE") && (
-                    <li>Try a different angle (side vs top view)</li>
-                  )}
-                  {result.meta.guidanceHints.includes("TRY_DIFFERENT_DISTANCE") && (
-                    <li>Try a closer or farther shot</li>
-                  )}
-                  {result.meta.guidanceHints.includes("TRY_DIFFERENT_LIGHTING") && (
-                    <li>Try brighter or more even lighting</li>
-                  )}
-                </ul>
-              </div>
-            ) : null}
           
           {/* Phase 5.5.5 — Also Known As */}
           {viewModel.nameFirstDisplay.alsoKnownAs && viewModel.nameFirstDisplay.alsoKnownAs.length > 0 && (
@@ -1140,11 +1149,12 @@ export default function WikiStyleResultPanel({
           
           {/* Phase 4.6 Step 4.6.3 — Ratio display removed (belongs in WikiReportPanel via analysis layer) */}
 
+          {/* STEP 5.4.4 — SECTION GROUPING (CARD SYSTEM) */}
           {/* Phase 5.3.6 — FREE TIER OPTIMIZATION: Always show dominant terpenes */}
           {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
           {/* Show terpenes from terpeneGuess if terpeneExperience is not available (free tier) */}
           {(viewModel.terpeneExperience || (safeTerpeneGuess && safeTerpeneGuess.length > 0)) && (
-            <div className="space-y-4 pt-4">
+            <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-4">
             {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
             {/* Phase 5.3.6 — Show terpenes from terpeneExperience OR terpeneGuess (free tier always gets terpenes) */}
             {((viewModel.terpeneExperience?.dominantTerpenes && viewModel.terpeneExperience.dominantTerpenes.length > 0) || 
@@ -1176,9 +1186,10 @@ export default function WikiStyleResultPanel({
               </div>
             )}
 
+            {/* STEP 5.4.4 — EXPERIENCE CARD */}
             {/* Phase 5.1 Step 5.1.5 — EXPERIENCE PROFILE */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-white/90">Experience Profile</h3>
+            <div className="space-y-3 pt-4 mt-4 border-t border-white/10">
+              <h3 className="text-base font-semibold text-white/95 tracking-tight">Experience Profile</h3>
               <div className="space-y-2.5">
                 {/* Body Relaxation */}
                 <div>
@@ -1613,12 +1624,9 @@ export default function WikiStyleResultPanel({
           </CollapsibleSection>
         )}
 
-      {/* Phase 3.6 Part C — GENETICS & LINEAGE (Expanded by default) */}
-      <CollapsibleSection
-        title="Genetics & Lineage"
-        defaultExpanded={true}
-        icon="🧬"
-      >
+      {/* STEP 5.4.4 — GENETICS CARD */}
+      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-4">
+        <h3 className="text-base font-semibold text-white/95 tracking-tight mb-4">Genetics</h3>
         <div className="space-y-4">
           {/* Dominance & Lineage */}
           {/* UI CONTRACT ENFORCEMENT — genetics.dominance is optional, only render if present */}
@@ -1704,7 +1712,7 @@ export default function WikiStyleResultPanel({
             </div>
           )}
         </div>
-      </CollapsibleSection>
+      </div>
 
       {/* Phase 3.6 Part D — VISUAL & MORPHOLOGY ANALYSIS (Expanded by default) */}
       <CollapsibleSection
