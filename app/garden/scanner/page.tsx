@@ -443,7 +443,19 @@ export default function ScannerPage() {
               {/* Phase 5.2 — Multi-Image Guidance & Capture UX */}
               {/* Show guidance before images are uploaded */}
               {images.length === 0 && (
-                <div className="mb-4">
+                <div className="mb-4 space-y-4">
+                  {/* STEP 5.5.4 — CONFIDENCE INCENTIVE (INITIAL STATE) */}
+                  {(() => {
+                    const { getConfidenceIncentiveMessage } = require("@/lib/scanner/confidenceIncentive");
+                    const incentiveMessage = getConfidenceIncentiveMessage(0, MAX_IMAGES);
+                    return (
+                      <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
+                        <p className="text-sm font-medium text-blue-200 leading-relaxed">
+                          {incentiveMessage}
+                        </p>
+                      </div>
+                    );
+                  })()}
                   <ImageGuidancePanel imagePreviews={[]} maxImages={MAX_IMAGES} />
                 </div>
               )}
@@ -490,6 +502,38 @@ export default function ScannerPage() {
                   <ImageGuidancePanel imagePreviews={imagePreviews} maxImages={MAX_IMAGES} />
                 </div>
               )}
+              
+              {/* STEP 5.5.4 — CONFIDENCE INCENTIVE (LIVE) */}
+              {images.length > 0 && images.length < MAX_IMAGES && (() => {
+                const { calculateConfidenceCap, getConfidenceIncentiveMessage } = require("@/lib/scanner/confidenceIncentive");
+                const currentCap = calculateConfidenceCap(images.length);
+                const nextCap = calculateConfidenceCap(images.length + 1);
+                const incentiveMessage = getConfidenceIncentiveMessage(images.length, MAX_IMAGES);
+                
+                return (
+                  <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-200 leading-relaxed">
+                          {incentiveMessage || "More angles = higher certainty"}
+                        </p>
+                      </div>
+                      {nextCap > currentCap && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-blue-300/80">Current:</span>
+                          <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-200 text-sm font-semibold">
+                            Up to {currentCap}%
+                          </span>
+                          <span className="text-blue-300/60">→</span>
+                          <span className="px-2 py-1 rounded bg-green-500/20 text-green-200 text-sm font-semibold">
+                            Up to {nextCap}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
               
               {/* Phase 5.2.3 — QUALITY FEEDBACK (PASSIVE) */}
               {images.length > 0 && (() => {
