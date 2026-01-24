@@ -808,6 +808,41 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       });
     }
     
+    // STEP 5.5.1 — IMAGE QUALITY SCORING (SILENT)
+    // Calculate quality scores for each image (stored internally, not shown to users)
+    {
+      const { calculateImageQualityScores } = await import("./imageQualityScoring");
+      
+      // Get base64 sizes for lighting score calculation
+      const base64Sizes = filteredBase64Data?.map(data => data.length) || [];
+      
+      imageResultsV3 = imageResultsV3.map((r, idx) => {
+        const qualityScores = calculateImageQualityScores(
+          idx,
+          r,
+          imageResultsV3,
+          base64Sizes[idx]
+        );
+        
+        return {
+          ...r,
+          qualityScores,
+        };
+      });
+      
+      // Log quality scores (dev only, not shown to users)
+      imageResultsV3.forEach((result, idx) => {
+        if (result.qualityScores) {
+          console.log(`STEP 5.5.1 — Image ${idx + 1} quality scores:`, {
+            sharpness: result.qualityScores.sharpness.toFixed(2),
+            lighting: result.qualityScores.lighting.toFixed(2),
+            angleUsefulness: result.qualityScores.angleUsefulness.toFixed(2),
+            redundancy: result.qualityScores.redundancy.toFixed(2),
+          });
+        }
+      });
+    }
+    
     // Phase 5.0.2 — Log per-image candidate counts
     imageResultsV3.forEach((result, idx) => {
       const candidateNames = Array.isArray(result.candidateStrains)

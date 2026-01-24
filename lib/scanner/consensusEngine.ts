@@ -51,6 +51,7 @@ export type ImageResult = {
     edgeDensity: number;
   };
   inferredAngle?: "macro-bud" | "side-profile" | "top-canopy" | "unknown"; // Phase 4.0.3 — Inferred image angle
+  qualityScores?: import("./imageQualityScoring").ImageQualityScores; // STEP 5.5.1 — Silent quality scores (not shown to users)
 };
 
 // Legacy type (keep for backward compat)
