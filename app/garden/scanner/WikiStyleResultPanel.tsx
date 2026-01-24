@@ -77,17 +77,21 @@ export default function WikiStyleResultPanel({
         {/* Phase 5.1.1 — NAME-FIRST PRESENTATION (LOCK) */}
         {/* Rule: The NAME is the anchor. Everything else supports it. */}
         <div>
-          {/* Primary Header: Strain Name + Confidence Badge */}
-          <div className="mb-5">
-            {/* Phase 5.3.5 — NAME-FIRST FEEL (CRITICAL) */}
-            {/* Strain Name — Large, Bold, Primary Anchor (THE HERO) */}
+          {/* STEP 5.4.2 — HERO ORDER (MANDATORY) */}
+          {/* 1. Strain Name (largest text) */}
+          {/* 2. Confidence Tier (badge-style text) */}
+          {/* 3. Confidence % (small, secondary) */}
+          {/* 4. Short one-line summary */}
+          {/* Nothing else above the fold */}
+          <div className="mb-6">
+            {/* 1. Strain Name — Largest text */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-4">
               {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
                 ? "Unidentified Hybrid Phenotype"
                 : viewModel.nameFirstDisplay.primaryStrainName}
             </h1>
             
-            {/* Confidence Badge — Immediately below name, supports the name */}
+            {/* 2. Confidence Tier + 3. Confidence % — Badge-style with percentage */}
             {(() => {
               const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
               const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
@@ -141,26 +145,45 @@ export default function WikiStyleResultPanel({
                 const familyColor = familyTier === "very_high" || familyTier === "high" ? "bg-green-600" : familyTier === "medium" ? "bg-yellow-500" : "bg-orange-500";
                 const strainColor = strainTier === "very_high" || strainTier === "high" ? "bg-green-600" : strainTier === "medium" ? "bg-yellow-500" : "bg-orange-500";
                 
-                // Phase 5.3.5 — NAME-FIRST FEEL (CRITICAL)
-                // Dual confidence display with percentages shown smaller, secondary
+                // STEP 5.4.2 — HERO ORDER: Dual confidence (family + strain) + summary
+                const { getShortConfidenceCopy } = require("@/lib/scanner/confidenceCopy");
+                const imageCount = (viewModel as any).imageCount ?? 1;
+                const hasStrongVisualMatch = familyConf >= 75;
+                const hasDatabaseMatch = true;
+                const familyConfidenceCopy = getShortConfidenceCopy({
+                  confidence: familyConf,
+                  confidenceTier: familyTier,
+                  imageCount,
+                  hasStrongVisualMatch,
+                  hasDatabaseMatch,
+                });
+                
                 return (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <div className="flex items-center gap-3 flex-wrap">
+                      {/* 2. Confidence Tier — Family */}
                       <span className={`px-4 py-2 rounded-full text-lg font-semibold text-white shadow-sm ${familyColor}`}>
                         {familyLabel} (family)
                       </span>
+                      {/* 3. Confidence % — Small, secondary */}
                       <span className="text-sm text-white/50 font-medium">
                         {familyConf}%
                       </span>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
+                      {/* 2. Confidence Tier — Strain */}
                       <span className={`px-4 py-2 rounded-full text-lg font-semibold text-white shadow-sm ${strainColor}`}>
                         {strainLabel} (strain)
                       </span>
+                      {/* 3. Confidence % — Small, secondary */}
                       <span className="text-sm text-white/50 font-medium">
                         {strainConf}%
                       </span>
                     </div>
+                    {/* 4. Short one-line summary */}
+                    <p className="text-sm text-white/70 leading-relaxed">
+                      {familyConfidenceCopy}
+                    </p>
                   </div>
                 );
               }
@@ -185,31 +208,29 @@ export default function WikiStyleResultPanel({
                 hasMultiImageAgreement,
               });
               
-              // Phase 5.3.5 — NAME-FIRST FEEL (CRITICAL)
-              // Confidence tier label (text, not %) is primary
-              // % shown smaller, secondary
-              // Name is the hero, confidence supports the name
+              // STEP 5.4.2 — HERO ORDER: Confidence tier (badge) + % (small, secondary) + summary
               return (
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   <div className="flex items-center gap-3">
-                    {/* Confidence tier label — Primary confidence display */}
+                    {/* 2. Confidence Tier — Badge-style text */}
                     <span className={`px-4 py-2 rounded-full text-lg font-semibold text-white shadow-sm ${confidenceColor}`}>
                       {confidenceLabel}
                     </span>
-                    {/* Percentage — Smaller, secondary */}
+                    {/* 3. Confidence % — Small, secondary */}
                     <span className="text-sm text-white/50 font-medium">
                       {clampedConfidence}%
                     </span>
                   </div>
-                  {/* Phase 5.3.3 — User-facing confidence copy (no math, no engine terms) */}
-                  <p className="text-xs text-white/50 italic leading-relaxed">
+                  {/* 4. Short one-line summary */}
+                  <p className="text-sm text-white/70 leading-relaxed">
                     {confidenceCopy}
                   </p>
                 </div>
               );
             })()}
           </div>
-              
+          
+          {/* STEP 5.4.2 — Everything below the fold (moved from above) */}
           {/* Phase 5.1.1 — Supporting Information (everything else supports the name) */}
           {/* Family context (subtle, supports name) */}
           {(() => {
@@ -382,45 +403,8 @@ export default function WikiStyleResultPanel({
                 return null;
               })()}
               
-              {/* Phase 4.2 — Enhanced subtitle with trust messaging */}
-              {/* Phase 4.4 — Visual Authority Upgrade: Improved spacing */}
-              <div className="mt-3 space-y-1">
-                {(() => {
-                  const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
-                  const scanStatus = (result as any).status || "success";
-                  const isFallback = viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar";
-                  
-                  if (isFallback) {
-                    return (
-                      <div className="text-sm text-white/60 font-medium">
-                        Best available match from reference catalog
-                      </div>
-                    );
-                  }
-                  
-                  // Phase 4.2 — Updated primary name header copy
-                  if (confidence >= 90) {
-                    return (
-                      <div className="text-sm text-white/60 font-medium">
-                        Strong visual and database agreement
-                      </div>
-                    );
-                  } else if (confidence >= 80 && confidence < 90 && scanStatus !== "partial") {
-                    return (
-                      <div className="text-sm text-white/60 font-medium">
-                        Best match based on visible traits and known cultivars
-                      </div>
-                    );
-                  } else {
-                    // confidence < 80 OR status === "partial"
-                    return (
-                      <div className="text-sm text-white/60 font-medium">
-                        Closest known cultivar based on current visual data
-                      </div>
-                    );
-                  }
-                })()}
-              </div>
+              {/* STEP 5.4.2 — Moved below the fold (was above) */}
+              {/* Enhanced subtitle with trust messaging — now in collapsible section below */}
             
             {/* Phase 4.9.6 — Visual Match Confidence (FREE TIER) */}
               {(() => {
