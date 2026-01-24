@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
-import { saveScanResultToHistory } from "@/lib/supabase/scanHistory";
+// import { saveScanResultToHistory } from "@/lib/supabase/scanHistory";
 import { getUserTierFlags } from "@/lib/flags";
 import { adaptScanResult } from "@/lib/scanner/adapter/scanResultAdapter";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
@@ -232,14 +232,15 @@ export default function ScannerPage() {
       setDiversityHint(scanResult.diversityNote || null);
 
       // Save to history (fire and forget, non-blocking)
-      try {
-        void saveScanResultToHistory({
-          userId: null, // until auth wired
-          scanResult: scanResult,
-        });
-      } catch (e) {
-        // swallow - never block scan rendering
-      }
+      // TODO: reintroduce scan history persistence after build stabilization
+      // try {
+      //   void saveScanResultToHistory({
+      //     userId: null, // until auth wired
+      //     scanResult: scanResult,
+      //   });
+      // } catch (e) {
+      //   // swallow - never block scan rendering
+      // }
       
       // Phase 4.0.2 — Check for diversity warning (images are similar)
       // Compute diversity from image files to detect similarity
