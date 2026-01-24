@@ -2436,10 +2436,12 @@ export default function WikiStyleResultPanel({
         if (!proEnhancements) {
           // Free tier: Show soft nudge
           return (
-            <div className="pt-6 mt-6 border-t border-white/10">
-              <p className="text-xs text-white/60 text-center leading-relaxed">
-                Increase certainty with more angles, or unlock Pro for deeper analysis.
-              </p>
+            <div className="mt-8 pt-8">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+                <p className="text-xs text-white/60 text-center leading-relaxed">
+                  Increase certainty with more angles, or unlock Pro for deeper analysis.
+                </p>
+              </div>
             </div>
           );
         }
