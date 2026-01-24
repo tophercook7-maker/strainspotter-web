@@ -27,35 +27,53 @@ export function normalizeScanResult(rawResult: ScanResult): ScanResult {
     };
   }
 
-  // 1. Guarantee a name
+  // 1. Guarantee a displayable strain name
+  const currentName = result.result.nameFirstDisplay.primaryStrainName;
+  
   if (
-    !result.result.nameFirstDisplay.primaryStrainName ||
-    result.result.nameFirstDisplay.primaryStrainName === "Unknown Cultivar" ||
-    result.result.nameFirstDisplay.primaryStrainName.trim() === ""
+    !currentName ||
+    currentName.trim() === "" ||
+    currentName === "Unknown Cultivar" ||
+    currentName === "Unknown" ||
+    currentName === "Unidentified"
   ) {
-    result.result.nameFirstDisplay.primaryStrainName =
+    // Fallback chain
+    const fallbackName = 
       result.result.name ||
       (result.consensus as any)?.primaryCandidate?.name ||
       "Closest Known Cultivar";
       
+    result.result.nameFirstDisplay.primaryStrainName = fallbackName;
+    
     // Sync primaryName alias
-    result.result.nameFirstDisplay.primaryName = result.result.nameFirstDisplay.primaryStrainName;
+    result.result.nameFirstDisplay.primaryName = fallbackName;
   }
 
-  // 2. Downgrade confidence instead of blocking (if it was low/unknown)
-  // If we had to force a name or if confidence is missing, ensure it's valid but low-ish
-  if (!result.confidence || result.confidence < 55) {
-      result.confidence = Math.max(55, Math.min(result.confidence ?? 60, 65));
-      if (result.result.nameFirstDisplay) {
-          result.result.nameFirstDisplay.confidencePercent = result.confidence;
-          result.result.nameFirstDisplay.confidence = result.confidence;
-          result.result.nameFirstDisplay.confidenceTier = "low";
-      }
+  // 2. If confidence is missing or too low, cap it between 55–65 instead of blocking
+  // Ensure we have a valid confidence number
+  let confidence = result.confidence ?? 0;
+  
+  if (confidence < 55) {
+    confidence = Math.max(55, Math.min(confidence, 65));
+    // If it was really low (e.g. 0), bump to at least 55
+    if (confidence < 55) confidence = 55;
+    
+    result.confidence = confidence;
+    
+    // Sync with ViewModel
+    if (result.result.nameFirstDisplay) {
+      result.result.nameFirstDisplay.confidencePercent = confidence;
+      result.result.nameFirstDisplay.confidence = confidence;
+      result.result.nameFirstDisplay.confidenceTier = "low";
+    }
   }
 
-  // 3. Add user-facing explanation if missing
-  if (!result.scanNote) {
-    result.scanNote = "Low confidence — visual similarity only. Results may vary.";
+  // 3. Add user-facing explanation if confidence < 70
+  if (confidence < 70) {
+    // Only add if not already present or empty
+    if (!result.scanNote) {
+      result.scanNote = "Low confidence — visual similarity only. Results may vary.";
+    }
   }
 
   return result;
