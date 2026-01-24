@@ -410,34 +410,34 @@ export function nameFirstMatchingEngine(
   if (candidates.length > 0) {
     const topCandidate = candidates[0];
     
-    // RULE: If top score < 35 (Phase 4.2.1), use "Closest Known Cultivar"
+    // ALWAYS GUESS MODE (Phase 4.2.1)
+    // Use top candidate regardless of score
+    // If score < 35, clamp confidence to 55 (Low)
+    primaryStrainName = topCandidate.strainName;
+    
     if (topCandidate.score >= 35) {
-      primaryStrainName = topCandidate.strainName;
       confidence = Math.min(99, topCandidate.score);
-      
-      // Build explanation from reasonTags
-      const tags = topCandidate.reasonTags;
-      if (tags.includes("exact")) {
-        explanation.push("Exact database match found");
-      } else if (tags.includes("alias")) {
-        explanation.push("Matched via known alias");
-      } else if (tags.includes("token")) {
-        explanation.push("Token similarity match");
-      } else if (tags.includes("phonetic")) {
-        explanation.push("Phonetic similarity match");
-      } else if (tags.includes("lineage")) {
-        explanation.push("Lineage proximity match");
-      }
-      
-      if (tags.length > 1) {
-        explanation.push(`Matched using: ${tags.join(", ")}`);
-      }
     } else {
-      // Top score < 35: use "Closest Known Cultivar"
-      primaryStrainName = "Closest Known Cultivar";
-      confidence = Math.max(55, Math.min(59, topCandidate.score));
-      explanation.push(`Top match score (${topCandidate.score}%) below threshold — using fallback`);
-      explanation.push(`Database suggests: ${topCandidate.strainName}`);
+      confidence = 55; // Low confidence floor
+      explanation.push(`Best available match (${topCandidate.score}%) selected in Always-Guess mode`);
+    }
+    
+    // Build explanation from reasonTags
+    const tags = topCandidate.reasonTags;
+    if (tags.includes("exact")) {
+      explanation.push("Exact database match found");
+    } else if (tags.includes("alias")) {
+      explanation.push("Matched via known alias");
+    } else if (tags.includes("token")) {
+      explanation.push("Token similarity match");
+    } else if (tags.includes("phonetic")) {
+      explanation.push("Phonetic similarity match");
+    } else if (tags.includes("lineage")) {
+      explanation.push("Lineage proximity match");
+    }
+    
+    if (tags.length > 1) {
+      explanation.push(`Matched using: ${tags.join(", ")}`);
     }
   } else {
     // No matches found

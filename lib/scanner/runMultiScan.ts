@@ -1,5 +1,9 @@
 // lib/scanner/runMultiScan.ts
 
+// Phase 4.2.1 — ALWAYS GUESS MODE
+// Scanner MUST always return a strain name string
+const ALWAYS_GUESS = true;
+
 import { runWikiEngine } from "./wikiEngine";
 import { wikiToViewModel } from "./wikiAdapter";
 import { matchCultivars } from "./cultivarMatcher";
@@ -4101,17 +4105,6 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
   
   
-  // Phase 4.2.1 — Relax name suppression
-  if (!finalPrimaryName || finalPrimaryName === "Unknown") {
-    if (nameFirstPipelineResult?.primaryStrainName) {
-      finalPrimaryName = nameFirstPipelineResult.primaryStrainName;
-      finalNameReasons.push("Low confidence visual match");
-    } else {
-      finalPrimaryName = "Unverified Cultivar (visual match only)";
-      finalNameReasons.push("Insufficient reference data");
-    }
-  }
-
   // PHASE 4.3 — HARD STOP FAILSAFE
   // FINAL CHECK: IF (primaryStrainName === "Unknown" OR empty):
   // primaryStrainName = topDatabaseMatch.name
@@ -4120,24 +4113,48 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       finalPrimaryName.trim().length < 3 || 
       finalPrimaryName === "Closest Known Cultivar" ||
       finalPrimaryName.toLowerCase() === "unknown" ||
-      finalPrimaryName.toLowerCase() === "unidentified") {
+      finalPrimaryName.toLowerCase() === "unidentified" ||
+      finalPrimaryName === "Unverified Cultivar (visual match only)") {
     
     console.warn("Phase 4.3 — HARD STOP FAILSAFE: Name was invalid, forcing database match");
     
-    // Force top database match if available
-    if (databaseCandidates && databaseCandidates.length > 0) {
-      finalPrimaryName = databaseCandidates[0].name;
-      finalNameConfidence = 55;
-      finalNameReasons = ["Match based on database similarity"];
-    } else if (candidateNames && candidateNames.length > 0) {
-      finalPrimaryName = candidateNames[0];
-      finalNameConfidence = 55;
-      finalNameReasons = ["Match based on available candidates"];
+    // Always-Guess Mode: Force best available match
+    if (ALWAYS_GUESS) {
+      if (phaseB1Result?.candidates && phaseB1Result.candidates.length > 0) {
+        finalPrimaryName = phaseB1Result.candidates[0].strainName;
+        finalNameConfidence = Math.max(55, phaseB1Result.candidates[0].score);
+        finalNameReasons = ["Best visual match (Always-Guess Mode)"];
+      } else if (candidateNames && candidateNames.length > 0) {
+        finalPrimaryName = candidateNames[0];
+        finalNameConfidence = 55;
+        finalNameReasons = ["Best available candidate (Always-Guess Mode)"];
+      } else if (databaseCandidates && databaseCandidates.length > 0) {
+        finalPrimaryName = databaseCandidates[0].name;
+        finalNameConfidence = 55;
+        finalNameReasons = ["Best database match (Always-Guess Mode)"];
+      } else {
+        // Absolute last resort
+        finalPrimaryName = "Closest Known Cultivar";
+        finalNameConfidence = 55;
+        finalNameReasons = ["No identification possible"];
+      }
     } else {
-      // Absolute last resort
-      finalPrimaryName = "Closest Known Cultivar";
-      finalNameConfidence = 55;
-      finalNameReasons = ["No identification possible"];
+      // Original logic (strict)
+      // Force top database match if available
+      if (databaseCandidates && databaseCandidates.length > 0) {
+        finalPrimaryName = databaseCandidates[0].name;
+        finalNameConfidence = 55;
+        finalNameReasons = ["Match based on database similarity"];
+      } else if (candidateNames && candidateNames.length > 0) {
+        finalPrimaryName = candidateNames[0];
+        finalNameConfidence = 55;
+        finalNameReasons = ["Match based on available candidates"];
+      } else {
+        // Absolute last resort
+        finalPrimaryName = "Closest Known Cultivar";
+        finalNameConfidence = 55;
+        finalNameReasons = ["No identification possible"];
+      }
     }
     
     finalNameIsLocked = false;
