@@ -88,12 +88,11 @@ export default function WikiStyleResultPanel({
             {/* STEP 5.5.6 — FAIL-SAFE UX: Always show best name, never empty */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-4">
               {(() => {
-                const rawName = viewModel.nameFirstDisplay?.primaryStrainName;
-                // Fail-safe: Always return a valid name
-                if (!rawName || rawName.trim() === "" || rawName === "Closest Known Cultivar") {
-                  return "Closest Known Cultivar";
-                }
-                return rawName;
+                const displayName =
+                  viewModel.nameFirstDisplay?.primaryStrainName ??
+                  viewModel.name ??
+                  "Unverified Cultivar";
+                return displayName;
               })()}
             </h1>
             
