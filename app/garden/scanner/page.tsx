@@ -225,6 +225,7 @@ export default function ScannerPage() {
         return;
       }
       
+      setScanResult(scanResult);
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
       
