@@ -21,6 +21,19 @@ import { assignImageLabels } from "./imageIntakeLabels";
 import { determineStrainName } from "./namingHierarchy";
 import { generateNamingDisplay } from "./namingDisplay";
 import { buildStrainCandidatePool } from "./strainCandidatePool";
+import { buildSafeFallbackResult, type ScanPipelineInput, type ImageSeed } from "./scanFallbacks";
+import { 
+  checkImageDistinctness, 
+  checkEmbeddingDistinctness, 
+  applyRoleWeighting, 
+  applyDiversityWeights, 
+  applyDuplicateSoftPenalty, 
+  tagInferredAngles, 
+  deriveAngleHints, 
+  applyEmbeddingDuplicatePenalty 
+} from "./scanGuards";
+import { calibrateConfidence } from "./confidenceCalibration";
+import { resolveFinalPrimaryName } from "./finalNameResolution";
 import { resolveStrainName } from "./nameResolution";
 // Phase 4.1 — Name-First Disambiguation
 import { buildStrainShortlist } from "./strainShortlist";
@@ -46,11 +59,10 @@ import { resolveStrainRatio, generateRatioExplanation } from "./ratioEngine";
 // Phase 5.1 — Terpene-Weighted Experience Engine
 import { generateTerpeneExperience } from "./terpeneExperienceEngine";
 // Phase 4.0.1 — Image Diversity Check
-import { evaluateImageDiversity, assessImageDiversity } from "./imageDiversity";
+import { evaluateImageDiversity } from "./imageDiversity";
 // Phase 4.0.3 — Angle & zoom inference
-import { inferImageAngle } from "./imageAngleHeuristics";
 // Phase 4.0.4 — Duplicate image detection
-import { detectDuplicates, computeImageSimilarity as computeEmbeddingSimilarity } from "./duplicateImageDetection";
+import { computeImageSimilarity as computeEmbeddingSimilarity } from "./duplicateImageDetection";
 // Phase 4.0.5 — Diversity hints
 import { generateDiversityHint } from "./imageDiversityHints";
 // Phase 4.0.5 — Similar-Image Tolerance & Retry Guard
@@ -64,11 +76,9 @@ import { applyDiversityConfidenceCap } from "./confidenceCaps";
 // Phase 4.0.8 — replace hard failure with guided recovery
 import { evaluateAnalysisGuards } from "./analysisGuards";
 // Phase 4.0.9 — integrate distinctness score
-import { calculateImageDistinctness, assessImageDistinctness } from "./imageDistinctness";
+import { calculateImageDistinctness } from "./imageDistinctness";
 // Phase 4.0.1 — Image Distinctiveness Guard
-import { areImagesDistinctEnough } from "./imageDistinctiveness";
 // Phase 4.0.2 — Image Role Weighting & Auto-Angle Inference
-import { inferImageRole } from "./imageRoleInference";
 // Phase 4.0.2 — Angle diversity bonus/penalty
 import { inferImageAngleFromSeed } from "./imageAngleHeuristics";
 // Phase 4.0.3 — Duplicate / Near-Duplicate Image Detection
@@ -78,7 +88,6 @@ import { computeImageSimilarity } from "./imageSimilarity";
 // Phase 4.0.4 — Angle & Perspective Heuristics
 import { classifyAngle, type ImageAngle } from "./angleClassifier";
 // Phase 4.0.3 — Near-duplicate image detection
-import { tagDuplicateImages } from "./imageDistinctiveness";
 // Phase 4.1 — Guaranteed strain name resolver
 import { resolveFallbackName } from "./nameFallback";
 // Phase 4.1.0 — apply name boost
@@ -92,7 +101,6 @@ import { applyConfidenceFloor } from "./confidenceFloor";
 // Phase 4.1.7 — UI message (non-blocking)
 import { buildScanNote, buildSamePlantNote, buildAngleHintNote, buildDistinctivenessNote, buildSimilarImagesNote, buildSamePlantPenaltyNote } from "./scanNotes";
 // Phase 4.2.1 — multi-angle hinting (non-blocking)
-import { inferAngleHint } from "./angleHinting";
 // Phase 4.2.2 — angle diversity scoring
 // Phase 4.0.8 — Angle Diversity Scoring
 import { computeAngleDiversity, type ImageAngle as AngleDiversityType } from "./angleDiversity";
@@ -133,10 +141,9 @@ import { computeConfidenceV403 } from "./confidenceV403";
 import { computeNameTrustV404 } from "./nameTrustV404";
 // Phase 4.5.1 — Name Memory Cache
 import { getNameMemoryBias, cacheScanResult } from "./nameMemory";
-import { applyFamilyFirstConfidenceBoost } from "./familyFirstBoost";
 // Phase 4.8 — Clone Detection & Disambiguation
 import { 
-  groupClones, 
+  groupClones,
   selectPrimaryNameFromClones, 
   generateDisambiguationCopy, 
   type CloneGroup, 
@@ -144,14 +151,12 @@ import {
 } from "./cloneDetectionV48";
 // Phase 4.9 — Visual Similarity Index (bud/leaf scoring)
 import { 
-  calculateVisualSimilarityIndex, 
-  getVisualSimilarityAdjustment, 
   type VisualSimilarityIndexResult 
 } from "./visualSimilarityIndex";
 // Phase 4.9.1 — Visual Feature Extraction (LOCK)
 import { extractVisualSignature, type VisualSignature } from "./visualFeatureExtraction";
 // Phase 4.9.2 — Strain Visual Baselines
-import { getStrainVisualBaseline, checkBaselineMatch, type VisualBaselineRange } from "./strainVisualBaselines";
+import { type VisualBaselineRange } from "./strainVisualBaselines";
 // Phase 4.9.3 — Image ↔ Strain Match Scoring
 import { 
   calculateImageStrainMatchScore, 
@@ -225,117 +230,6 @@ import { assessPlantSimilarity } from "./plantSimilarity";
 // Phase 4.0.8 — ScanResult moved to types.ts as discriminated union
 import type { ScanResult } from "./types";
 
-type ImageSeed = {
-  name: string;
-  size: number;
-};
-
-type ScanPipelineInput = {
-  imageSeeds: ImageSeed[];
-  imageCount: number;
-};
-
-/**
- * Run the scan pipeline with image seeds
- * STEP 2.1.E — Process multiple images, average confidence, pick dominant candidate
- */
-// STABILIZATION MODE — Helper to build safe fallback result
-function buildSafeFallbackResult(
-  reason: string,
-  imageCount: number,
-  fallbackName: string = "Closest Known Cultivar"
-): ScanResult {
-  // FAILURE MESSAGING SOFTENED — Use softer messages instead of "analysis failed"
-  const softReason = reason.includes("failed") || reason.includes("error") || reason.includes("Error")
-    ? "Low confidence — results may vary"
-    : reason.includes("similar") || reason.includes("identical")
-    ? "Images appear similar — try different angles"
-    : reason;
-  
-  const fallbackConfidence = Math.max(50, 75 - (imageCount === 1 ? 15 : 0));
-  const fallbackViewModel: import("./viewModel").ScannerViewModel = {
-    name: fallbackName,
-    title: fallbackName,
-    confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5, explanation: softReason },
-    matchBasis: "Results shown with limited confidence",
-    visualMatchSummary: "",
-    flowerStructureAnalysis: "",
-    trichomeDensityMaturity: "",
-    leafShapeInternode: "",
-    colorPistilIndicators: "",
-    growthPatternClues: "",
-    primaryMatch: {
-      name: fallbackName,
-      confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5 },
-      whyThisMatch: softReason,
-    },
-    secondaryMatches: [],
-    trustLayer: {
-      confidenceBreakdown: { visualSimilarity: fallbackConfidence, traitOverlap: fallbackConfidence, consensusStrength: 0 },
-      whyThisMatch: [softReason],
-      sourcesUsed: ["Limited analysis"],
-      confidenceLanguage: "Low confidence — results may vary",
-    },
-    aiWikiBlend: "",
-    uncertaintyExplanation: softReason,
-    accuracyTips: ["Try photos from different angles", "Ensure good lighting and focus", "Add more images for better accuracy"],
-    confidence: fallbackConfidence,
-    whyThisMatch: softReason,
-    morphology: "",
-    trichomes: "",
-    pistils: "",
-    structure: "",
-    growthTraits: [],
-    terpeneGuess: [],
-    effectsShort: [],
-    effectsLong: [],
-    comparisons: [],
-    referenceStrains: [],
-    sources: [],
-    genetics: { dominance: "Unknown", lineage: "" },
-    experience: { effects: [], bestFor: [] },
-    disclaimer: softReason,
-    nameFirstDisplay: {
-      primaryStrainName: fallbackName,
-      primaryName: fallbackName,
-      confidencePercent: fallbackConfidence,
-      confidence: fallbackConfidence,
-      confidenceTier: fallbackConfidence >= 75 ? "high" as const : fallbackConfidence >= 65 ? "medium" as const : "low" as const,
-      // Phase 4.1 — Enhanced tagline
-      tagline: (() => {
-        const { generateIntelligentTagline } = require("./perceivedIntelligence");
-        const fallbackConf = Math.max(50, 75 - (imageCount === 1 ? 15 : 0));
-        return generateIntelligentTagline({
-          confidencePercent: fallbackConf,
-          imageCount: imageCount || 0,
-          hasDatabaseMatch: false,
-          hasMultiImageAgreement: false,
-        });
-      })(),
-      explanation: { whyThisNameWon: [softReason], whatRuledOutOthers: [], varianceNotes: [] },
-    },
-  };
-  const fallbackConsensus: ConsensusResult = {
-    primaryMatch: { name: fallbackName, confidence: fallbackConfidence, reason: softReason },
-    alternates: [],
-    agreementScore: 0,
-    strainName: fallbackName,
-    confidenceRange: { min: fallbackConfidence - 5, max: fallbackConfidence + 5, explanation: softReason },
-    whyThisMatch: softReason,
-    alternateMatches: [],
-    lowConfidence: true,
-    agreementLevel: "low" as const,
-  };
-  return {
-    status: "partial",
-    guard: { status: "low-confidence" as const, reason: softReason },
-    consensus: fallbackConsensus,
-    confidence: fallbackConfidence,
-    result: fallbackViewModel,
-    synthesis: {} as any,
-  };
-}
-
 async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): Promise<ScanResult> {
   console.log("runScanPipeline: starting with", input.imageCount, "images");
   
@@ -362,12 +256,10 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // STABILIZATION MODE — Proceed with low confidence instead of returning error
   // Phase 4.0.1 — Check image distinctness (soften failure, proceed with warning)
-  const distinctness = assessImageDistinctness(input.imageSeeds);
-  
-  if (!distinctness.distinct) {
+  const distinctnessResult = checkImageDistinctness(input.imageSeeds);
+  if (!distinctnessResult.distinct && distinctnessResult.warning) {
     console.warn("STABILIZATION: Images lack variance, proceeding with reduced confidence");
-    // Add warning to analysisWarnings array (will be added to viewModel.notes later)
-    analysisWarnings.push("HIGH_IMAGE_SIMILARITY");
+    analysisWarnings.push(distinctnessResult.warning);
   }
 
   // Phase 4.0.3 — De-duplicate similar images instead of failing scan
@@ -548,11 +440,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     });
     
     // Phase 4.0.1 — Check image distinctiveness
-    const imageFingerprints = imageResultsV3
-      .map(r => r.embedding)
-      .filter((embedding): embedding is number[] => embedding !== undefined && Array.isArray(embedding));
-    
-    if (imageFingerprints.length >= 2 && !areImagesDistinctEnough(imageFingerprints)) {
+    if (!checkEmbeddingDistinctness(imageResultsV3)) {
       // Return soft-fail result with recommendation
       const fallbackResult = imageResultsV3[0];
       // Phase 4.1 — Ensure nameFirstDisplay is always present
@@ -608,7 +496,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         },
         experience: {
           effects: [],
-          bestFor: [],
+          bestFor: []
         },
         disclaimer: "Results based on single image due to low image diversity",
         softFail: {
@@ -664,150 +552,21 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
     
     // Phase 4.0.2 — Apply role weighting and diversity weights
-    // First, infer roles and apply role-based weights
-    imageResultsV3 = imageResultsV3.map(result => {
-      // Convert detectedTraits to numeric features for role inference
-      const trichomeDensityNum = result.detectedTraits.trichomeDensity === "high" ? 0.9
-        : result.detectedTraits.trichomeDensity === "medium" ? 0.6
-        : result.detectedTraits.trichomeDensity === "low" ? 0.3
-        : 0;
-      
-      // Infer leaf visibility from leafShape (broad = more visible)
-      const leafVisibility = result.detectedTraits.leafShape === "broad" ? 0.7
-        : result.detectedTraits.leafShape === "narrow" ? 0.4
-        : 0.5;
-      
-      // Infer bud coverage from budStructure (high = more coverage)
-      const budCoverage = result.detectedTraits.budStructure === "high" ? 0.8
-        : result.detectedTraits.budStructure === "medium" ? 0.6
-        : result.detectedTraits.budStructure === "low" ? 0.4
-        : 0.5;
-      
-      // Infer zoom level from meta or imageObservation
-      const zoomLevel = result.meta?.focusScore ? Math.min(1, result.meta.focusScore / 100) : 0.5;
-      
-      const role = inferImageRole({
-        trichomeDensity: trichomeDensityNum,
-        leafVisibility: leafVisibility,
-        budCoverage: budCoverage,
-        zoomLevel: zoomLevel,
-      });
-      
-      // Apply role-based weights
-      let weight = 1;
-      if (role === "macro") weight = 1.2;
-      if (role === "structure") weight = 1.1;
-      if (role === "unknown") weight = 0.9;
-      
-      return {
-        ...result,
-        role,
-        weight,
-      };
-    });
-    
-    // Apply diversity weights (existing logic)
-    const imageHashes = imageResultsV3.map(r => r.imageHash || "").filter(h => h.length > 0);
-    if (imageHashes.length >= 2) {
-      const diversity = assessImageDiversity(imageHashes);
-      imageResultsV3 = imageResultsV3.map((result, idx) => {
-        const penalty = diversity.penalties[idx] ?? 1;
-        // Combine role weight with diversity penalty
-        const roleWeight = (result as any).weight ?? 1;
-        const combinedWeight = roleWeight * penalty;
-        return {
-          ...result,
-          candidateStrains: result.candidateStrains.map(strain => ({
-            ...strain,
-            confidence: Math.round(strain.confidence * combinedWeight),
-          })),
-          diversityPenalty: penalty,
-          weight: combinedWeight,
-        } as typeof result & { role?: string; weight?: number };
-      });
-    }
+    imageResultsV3 = applyRoleWeighting(imageResultsV3);
+    imageResultsV3 = applyDiversityWeights(imageResultsV3);
     
     // Phase 4.0.3 — Apply duplicate soft-penalty (never fail scan)
-    // Tag near-duplicate images and apply similarity penalties to weights
-    if (imageResultsV3.length >= 2) {
-      // Map imageResultsV3 to format expected by tagDuplicateImages (with visualSignature)
-      const weightedImageResults = imageResultsV3.map(r => ({
-        ...r,
-        visualSignature: r.embedding || [], // Use embedding as visual signature
-      }));
-      
-      const weightedImages = tagDuplicateImages(weightedImageResults);
-      
-      // Apply the adjusted weights back to imageResultsV3
-      imageResultsV3 = imageResultsV3.map((result, idx) => {
-        const adjustedWeight = weightedImages[idx]?.weight ?? (result as any).weight ?? 1;
-        return {
-          ...result,
-          weight: adjustedWeight,
-          candidateStrains: result.candidateStrains.map(strain => ({
-            ...strain,
-            confidence: Math.round(strain.confidence * adjustedWeight),
-          })),
-        } as typeof result & { role?: string; weight?: number };
-      });
-    }
+    imageResultsV3 = applyDuplicateSoftPenalty(imageResultsV3);
     
     // Phase 4.0.3 — Tag each image with inferred angle
-    imageResultsV3 = imageResultsV3.map(r => {
-      if (r.meta) {
-        const angle = inferImageAngle({
-          width: r.meta.width,
-          height: r.meta.height,
-          focusScore: r.meta.focusScore,
-          edgeDensity: r.meta.edgeDensity,
-        });
-        return {
-          ...r,
-          inferredAngle: angle,
-        };
-      }
-      return r;
-    });
+    imageResultsV3 = tagInferredAngles(imageResultsV3);
 
     // Phase 4.2.1 — attach angle hints from visual tags
-    imageAngleHints = imageResultsV3.map((img, idx) => {
-      // Extract tags from detected traits and image observation
-      const visualTags: string[] = [];
-      if (img.inferredAngle === "macro-bud" || img.inferredAngle === "top-canopy" || img.inferredAngle === "side-profile") {
-        visualTags.push(img.inferredAngle === "macro-bud" ? "macro" : img.inferredAngle === "top-canopy" ? "top" : "side");
-      }
-      if (img.detectedTraits.trichomeDensity === "high") {
-        visualTags.push("trichome");
-      }
-      if (img.imageObservation?.imageType) {
-        visualTags.push(img.imageObservation.imageType);
-      }
-      
-      return {
-        id: img.imageIndex,
-        angle: inferAngleHint(visualTags),
-      };
-    });
+    imageAngleHints = deriveAngleHints(imageResultsV3);
     
     // Phase 4.0.4 — Apply duplicate penalty instead of failing scan
-    const embeddings = imageResultsV3
-      .map(r => r.embedding)
-      .filter((e): e is number[] => Array.isArray(e) && e.length > 0);
-    
-    if (embeddings.length >= 2) {
-      const duplicateIndexes = detectDuplicates(embeddings);
-      imageResultsV3 = imageResultsV3.map((r, idx) => {
-        // Apply duplicate penalty (0.75) if this image is a duplicate
-        // Combine with existing diversityPenalty if present
-        const duplicatePenalty = duplicateIndexes.has(idx) ? 0.75 : 1.0;
-        const existingPenalty = r.diversityPenalty ?? 1.0;
-        return {
-          ...r,
-          diversityPenalty: Math.min(existingPenalty, duplicatePenalty),
-        };
-      });
-    }
-    
+    imageResultsV3 = applyEmbeddingDuplicatePenalty(imageResultsV3);
+
     // STEP 5.5.1 — IMAGE QUALITY SCORING (SILENT)
     // Calculate quality scores for each image (stored internally, not shown to users)
     {
@@ -3609,24 +3368,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
   }
   
-  // Phase 4.0.3 — Update viewModel confidence from V403 breakdown (single source of truth)
-  if (viewModel.nameFirstDisplay) {
-    viewModel.nameFirstDisplay.confidencePercent = finalConfidence;
-    viewModel.nameFirstDisplay.confidence = finalConfidence;
-    // Update confidenceTier based on final confidence
-    viewModel.nameFirstDisplay.confidenceTier = finalConfidence >= 85 ? "very_high" as const
-      : finalConfidence >= 75 ? "high" as const
-      : finalConfidence >= 65 ? "medium" as const
-      : "low" as const;
-  }
-  viewModel.confidence = finalConfidence;
-  
-  // Phase 4.0.3 — Update confidenceTier in viewModel (using V403 final confidence)
-  const v403ConfidenceTier = getConfidenceTierFromRange(
-    finalConfidence - 2,
-    finalConfidence + 2
-  );
-  viewModel.confidenceTier = v403ConfidenceTier;
+  // Phase 4.0.3 — Final confidence calibration
+  finalConfidence = calibrateConfidence({
+    viewModel,
+    imageCount: filteredInput.imageCount,
+    distinctImageCount: filteredInput.imageCount, // Simplified for now
+    hasDuplicates: filteredInput.imageCount < input.imageCount,
+    samePlantLikely,
+    avgImageQualityScore: 0.7, // Default
+    consensusStrength: 0.8, // Default
+    dbMatchStrength: 0.8, // Default
+    nameStability: 0.8, // Default
+    finalConfidence,
+  });
 
   // Phase 4.6 — NAME TRUST & DISAMBIGUATION
   // Collect candidate names from all images
@@ -4352,425 +4106,62 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     finalNameIsLocked = false;
   }
   
-  // Phase 4.8.6 — Ensure name is never empty (absolute safety)
-  if (!finalPrimaryName || finalPrimaryName.trim() === "") {
-    finalPrimaryName = "Closest Known Cultivar";
-    console.error("Phase 4.8.6 — CRITICAL: Name was empty, forced fallback");
-  }
+  // Phase 4.8.6 — Final name resolution
+  const nameResolutionResult = resolveFinalPrimaryName({
+    viewModel,
+    finalPrimaryName,
+    finalNameConfidence,
+    finalNameReasons,
+    finalNameIsLocked,
+    phaseB1Result,
+    phaseB2ConfidenceResult,
+    imageResultsV3,
+    filteredInput,
+    finalImageFingerprints,
+    disambiguationCopy,
+    fusedFeatures,
+    visualSignatures,
+  });
+
+  finalPrimaryName = nameResolutionResult.finalPrimaryName;
+  finalNameConfidence = nameResolutionResult.finalNameConfidence;
+  finalNameReasons = nameResolutionResult.finalNameReasons;
+  const nameMemoryMatch = nameResolutionResult.nameMemoryMatch;
+  const visualSimilarityResult = nameResolutionResult.visualSimilarityResult;
   
-  // Phase 4.6.2 — FAMILY-FIRST CONFIDENCE BOOST
-  // Phase 4.8.6 — Still calculate family even if name is unclear (family + ratio shown independently)
-  // If exact strain uncertain but family is strong: lock family, soft-rank strains inside family
-  let familyFirstResult: ReturnType<typeof applyFamilyFirstConfidenceBoost> | null = null;
-  let exactStrainConfidenceForUI: number | null = null; // Phase 4.6.4 — Store for dual confidence display
-  try {
-    // Get candidate strains from Phase B.1 (convert to expected format)
-    const candidateStrains = phaseB1Result?.candidates.map(c => ({
-      name: c.strainName,
-      confidence: c.score,
-    })) || [];
-    
-    // Get final confidence after Phase B.2 calibration
-    const finalConfidenceForFamilyCheck = phaseB2ConfidenceResult?.confidence ?? finalNameConfidence;
-    exactStrainConfidenceForUI = finalConfidenceForFamilyCheck; // Phase 4.6.4 — Store for UI
-    
-    // Phase 4.8.6 — Use finalPrimaryName for family detection (even if "Closest Known Cultivar")
-    // Family detection will attempt to find family from candidates or visual traits
-    const nameForFamilyDetection = finalPrimaryName === "Closest Known Cultivar" && candidateStrains.length > 0
-      ? candidateStrains[0].name // Use top candidate for family detection
-      : finalPrimaryName;
-    
-    familyFirstResult = applyFamilyFirstConfidenceBoost({
-      primaryStrainName: nameForFamilyDetection,
-      exactStrainConfidence: finalConfidenceForFamilyCheck,
-      candidateStrains,
-      imageCount: imageResultsV3.length || filteredInput.imageCount,
-    });
-    
-    // If family-first is recommended, apply it
-    if (familyFirstResult.useFamilyFirst) {
-      console.log("Phase 4.6.2 — Applying family-first confidence boost:", {
-        familyName: familyFirstResult.familyName,
-        exactStrainConfidence: finalConfidenceForFamilyCheck,
-        familyConfidence: familyFirstResult.familyConfidence,
-        closestStrainInFamily: familyFirstResult.closestStrainInFamily,
-        displayFormat: familyFirstResult.displayFormat,
-      });
-      
-      // Update primary name to use family-first display format
-      finalPrimaryName = familyFirstResult.displayFormat;
-      // Use family confidence (higher than exact strain confidence)
-      finalNameConfidence = familyFirstResult.familyConfidence;
-      // Update reasons to include family-first explanation
-      finalNameReasons = [
-        ...finalNameReasons,
-        ...familyFirstResult.explanation,
-      ];
-    }
-  } catch (error) {
-    console.warn("Phase 4.6.2 — Family-first boost error:", error);
-    // Continue with exact strain name if family-first fails
-  }
-  
-  // NAME-FIRST MATCHING — Update nameFirstDisplay with name-first result (NON-NEGOTIABLE)
+  // Phase 4.3.6 — Confidence Explanation Layer
+  // Attach final reasons to nameFirstDisplay
   if (viewModel.nameFirstDisplay) {
-    // Override primary name (always non-empty, never "Unknown") - NAME-FIRST MATCHING prioritized
-    viewModel.nameFirstDisplay.primaryStrainName = finalPrimaryName;
-    viewModel.nameFirstDisplay.primaryName = finalPrimaryName;
-    
-    // Phase B.2 — Update confidence from Phase B.2 calibration (if available)
-    // Otherwise use name-first matching confidence
-    // Phase 4.6.2 — If family-first is applied, use family confidence instead
-    const displayConfidence = familyFirstResult?.useFamilyFirst 
-      ? familyFirstResult.familyConfidence 
-      : (phaseB2ConfidenceResult?.confidence ?? finalNameConfidence);
-    const displayTier = phaseB2ConfidenceResult?.tier ?? (
-      displayConfidence >= 90 ? "very_high" :
-      displayConfidence >= 80 ? "high" :
-      displayConfidence >= 70 ? "medium" : "low"
-    );
-    
-    // Phase 4.5.2 — Confidence Stability Rule: Apply name memory bias before final confidence assignment
-    let stabilityAdjustedConfidence = displayConfidence;
-    let nameMemoryMatch = false; // Phase 4.5.3 — Track if name matches previous scan
-    
-    if (finalPrimaryName && finalImageFingerprints.length > 0) {
-      const cachedBias = getNameMemoryBias(finalImageFingerprints);
-      
-      if (cachedBias) {
-        const nameMatches = cachedBias.name === finalPrimaryName;
-        
-        if (nameMatches) {
-          // Phase 4.5.3 — Mark that name memory found a match
-          nameMemoryMatch = true;
-          
-          // If primary strain name matches previous scan: confidence may increase slightly
-          const stabilityBoost = Math.min(3, 95 - displayConfidence); // Max +3%, capped at 95%
-          stabilityAdjustedConfidence = displayConfidence + stabilityBoost;
-          console.log("Phase 4.5.2 — Name matches previous scan, applying stability boost:", {
-            previousName: cachedBias.name,
-            previousConfidence: cachedBias.confidence,
-            currentName: finalPrimaryName,
-            currentConfidence: displayConfidence,
-            adjustedConfidence: stabilityAdjustedConfidence,
-            boost: stabilityBoost,
-          });
-        } else {
-          // If name changes: confidence must drop (never jump up)
-          const stabilityPenalty = Math.min(10, displayConfidence - 55); // Max -10%, floor at 55%
-          stabilityAdjustedConfidence = Math.max(55, displayConfidence - stabilityPenalty);
-          console.log("Phase 4.5.2 — Name changed from previous scan, applying stability penalty:", {
-            previousName: cachedBias.name,
-            previousConfidence: cachedBias.confidence,
-            currentName: finalPrimaryName,
-            currentConfidence: displayConfidence,
-            adjustedConfidence: stabilityAdjustedConfidence,
-            penalty: stabilityPenalty,
-          });
-        }
-      }
-    }
-    
-    // Phase 4.8.5 — CONFIDENCE CALIBRATION (Clone-based)
-    // Clone detected: Name confidence capped at 97%, add uncertainty note
-    // No clone detected: Normal confidence rules apply
-    if (disambiguationCopy && disambiguationCopy.hasClones) {
-      // Phase 4.8.5 — Cap confidence at 97% when clones detected
-      if (stabilityAdjustedConfidence > 97) {
-        stabilityAdjustedConfidence = 97;
-        // Phase 4.8.5 — Add uncertainty note to explanation
-        finalNameReasons.push("Multiple named cuts detected — confidence capped to reflect variant uncertainty");
-        console.log("Phase 4.8.5 — Clone detected: Confidence capped at 97% (was", displayConfidence, ")");
-      } else {
-        // Confidence already ≤ 97%, but still add uncertainty note
-        finalNameReasons.push("Multiple named cuts detected — exact variant may vary");
-      }
-    }
-    
-    // Phase 4.9 — VISUAL SIMILARITY INDEX (bud/leaf scoring)
-    // Calculate visual similarity between observed features and database strain profile
-    let visualSimilarityResult: VisualSimilarityIndexResult | null = null;
-    let visualSimilarityAdjustedConfidence = stabilityAdjustedConfidence;
-    let dbEntryForVisual: CultivarReference | undefined = undefined;
-    
-    if (fusedFeatures && finalPrimaryName && finalPrimaryName !== "Closest Known Cultivar") {
-      try {
-        // Find database entry for primary strain
-        dbEntryForVisual = CULTIVAR_LIBRARY.find(s => 
-          s.name.toLowerCase() === finalPrimaryName.toLowerCase() ||
-          s.aliases?.some(a => a.toLowerCase() === finalPrimaryName.toLowerCase())
-        );
-        
-        if (dbEntryForVisual) {
-          // Phase 4.9.2 — Get visual baseline for strain
-          const visualBaseline = getStrainVisualBaseline(dbEntryForVisual);
-          
-          // Calculate visual similarity index
-          visualSimilarityResult = calculateVisualSimilarityIndex(fusedFeatures, dbEntryForVisual);
-          
-          // Phase 4.9.2 — If we have visual signatures, check baseline match for more accurate scoring
-          let baselineAdjustedScore = visualSimilarityResult.overallScore;
-          if (visualSignatures && visualSignatures.length > 0) {
-            // Use the first visual signature (or average if multiple)
-            const primarySignature = visualSignatures[0];
-            const baselineMatch = checkBaselineMatch(primarySignature, visualBaseline);
-            
-            // Blend baseline match with original similarity score (70% original, 30% baseline)
-            baselineAdjustedScore = Math.round(
-              visualSimilarityResult.overallScore * 0.7 +
-              baselineMatch.overallMatch * 0.3
-            );
-            
-            console.log("Phase 4.9.2 — Baseline Match:", {
-              originalScore: visualSimilarityResult.overallScore,
-              baselineMatch: baselineMatch.overallMatch,
-              adjustedScore: baselineAdjustedScore,
-              withinTolerance: baselineMatch.withinTolerance,
-            });
-            
-            // Update visual similarity result with baseline-adjusted score
-            visualSimilarityResult = {
-              ...visualSimilarityResult,
-              overallScore: baselineAdjustedScore,
-              explanation: [
-                ...visualSimilarityResult.explanation,
-                ...baselineMatch.explanation,
-              ],
-            };
-          }
-          
-          // Get confidence adjustment based on visual similarity (use baseline-adjusted score)
-          const visualAdjustment = getVisualSimilarityAdjustment(baselineAdjustedScore);
-          
-          // Apply adjustment (with caps to prevent going over existing limits)
-          visualSimilarityAdjustedConfidence = Math.max(
-            50, // Floor
-            Math.min(
-              stabilityAdjustedConfidence + visualAdjustment.adjustment, // Apply adjustment
-              stabilityAdjustedConfidence >= 85 ? 95 : stabilityAdjustedConfidence >= 70 ? 90 : 85 // Respect existing caps
-            )
-          );
-          
-          // Round to integer
-          visualSimilarityAdjustedConfidence = Math.round(visualSimilarityAdjustedConfidence);
-          
-          // Add visual similarity explanation to reasons
-          if (visualAdjustment.adjustment > 0) {
-            finalNameReasons.push(visualAdjustment.explanation);
-          } else if (visualAdjustment.adjustment < 0) {
-            finalNameReasons.push(visualAdjustment.explanation);
-          }
-          
-          console.log("Phase 4.9 — Visual Similarity Index:", {
-            overallScore: visualSimilarityResult.overallScore,
-            budScore: visualSimilarityResult.budScore,
-            leafScore: visualSimilarityResult.leafScore,
-            trichomeScore: visualSimilarityResult.trichomeScore,
-            pistilScore: visualSimilarityResult.pistilScore,
-            adjustment: visualAdjustment.adjustment,
-            confidenceBefore: stabilityAdjustedConfidence,
-            confidenceAfter: visualSimilarityAdjustedConfidence,
-          });
-        }
-      } catch (error) {
-        console.warn("Phase 4.9 — Visual similarity calculation error:", error);
-        // Continue without visual similarity adjustment
-      }
-    }
-    
-    viewModel.nameFirstDisplay.confidencePercent = visualSimilarityAdjustedConfidence;
-    viewModel.nameFirstDisplay.confidence = visualSimilarityAdjustedConfidence;
-    // Phase 4.5.2 — Use visual similarity-adjusted confidence for tier
-    viewModel.nameFirstDisplay.confidenceTier = visualSimilarityAdjustedConfidence >= 90 ? "very_high" :
-      visualSimilarityAdjustedConfidence >= 80 ? "high" :
-      visualSimilarityAdjustedConfidence >= 70 ? "medium" : "low";
-    // Phase 4.5.2 — Update viewModel confidence to match visual similarity-adjusted value
-    viewModel.confidence = visualSimilarityAdjustedConfidence;
-    // Phase 4.5.3 — Store name memory match in scanMeta for UI display
-    scanMeta.nameMemoryMatch = nameMemoryMatch;
-    
-    // Phase 4.9 — Store visual similarity result in viewModel for UI display
-    if (visualSimilarityResult) {
-      (viewModel.nameFirstDisplay as any).visualSimilarity = {
-        overallScore: visualSimilarityResult.overallScore,
-        budScore: visualSimilarityResult.budScore,
-        leafScore: visualSimilarityResult.leafScore,
-        trichomeScore: visualSimilarityResult.trichomeScore,
-        pistilScore: visualSimilarityResult.pistilScore,
-        breakdown: visualSimilarityResult.breakdown,
-        explanation: visualSimilarityResult.explanation,
-      };
-    }
-    
-    // Phase 4.9.2 — Store visual baseline if available
-    if (dbEntryForVisual) {
-      const visualBaseline = getStrainVisualBaseline(dbEntryForVisual);
-      (viewModel.nameFirstDisplay as any).visualBaseline = {
-        densityRange: visualBaseline.densityRange,
-        trichomeRange: visualBaseline.trichomeRange,
-        colorBaseline: visualBaseline.colorBaseline,
-        baselineConfidence: visualBaseline.baselineConfidence,
-        source: visualBaseline.source,
-      };
-    }
-    
-    // Phase 4.9.4 — Store visual consensus result if available (multi-image)
-    if (phaseB1Result && (phaseB1Result as any).visualConsensus) {
-      const consensusResult = (phaseB1Result as any).visualConsensus as VisualConsensusResult;
-      (viewModel.nameFirstDisplay as any).visualConsensus = {
-        visualConsensusScore: consensusResult.visualConsensusScore,
-        averageMatchScore: consensusResult.averageMatchScore,
-        consistencyBoost: consensusResult.consistencyBoost,
-        contradictionPenalty: consensusResult.contradictionPenalty,
-        consistentFeatures: consensusResult.consistentFeatures,
-        contradictoryFeatures: consensusResult.contradictoryFeatures,
-        visualConfidenceNote: consensusResult.visualConfidenceNote,
-        perImageScores: consensusResult.perImageScores,
-      };
-    }
-    
-    // Update explanation (clear reason why this name won) - NAME-FIRST MATCHING prioritized
     if (!viewModel.nameFirstDisplay.explanation) {
       viewModel.nameFirstDisplay.explanation = { whyThisNameWon: [], whatRuledOutOthers: [], varianceNotes: [] };
     }
-    // NAME-FIRST MATCHING provides reasons array
     viewModel.nameFirstDisplay.explanation.whyThisNameWon = finalNameReasons;
     
-    // Phase B.1 — Attach alternates (ranked, max 3) - Phase B.1 prioritized
-    if (phaseB1Result && phaseB1Result.candidates.length > 1) {
-      // Use Phase B.1 candidates (top 3 alternates, excluding primary)
-      viewModel.nameFirstDisplay.alternateNames = phaseB1Result.candidates.slice(1, 4).map(c => c.strainName);
-    } else if (nameConfidenceV55 && nameConfidenceV55.alternateMatches.length > 0) {
-      viewModel.nameFirstDisplay.alternateNames = nameConfidenceV55.alternateMatches.map(a => a.name);
-    } else if (strengthenedNameV53) {
-      viewModel.nameFirstDisplay.alternateNames = strengthenedNameV53.alternateMatches.map(a => a.name);
-    } else {
-      viewModel.nameFirstDisplay.alternateNames = nameTrustV46.alternates;
+    // Attach alternates from Phase B.1 or other sources
+    if (phaseB1Result?.candidates) {
+      viewModel.nameFirstDisplay.alternateNames = phaseB1Result.candidates.slice(1, 4).map((c: any) => c.strainName);
     }
-    
-    // Phase B.1 — Store top 5 candidates if available
-    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
-      (viewModel.nameFirstDisplay as any).phaseB1Candidates = phaseB1Result.candidates.map(c => ({
-        strainName: c.strainName,
-        score: c.score,
-        reasonTags: c.reasonTags,
-      }));
-    }
-    
-    // Phase 4.6.2 — Store family-first result if applied
-    // Phase 4.6.4 — Also store original strain confidence for dual confidence display
-    if (familyFirstResult?.useFamilyFirst && exactStrainConfidenceForUI !== null) {
-      (viewModel.nameFirstDisplay as any).familyFirst = {
-        familyName: familyFirstResult.familyName,
-        closestStrainInFamily: familyFirstResult.closestStrainInFamily,
-        strainRanking: familyFirstResult.strainRanking,
-        displayFormat: familyFirstResult.displayFormat,
-        familyConfidence: familyFirstResult.familyConfidence,
-        exactStrainConfidence: exactStrainConfidenceForUI, // Phase 4.6.4 — Store original strain confidence
-      };
-    }
-    
-    // NAME-FIRST MATCHING — Mark as locked if DB confidence >= 85% OR name-first result says locked
-    (viewModel.nameFirstDisplay as any).isLocked = finalNameIsLocked || (shouldLockName && finalNameConfidence >= 75);
-    
-    // Phase 5.5 — Attach disambiguation flag
-    if (nameConfidenceV55) {
-      (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
-    }
-    
-    // Phase B.1 — Attach source information (Phase B.1 prioritized)
-    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
-      const topCandidate = phaseB1Result.candidates[0];
-      // Use first reasonTag as primary source
-      (viewModel.nameFirstDisplay as any).nameSource = topCandidate.reasonTags[0] || "token";
-      (viewModel.nameFirstDisplay as any).phaseB1Primary = true;
-    } else if (nameFirstMatchingResult) {
-      (viewModel.nameFirstDisplay as any).nameSource = nameFirstMatchingResult.source;
-    } else if (!nameConfidenceV55) {
-      (viewModel.nameFirstDisplay as any).nameSource = strengthenedNameV53?.selectedSource || "direct";
-    }
-  } else {
-    // PRIMARY STRAIN SELECTION LOGIC — Create nameFirstDisplay if it doesn't exist
-    // Always populate: primaryStrainName, confidencePercent, explanation.whyThisNameWon[]
-    // Never leave primaryStrainName empty
-    // Never throw
-    
-    let confidenceTier: "very_high" | "high" | "medium" | "low";
-    if (finalNameConfidence >= 90) {
-      confidenceTier = "very_high";
-    } else if (finalNameConfidence >= 80) {
-      confidenceTier = "high";
-    } else if (finalNameConfidence >= 70) {
-      confidenceTier = "medium";
-    } else {
-      confidenceTier = "low";
-    }
-    
-    // Ensure finalPrimaryName is never empty
-    const safePrimaryName = finalPrimaryName && finalPrimaryName.trim().length >= 3
-      ? finalPrimaryName
-      : "Closest Known Cultivar";
-    
-    // Ensure finalNameReasons is never empty
-    const safeReasons = finalNameReasons.length > 0
-      ? finalNameReasons
-      : ["Name selected based on available analysis"];
-    
-    // Phase 4.8.6 — FAILURE SAFETY: Ensure name is never empty
-    const validatedPrimaryName = safePrimaryName && safePrimaryName.trim().length >= 3
-      ? safePrimaryName
-      : "Closest Known Cultivar";
-    
-    viewModel.nameFirstDisplay = {
-      primaryStrainName: validatedPrimaryName,
-      primaryName: validatedPrimaryName,
-      confidencePercent: finalNameConfidence,
-      confidence: finalNameConfidence,
-      confidenceTier,
-      tagline: safeReasons[0] || "Closest known match based on available analysis",
-      explanation: { 
-        whyThisNameWon: safeReasons, 
-        whatRuledOutOthers: [], 
-        varianceNotes: [] 
-      },
-      alternateNames: phaseB1Result && phaseB1Result.candidates.length > 1
-        ? phaseB1Result.candidates.slice(1, 4).map(c => c.strainName) // Top 3 alternates from Phase B.1
-        : [],
+  }
+        
+  // Phase 4.5.3 — Store name memory match in scanMeta for UI display
+  scanMeta.nameMemoryMatch = nameMemoryMatch;
+  
+  // Phase 4.9 — Store visual similarity result in viewModel for UI display
+  if (viewModel.nameFirstDisplay && visualSimilarityResult) {
+    (viewModel.nameFirstDisplay as any).visualSimilarity = {
+      overallScore: visualSimilarityResult.overallScore,
+      budScore: visualSimilarityResult.budScore,
+      leafScore: visualSimilarityResult.leafScore,
+      trichomeScore: visualSimilarityResult.trichomeScore,
+      pistilScore: visualSimilarityResult.pistilScore,
+      breakdown: visualSimilarityResult.breakdown,
+      explanation: visualSimilarityResult.explanation,
     };
-    
-    // Phase 4.8.6 — Final safety: Never show empty name
-    if (!viewModel.nameFirstDisplay.primaryStrainName || viewModel.nameFirstDisplay.primaryStrainName.trim() === "") {
-      viewModel.nameFirstDisplay.primaryStrainName = "Closest Known Cultivar";
-      viewModel.nameFirstDisplay.primaryName = "Closest Known Cultivar";
-      console.error("Phase 4.8.6 — CRITICAL: nameFirstDisplay.primaryStrainName was empty, forced fallback");
-    }
-    (viewModel.nameFirstDisplay as any).isLocked = finalNameIsLocked || (shouldLockName && finalNameConfidence >= 75);
-    if (nameConfidenceV55) {
-      (viewModel.nameFirstDisplay as any).disambiguationTriggered = nameConfidenceV55.disambiguationTriggered;
-    }
-    // Phase 4.8.4 — Attach disambiguation copy if clones detected
-    if (disambiguationCopy && disambiguationCopy.hasClones) {
-      (viewModel.nameFirstDisplay as any).disambiguationCopy = disambiguationCopy;
-    }
-    // Phase B.1 — Attach source information (Phase B.1 prioritized)
-    if (phaseB1Result && phaseB1Result.candidates.length > 0) {
-      const topCandidate = phaseB1Result.candidates[0];
-      // Use first reasonTag as primary source
-      (viewModel.nameFirstDisplay as any).nameSource = topCandidate.reasonTags[0] || "token";
-      (viewModel.nameFirstDisplay as any).phaseB1Primary = true;
-      (viewModel.nameFirstDisplay as any).phaseB1Candidates = phaseB1Result.candidates.map(c => ({
-        strainName: c.strainName,
-        score: c.score,
-        reasonTags: c.reasonTags,
-      }));
-    } else {
-      (viewModel.nameFirstDisplay as any).nameSource = "fallback";
-    }
   }
   
   // NAME-FIRST MATCHING — 8. Logging
   // NAME_FINAL: <name> confidence=<c> alternates=<n>
-  const finalAlternates = nameConfidenceV55?.alternateMatches.map(a => a.name) || strengthenedNameV53?.alternateMatches.map(a => a.name) || nameTrustV46.alternates || [];
+  const finalAlternates = viewModel.nameFirstDisplay?.alternateNames || [];
   console.log("NAME_FINAL:", {
     name: finalPrimaryName,
     confidence: finalNameConfidence,

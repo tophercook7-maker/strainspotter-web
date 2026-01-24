@@ -7,6 +7,9 @@ import { getConfidenceTier } from "./confidenceTier";
 // Phase 4.9 Step 4.9.3 — Disambiguation Engine
 import { disambiguateCloseNames } from "./nameDisambiguationV4";
 
+import { normalizeStrainName } from "./nameNormalization";
+import { groupClones, type CloneGroup } from "./cloneGrouping";
+
 /**
  * Phase 4.1 Step 4.1.4 — Name Selection Result
  */
@@ -19,6 +22,7 @@ export type NameSelectionResult = {
     score: number;
     whyNotPrimary: string;
   }>; // 2–3 close contenders
+  cloneGroup?: CloneGroup; // STEP 6.0.2 — Detected clone group
 };
 
 /**
@@ -56,20 +60,31 @@ export function selectPrimaryName(
     };
   }
 
-  const topResult = scoredResults[0];
-  const secondResult = scoredResults[1];
-  const thirdResult = scoredResults[2];
+  // STEP 6.0.2 — Group clones
+  const cloneGroups = groupClones(scoredResults);
+  const topGroup = cloneGroups[0];
+  
+  // STEP 6.0.3 — Primary name is the canonical name of the top group
+  const primaryStrainName = topGroup.canonicalName;
+
+  const topResult = scoredResults.find(r => r.strainName === primaryStrainName) || scoredResults[0];
+  const secondResult = scoredResults.filter(r => normalizeStrainName(r.strainName) !== normalizeStrainName(primaryStrainName))[0];
+  const thirdResult = scoredResults.filter(r => normalizeStrainName(r.strainName) !== normalizeStrainName(primaryStrainName))[1];
 
   // Phase 4.1 Step 4.1.4 — Derive confidence from total score, capped by image count
   let nameConfidencePercent = topResult.totalScore;
   
+  // STEP 6.0.5 — Cap confidence if clones detected
+  const hasClones = topGroup.variants.length > 1;
+  const confidenceCap = hasClones ? 97 : 99;
+
   // Phase 4.1 Step 4.1.4 — Cap confidence by image count (from Phase 4.0 Part D)
   if (imageCount === 1) {
     nameConfidencePercent = Math.min(82, nameConfidencePercent);
   } else if (imageCount === 2) {
     nameConfidencePercent = Math.min(90, nameConfidencePercent);
   } else if (imageCount >= 3) {
-    nameConfidencePercent = Math.min(99, nameConfidencePercent);
+    nameConfidencePercent = Math.min(confidenceCap, nameConfidencePercent);
   }
 
   // Phase 4.1 Step 4.1.4 — Get confidence tier
@@ -127,10 +142,11 @@ export function selectPrimaryName(
   }
 
   return {
-    primaryStrainName: topResult.strainName,
+    primaryStrainName,
     nameConfidencePercent: Math.round(nameConfidencePercent),
     nameConfidenceTier,
     alternateMatches: alternateMatches.slice(0, 3), // Max 3 alternates
+    cloneGroup: topGroup, // STEP 6.0.2
   };
 }
 
