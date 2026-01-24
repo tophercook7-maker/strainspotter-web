@@ -5753,6 +5753,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // PHASE A FINALIZATION — Log once at end
   console.log(`SCAN COMPLETE — status=${result.status} confidence=${result.confidence}`);
+  
+  // REGRESSION GUARD (Phase 4.2.1)
+  // Verify result contract before returning
+  const { validateScannerResult } = require("./regressionGuard");
+  try {
+    validateScannerResult(result.result, `Scan Result (status=${result.status})`);
+  } catch (e) {
+    console.error("REGRESSION GUARD ERROR:", e);
+    // Don't throw, just log - we want to return the result anyway
+  }
+  
   return result;
   } catch (error) {
     // PHASE A FINALIZATION — Catch any unexpected errors and return safe fallback (never throw)
