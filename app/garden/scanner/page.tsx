@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import { saveScanResultToHistory } from "@/lib/supabase/scanHistory";
 import { getUserTierFlags } from "@/lib/flags";
+import { adaptScanResult } from "@/lib/scanner/adapter/scanResultAdapter";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
 import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
@@ -218,18 +219,32 @@ export default function ScannerPage() {
         return;
       }
       
-      setScanResult(scanResult);
+      const adaptedResult = adaptScanResult({
+        scannerResult: scanResult.result,
+        scanMeta: scanResult.meta
+      });
+      console.log("ADAPTED RESULT:", adaptedResult.strainName, adaptedResult.confidence);
+      setScanResult(scanResult); // Keep original ScanResult for status checks
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
       
       // Phase 4.0.5 — Set diversity hint from scan result
       setDiversityHint(scanResult.diversityNote || null);
 
-      // Save to history (fire and forget)
-      // TODO: Pass real userId when auth is connected
-      saveScanResultToHistory(orchestrated, undefined).catch(err => 
-        console.error("Failed to save scan history:", err)
-      );
+      // Save to history (fire and forget, non-blocking)
+      try {
+        void saveScanResultToHistory({
+          userId: null, // until auth wired
+          imagesCount: images.length,
+          primaryStrainName: scanResult.result.nameFirstDisplay?.primaryStrainName ?? scanResult.result.name ?? "Unknown",
+          confidencePercent: scanResult.result.nameFirstDisplay?.confidencePercent ?? scanResult.result.confidence ?? null,
+          status: scanResult.status,
+          scanId: null, // ScanMeta doesn't have scanId field
+          raw: { scanResult }, // optional
+        });
+      } catch (e) {
+        // swallow - never block scan rendering
+      }
       
       // Phase 4.0.2 — Check for diversity warning (images are similar)
       // Compute diversity from image files to detect similarity
