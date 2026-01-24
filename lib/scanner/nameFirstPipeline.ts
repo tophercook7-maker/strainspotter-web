@@ -1,3 +1,4 @@
+// 🔒 SCANNER CORE — DO NOT MODIFY WITHOUT ARCH REVIEW
 // lib/scanner/nameFirstPipeline.ts
 // Phase 4.3 Step 4.3.1 — Name-First Pipeline
 // Phase 5.3 — Name-First Matching & Strain Disambiguation (Enhanced)

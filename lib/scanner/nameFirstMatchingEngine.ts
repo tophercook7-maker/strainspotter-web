@@ -1,3 +1,4 @@
+// 🔒 SCANNER CORE — DO NOT MODIFY WITHOUT ARCH REVIEW
 // Phase B.1 — NAME-FIRST MATCHING ENGINE
 // lib/scanner/nameFirstMatchingEngine.ts
 

@@ -1,3 +1,4 @@
+// 🔒 SCANNER CORE — DO NOT MODIFY WITHOUT ARCH REVIEW
 // lib/scanner/ratioEngine.ts
 // Phase 4.6 — Indica / Sativa / Hybrid Ratio Engine
 // Phase 4.8 — Enhanced Multi-Source Weighted Ratio Engine

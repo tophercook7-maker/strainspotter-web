@@ -1,3 +1,4 @@
+// 🔒 SCANNER CORE — DO NOT MODIFY WITHOUT ARCH REVIEW
 // lib/scanner/runMultiScan.ts
 
 // Phase 4.2.1 — ALWAYS GUESS MODE

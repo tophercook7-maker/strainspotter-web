@@ -1,3 +1,4 @@
+// 🔒 SCANNER CORE — DO NOT MODIFY WITHOUT ARCH REVIEW
 // lib/scanner/normalizeScanResult.ts
 import type { ScanResult } from "./types";
 

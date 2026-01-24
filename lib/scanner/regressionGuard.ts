@@ -1,3 +1,4 @@
+// 🔒 SCANNER CORE — DO NOT MODIFY WITHOUT ARCH REVIEW
 import type { ScannerViewModel } from "./viewModel";
 
 export function validateScannerResult(result: ScannerViewModel, context: string): void {
