@@ -1086,11 +1086,12 @@ export default function WikiStyleResultPanel({
               <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-3">
                 <h3 className="text-base font-semibold text-white/95 tracking-tight mb-3">Notes & Uncertainty</h3>
                 
+                {/* STEP 5.4.5 — No tiny gray text for important info */}
                 {/* Phase 4.0.4 — transparent explanation (no scary errors) */}
                 {(result.diversityNote || (viewModel.notes && viewModel.notes.some(n => 
                   n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
                 ))) && (
-                  <div className="text-xs text-white/70">
+                  <div className="text-sm text-white/80">
                     {result.diversityNote || viewModel.notes?.find(n => 
                       n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
                     )}
@@ -1099,7 +1100,7 @@ export default function WikiStyleResultPanel({
                 
                 {/* Phase 4.0.6 — non-blocking scan warning display */}
                 {result.scanWarning && (
-                  <div className="text-xs text-yellow-300">
+                  <div className="text-sm text-yellow-200">
                     {result.scanWarning}
                   </div>
                 )}
@@ -1113,11 +1114,12 @@ export default function WikiStyleResultPanel({
                   </div>
                 )}
 
+                {/* STEP 5.4.5 — No tiny gray text for important info */}
                 {/* Phase 4.2.6 — render guidance hints (collapsed, subtle) */}
                 {result.meta?.guidanceHints?.length ? (
-                  <div className="text-xs text-white/60">
-                    <div className="font-semibold mb-1.5">Improve Scan Accuracy</div>
-                    <ul className="list-disc list-inside space-y-1">
+                  <div className="text-sm text-white/75">
+                    <div className="font-semibold mb-2">Improve Scan Accuracy</div>
+                    <ul className="list-disc list-inside space-y-1.5">
                       {result.meta.guidanceHints.includes("TRY_DIFFERENT_ANGLE") && (
                         <li>Try a different angle (side vs top view)</li>
                       )}
