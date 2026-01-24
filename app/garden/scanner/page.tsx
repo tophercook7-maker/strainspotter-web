@@ -235,12 +235,7 @@ export default function ScannerPage() {
       try {
         void saveScanResultToHistory({
           userId: null, // until auth wired
-          imagesCount: images.length,
-          primaryStrainName: scanResult.result.nameFirstDisplay?.primaryStrainName ?? scanResult.result.name ?? "Unknown",
-          confidencePercent: scanResult.result.nameFirstDisplay?.confidencePercent ?? scanResult.result.confidence ?? null,
-          status: scanResult.status,
-          scanId: null, // ScanMeta doesn't have scanId field
-          raw: { scanResult }, // optional
+          scanResult: scanResult,
         });
       } catch (e) {
         // swallow - never block scan rendering
