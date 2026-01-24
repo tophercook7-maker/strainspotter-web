@@ -1567,9 +1567,10 @@ export default function WikiStyleResultPanel({
 
       {/* Phase 3.8 Part E — Why This Match (Expandable) */}
         {viewModel.nameReasoning && viewModel.nameReasoning.bullets.length > 0 && (
+          {/* STEP 5.4.6 — Deep explanations collapsed by default */}
           <CollapsibleSection
             title="Why This Name?"
-            defaultExpanded={true}
+            defaultExpanded={false}
             icon="💡"
           >
             <ul className="space-y-2">
@@ -2163,6 +2164,7 @@ export default function WikiStyleResultPanel({
       {(viewModel.relatedStrains && viewModel.relatedStrains.length > 0) || 
        (extendedProfile?.knownVariations && extendedProfile.knownVariations.length > 0) ? (
         <CollapsibleSection
+          {/* STEP 5.4.6 — Clone detection collapsed by default */}
           title="Variants & Close Relatives"
           defaultExpanded={false}
           icon="🌳"
@@ -2486,6 +2488,7 @@ export default function WikiStyleResultPanel({
         // Pro tier: Show pro enhancements (soft card boundaries)
         return (
           <div className="space-y-6 pt-8 mt-8">
+            {/* STEP 5.4.6 — Deep explanations collapsed by default */}
             {/* Phase 5.3.7.1 — Detailed Why-This-Name-Won Breakdown */}
             {proEnhancements.detailedWhyThisNameWon && proEnhancements.detailedWhyThisNameWon.length > 0 && (
               <CollapsibleSection
@@ -2516,6 +2519,7 @@ export default function WikiStyleResultPanel({
               </CollapsibleSection>
             )}
             
+            {/* STEP 5.4.6 — Per-image findings collapsed by default */}
             {/* Phase 5.3.7.3 — Per-Image Analysis */}
             {proEnhancements.perImageAnalysis && proEnhancements.perImageAnalysis.length > 0 && (
               <CollapsibleSection
