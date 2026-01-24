@@ -810,8 +810,8 @@ export default function WikiStyleResultPanel({
                   
                   {/* Authority Indicators */}
                   <div className="rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
-                    <p className="text-xs text-white/60 leading-relaxed">
-                      <span className="font-semibold text-white/70">Analysis powered by:</span>{" "}
+                    <p className="text-sm text-white/75 leading-relaxed">
+                      <span className="font-semibold text-white/85">Analysis powered by:</span>{" "}
                       {trustExplanation.authorityIndicators.databaseSize} • {trustExplanation.authorityIndicators.analysisDepth}
                     </p>
                   </div>
@@ -995,7 +995,7 @@ export default function WikiStyleResultPanel({
                   
                   {/* Phase 4.1 — Learning expectation note (subtle) */}
                   {/* Phase 4.4.2 — Remove full-width divider, use spacing instead */}
-                  <p className="text-xs text-white/50 italic mt-4">
+                  <p className="text-sm text-white/70 mt-4">
                     If this is the same plant, future scans will become more accurate.
                   </p>
                 </div>
@@ -1208,8 +1208,8 @@ export default function WikiStyleResultPanel({
                 {/* Mental Stimulation */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-medium text-white/80">Mental Stimulation</span>
-                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.mentalStimulation}%</span>
+                    <span className="text-sm font-medium text-white/85">Mental Stimulation</span>
+                    <span className="text-sm text-white/70">{viewModel.terpeneExperience.experience.mentalStimulation}%</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                     <div
@@ -1236,8 +1236,8 @@ export default function WikiStyleResultPanel({
                 {/* Sedation */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-medium text-white/80">Sedation</span>
-                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.sedation}%</span>
+                    <span className="text-sm font-medium text-white/85">Sedation</span>
+                    <span className="text-sm text-white/70">{viewModel.terpeneExperience.experience.sedation}%</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                     <div
@@ -1264,8 +1264,8 @@ export default function WikiStyleResultPanel({
                 {/* Appetite Stimulation */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-medium text-white/80">Appetite Stimulation</span>
-                    <span className="text-xs text-white/60">{viewModel.terpeneExperience.experience.appetiteStimulation}%</span>
+                    <span className="text-sm font-medium text-white/85">Appetite Stimulation</span>
+                    <span className="text-sm text-white/70">{viewModel.terpeneExperience.experience.appetiteStimulation}%</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
                     <div
