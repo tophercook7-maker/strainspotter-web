@@ -813,9 +813,20 @@ export default function ScannerPage() {
             </div>
           )}
           
+          {/* STEP 5.5.6 — FAIL-SAFE UX: Always show results, never empty screen */}
           {result && <ResultPanel result={result} />}
-          {analysis && <WikiReportPanel analysis={analysis.analysis} />}
+          {analysis && <WikiReportPanel analysis={analysis.analysis} result={result} imageCount={images.length} />}
           {analysis && <WikiStyleResultPanel result={analysis} />}
+          
+          {/* STEP 5.5.6 — FAIL-SAFE UX: Show fallback if no results at all */}
+          {!result && !analysis && scanError && (
+            <div className="mt-8 rounded-lg border border-white/10 bg-white/5 p-6 text-center">
+              <h2 className="text-xl font-semibold text-white/90 mb-2">Closest Known Cultivar</h2>
+              <p className="text-sm text-white/70 leading-relaxed">
+                Unable to identify this cultivar with high confidence. Try adding photos from different angles or improving lighting.
+              </p>
+            </div>
+          )}
         </section>
         </div>
       </main>

@@ -85,11 +85,33 @@ export default function WikiStyleResultPanel({
           {/* Nothing else above the fold */}
           <div className="mb-6">
             {/* 1. Strain Name — Largest text */}
+            {/* STEP 5.5.6 — FAIL-SAFE UX: Always show best name, never empty */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-4">
-              {viewModel.nameFirstDisplay.primaryStrainName === "Closest Known Cultivar"
-                ? "Unidentified Hybrid Phenotype"
-                : viewModel.nameFirstDisplay.primaryStrainName}
+              {(() => {
+                const rawName = viewModel.nameFirstDisplay?.primaryStrainName;
+                // Fail-safe: Always return a valid name
+                if (!rawName || rawName.trim() === "" || rawName === "Closest Known Cultivar") {
+                  return "Closest Known Cultivar";
+                }
+                return rawName;
+              })()}
             </h1>
+            
+            {/* STEP 5.5.6 — FAIL-SAFE UX: Low confidence match label */}
+            {(() => {
+              const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+              const confidence = Math.min(95, rawConfidence);
+              const isLowConfidence = confidence < 60;
+              
+              if (isLowConfidence) {
+                return (
+                  <div className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/20 border border-yellow-500/30">
+                    <span className="text-sm font-medium text-yellow-200">Low confidence match</span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
             
             {/* 2. Confidence Tier + 3. Confidence % — Badge-style with percentage */}
             {(() => {
@@ -1726,26 +1748,37 @@ export default function WikiStyleResultPanel({
           )}
 
           {/* Parent Strains & Family Tree */}
-          {(extendedProfile?.genetics.lineage ||
-            viewModel.genetics?.lineage ||
-            viewModel.familyTree) && (
-            <div>
-              <h4 className="text-base font-semibold text-white/90 mb-2">
-                Parent Strains & Family Tree
-              </h4>
-              <p className="text-white/80 leading-relaxed mb-2">
-                {viewModel.familyTree ||
-                  extendedProfile?.genetics.lineage ||
-                  viewModel.genetics?.lineage ||
-                  "Lineage information not available."}
-              </p>
-              {(extendedProfile?.genetics.lineage || viewModel.genetics?.lineage) && (
-                <p className="text-white/80 leading-relaxed text-sm">
-                  This genetic combination contributes to the distinctive traits observed in this cultivar. The parent strains influence the plant's morphology, effects, and cultivation characteristics.
+          {/* STEP 5.5.6 — FAIL-SAFE UX: Always show lineage section, with fallback if no data */}
+          <div>
+            <h4 className="text-base font-semibold text-white/90 mb-2">
+              Parent Strains & Family Tree
+            </h4>
+            {(() => {
+              const lineage = viewModel.familyTree ||
+                extendedProfile?.genetics.lineage ||
+                viewModel.genetics?.lineage;
+              
+              if (lineage) {
+                return (
+                  <>
+                    <p className="text-white/80 leading-relaxed mb-2">
+                      {lineage}
+                    </p>
+                    <p className="text-white/80 leading-relaxed text-sm">
+                      This genetic combination contributes to the distinctive traits observed in this cultivar. The parent strains influence the plant's morphology, effects, and cultivation characteristics.
+                    </p>
+                  </>
+                );
+              }
+              
+              // STEP 5.5.6 — Fallback: Show helpful message instead of empty section
+              return (
+                <p className="text-white/70 leading-relaxed text-sm italic">
+                  Genetic lineage information is not available for this cultivar in the reference database.
                 </p>
-              )}
-            </div>
-          )}
+              );
+            })()}
+          </div>
 
           {/* Phenotype Expression */}
           <div>
