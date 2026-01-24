@@ -2161,10 +2161,10 @@ export default function WikiStyleResultPanel({
       </CollapsibleSection>
       
       {/* Phase 3.9 Part G — VARIANTS & CLOSE RELATIVES */}
+      {/* STEP 5.4.6 — Clone detection collapsed by default */}
       {(viewModel.relatedStrains && viewModel.relatedStrains.length > 0) || 
        (extendedProfile?.knownVariations && extendedProfile.knownVariations.length > 0) ? (
         <CollapsibleSection
-          {/* STEP 5.4.6 — Clone detection collapsed by default */}
           title="Variants & Close Relatives"
           defaultExpanded={false}
           icon="🌳"
