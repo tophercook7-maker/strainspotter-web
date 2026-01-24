@@ -4,6 +4,7 @@
 "use client";
 
 import type { FullScanResult } from "@/lib/scanner/types";
+import type { FeatureFlag } from "@/lib/flags";
 import CollapsibleSection from "./CollapsibleSection";
 import { generateWhyThisMatchReasons } from "@/lib/scanner/whyThisMatchEngine";
 import { generateConfidenceExplanationV514 } from "@/lib/scanner/confidenceExplanation";
@@ -11,8 +12,10 @@ import { generateConfidenceExplanation } from "@/lib/scanner/confidenceExplanati
 
 export default function WikiStyleResultPanel({
   result,
+  flags,
 }: {
   result: FullScanResult;
+  flags?: Record<FeatureFlag, boolean>;
 }) {
   // Extract ViewModel from FullScanResult (architecture: analysis layer separate from ViewModel)
   const viewModel = result.result;

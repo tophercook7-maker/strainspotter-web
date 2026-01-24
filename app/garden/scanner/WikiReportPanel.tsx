@@ -18,6 +18,8 @@ interface FullScanResult {
   };
 }
 
+import type { FeatureFlag } from "@/lib/flags";
+
 interface WikiReportPanelProps {
   analysis: {
     dominance?: {
@@ -30,6 +32,7 @@ interface WikiReportPanelProps {
   result?: ScannerViewModel; // Optional for backward compat
   imageCount?: number; // Optional for backward compat
   children?: React.ReactNode;
+  flags?: Record<FeatureFlag, boolean>;
 }
 
 /**

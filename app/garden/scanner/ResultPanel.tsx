@@ -2,8 +2,9 @@
 // PART B — Full report display (NO TRUNCATION)
 
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
+import type { FeatureFlag } from "@/lib/flags";
 
-export default function ResultPanel({ result }: { result: ScannerViewModel }) {
+export default function ResultPanel({ result, flags }: { result: ScannerViewModel; flags?: Record<FeatureFlag, boolean> }) {
   // UI CONTRACT ENFORCEMENT — Only read from nameFirstDisplay and optional sections
   // Never assume: dominance, terpeneExperience, extendedProfile
   const ratio = result.ratio ?? null; // Optional section
@@ -151,7 +152,8 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
       {/* Phase 4.4 — 2. Indica / Sativa / Hybrid ratio (REQUIRED) */}
       {/* Phase 4.7.4 — UI Presentation (Trust-First) */}
       {/* Phase 4.7.5 — Failure Safety */}
-      {result.ratio && (
+      {/* FEATURE FLAG: Paid Tier Only */}
+      {flags?.paid_tier && result.ratio && (
         <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
           {/* Phase 4.7.4 — Trust-First Presentation: Visualization first, not raw numbers */}
           {/* Phase 4.7.5 — Failure Safety: Check confidence threshold */}
@@ -289,7 +291,8 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
       )}
 
       {/* Phase 4.2 — 4. Handle similar strains gracefully (collapsible, if present) */}
-      {result.nameDisambiguationV407 && result.nameDisambiguationV407.alternates.length > 0 && (
+      {/* FEATURE FLAG: Paid Tier Only */}
+      {flags?.paid_tier && result.nameDisambiguationV407 && result.nameDisambiguationV407.alternates.length > 0 && (
         <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
           {/* Phase 4.7 — 4. Section separators: section cards */}
           <details className="cursor-pointer">
@@ -397,7 +400,8 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
       )}
 
       {/* Phase 4.3.3 — render visual anchors */}
-      {result.visualAnchors?.length ? (
+      {/* FEATURE FLAG: Paid Tier Only */}
+      {flags?.paid_tier && result.visualAnchors?.length ? (
         <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-base md:text-lg font-semibold mb-3">
@@ -544,7 +548,8 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
       )}
 
       {/* Phase 4.7.0 — render disambiguation UI */}
-      {result.nameDisambiguation && (
+      {/* FEATURE FLAG: Paid Tier Only */}
+      {flags?.paid_tier && result.nameDisambiguation && (
         <div className="mt-10 max-w-md">
           <h3 className="text-xl font-bold mb-2">Why this strain?</h3>
 

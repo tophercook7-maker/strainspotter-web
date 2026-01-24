@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
+import { saveScanResultToHistory } from "@/lib/supabase/scanHistory";
+import { getUserTierFlags } from "@/lib/flags";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
 import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
@@ -36,6 +38,7 @@ export default function ScannerPage() {
   const [imagePreviews, setImagePreviews] = useState<Array<{ url: string; base64: string; angleLabel: string }>>([]); // Phase 4.0.2 — Previews with base64 and angles
   const [duplicateWarning, setDuplicateWarning] = useState(false); // Phase 4.0.3 — Track if duplicates were removed
   const [isDragging, setIsDragging] = useState(false); // Phase 5.2.4 — Drag and drop state
+  const [flags, setFlags] = useState(getUserTierFlags()); // Feature flags
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
 
   // NEVER clear result on re-render
@@ -221,6 +224,12 @@ export default function ScannerPage() {
       
       // Phase 4.0.5 — Set diversity hint from scan result
       setDiversityHint(scanResult.diversityNote || null);
+
+      // Save to history (fire and forget)
+      // TODO: Pass real userId when auth is connected
+      saveScanResultToHistory(orchestrated, undefined).catch(err => 
+        console.error("Failed to save scan history:", err)
+      );
       
       // Phase 4.0.2 — Check for diversity warning (images are similar)
       // Compute diversity from image files to detect similarity
@@ -805,9 +814,9 @@ export default function ScannerPage() {
           )}
           
           {/* STEP 5.5.6 — FAIL-SAFE UX: Always show results, never empty screen */}
-          {result && <ResultPanel result={result} />}
-          {analysis && <WikiReportPanel analysis={analysis.analysis} result={result} imageCount={images.length} />}
-          {analysis && <WikiStyleResultPanel result={analysis} />}
+          {result && <ResultPanel result={result} flags={flags} />}
+          {analysis && <WikiReportPanel analysis={analysis.analysis} result={result} imageCount={images.length} flags={flags} />}
+          {analysis && <WikiStyleResultPanel result={analysis} flags={flags} />}
           
           {/* STEP 5.5.6 — FAIL-SAFE UX: Show fallback if no results at all */}
           {!result && !analysis && scanError && (
