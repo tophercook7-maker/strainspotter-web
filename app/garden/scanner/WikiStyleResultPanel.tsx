@@ -97,6 +97,22 @@ export default function WikiStyleResultPanel({
               })()}
             </h1>
             
+            {/* PHASE 4.2 — Why this match? (directly under strain name) */}
+            {viewModel.nameFirstDisplay.explanation?.whyThisNameWon && 
+             viewModel.nameFirstDisplay.explanation.whyThisNameWon.length > 0 && (
+              <div className="mb-4 mt-2">
+                <h2 className="text-base font-semibold text-white/90 mb-2.5">Why this match?</h2>
+                <ul className="space-y-1.5">
+                  {viewModel.nameFirstDisplay.explanation.whyThisNameWon.slice(0, 4).map((reason, idx) => (
+                    <li key={idx} className="text-sm text-white/75 leading-relaxed flex items-start">
+                      <span className="text-blue-400 mr-2 mt-0.5">•</span>
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
             {/* STEP 5.5.6 — FAIL-SAFE UX: Low confidence match label */}
             {(() => {
               const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
@@ -202,7 +218,7 @@ export default function WikiStyleResultPanel({
                         {strainConf}%
                       </span>
                     </div>
-                    {/* 4. Short one-line summary */}
+                    {/* PHASE 4.2 — One-line confidence explanation */}
                     <p className="text-sm text-white/70 leading-relaxed">
                       {familyConfidenceCopy}
                     </p>
@@ -230,7 +246,28 @@ export default function WikiStyleResultPanel({
                 hasMultiImageAgreement,
               });
               
-              // STEP 5.4.2 — HERO ORDER: Confidence tier (badge) + % (small, secondary) + summary
+              // STEP 5.4.2 — HERO ORDER: Confidence tier (badge) + % (small, secondary) + one-line explanation
+              // PHASE 4.2 — One-line confidence explanation under badge
+              const scanStatus = (result as any)?.status || "success";
+              const hasLimitedDiversity = viewModel.notes?.some(n => 
+                n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity")
+              ) || false;
+              
+              let confidenceExplanation = "";
+              if (confidenceTier === "very_high") {
+                confidenceExplanation = "High confidence based on visual traits and name agreement";
+              } else if (confidenceTier === "high") {
+                confidenceExplanation = "High confidence based on visual traits and name agreement";
+              } else if (confidenceTier === "medium") {
+                confidenceExplanation = hasLimitedDiversity 
+                  ? "Moderate confidence due to limited image diversity"
+                  : "Moderate confidence based on visual analysis";
+              } else {
+                confidenceExplanation = scanStatus === "partial"
+                  ? "Moderate confidence due to limited image diversity"
+                  : "Moderate confidence based on available visual data";
+              }
+              
               return (
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-3">
@@ -243,9 +280,9 @@ export default function WikiStyleResultPanel({
                       {clampedConfidence}%
                     </span>
                   </div>
-                  {/* STEP 5.4.5 — Summary text: larger than body */}
-                  <p className="text-base text-white/80 leading-relaxed">
-                    {confidenceCopy}
+                  {/* PHASE 4.2 — One-line confidence explanation */}
+                  <p className="text-sm text-white/70 leading-relaxed">
+                    {confidenceExplanation}
                   </p>
                 </div>
               );
@@ -294,7 +331,7 @@ export default function WikiStyleResultPanel({
               }
               
               return (
-                <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="mt-4 pt-4">
                   <h3 className="text-sm font-semibold text-white/90 mb-2">Why this confidence level?</h3>
                   <ul className="space-y-1.5">
                     {bullets.slice(0, 3).map((bullet, idx) => (
