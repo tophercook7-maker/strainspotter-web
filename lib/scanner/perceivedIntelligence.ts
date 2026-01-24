@@ -22,8 +22,8 @@ export function generateIntelligentTagline(args: {
 }): string {
   const { confidencePercent, imageCount, hasDatabaseMatch, hasMultiImageAgreement, matchType } = args;
 
-  // Very High Confidence (85+)
-  if (confidencePercent >= 85) {
+  // Very High Confidence (90+)
+  if (confidencePercent >= 90) {
     if (hasDatabaseMatch && matchType === "exact") {
       return "Exact database match with strong visual confirmation";
     }
@@ -36,8 +36,8 @@ export function generateIntelligentTagline(args: {
     return "High-confidence identification based on visual and genetic alignment";
   }
 
-  // High Confidence (70-84)
-  if (confidencePercent >= 70) {
+  // High Confidence (80-89)
+  if (confidencePercent >= 80) {
     if (hasDatabaseMatch) {
       return "Database match supported by observed morphological traits";
     }
@@ -47,8 +47,8 @@ export function generateIntelligentTagline(args: {
     return "Most likely cultivar based on visual structure and known genetics";
   }
 
-  // Medium Confidence (60-69)
-  if (confidencePercent >= 60) {
+  // Medium Confidence (65-79)
+  if (confidencePercent >= 65) {
     if (hasDatabaseMatch) {
       return "Closest database match with moderate visual alignment";
     }
@@ -58,7 +58,7 @@ export function generateIntelligentTagline(args: {
     return "Closest match based on available visual and genetic data";
   }
 
-  // Low Confidence (<60)
+  // Low Confidence (<65)
   if (hasDatabaseMatch) {
     return "Closest database match — visual traits show some variation";
   }

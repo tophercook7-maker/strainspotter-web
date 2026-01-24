@@ -509,8 +509,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           primaryName: fallbackName,
           confidencePercent: fallbackConfidence,
           confidence: fallbackConfidence,
-          confidenceTier: fallbackConfidence >= 85 ? "very_high" as const
-            : fallbackConfidence >= 75 ? "high" as const
+          confidenceTier: fallbackConfidence >= 90 ? "very_high" as const
+            : fallbackConfidence >= 80 ? "high" as const
             : fallbackConfidence >= 65 ? "medium" as const
             : "low" as const,
           tagline: "Closest known match based on visual analysis",
@@ -1176,8 +1176,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       primaryName: fallbackName,
       confidencePercent: fallbackConfidence,
       confidence: fallbackConfidence,
-      confidenceTier: fallbackConfidence >= 85 ? "very_high" as const
-        : fallbackConfidence >= 75 ? "high" as const
+      confidenceTier: fallbackConfidence >= 90 ? "very_high" as const
+        : fallbackConfidence >= 80 ? "high" as const
         : fallbackConfidence >= 65 ? "medium" as const
         : "low" as const,
       tagline: "Closest known match based on visual analysis",
@@ -2401,8 +2401,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
                   primaryName: nameResult.name, // Required field
                   confidencePercent: nameResult.confidence,
                   confidence: nameResult.confidence, // Phase 4.1 — Guaranteed field
-                  confidenceTier: nameResult.confidence >= 85 ? "very_high" as const
-                    : nameResult.confidence >= 75 ? "high" as const
+                  confidenceTier: nameResult.confidence >= 90 ? "very_high" as const
+                    : nameResult.confidence >= 80 ? "high" as const
                     : nameResult.confidence >= 65 ? "medium" as const
                     : "low" as const,
                   alsoKnownAs,
@@ -2530,8 +2530,8 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         primaryName: fallbackNameResult.name,
         confidencePercent: fallbackNameResult.confidence,
         confidence: fallbackNameResult.confidence,
-        confidenceTier: fallbackNameResult.confidence >= 85 ? "very_high" as const
-          : fallbackNameResult.confidence >= 75 ? "high" as const
+        confidenceTier: fallbackNameResult.confidence >= 90 ? "very_high" as const
+          : fallbackNameResult.confidence >= 80 ? "high" as const
           : fallbackNameResult.confidence >= 65 ? "medium" as const
           : "low" as const,
         tagline: "Closest known match based on visual analysis",
@@ -3932,11 +3932,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   
   // PRIMARY STRAIN SELECTION LOGIC
   // Select primaryStrainName ONLY from top-5 name-first results (Phase B.1)
-  // If top score < 60: primaryStrainName = "Closest Known Cultivar"
-  // Never leave primaryStrainName empty
-  // Never throw
+  // PHASE 4.3 — FORCE NAME RETURN (NO UNKNOWN)
   
-  let finalPrimaryName = "Closest Known Cultivar"; // Fallback
+  let finalPrimaryName = ""; 
   let finalNameConfidence = 70; // Default
   let finalNameReasons: string[] = ["Name selected based on available analysis"];
   let finalNameIsLocked = false;
@@ -3944,9 +3942,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // RULE: Select primaryStrainName ONLY from Phase B.1 top-5 results
   if (phaseB1Result) {
     // Phase B.1 result is the ONLY source for primary strain name
-    finalPrimaryName = phaseB1Result.primaryStrainName;
-    finalNameConfidence = phaseB1Result.confidence;
-    finalNameReasons = phaseB1Result.explanation;
+    
+    // FORCE NAME RETURN: Use top candidate if available
+    if (phaseB1Result.candidates && phaseB1Result.candidates.length > 0) {
+      const topCandidate = phaseB1Result.candidates[0];
+      finalPrimaryName = topCandidate.strainName;
+      // Clamp confidence: 55-88% for forced matches
+      finalNameConfidence = Math.max(55, Math.min(88, topCandidate.score));
+      finalNameReasons = phaseB1Result.explanation;
+    } else {
+      finalPrimaryName = phaseB1Result.primaryStrainName;
+      finalNameConfidence = phaseB1Result.confidence;
+      finalNameReasons = phaseB1Result.explanation;
+    }
     
     // Phase 4.9.5 — Use confidence ceiling from visual integration if available
     // Phase 4.9.7 — SAFETY: Apply visual contradiction penalty if detected
@@ -3983,20 +3991,19 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     }
     
     finalNameIsLocked = finalNameConfidence >= 85;
-    
-    // Safety: Never leave primaryStrainName empty
-    if (!finalPrimaryName || finalPrimaryName.trim().length < 3) {
-      console.warn("PRIMARY STRAIN SELECTION: Phase B.1 returned empty name, using fallback");
-      finalPrimaryName = "Closest Known Cultivar";
-      finalNameConfidence = 70;
-      finalNameReasons = ["Fallback selection due to empty name from Phase B.1"];
-    }
   } else {
-    // Phase B.1 didn't run or returned null - use fallback
-    console.warn("PRIMARY STRAIN SELECTION: Phase B.1 result not available, using fallback");
-    finalPrimaryName = "Closest Known Cultivar";
-    finalNameConfidence = 70;
-    finalNameReasons = ["Phase B.1 matching not available — using fallback"];
+    // Phase B.1 didn't run or returned null - try to find ANY candidate
+    console.warn("PRIMARY STRAIN SELECTION: Phase B.1 result not available, attempting fallback");
+    
+    if (candidateNames.length > 0) {
+      finalPrimaryName = candidateNames[0];
+      finalNameConfidence = 55;
+      finalNameReasons = ["Selected from available candidates"];
+    } else {
+      finalPrimaryName = "Closest Known Cultivar";
+      finalNameConfidence = 55;
+      finalNameReasons = ["No candidates available"];
+    }
   }
   
   // Phase B.2 — CONFIDENCE CALIBRATION
@@ -4004,7 +4011,6 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // - Single image max confidence ≤ 85%
   // - Multiple images raise confidence gradually
   // - Never output 100%
-  // - If name confidence < 60%, label as "Closest Known Cultivar"
   let phaseB2ConfidenceResult: ReturnType<typeof calibrateConfidenceB2> | null = null;
   try {
     // Phase B.2 — Derive image agreement score (0-1) and agreeing image count
@@ -4051,17 +4057,14 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
     // Apply Phase B.2 calibrated confidence
     finalNameConfidence = phaseB2ConfidenceResult.confidence;
     
-    // RULE: If name confidence < 60%, label as "Closest Known Cultivar"
-    if (phaseB2ConfidenceResult.shouldUseFallbackName) {
-      finalPrimaryName = "Closest Known Cultivar";
-      finalNameReasons = phaseB2ConfidenceResult.explanation;
-    } else {
-      // Add confidence explanation to reasons
-      finalNameReasons = [
-        ...finalNameReasons,
-        ...phaseB2ConfidenceResult.explanation,
-      ];
-    }
+    // REMOVED: Condition that blocks naming due to low confidence
+    // We now ALWAYS return the name, but keep the explanation
+    
+    // Add confidence explanation to reasons
+    finalNameReasons = [
+      ...finalNameReasons,
+      ...phaseB2ConfidenceResult.explanation,
+    ];
     
     console.log("Phase B.2 — CONFIDENCE CALIBRATED:", {
       confidence: phaseB2ConfidenceResult.confidence,
@@ -4091,18 +4094,34 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
   
   
-  // Phase 4.8.6 — FAILURE SAFETY: Final validation
-  // If name unclear: Use "Closest Known Cultivar"
-  // Still show family + ratio (calculated independently)
-  // Never show empty name
+  // PHASE 4.3 — HARD STOP FAILSAFE
+  // FINAL CHECK: IF (primaryStrainName === "Unknown" OR empty):
+  // primaryStrainName = topDatabaseMatch.name
+  // confidence = 55
   if (!finalPrimaryName || 
       finalPrimaryName.trim().length < 3 || 
+      finalPrimaryName === "Closest Known Cultivar" ||
       finalPrimaryName.toLowerCase() === "unknown" ||
       finalPrimaryName.toLowerCase() === "unidentified") {
-    console.warn("Phase 4.8.6 — PRIMARY STRAIN SELECTION: Final check — name was unclear, forcing fallback");
-    finalPrimaryName = "Closest Known Cultivar";
-    finalNameConfidence = 70;
-    finalNameReasons = ["Fallback selection due to unclear name — family and ratio information still available"];
+    
+    console.warn("Phase 4.3 — HARD STOP FAILSAFE: Name was invalid, forcing database match");
+    
+    // Force top database match if available
+    if (databaseCandidates && databaseCandidates.length > 0) {
+      finalPrimaryName = databaseCandidates[0].name;
+      finalNameConfidence = 55;
+      finalNameReasons = ["Match based on database similarity"];
+    } else if (candidateNames && candidateNames.length > 0) {
+      finalPrimaryName = candidateNames[0];
+      finalNameConfidence = 55;
+      finalNameReasons = ["Match based on available candidates"];
+    } else {
+      // Absolute last resort
+      finalPrimaryName = "Closest Known Cultivar";
+      finalNameConfidence = 55;
+      finalNameReasons = ["No identification possible"];
+    }
+    
     finalNameIsLocked = false;
   }
   

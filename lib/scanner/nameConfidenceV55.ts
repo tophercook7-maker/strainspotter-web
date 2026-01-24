@@ -106,13 +106,14 @@ export function resolveNameConfidenceV55(args: {
       
       // Calculate confidence components
       
-      // 1) Database exact match / alias match (40%)
+      // 1) Database exact match / alias match (55%)
+      // Phase 4.3 — Increased weight for database/alias matches
       let databaseMatch = 0.0;
       if (dbEntry) {
         if (dbEntry.name.toLowerCase() === name.toLowerCase()) {
           databaseMatch = 1.0; // Exact match
         } else {
-          databaseMatch = 0.9; // Alias match
+          databaseMatch = 0.95; // Alias match (boosted from 0.9)
         }
       } else {
         databaseMatch = 0.0; // No database match
@@ -122,8 +123,9 @@ export function resolveNameConfidenceV55(args: {
       const frequency = nameFrequency.get(name) || 0;
       const multiImageConsensus = Math.min(1.0, frequency / Math.max(1, imageCount));
       
-      // 3) Visual phenotype alignment (20%)
-      let visualPhenotypeAlignment = 0.5; // Default neutral
+      // 3) Visual phenotype alignment (10%)
+      // Phase 4.3 — Reduced weight to prevent visual veto (adjustment only)
+      let visualPhenotypeAlignment = 0.6; // Default slightly positive (was 0.5)
       if (fusedFeatures && dbEntry) {
         // Check if visual traits align with database entry
         // This is a simplified check - in practice, you'd compare more traits
@@ -147,7 +149,8 @@ export function resolveNameConfidenceV55(args: {
         visualPhenotypeAlignment = Math.min(1.0, visualPhenotypeAlignment);
       }
       
-      // 4) Terpene + effect alignment (15%)
+      // 4) Terpene + effect alignment (10%)
+      // Phase 4.3 — Reduced weight
       let terpeneEffectAlignment = 0.5; // Default neutral
       if (dbEntry && (terpeneProfile || effectProfile)) {
         // Simplified alignment check
@@ -163,7 +166,7 @@ export function resolveNameConfidenceV55(args: {
             )
           );
           if (terpeneMatches.length > 0) {
-            terpeneEffectAlignment += 0.15;
+            terpeneEffectAlignment += 0.25; // Boosted from 0.15 to maintain impact with lower weight
           }
         }
         
@@ -175,7 +178,7 @@ export function resolveNameConfidenceV55(args: {
             )
           );
           if (effectMatches.length > 0) {
-            terpeneEffectAlignment += 0.1;
+            terpeneEffectAlignment += 0.25; // Boosted from 0.1 to maintain impact with lower weight
           }
         }
         
@@ -183,11 +186,12 @@ export function resolveNameConfidenceV55(args: {
       }
       
       // Calculate weighted confidence
+      // Phase 4.3 — Name-First Weighting
       const weightedConfidence = 
-        (databaseMatch * 0.40 * 100) +
-        (multiImageConsensus * 0.25 * 100) +
-        (visualPhenotypeAlignment * 0.20 * 100) +
-        (terpeneEffectAlignment * 0.15 * 100);
+        (databaseMatch * 0.55 * 100) +           // Increased from 0.40
+        (multiImageConsensus * 0.25 * 100) +     // Kept at 0.25
+        (visualPhenotypeAlignment * 0.10 * 100) + // Decreased from 0.20
+        (terpeneEffectAlignment * 0.10 * 100);    // Decreased from 0.15
       
       // Calculate disambiguation factors
       let geneticLineageMatch = 0.5; // Default
@@ -312,22 +316,20 @@ export function resolveNameConfidenceV55(args: {
     // No action needed here as disambiguation selects the best candidate, not increases confidence
     
     // 4) Confidence bands (LOCKED)
-    // 90–99% → Very High
+    // 90–97% → Very High
     // 80–89% → High
-    // 70–79% → Medium
-    // 60–69% → Low (still valid)
+    // 65–79% → Medium
+    // 55–64% → Low (still valid)
     // Never show 100%
     let confidenceTier: "very_high" | "high" | "medium" | "low";
     if (finalConfidence >= 90) {
       confidenceTier = "very_high";
     } else if (finalConfidence >= 80) {
       confidenceTier = "high";
-    } else if (finalConfidence >= 70) {
+    } else if (finalConfidence >= 65) {
       confidenceTier = "medium";
-    } else if (finalConfidence >= 60) {
-      confidenceTier = "low";
     } else {
-      // Below 60% still valid, but tier as "low"
+      // Below 65% still valid, but tier as "low"
       confidenceTier = "low";
     }
     

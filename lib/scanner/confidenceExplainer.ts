@@ -33,9 +33,9 @@ export function buildConfidenceExplanation(input: {
   )
 
   let tier: ConfidenceExplanation["tier"] = "Medium"
-  if (score >= 93) tier = "Very High"
-  else if (score >= 85) tier = "High"
-  else if (score < 70) tier = "Low"
+  if (score >= 90) tier = "Very High"
+  else if (score >= 80) tier = "High"
+  else if (score < 65) tier = "Low"
 
   // Phase 4.1 — Use intelligent explanation generation
   const explanation = generateIntelligentExplanation({

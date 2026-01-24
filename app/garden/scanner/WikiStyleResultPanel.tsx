@@ -117,7 +117,8 @@ export default function WikiStyleResultPanel({
             {(() => {
               const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
               const confidence = Math.min(95, rawConfidence);
-              const isLowConfidence = confidence < 60;
+              // Phase 4.3 — Low (valid) starts at 55. Only warn if below 55.
+              const isLowConfidence = confidence < 55;
               
               if (isLowConfidence) {
                 return (
@@ -135,11 +136,11 @@ export default function WikiStyleResultPanel({
               const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
               const confidence = Math.min(95, rawConfidence);
               
-              // Phase 5.3.1 — CONFIDENCE BANDS (LOCK)
-              // 0–59% → Low Confidence
-              // 60–74% → Moderate Confidence
-              // 75–89% → High Confidence
-              // 90–99% → Very High Confidence
+              // Phase 4.3 — CONFIDENCE CALIBRATION (UPDATED TIERS)
+              // 55–64% → Low Confidence (valid)
+              // 65–79% → Moderate Confidence
+              // 80–89% → High Confidence
+              // 90–97% → Very High Confidence
               // Never show 100%. Never imply lab certainty.
               let confidenceTier: "very_high" | "high" | "medium" | "low";
               let confidenceLabel: string;
@@ -152,11 +153,11 @@ export default function WikiStyleResultPanel({
                 confidenceTier = "very_high";
                 confidenceLabel = "Very High";
                 confidenceColor = "bg-green-600";
-              } else if (clampedConfidence >= 75) {
+              } else if (clampedConfidence >= 80) {
                 confidenceTier = "high";
                 confidenceLabel = "High";
                 confidenceColor = "bg-green-600";
-              } else if (clampedConfidence >= 60) {
+              } else if (clampedConfidence >= 65) {
                 confidenceTier = "medium";
                 confidenceLabel = "Moderate";
                 confidenceColor = "bg-yellow-500";
@@ -173,9 +174,9 @@ export default function WikiStyleResultPanel({
                 const familyConf = Math.round(Math.min(99, familyFirst.familyConfidence)); // Never 100%
                 const strainConf = Math.round(Math.min(99, familyFirst.exactStrainConfidence)); // Never 100%
                 
-                // Phase 5.3.1 — New confidence bands
-                const familyTier = familyConf >= 90 ? "very_high" : familyConf >= 75 ? "high" : familyConf >= 60 ? "medium" : "low";
-                const strainTier = strainConf >= 90 ? "very_high" : strainConf >= 75 ? "high" : strainConf >= 60 ? "medium" : "low";
+                // Phase 4.3 — New confidence bands
+                const familyTier = familyConf >= 90 ? "very_high" : familyConf >= 80 ? "high" : familyConf >= 65 ? "medium" : "low";
+                const strainTier = strainConf >= 90 ? "very_high" : strainConf >= 80 ? "high" : strainConf >= 65 ? "medium" : "low";
                 
                 const familyLabel = familyTier === "very_high" ? "Very High" : familyTier === "high" ? "High" : familyTier === "medium" ? "Moderate" : "Low";
                 const strainLabel = strainTier === "very_high" ? "Very High" : strainTier === "high" ? "High" : strainTier === "medium" ? "Moderate" : "Low";

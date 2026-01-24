@@ -143,7 +143,7 @@ export function resolveFinalConfidenceV1(args: {
       tier = "Very High";
     } else if (finalConfidence >= 80) {
       tier = "High";
-    } else if (finalConfidence >= 70) {
+    } else if (finalConfidence >= 65) {
       tier = "Medium";
     } else {
       tier = "Low";

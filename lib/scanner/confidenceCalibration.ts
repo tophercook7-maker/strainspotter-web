@@ -93,7 +93,7 @@ export function calibrateConfidence(args: {
   finalConfidence = Math.max(55, finalConfidence);
   
   // Add note for user guidance if confidence is low
-  if (finalConfidence < 60) {
+  if (finalConfidence < 55) {
     if (!viewModel.notes) {
       viewModel.notes = [];
     }
