@@ -694,6 +694,13 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
             undefined, // terpeneProfile - will be provided in validation pass
             undefined  // strainRatio - will be provided in validation pass
           );
+
+          // TEMP DEBUG — Phase 4.2.1
+          console.log("NAME-FIRST CANDIDATES:", {
+            primary: nameFirstPipelineResult?.primaryStrainName,
+            alternates: nameFirstPipelineResult?.alternateMatches,
+            confidence: nameFirstPipelineResult?.nameConfidencePercent
+          });
           console.log("Phase 5.0.2 — STEP 4 COMPLETE: Multi-image consensus built");
           console.log("Phase 4.3 Step 4.3.1 — NAME-FIRST PIPELINE RESULT (initial):", nameFirstPipelineResult);
           
@@ -4094,6 +4101,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   }
   
   
+  // Phase 4.2.1 — Relax name suppression
+  if (!finalPrimaryName || finalPrimaryName === "Unknown") {
+    if (nameFirstPipelineResult?.primaryStrainName) {
+      finalPrimaryName = nameFirstPipelineResult.primaryStrainName;
+      finalNameReasons.push("Low confidence visual match");
+    } else {
+      finalPrimaryName = "Unverified Cultivar (Visual Match)";
+      finalNameReasons.push("Insufficient reference data");
+    }
+  }
+
   // PHASE 4.3 — HARD STOP FAILSAFE
   // FINAL CHECK: IF (primaryStrainName === "Unknown" OR empty):
   // primaryStrainName = topDatabaseMatch.name
