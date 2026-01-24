@@ -6,7 +6,7 @@ export function normalizeScanResult(rawResult: ScanResult): ScanResult {
   const result = { ...rawResult };
 
   // Ensure result structure exists
-  if (!result.result) {
+  if ('error' in result || !result.result) {
     // This should ideally be handled upstream, but as a safety net:
     // We can't easily reconstruct a full ViewModel here without more context.
     // Assuming upstream provides a basic result object.

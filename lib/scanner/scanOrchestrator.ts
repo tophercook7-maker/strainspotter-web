@@ -59,6 +59,25 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
   const normalized = normalizeScanResult(scanResult);
   
   // 4. Extract and Validate Fields
+  // Ensure normalized is not an error type before accessing result
+  if ('error' in normalized) {
+      // This should be impossible due to previous checks, but satisfy TS
+      const fallback = buildSafeFallbackResult("Normalization failed", images.length) as Extract<
+        ScanResult,
+        { result: ScannerViewModel }
+      >;
+      // Recurse once safely or just return fallback data
+      // To avoid recursion loops, we'll manually construct the return
+      return {
+          displayName: "Closest Known Cultivar",
+          confidencePercent: 55,
+          confidenceTier: "Low",
+          summary: ["Fallback due to normalization error"],
+          rawScannerResult: fallback.result, // We know fallback has result
+          normalizedScanResult: fallback
+      };
+  }
+
   const viewModel = normalized.result;
   
   // Name Guarantee
