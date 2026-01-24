@@ -1566,8 +1566,8 @@ export default function WikiStyleResultPanel({
       )}
 
       {/* Phase 3.8 Part E — Why This Match (Expandable) */}
+        {/* STEP 5.4.6 — Deep explanations collapsed by default */}
         {viewModel.nameReasoning && viewModel.nameReasoning.bullets.length > 0 && (
-          {/* STEP 5.4.6 — Deep explanations collapsed by default */}
           <CollapsibleSection
             title="Why This Name?"
             defaultExpanded={false}
