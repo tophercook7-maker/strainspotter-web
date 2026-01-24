@@ -8,12 +8,13 @@ export function buildScanNote(distinctnessScore: number): string | null {
   return null
 }
 
+// STEP 5.5.3 — SAME-PLANT DETECTION (SOFT)
 // Phase 4.0.2 — SAME-PLANT AWARENESS NOTE
 // Phase 4.2.0 — USER-FACING NOTE (OPTIONAL)
 // Phase 5.1.5 — Updated message for transparency
 export function buildSamePlantNote(samePlantLikely: boolean): string | null {
   if (samePlantLikely) {
-    return "Photos appear to be the same plant. Confidence reflects limited angle diversity."
+    return "Images appear to be the same plant — results may be less precise"
   }
   return null
 }
