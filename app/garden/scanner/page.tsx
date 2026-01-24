@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
-import { saveScanResultToHistory } from "@/lib/supabase/scanHistory";
+import { saveScanResultToHistory } from "../../../lib/supabase/scanHistory";
 import { getUserTierFlags } from "@/lib/flags";
 import { adaptScanResult } from "@/lib/scanner/adapter/scanResultAdapter";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
