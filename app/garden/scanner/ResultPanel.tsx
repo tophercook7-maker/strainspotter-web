@@ -25,18 +25,13 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
             <div className="flex items-start justify-between gap-4 mb-3">
               <div className="flex-1">
                 <div className="text-3xl md:text-4xl font-extrabold">
-                  {result.nameFirstDisplay?.confidencePercent < 70 ? (
-                    <>
-                      <span className="opacity-70">Closest Known Cultivar: </span>
-                      {primaryName}
-                    </>
-                  ) : (
-                    primaryName
-                  )}
+                  {/* Phase 4.2.1 — Always render name, no conditional hiding */}
+                  {primaryName}
                 </div>
                 
                 {/* Phase 4.9 — 2. Name confidence badge: Attach directly to name, color-coded but subtle */}
                 <div className="mt-2 inline-flex items-center gap-2">
+                  {/* Phase 4.2.1 — Always render confidence badge, even for low confidence */}
                   {confidenceTier === "Very High Confidence" && (
                     <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300 border border-green-500/40">
                       Very High
@@ -57,9 +52,14 @@ export default function ResultPanel({ result }: { result: ScannerViewModel }) {
                       {confidenceTier === "Low Confidence" ? "Low" : "Possible"}
                     </span>
                   )}
-                  {confidenceTier === "Exploratory Match" && (
+                  {/* Fallback for any other tier or missing tier */}
+                  {confidenceTier !== "Very High Confidence" && 
+                   confidenceTier !== "High Confidence" && 
+                   confidenceTier !== "Moderate Confidence" && 
+                   confidenceTier !== "Low Confidence" && 
+                   confidenceTier !== "Possible Match" && (
                     <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-300 border border-gray-500/40">
-                      Exploratory
+                      {confidenceTier}
                     </span>
                   )}
                 </div>

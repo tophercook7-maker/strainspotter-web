@@ -113,21 +113,8 @@ export default function WikiStyleResultPanel({
             )}
             
             {/* STEP 5.5.6 — FAIL-SAFE UX: Low confidence match label */}
-            {(() => {
-              const rawConfidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
-              const confidence = Math.min(95, rawConfidence);
-              // Phase 4.3 — Low (valid) starts at 55. Only warn if below 55.
-              const isLowConfidence = confidence < 55;
-              
-              if (isLowConfidence) {
-                return (
-                  <div className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/20 border border-yellow-500/30">
-                    <span className="text-sm font-medium text-yellow-200">Low confidence match</span>
-                  </div>
-                );
-              }
-              return null;
-            })()}
+            {/* Phase 4.2.1 — Removed conditional hiding. Confidence badge is always shown below. */}
+            {/* If confidence is low, we can show an additional informational badge if desired, but not block the main badge. */}
             
             {/* 2. Confidence Tier + 3. Confidence % — Badge-style with percentage */}
             {(() => {
