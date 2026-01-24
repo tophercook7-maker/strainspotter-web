@@ -228,6 +228,63 @@ export default function WikiStyleResultPanel({
                 </div>
               );
             })()}
+            
+            {/* STEP 5.5.5 — RESULT CONFIDENCE EXPLANATION */}
+            {(() => {
+              const confidence = Math.round(viewModel.nameFirstDisplay.confidencePercent ?? viewModel.nameFirstDisplay.confidence ?? 0);
+              const imageCount = viewModel.multiImageInfo?.imageCountText 
+                ? parseInt(viewModel.multiImageInfo.imageCountText.match(/\d+/)?.[0] || "1")
+                : 1;
+              
+              // Derive signals for explanation
+              const hasMultipleImages = imageCount >= 2;
+              const consensusStrength = viewModel.trustLayer?.confidenceBreakdown?.consensusStrength ?? 0;
+              const hasAgreement = hasMultipleImages && consensusStrength > 0.5;
+              const hasDatabaseMatch = (viewModel.nameFirstDisplay as any)?.hasDatabaseMatch ?? true;
+              
+              // Build 3 bullets max (plain language)
+              const bullets: string[] = [];
+              
+              // 1. Image variety
+              if (hasMultipleImages) {
+                const angleText = imageCount === 2 ? "two angles" : `${imageCount} different angles`;
+                bullets.push(`Image variety: ${imageCount} photos from ${angleText}`);
+              } else {
+                bullets.push("Image variety: Single photo — multiple angles improve accuracy");
+              }
+              
+              // 2. Agreement across images
+              if (hasMultipleImages) {
+                if (hasAgreement) {
+                  bullets.push("Agreement: Consistent traits observed across images");
+                } else {
+                  bullets.push("Agreement: Some variation between images");
+                }
+              } else {
+                bullets.push("Agreement: Single image — no cross-validation available");
+              }
+              
+              // 3. Database alignment
+              if (hasDatabaseMatch) {
+                bullets.push("Database alignment: Matches known cultivar characteristics");
+              } else {
+                bullets.push("Database alignment: Limited match to reference catalog");
+              }
+              
+              return (
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  <h3 className="text-sm font-semibold text-white/90 mb-2">Why this confidence level?</h3>
+                  <ul className="space-y-1.5">
+                    {bullets.slice(0, 3).map((bullet, idx) => (
+                      <li key={idx} className="text-sm text-white/75 leading-relaxed flex items-start">
+                        <span className="text-blue-400 mr-2 mt-0.5">•</span>
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
           </div>
           
           {/* STEP 5.4.2 — Everything below the fold (moved from above) */}
