@@ -285,6 +285,7 @@ export interface ScanMeta {
   visualDistinctivenessScore?: number
   guidanceHints?: string[]
   nameMemoryMatch?: boolean // Phase 4.5.3 — Indicates if name matches previous scan
+  friendlyFeedback?: string | null // STEP 5.5.2 — User-facing friendly feedback (one message only)
 }
 
 // Phase 4.0.5 — Warning channel (non-fatal)

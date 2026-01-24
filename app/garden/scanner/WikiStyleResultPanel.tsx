@@ -1082,9 +1082,16 @@ export default function WikiStyleResultPanel({
             {/* STEP 5.4.4 — NOTES & UNCERTAINTY CARD */}
             {((result.diversityNote || (viewModel.notes && viewModel.notes.some(n => 
               n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
-            ))) || result.scanWarning || (result.warnings && result.warnings.length > 0) || result.meta?.guidanceHints?.length) && (
+            ))) || result.scanWarning || (result.warnings && result.warnings.length > 0) || result.meta?.guidanceHints?.length || result.meta?.friendlyFeedback) && (
               <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-3">
                 <h3 className="text-base font-semibold text-white/95 tracking-tight mb-3">Notes & Uncertainty</h3>
+                
+                {/* STEP 5.5.2 — User-facing friendly feedback (one message only) */}
+                {result.meta?.friendlyFeedback && (
+                  <div className="text-sm text-blue-200 leading-relaxed">
+                    💡 {result.meta.friendlyFeedback}
+                  </div>
+                )}
                 
                 {/* STEP 5.4.5 — No tiny gray text for important info */}
                 {/* Phase 4.0.4 — transparent explanation (no scary errors) */}

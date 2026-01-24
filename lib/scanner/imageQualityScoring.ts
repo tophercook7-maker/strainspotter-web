@@ -241,3 +241,109 @@ export function calculateImageQualityScores(
     ),
   };
 }
+
+/**
+ * STEP 5.5.2 — Generate Friendly User Feedback
+ * 
+ * Analyzes quality scores and generates ONE friendly, actionable message.
+ * Only shown if confidence is below threshold.
+ * 
+ * Rules:
+ * - Never blame the user
+ * - Never say "bad photo"
+ * - Show only ONE message (most impactful issue)
+ * - Friendly, helpful tone
+ */
+export function generateFriendlyFeedback(
+  imageResults: Array<{
+    qualityScores?: ImageQualityScores;
+    inferredAngle?: "macro-bud" | "side-profile" | "top-canopy" | "unknown";
+  }>,
+  confidence: number,
+  confidenceThreshold: number = 85
+): string | null {
+  // Only show feedback if confidence is below threshold
+  if (confidence >= confidenceThreshold) {
+    return null;
+  }
+  
+  if (imageResults.length === 0) {
+    return null;
+  }
+  
+  // Calculate average scores across all images
+  const avgScores = imageResults.reduce(
+    (acc, img) => {
+      if (!img.qualityScores) return acc;
+      return {
+        sharpness: acc.sharpness + img.qualityScores.sharpness,
+        lighting: acc.lighting + img.qualityScores.lighting,
+        angleUsefulness: acc.angleUsefulness + img.qualityScores.angleUsefulness,
+        redundancy: acc.redundancy + img.qualityScores.redundancy,
+        count: acc.count + 1,
+      };
+    },
+    { sharpness: 0, lighting: 0, angleUsefulness: 0, redundancy: 0, count: 0 }
+  );
+  
+  if (avgScores.count === 0) {
+    return null;
+  }
+  
+  const avgSharpness = avgScores.sharpness / avgScores.count;
+  const avgLighting = avgScores.lighting / avgScores.count;
+  const avgAngleUsefulness = avgScores.angleUsefulness / avgScores.count;
+  const avgRedundancy = avgScores.redundancy / avgScores.count;
+  
+  // Check for missing angles
+  const capturedAngles = new Set(
+    imageResults
+      .map(img => img.inferredAngle)
+      .filter((angle): angle is "macro-bud" | "side-profile" | "top-canopy" => 
+        angle !== undefined && angle !== "unknown"
+      )
+  );
+  const hasMacro = capturedAngles.has("macro-bud");
+  const hasSide = capturedAngles.has("side-profile");
+  const hasTop = capturedAngles.has("top-canopy");
+  
+  // Priority order (most impactful first):
+  // 1. Missing close-up (macro) - most valuable for identification
+  // 2. Missing side angle - very useful for structure
+  // 3. Low lighting - affects all analysis
+  // 4. Low sharpness - affects detail detection
+  // 5. High redundancy - suggests need for more diversity
+  
+  // 1. Missing close-up photo
+  if (!hasMacro && imageResults.length < 3) {
+    return "Try one closer photo of the buds";
+  }
+  
+  // 2. Missing side angle
+  if (!hasSide && imageResults.length < 3) {
+    return "A side-angle shot may improve accuracy";
+  }
+  
+  // 3. Low lighting (below 0.5)
+  if (avgLighting < 0.5) {
+    return "Lighting is a bit dark — natural light helps";
+  }
+  
+  // 4. Low sharpness (below 0.5)
+  if (avgSharpness < 0.5) {
+    return "Try to get the buds in sharper focus";
+  }
+  
+  // 5. High redundancy (above 0.6) - images too similar
+  if (avgRedundancy > 0.6 && imageResults.length >= 2) {
+    return "Try photos from different angles or distances";
+  }
+  
+  // 6. Low angle usefulness overall
+  if (avgAngleUsefulness < 0.7 && imageResults.length < 3) {
+    return "Adding a close-up or side view may help";
+  }
+  
+  // Default: generic helpful message
+  return "Additional photos from different angles may improve accuracy";
+}

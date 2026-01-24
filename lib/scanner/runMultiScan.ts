@@ -6008,6 +6008,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
         })
       : null;
     
+    // STEP 5.5.2 — Generate friendly user feedback (one message only)
+    const { generateFriendlyFeedback } = await import("./imageQualityScoring");
+    const friendlyFeedback = generateFriendlyFeedback(
+      imageResultsV3,
+      optimizedViewModel.nameFirstDisplay.confidencePercent,
+      85 // Confidence threshold
+    );
+    if (friendlyFeedback) {
+      scanMeta.friendlyFeedback = friendlyFeedback;
+    }
+    
     const result: ScanResult = {
       status: "partial",
       guard: {
@@ -6025,7 +6036,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       scanNote: scanNote || undefined, // Phase 4.1.7 — Non-blocking UI message
       samePlantNote: samePlantNote || undefined, // Phase 4.2.0 — User-facing note when same-plant detected
       similarImagesNote: similarImagesNote || samePlantPenaltyNote || undefined, // Phase 5.2.4 — User-facing note when images are similar, Phase 5.3.4 — Same-plant penalty note
-      meta: scanMeta, // Phase 4.2.6 — Scan metadata
+      meta: scanMeta, // Phase 4.2.6 — Scan metadata (includes friendlyFeedback)
       proEnhancements: proEnhancements || undefined, // Phase 5.3.7 — Pro-only enhancements (never downgrades free tier)
     };
     
@@ -6226,6 +6237,17 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
           isProTier: true,
         })
       : null;
+    
+    // STEP 5.5.2 — Generate friendly user feedback (one message only)
+    const { generateFriendlyFeedback } = await import("./imageQualityScoring");
+    const friendlyFeedback = generateFriendlyFeedback(
+      imageResultsV3,
+      optimizedViewModel.nameFirstDisplay.confidencePercent,
+      85 // Confidence threshold
+    );
+    if (friendlyFeedback) {
+      scanMeta.friendlyFeedback = friendlyFeedback;
+    }
     
     // Create result based on status (discriminated union: "partial" requires guard, "success" does not)
     const result: ScanResult = needsFallback
