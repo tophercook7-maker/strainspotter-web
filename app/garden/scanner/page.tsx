@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { scanImages } from "@/lib/scanner/runMultiScan";
+import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
 import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
@@ -193,7 +193,8 @@ export default function ScannerPage() {
       console.log("STEP 1: PREP DONE");
       console.log("STEP 2: CONTEXT BUILT");
       console.log("STEP 3: ENGINE CALLED");
-      const scanResult = await scanImages(images);
+      const orchestrated = await orchestrateScan(images);
+      const scanResult = orchestrated.normalizedScanResult;
       console.log("STEP 4: RESULT RECEIVED", scanResult);
       
       // Phase 5.2.6 — Prevent scroll jump: Restore scroll position after results appear
@@ -205,17 +206,6 @@ export default function ScannerPage() {
         });
       });
       
-      // FAILURE MESSAGING SOFTENED — Handle non-fatal warning (images lack variance)
-      if ('error' in scanResult && scanResult.error === true) {
-        // FAILURE MESSAGING SOFTENED — Set soft warning, never block user
-        setScanError({ reason: "images-too-similar" });
-        // Continue processing - don't return early
-        // Note: When error is returned, there's no result/synthesis, so we skip those
-        // But we should still try to show something useful
-        setIsScanning(false);
-        return;
-      }
-      
       // Clear any previous errors
       setScanError(null);
       
@@ -225,17 +215,12 @@ export default function ScannerPage() {
         return;
       }
       
-      // Phase 4.2.1 — Normalize result to ensure contract compliance
-      // This guarantees a name is always present and confidence is valid
-      const { normalizeScanResult } = require("@/lib/scanner/normalizeScanResult");
-      const normalizedResult = normalizeScanResult(scanResult);
-      
-      setScanResult(normalizedResult);
-      setResult(normalizedResult.result);
-      setSynthesis(normalizedResult.synthesis);
+      setScanResult(scanResult);
+      setResult(scanResult.result);
+      setSynthesis(scanResult.synthesis);
       
       // Phase 4.0.5 — Set diversity hint from scan result
-      setDiversityHint(normalizedResult.diversityNote || null);
+      setDiversityHint(scanResult.diversityNote || null);
       
       // Phase 4.0.2 — Check for diversity warning (images are similar)
       // Compute diversity from image files to detect similarity
