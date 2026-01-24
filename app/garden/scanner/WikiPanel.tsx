@@ -32,10 +32,11 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
 
   return (
     <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 p-5 sm:p-6 overflow-hidden">
+      {/* STEP 5.4.7 — Minimum 44px tap target */}
       {/* Phase 15.5.7 — WikiPanel toggle: make it not huge + fix giant opener */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-left"
+        className="w-full flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/5 px-5 min-h-[44px] py-4 text-left"
         aria-expanded={isOpen}
       >
         <span className="text-base sm:text-lg font-semibold">Analysis Insights</span>
@@ -87,7 +88,7 @@ export default function WikiPanel({ synthesis }: WikiPanelProps) {
                   {synthesis.whyThisMatters.length > 3 && (
                     <button
                       onClick={() => setIsWhyMattersExpanded(!isWhyMattersExpanded)}
-                      className="text-sm text-blue-400 hover:text-blue-300 font-medium mt-2"
+                      className="text-sm text-blue-400 hover:text-blue-300 font-medium mt-2 min-h-[44px] px-3 py-2 -ml-3"
                     >
                       {isWhyMattersExpanded ? "Read less" : "Read more"}
                     </button>

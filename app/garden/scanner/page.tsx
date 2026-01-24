@@ -588,9 +588,10 @@ export default function ScannerPage() {
                                   </span>
                                 )}
                               </div>
+                              {/* STEP 5.4.7 — Minimum 44px tap target */}
                               <button
                                 onClick={() => removeImage(idx)}
-                                className="bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded transition-opacity"
+                                className="bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold min-w-[44px] min-h-[44px] px-3 py-2 rounded transition-opacity flex items-center justify-center"
                                 aria-label={`Remove image ${idx + 1}`}
                               >
                                 ×
@@ -670,8 +671,8 @@ export default function ScannerPage() {
           )}
           
           {/* Phase 5.2.5 — Run Scan Button: Full-width capped (max-w-md), height ≥ 52px, single click, disabled only while scanning */}
-          {/* Phase 5.2.6 — Mobile-first: Sticky on mobile, normal on desktop */}
-          <div className="w-full max-w-md mx-auto">
+          {/* STEP 5.4.7 — Mobile-first: Buttons centered, not stretched, minimum 44px tap target */}
+          <div className="w-full flex justify-center">
             <button
               type="button"
               disabled={isScanning}
@@ -690,7 +691,7 @@ export default function ScannerPage() {
                   }
                 }
               }}
-              className="w-full h-[52px] rounded-full bg-white text-black font-semibold text-base shadow-lg shadow-white/10 active:scale-[0.98] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 transition-all"
+              className="min-w-[200px] max-w-md w-full sm:w-auto px-8 min-h-[44px] h-[52px] rounded-full bg-white text-black font-semibold text-base shadow-lg shadow-white/10 active:scale-[0.98] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 transition-all"
               aria-label={isScanning ? "Analyzing plant" : "Run scan"}
               aria-busy={isScanning}
             >
