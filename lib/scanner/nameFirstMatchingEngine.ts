@@ -410,8 +410,8 @@ export function nameFirstMatchingEngine(
   if (candidates.length > 0) {
     const topCandidate = candidates[0];
     
-    // RULE: If top score < 60, use "Closest Known Cultivar"
-    if (topCandidate.score >= 60) {
+    // RULE: If top score < 35 (Phase 4.2.1), use "Closest Known Cultivar"
+    if (topCandidate.score >= 35) {
       primaryStrainName = topCandidate.strainName;
       confidence = Math.min(99, topCandidate.score);
       
@@ -433,7 +433,7 @@ export function nameFirstMatchingEngine(
         explanation.push(`Matched using: ${tags.join(", ")}`);
       }
     } else {
-      // Top score < 60: use "Closest Known Cultivar"
+      // Top score < 35: use "Closest Known Cultivar"
       primaryStrainName = "Closest Known Cultivar";
       confidence = Math.max(55, Math.min(59, topCandidate.score));
       explanation.push(`Top match score (${topCandidate.score}%) below threshold — using fallback`);

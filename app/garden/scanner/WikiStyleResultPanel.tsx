@@ -91,7 +91,7 @@ export default function WikiStyleResultPanel({
                 const displayName =
                   viewModel.nameFirstDisplay?.primaryStrainName ??
                   viewModel.name ??
-                  "Unverified Cultivar";
+                  "Unverified Cultivar (visual match only)";
                 return displayName;
               })()}
             </h1>

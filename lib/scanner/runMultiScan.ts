@@ -4107,7 +4107,7 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
       finalPrimaryName = nameFirstPipelineResult.primaryStrainName;
       finalNameReasons.push("Low confidence visual match");
     } else {
-      finalPrimaryName = "Unverified Cultivar (Visual Match)";
+      finalPrimaryName = "Unverified Cultivar (visual match only)";
       finalNameReasons.push("Insufficient reference data");
     }
   }
