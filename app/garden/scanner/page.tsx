@@ -225,12 +225,17 @@ export default function ScannerPage() {
         return;
       }
       
-      setScanResult(scanResult);
-      setResult(scanResult.result);
-      setSynthesis(scanResult.synthesis);
+      // Phase 4.2.1 — Normalize result to ensure contract compliance
+      // This guarantees a name is always present and confidence is valid
+      const { normalizeScanResult } = require("@/lib/scanner/normalizeScanResult");
+      const normalizedResult = normalizeScanResult(scanResult);
+      
+      setScanResult(normalizedResult);
+      setResult(normalizedResult.result);
+      setSynthesis(normalizedResult.synthesis);
       
       // Phase 4.0.5 — Set diversity hint from scan result
-      setDiversityHint(scanResult.diversityNote || null);
+      setDiversityHint(normalizedResult.diversityNote || null);
       
       // Phase 4.0.2 — Check for diversity warning (images are similar)
       // Compute diversity from image files to detect similarity
