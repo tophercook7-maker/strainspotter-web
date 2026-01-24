@@ -141,7 +141,7 @@ export default function WikiReportPanel({
                       <span className="text-white/50 group-open:rotate-180 transition-transform">▼</span>
                     </span>
                   </summary>
-                  <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                  <div className="mt-3 pt-3 space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-white/80">Indica</span>
                       <span className="text-white/90 font-medium">{clampPct(displayIndica)}%</span>

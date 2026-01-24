@@ -221,8 +221,8 @@ export default function WikiStyleResultPanel({
                       {clampedConfidence}%
                     </span>
                   </div>
-                  {/* 4. Short one-line summary */}
-                  <p className="text-sm text-white/70 leading-relaxed">
+                  {/* STEP 5.4.5 — Summary text: larger than body */}
+                  <p className="text-base text-white/80 leading-relaxed">
                     {confidenceCopy}
                   </p>
                 </div>
@@ -318,7 +318,7 @@ export default function WikiStyleResultPanel({
                 const familyFirst = (viewModel.nameFirstDisplay as any)?.familyFirst;
                 if (familyFirst?.familyName) {
                   return (
-                    <p className="text-xs text-white/50 leading-relaxed mb-4">
+                    <p className="text-sm text-white/75 leading-relaxed mb-4">
                       {familyFirst.familyName} lineage confirmed. Exact cultivar may vary within family.
                     </p>
                   );
@@ -370,7 +370,7 @@ export default function WikiStyleResultPanel({
                 // Phase 5.2.4 — Show similar images note (preferred over same-plant note)
                 if (hasSimilarImagesNote) {
                   return (
-                    <div className="mt-3 text-xs text-white/60 leading-relaxed">
+                    <div className="mt-3 text-sm text-white/75 leading-relaxed">
                       {(result as any).similarImagesNote}
                     </div>
                   );
@@ -394,7 +394,7 @@ export default function WikiStyleResultPanel({
                 
                 if (nameMemoryMatch) {
                   return (
-                    <div className="mt-2 text-xs text-white/50 italic">
+                    <div className="mt-2 text-sm text-white/70">
                       This appears consistent with a previous scan.
                     </div>
                   );
@@ -626,7 +626,7 @@ export default function WikiStyleResultPanel({
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-white/60 italic mt-2">
+                    <p className="text-sm text-white/70 mt-2">
                       Primary match showed strongest overall alignment.
                     </p>
                   </div>
@@ -1413,16 +1413,15 @@ export default function WikiStyleResultPanel({
                 {viewModel.nameFirstDisplay.tagline?.toLowerCase().includes("low confidence") || 
                  (viewModel.nameFirstDisplay.confidencePercent ?? 0) < 70 ? (
                   <>
-                    <p className="text-sm">
-                      Based on visible structure, bud density, and leaf morphology across uploaded images.
-                    </p>
-                    <p className="text-sm mt-2">
-                      Lower confidence due to similar photos lacking contrasting angles to differentiate cultivars.
-                    </p>
-                    <p className="text-sm mt-3 font-medium">
+                    {/* STEP 5.4.5 — Body text: readable, bullet points > paragraphs */}
+                    <ul className="space-y-2 text-sm text-white/80 leading-relaxed">
+                      <li>Based on visible structure, bud density, and leaf morphology across uploaded images</li>
+                      <li>Lower confidence due to similar photos lacking contrasting angles to differentiate cultivars</li>
+                    </ul>
+                    <p className="text-sm font-semibold text-white/90 mt-4 mb-2">
                       Accuracy improves with:
                     </p>
-                    <ul className="text-sm list-disc ml-5 mt-1">
+                    <ul className="text-sm list-disc ml-5 space-y-1.5 text-white/80">
                       <li>Close-up bud photo</li>
                       <li>Wider plant or branch photo</li>
                       <li>Different angle, distance, or lighting</li>
@@ -1461,11 +1460,11 @@ export default function WikiStyleResultPanel({
                       </div>
                     )}
 
-                    {/* Phase 4.5 Step 4.5.3 — Variance Notes (if available) */}
+                    {/* STEP 5.4.5 — Variance Notes: readable text */}
                     {viewModel.nameFirstDisplay.explanation.varianceNotes && 
                      viewModel.nameFirstDisplay.explanation.varianceNotes.length > 0 && (
-                      <div className="pt-2">
-                        <p className="text-xs text-white/70 leading-relaxed italic">
+                      <div className="pt-3 mt-3">
+                        <p className="text-sm text-white/75 leading-relaxed">
                           {(viewModel.nameFirstDisplay.explanation.varianceNotes ?? []).join(" ")}
                         </p>
                       </div>
@@ -1635,13 +1634,27 @@ export default function WikiStyleResultPanel({
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Dominance Type
               </h4>
-              <p className="text-white/80 leading-relaxed">
-                This cultivar is classified as{" "}
-                <strong className="text-white">
-                  {viewModel.genetics.dominance}
-                </strong>
-                {`-dominant, which influences both its physical structure and expected effects. ${viewModel.genetics.dominance === "Indica" ? "Indica-dominant strains typically produce broad leaves, dense buds, and relaxing body effects." : viewModel.genetics.dominance === "Sativa" ? "Sativa-dominant strains usually feature narrow leaves, elongated structure, and uplifting cerebral effects." : "Hybrids combine traits from both genetic lineages, offering balanced characteristics."}`}
-              </p>
+              {/* STEP 5.4.5 — Body text: readable at arm's length, bullet points > paragraphs */}
+              <ul className="space-y-2">
+                <li className="text-sm text-white/80 leading-relaxed">
+                  This cultivar is classified as <strong className="text-white">{viewModel.genetics.dominance}</strong>-dominant
+                </li>
+                {viewModel.genetics.dominance === "Indica" && (
+                  <>
+                    <li className="text-sm text-white/80 leading-relaxed">Broad leaves and dense buds</li>
+                    <li className="text-sm text-white/80 leading-relaxed">Relaxing body effects</li>
+                  </>
+                )}
+                {viewModel.genetics.dominance === "Sativa" && (
+                  <>
+                    <li className="text-sm text-white/80 leading-relaxed">Narrow leaves and elongated structure</li>
+                    <li className="text-sm text-white/80 leading-relaxed">Uplifting cerebral effects</li>
+                  </>
+                )}
+                {viewModel.genetics.dominance === "Hybrid" && (
+                  <li className="text-sm text-white/80 leading-relaxed">Combines traits from both genetic lineages with balanced characteristics</li>
+                )}
+              </ul>
             </div>
           )}
 
@@ -1672,14 +1685,30 @@ export default function WikiStyleResultPanel({
             <h4 className="text-base font-semibold text-white/90 mb-2">
               Typical Phenotype Expression
             </h4>
-            <p className="text-white/80 leading-relaxed">
-              {/* UI CONTRACT ENFORCEMENT — genetics.dominance is optional */}
-              {viewModel.genetics?.dominance === "Indica"
-                ? "Indica-dominant phenotypes typically display compact, bushy growth with dense, resinous flower clusters. Leaves are broad and dark green, with tight internodal spacing. Bud structure is usually dense and heavy, with high trichome production."
-                : viewModel.genetics?.dominance === "Sativa"
-                ? "Sativa-dominant phenotypes often show tall, lanky growth patterns with elongated flower clusters. Leaves are narrow and light green, with wider internodal spacing. Bud structure tends to be airier and less dense than indica varieties."
-                : "Hybrid phenotypes can vary significantly depending on the specific genetic ratio. Some express more indica-like traits (dense structure, broad leaves), while others lean sativa (elongated structure, narrow leaves). The observed characteristics help determine the dominant influence."}
-            </p>
+            {/* STEP 5.4.5 — Bullet points > paragraphs */}
+            <ul className="space-y-2">
+              {viewModel.genetics?.dominance === "Indica" && (
+                <>
+                  <li className="text-sm text-white/80 leading-relaxed">Compact, bushy growth with dense flower clusters</li>
+                  <li className="text-sm text-white/80 leading-relaxed">Broad, dark green leaves with tight internodal spacing</li>
+                  <li className="text-sm text-white/80 leading-relaxed">Dense, heavy bud structure with high trichome production</li>
+                </>
+              )}
+              {viewModel.genetics?.dominance === "Sativa" && (
+                <>
+                  <li className="text-sm text-white/80 leading-relaxed">Tall, lanky growth with elongated flower clusters</li>
+                  <li className="text-sm text-white/80 leading-relaxed">Narrow, light green leaves with wider internodal spacing</li>
+                  <li className="text-sm text-white/80 leading-relaxed">Airier, less dense bud structure than indica varieties</li>
+                </>
+              )}
+              {(!viewModel.genetics?.dominance || viewModel.genetics?.dominance === "Hybrid") && (
+                <>
+                  <li className="text-sm text-white/80 leading-relaxed">Phenotypes vary based on genetic ratio</li>
+                  <li className="text-sm text-white/80 leading-relaxed">May express indica-like traits (dense structure, broad leaves) or sativa traits (elongated structure, narrow leaves)</li>
+                  <li className="text-sm text-white/80 leading-relaxed">Observed characteristics determine dominant influence</li>
+                </>
+              )}
+            </ul>
           </div>
 
           {/* Breeder Origins */}
@@ -1689,26 +1718,26 @@ export default function WikiStyleResultPanel({
                 <h4 className="text-base font-semibold text-white/90 mb-2">
                   Known Origins & History
                 </h4>
-                <div className="space-y-2">
+                {/* STEP 5.4.5 — Bullet points > paragraphs */}
+                <ul className="space-y-2">
                   {extendedProfile.genetics.breederNotes.map((note, idx) => (
-                    <p key={idx} className="text-white/80 leading-relaxed">
+                    <li key={idx} className="text-sm text-white/80 leading-relaxed">
                       {note}
-                    </p>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             )}
 
-          {/* Uncertainty Note */}
+          {/* STEP 5.4.5 — Uncertainty Note: readable text, bullet points */}
           {(!extendedProfile?.genetics.lineage && !viewModel.genetics?.lineage) && (
-            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-              <p className="text-sm text-yellow-200 leading-relaxed">
-                <strong>Lineage Inference Limitation:</strong> Genetic lineage
-                identification from visual analysis alone has limitations. Parent
-                strain information would require genetic testing or documented
-                breeding records. The dominance type (Indica/Sativa/Hybrid) is
-                inferred from observable morphological traits.
-              </p>
+            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
+              <p className="text-sm font-semibold text-yellow-200 mb-2">Lineage Inference Limitation</p>
+              <ul className="space-y-1.5 text-sm text-yellow-200/90 leading-relaxed">
+                <li>Genetic lineage identification from visual analysis alone has limitations</li>
+                <li>Parent strain information would require genetic testing or documented breeding records</li>
+                <li>Dominance type (Indica/Sativa/Hybrid) is inferred from observable morphological traits</li>
+              </ul>
             </div>
           )}
         </div>
@@ -2446,7 +2475,7 @@ export default function WikiStyleResultPanel({
           return (
             <div className="mt-8 pt-8">
               <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-                <p className="text-xs text-white/60 text-center leading-relaxed">
+                <p className="text-sm text-white/75 text-center leading-relaxed">
                   Increase certainty with more angles, or unlock Pro for deeper analysis.
                 </p>
               </div>
