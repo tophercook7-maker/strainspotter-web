@@ -691,7 +691,7 @@ export default function ScannerPage() {
                   }
                 }
               }}
-              className="min-w-[200px] max-w-md w-full sm:w-auto px-8 min-h-[44px] h-[52px] rounded-full bg-white text-black font-semibold text-base shadow-lg shadow-white/10 active:scale-[0.98] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 transition-all"
+              className="min-w-[200px] max-w-md w-auto px-8 min-h-[44px] h-[52px] rounded-full bg-white text-black font-semibold text-base shadow-lg shadow-white/10 active:scale-[0.98] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 transition-all"
               aria-label={isScanning ? "Analyzing plant" : "Run scan"}
               aria-busy={isScanning}
             >
