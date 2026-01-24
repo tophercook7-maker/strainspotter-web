@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
-// import { saveScanResultToHistory } from "@/lib/supabase/scanHistory";
+import { saveScanHistory } from "@/app/actions/saveScanHistory";
 import { getUserTierFlags } from "@/lib/flags";
 import { adaptScanResult } from "@/lib/scanner/adapter/scanResultAdapter";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
@@ -223,7 +223,7 @@ export default function ScannerPage() {
         scannerResult: scanResult.result,
         scanMeta: scanResult.meta
       });
-      console.log("ADAPTED RESULT:", adaptedResult.strainName, adaptedResult.confidence);
+      console.log("[SCAN RESULT]", adaptedResult.strainName, adaptedResult.matchConfidence);
       setScanResult(scanResult); // Keep original ScanResult for status checks
       setResult(scanResult.result);
       setSynthesis(scanResult.synthesis);
@@ -232,15 +232,18 @@ export default function ScannerPage() {
       setDiversityHint(scanResult.diversityNote || null);
 
       // Save to history (fire and forget, non-blocking)
-      // TODO: reintroduce scan history persistence after build stabilization
-      // try {
-      //   void saveScanResultToHistory({
-      //     userId: null, // until auth wired
-      //     scanResult: scanResult,
-      //   });
-      // } catch (e) {
-      //   // swallow - never block scan rendering
-      // }
+      if (scanResult.status === "success" || scanResult.status === "partial") {
+        try {
+          void saveScanHistory({
+            strainName: scanResult.result.nameFirstDisplay?.primaryStrainName ?? scanResult.result.name ?? null,
+            confidence: scanResult.result.nameFirstDisplay?.confidencePercent ?? scanResult.result.confidence ?? null,
+            metadata: scanResult,
+          });
+        } catch (e) {
+          // Silent fail — history must never break scanning
+          console.warn("Scan history save skipped:", e);
+        }
+      }
       
       // Phase 4.0.2 — Check for diversity warning (images are similar)
       // Compute diversity from image files to detect similarity

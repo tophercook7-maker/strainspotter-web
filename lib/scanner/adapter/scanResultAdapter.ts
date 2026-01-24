@@ -34,20 +34,23 @@ export function adaptScanResult({
                            scannerResult.confidence ?? 
                            0;
   
-  // Convert to 0-1 range for matchConfidence
-  const matchConfidence = confidencePercent >= 60 ? confidencePercent / 100 : null;
+  // Convert to 0-1 range for matchConfidence (always a number, never null)
+  const matchConfidence = confidencePercent / 100;
   
-  // Determine strain name based on confidence threshold
-  const strainName = matchConfidence !== null && matchConfidence >= 0.6 
+  // Always surface the name if it exists - never force "Unknown" just because confidence is low
+  const strainName = (primaryName && primaryName.trim() !== "" && primaryName !== "Unknown" && primaryName !== "Unknown Cultivar")
     ? primaryName 
     : "Cannabis (strain unknown)";
   
-  // Confidence label
-  let confidenceLabel = "Low Confidence";
-  if (confidencePercent >= 90) confidenceLabel = "Very High Confidence";
-  else if (confidencePercent >= 80) confidenceLabel = "High Confidence";
-  else if (confidencePercent >= 70) confidenceLabel = "Moderate Confidence";
-  else if (confidencePercent >= 60) confidenceLabel = "Low-Moderate Confidence";
+  // Confidence label - more informative, never hides the name
+  let confidenceLabel: string;
+  if (confidencePercent >= 85) {
+    confidenceLabel = "High confidence";
+  } else if (confidencePercent >= 65) {
+    confidenceLabel = `Strain estimate – ${Math.round(confidencePercent)}%`;
+  } else {
+    confidenceLabel = "Best guess match";
+  }
   
   // Extract effects (always array, never undefined)
   const effects = scannerResult.experience?.effects ?? 
