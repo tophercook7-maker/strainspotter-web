@@ -5754,17 +5754,22 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // PHASE A FINALIZATION — Log once at end
   console.log(`SCAN COMPLETE — status=${result.status} confidence=${result.confidence}`);
   
+  // Phase 4.2.1 — Normalize result to ensure contract compliance
+  // This guarantees a name is always present and confidence is valid
+  const { normalizeScanResult } = require("./normalizeScanResult");
+  const normalizedResult = normalizeScanResult(result);
+  
   // REGRESSION GUARD (Phase 4.2.1)
   // Verify result contract before returning
   const { validateScannerResult } = require("./regressionGuard");
   try {
-    validateScannerResult(result.result, `Scan Result (status=${result.status})`);
+    validateScannerResult(normalizedResult.result, `Scan Result (status=${normalizedResult.status})`);
   } catch (e) {
     console.error("REGRESSION GUARD ERROR:", e);
     // Don't throw, just log - we want to return the result anyway
   }
   
-  return result;
+  return normalizedResult;
   } catch (error) {
     // PHASE A FINALIZATION — Catch any unexpected errors and return safe fallback (never throw)
     console.error("PHASE A FINALIZATION: Unexpected error in runScanPipeline, returning safe fallback:", error);
