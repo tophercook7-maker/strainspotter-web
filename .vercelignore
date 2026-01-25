@@ -19,3 +19,9 @@ logs/
 archive/
 
 !app/lib/**
+# --- Allow Supabase server client ---
+!app/_server/
+!app/_server/**
+!app/_server/supabase/
+!app/_server/supabase/**
+!app/_server/supabase/server.ts
