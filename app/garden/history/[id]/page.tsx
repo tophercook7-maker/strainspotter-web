@@ -4,6 +4,10 @@ import WikiStyleResultPanel from "../../scanner/WikiStyleResultPanel";
 import { getUserTierFlags } from "@/lib/flags";
 import type { FullScanResult } from "@/lib/scanner/types";
 
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
 async function getScanById(id: string) {
   try {
     const supabase = createServerClient();
@@ -25,11 +29,7 @@ async function getScanById(id: string) {
   }
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function Page({ params }: PageProps) {
   const { id } = await params;
   const scan = await getScanById(id);
 
