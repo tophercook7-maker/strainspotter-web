@@ -25,12 +25,13 @@ async function getScanById(id: string) {
   }
 }
 
-export default async function ScanDetailPage({
+export default async function Page({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const scan = await getScanById(params.id);
+  const { id } = await params;
+  const scan = await getScanById(id);
 
   if (!scan) {
     return (
