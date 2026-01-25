@@ -1,5 +1,5 @@
 import TopNav from "../_components/TopNav";
-import { createServerClient } from "../../../lib/supabase/server";
+import { createServerClient } from "../../_server/supabase/server";
 import Link from "next/link";
 import type { EcosystemStrainNode } from "@/lib/ecosystem/types";
 
