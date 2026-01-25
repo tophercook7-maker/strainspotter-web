@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 
 /**
  * Server action to save scan history to Supabase.
@@ -12,7 +12,7 @@ export async function saveScanHistory(scan: {
   metadata: any;
 }) {
   try {
-    const supabase = createClient();
+    const supabase = createServerClient();
 
     await supabase.from("scans").insert({
       user_id: null, // TODO: wire auth when available

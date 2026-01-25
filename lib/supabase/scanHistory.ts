@@ -1,5 +1,6 @@
 // lib/supabase/scanHistory.ts
-import { createClient } from "@/lib/supabase/client";
+// Legacy scan history writer - use app/actions/saveScanHistory.ts for new code
+import { createServerClient } from "@/lib/supabase/server";
 
 /**
  * Non-blocking, production-safe scan history writer.
@@ -15,7 +16,7 @@ export async function saveScanResultToHistory({
   try {
     if (!userId) return;
 
-    const supabase = createClient();
+    const supabase = createServerClient();
 
     await supabase.from("scans").insert({
       user_id: userId,
