@@ -1,6 +1,7 @@
 import TopNav from "../_components/TopNav";
-import { createServerClient } from "@/app/lib/supabase/server";
+import { createServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import type { EcosystemStrainNode } from "@/lib/ecosystem/types";
 
 type ScanRow = {
   id: string;
@@ -9,14 +10,7 @@ type ScanRow = {
   created_at: string;
 };
 
-type StrainStats = {
-  name: string;
-  scanCount: number;
-  avgConfidence: number;
-  lastSeen: string;
-};
-
-async function getStrainStats(): Promise<StrainStats[]> {
+async function getStrainNodes(): Promise<EcosystemStrainNode[]> {
   try {
     const supabase = createServerClient();
     
@@ -70,8 +64,9 @@ async function getStrainStats(): Promise<StrainStats[]> {
     }
 
     // Convert to array and compute averages
-    const results: StrainStats[] = Array.from(strainMap.entries())
-      .map(([name, stats]) => ({
+    const results: EcosystemStrainNode[] = Array.from(strainMap.entries())
+      .map(([name, stats], index) => ({
+        id: `node-${index}`,
         name,
         scanCount: stats.scans.length,
         avgConfidence: stats.confidenceCount > 0
@@ -89,48 +84,48 @@ async function getStrainStats(): Promise<StrainStats[]> {
 
     return results;
   } catch (err) {
-    console.error("Error fetching strain stats:", err);
+    console.error("Error fetching strain nodes:", err);
     return [];
   }
 }
 
 export default async function StrainsPage() {
-  const strains = await getStrainStats();
+  const nodes = await getStrainNodes();
 
   return (
     <>
-      <TopNav title="Strains" showBack />
+      <TopNav title="Strain Nodes" showBack />
       <main className="min-h-screen bg-black text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
-          {strains.length === 0 ? (
+          {nodes.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-white/70 text-lg">No strains yet</p>
+              <p className="text-white/70 text-lg">No strain nodes yet</p>
               <p className="text-white/50 text-sm mt-2">
-                Scan some plants to see identified strains here
+                Scan some plants to see identified strain nodes here
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {strains.map((strain) => (
+              {nodes.map((node) => (
                 <Link
-                  key={strain.name}
-                  href={`/garden/history?strain=${encodeURIComponent(strain.name)}`}
+                  key={node.id}
+                  href={`/garden/history?strain=${encodeURIComponent(node.name)}`}
                   className="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg">
-                        {strain.name}
+                        {node.name}
                       </h3>
                       <div className="flex items-center gap-4 mt-2 text-sm text-white/70">
-                        <span>{strain.scanCount} scan{strain.scanCount !== 1 ? 's' : ''}</span>
-                        {strain.avgConfidence > 0 && (
-                          <span>{strain.avgConfidence}% avg confidence</span>
+                        <span>{node.scanCount} signal{node.scanCount !== 1 ? 's' : ''}</span>
+                        {node.avgConfidence > 0 && (
+                          <span>{node.avgConfidence}% avg confidence</span>
                         )}
                       </div>
                     </div>
                     <p className="text-white/50 text-xs whitespace-nowrap">
-                      {new Date(strain.lastSeen).toLocaleDateString()}
+                      Last activity: {new Date(node.lastSeen).toLocaleDateString()}
                     </p>
                   </div>
                 </Link>
