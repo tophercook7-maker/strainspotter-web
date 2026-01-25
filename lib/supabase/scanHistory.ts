@@ -1,6 +1,6 @@
 // lib/supabase/scanHistory.ts
 // Legacy scan history writer - use app/actions/saveScanHistory.ts for new code
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "./server";
 
 /**
  * Non-blocking, production-safe scan history writer.

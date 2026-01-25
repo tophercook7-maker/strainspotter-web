@@ -1,5 +1,5 @@
 import TopNav from "../../_components/TopNav";
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient } from "../../../../lib/supabase/server";
 import WikiStyleResultPanel from "../../scanner/WikiStyleResultPanel";
 import { getUserTierFlags } from "@/lib/flags";
 import type { FullScanResult } from "@/lib/scanner/types";
