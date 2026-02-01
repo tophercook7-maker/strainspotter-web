@@ -1,25 +1,16 @@
+@import '../styles/glass.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: #000;
-  color: white;
-  min-height: 100%;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
+@layer base {
+  html,
+  body {
+    @apply m-0 p-0 bg-black text-white min-h-full;
   }
-  50% {
-    transform: translateY(-10px);
+
+  * {
+    @apply box-border;
   }
 }

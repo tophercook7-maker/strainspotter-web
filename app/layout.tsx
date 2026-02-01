@@ -1,21 +1,21 @@
-import "./globals.css";
-import { DatabaseInitializer } from "@/lib/scanner/dbInitializer";
+import './globals.css'
+import { DatabaseInitializer } from '@/lib/scanner/dbInitializer'
 
 export const metadata = {
-  title: "StrainSpotter",
-};
+  title: 'StrainSpotter',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen w-screen overflow-x-hidden">
+      <body>
         <DatabaseInitializer />
         {children}
       </body>
     </html>
-  );
+  )
 }

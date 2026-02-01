@@ -19,6 +19,9 @@ import WikiStyleResultPanel from "./WikiStyleResultPanel";
 import WikiReportPanel from "./WikiReportPanel"; // Phase 4.2 — Extensive Wiki-Style Report
 import TopNav from "../_components/TopNav";
 import ImageGuidancePanel from "./ImageGuidancePanel"; // Phase 5.2 — Multi-Image Guidance
+import ClearButton from "@/components/ui/ClearButton";
+import CircularProgress from "@mui/material/CircularProgress";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 /**
  * 🔒 A.2 — runScan uses ViewModel ONLY (UI NEVER TOUCHES WIKI DIRECTLY)
@@ -31,6 +34,7 @@ export default function ScannerPage() {
   const [analysis, setAnalysis] = useState<FullScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [singleImageConfirmed, setSingleImageConfirmed] = useState(false); // Phase 4.0 Part A — Single-image confirmation
+  const [showConfirmModal, setShowConfirmModal] = useState(false); // Modal state for single-image confirmation
   const [diversityWarning, setDiversityWarning] = useState(false); // Phase 4.0.2 — Track if images are similar
   const [angleHints, setAngleHints] = useState<string[]>([]); // Phase 4.0.3 — Track angle diversity hints
   const [diversityHint, setDiversityHint] = useState<string | null>(null); // Phase 4.0.5 — Diversity hint from scan result
@@ -162,15 +166,8 @@ export default function ScannerPage() {
     const validation = validateImages();
     if (!validation.valid) {
       if (validation.requiresConfirmation) {
-        const confirmed = window.confirm(
-          `${validation.warning}\n\nWould you like to proceed with single-image analysis?`
-        );
-        if (confirmed) {
-          setSingleImageConfirmed(true);
-          // Continue to scan
-        } else {
-          return;
-        }
+        setShowConfirmModal(true);
+        return;
       } else {
         alert(validation.warning);
         return;
@@ -731,56 +728,22 @@ export default function ScannerPage() {
           {/* Phase 5.2.5 — Run Scan Button: Full-width capped (max-w-md), height ≥ 52px, single click, disabled only while scanning */}
           {/* STEP 5.4.7 — Mobile-first: Buttons centered, not stretched, minimum 44px tap target */}
           <div className="w-full flex justify-center">
-            <button
-              type="button"
-              disabled={isScanning}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!isScanning && images.length > 0) {
-                  handleAnalyzePlant();
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  if (!isScanning && images.length > 0) {
-                    handleAnalyzePlant();
-                  }
-                }
-              }}
-              className="min-w-[200px] max-w-md w-auto px-8 min-h-[44px] h-[52px] rounded-full bg-white text-black font-semibold text-base shadow-lg shadow-white/10 active:scale-[0.98] hover:bg-white/95 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:active:scale-100 flex items-center justify-center gap-2 transition-all"
-              aria-label={isScanning ? "Analyzing plant" : "Run scan"}
+            <ClearButton
+              onClick={handleAnalyzePlant}
+              disabled={isScanning || images.length === 0}
+              startIcon={
+                isScanning ? <CircularProgress size={18} color="inherit" /> : undefined
+              }
+              aria-label="Run scan"
               aria-busy={isScanning}
+              sx={{
+                minWidth: 200,
+                maxWidth: '28rem',
+                height: 52,
+              }}
             >
-              {isScanning ? (
-                <>
-                  <svg
-                    className="animate-spin h-5 w-5 text-black"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  <span>Analyzing plant…</span>
-                </>
-              ) : (
-                "Run Scan"
-              )}
-            </button>
+              {isScanning ? 'Analyzing plant…' : 'Run Scan'}
+            </ClearButton>
           </div>
         </div>
 
@@ -844,6 +807,24 @@ export default function ScannerPage() {
         </section>
         </div>
       </main>
+
+      {/* Single-image confirmation modal */}
+      <ConfirmModal
+        open={showConfirmModal}
+        title="Single Image Analysis"
+        message="For best accuracy, we recommend 2+ images from different angles. Single-image scans have limited accuracy. Would you like to proceed?"
+        confirmText="Proceed"
+        cancelText="Cancel"
+        onConfirm={() => {
+          setSingleImageConfirmed(true);
+          setShowConfirmModal(false);
+          // Trigger scan after confirmation
+          setTimeout(() => handleAnalyzePlant(), 0);
+        }}
+        onCancel={() => {
+          setShowConfirmModal(false);
+        }}
+      />
     </>
   );
 }

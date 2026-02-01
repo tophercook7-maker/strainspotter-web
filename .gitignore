@@ -31,6 +31,10 @@ node_modules/
 # ===============================
 !app/
 !app/**
+!components/
+!components/**
+!styles/
+!styles/**
 !public/
 !next.config.*
 !package.json
@@ -38,6 +42,7 @@ node_modules/
 !tsconfig.json
 !postcss.config.js
 !tailwind.config.js
+!GLASS_UI*.md
 # ===============================
 # ALLOW DESKTOP APP
 # ===============================
