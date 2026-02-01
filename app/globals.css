@@ -1,8 +1,10 @@
-@import '../styles/glass.css';
-
+/* FIX: Tailwind directives MUST come first */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* import glass variables AFTER tailwind */
+@import '../styles/glass.css';
 
 @layer base {
   html,

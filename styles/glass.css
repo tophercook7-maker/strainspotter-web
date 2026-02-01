@@ -1,11 +1,14 @@
 /* styles/glass.css */
-:root {
-  --glass-bg: rgba(255, 255, 255, 0.04);
-  --glass-bg-hover: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.25);
-  --glass-border-hover: rgba(255, 255, 255, 0.45);
-  --glass-text: rgba(255, 255, 255, 0.92);
-  --glass-text-disabled: rgba(255, 255, 255, 0.35);
-  --glass-blur: 12px;
-  --glass-radius: 14px;
+/* FIX: wrap variables in @layer base so Tailwind knows how to process them */
+@layer base {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-bg-hover: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.25);
+    --glass-border-hover: rgba(255, 255, 255, 0.45);
+    --glass-text: rgba(255, 255, 255, 0.92);
+    --glass-text-disabled: rgba(255, 255, 255, 0.35);
+    --glass-blur: 12px;
+    --glass-radius: 14px;
+  }
 }
