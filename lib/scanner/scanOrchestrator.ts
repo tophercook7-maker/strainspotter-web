@@ -69,7 +69,7 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
       // Recurse once safely or just return fallback data
       // To avoid recursion loops, we'll manually construct the return
       return {
-          displayName: "Closest Known Cultivar",
+          displayName: "Low-confidence scan result",
           confidencePercent: 55,
           confidenceTier: "Low",
           summary: ["Fallback due to normalization error"],
@@ -82,8 +82,14 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
   
   // Name Guarantee
   let displayName = viewModel.nameFirstDisplay?.primaryStrainName;
-  if (!displayName || displayName === "Unknown Cultivar" || displayName.trim() === "") {
-      displayName = viewModel.name || "Closest Known Cultivar";
+  const weakNames = ["closest known cultivar", "closest cultivar", "unknown cultivar", "unknown"];
+  const isWeak = !displayName || displayName.trim() === "" ||
+    weakNames.includes(displayName.toLowerCase().trim());
+  if (isWeak) {
+      displayName = viewModel.name || "Low-confidence scan result";
+      if (weakNames.includes((displayName || "").toLowerCase().trim())) {
+        displayName = "Low-confidence scan result";
+      }
   }
 
   // Confidence Guarantee

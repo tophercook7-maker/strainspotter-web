@@ -112,11 +112,13 @@ export default function WikiStyleResultPanel({
             {/* STEP 5.5.6 — FAIL-SAFE UX: Always show best name, never empty */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-4 break-words">
               {(() => {
-                const displayName =
+                const raw =
                   vm.nameFirstDisplay?.primaryStrainName ??
                   vm.name ??
-                  "Unverified Cultivar (visual match only)";
-                return displayName;
+                  "";
+                const weak = ["closest known cultivar", "closest cultivar", "unknown cultivar", "unknown", "unverified cultivar (visual match only)"];
+                const isWeak = !raw || weak.includes(raw.toLowerCase().trim());
+                return isWeak ? "Low-confidence scan result" : raw;
               })()}
             </h1>
             
@@ -364,7 +366,7 @@ export default function WikiStyleResultPanel({
             const primaryStrainName = vm.nameFirstDisplay.primaryStrainName;
             
             // Skip if fallback name
-            if (primaryStrainName === "Closest Known Cultivar" || !primaryStrainName) {
+            if (!primaryStrainName || ["closest known cultivar", "closest cultivar", "low-confidence scan result"].includes(primaryStrainName.toLowerCase().trim())) {
               return null;
             }
             
@@ -616,7 +618,7 @@ export default function WikiStyleResultPanel({
               
               {/* Phase 4.2 — Trust indicator badge */}
               {/* Phase 4.4 — Visual Authority Upgrade: Enhanced badge styling */}
-              {vm.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" && (
+              {!["closest known cultivar", "closest cultivar", "low-confidence scan result"].includes((vm.nameFirstDisplay.primaryStrainName || "").toLowerCase().trim()) && (
                 <div className="mt-2">
                   <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-500/30 shadow-sm">
                     <span className="mr-1.5 text-sm">✓</span>
@@ -634,7 +636,7 @@ export default function WikiStyleResultPanel({
             const confidence = Math.round(vm.nameFirstDisplay.confidencePercent ?? vm.nameFirstDisplay.confidence ?? 0);
             
             // Skip if fallback name
-            if (primaryName === "Closest Known Cultivar" || !primaryName) {
+            if (!primaryName || ["closest known cultivar", "closest cultivar", "low-confidence scan result"].includes(primaryName.toLowerCase().trim())) {
               return null;
             }
             
@@ -947,7 +949,9 @@ export default function WikiStyleResultPanel({
             }
             
             // Fallback: Show existing trust message
-            return vm.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" ? (
+            const pn = (vm.nameFirstDisplay.primaryStrainName || "").toLowerCase().trim();
+            const isWeak = !pn || ["closest known cultivar", "closest cultivar", "low-confidence scan result"].includes(pn);
+            return !isWeak ? (
               <div className="mt-6 rounded-xl border border-white/15 bg-white/[0.06] p-4 backdrop-blur-sm">
                 <p className="text-sm text-white/75 leading-relaxed">
                   <span className="font-semibold text-white/90">Name Selection:</span>{" "}
@@ -1618,7 +1622,7 @@ export default function WikiStyleResultPanel({
         <div className="space-y-4 pb-4">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-bold text-white">
-              {vm.nameFirstDisplay?.primaryStrainName || "Closest Known Cultivar"}
+              {vm.nameFirstDisplay?.primaryStrainName || "Low-confidence scan result"}
             </h1>
 
           {/* Match type label */}

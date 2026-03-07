@@ -19,7 +19,7 @@ export type ScanPipelineInput = {
 export function buildSafeFallbackResult(
   reason: string,
   imageCount: number,
-  fallbackName: string = "Closest Known Cultivar"
+  fallbackName: string = "Low-confidence scan result"
 ): ScanResult {
   // FAILURE MESSAGING SOFTENED — Use softer messages instead of "analysis failed"
   const softReason = reason.includes("failed") || reason.includes("error") || reason.includes("Error")

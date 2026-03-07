@@ -8,16 +8,40 @@ import type { JudgeResponse } from "./runJudge";
 /**
  * Build a ScanResult from the judge API response so the existing ResultPanel/WikiStyleResultPanel can display it.
  */
+/** Placeholder/generic phrases that indicate no real cultivar match. */
+const WEAK_NAMES = new Set([
+  "closest known cultivar",
+  "closest cultivar",
+  "closest known strain",
+  "unknown",
+  "unknown cultivar",
+  "unverified cultivar (visual match only)",
+]);
+
+function isWeakCultivarName(name: string | null | undefined): boolean {
+  if (!name || typeof name !== "string") return true;
+  const lower = name.toLowerCase().trim();
+  return WEAK_NAMES.has(lower) || lower.length < 3;
+}
+
 export function judgeResultToScanResult(
-  judge: JudgeResponse,
+  judge: JudgeResponse & { noRealMatch?: boolean; userMessage?: string },
   imageCount: number
 ): ScanResult {
-  const strainName = judge.best?.strain_name ?? "Closest Known Cultivar";
+  const hasNoRealMatch = judge.noRealMatch || !judge.best;
+  const rawStrainName = judge.best?.strain_name;
+  const isPlaceholder = hasNoRealMatch || isWeakCultivarName(rawStrainName);
+  const strainName = isPlaceholder
+    ? "Low-confidence scan result"
+    : (rawStrainName ?? "Low-confidence scan result");
   const confidencePercent = judge.best
     ? Math.round(judge.best.similarity * 100)
     : 50;
+  const userMessage =
+    (judge as { userMessage?: string }).userMessage ??
+    "We could not confidently identify a known cultivar from this scan.";
   const description = judge.description ?? "No description.";
-  const guidance = judge.guidance ?? "Try a sharper, front-on photo of the label.";
+  const guidance = isPlaceholder ? userMessage : (judge.guidance ?? "Try a sharper, front-on photo of the label.");
   const askForBetterPics = judge.askForBetterPics ?? true;
 
   const confidenceTier: "very_high" | "high" | "medium" | "low" =
@@ -89,12 +113,13 @@ export function judgeResultToScanResult(
       confidencePercent,
       confidence: confidencePercent,
       confidenceTier,
-      tagline:
-        confidencePercent >= 82
+      tagline: isPlaceholder
+        ? userMessage
+        : confidencePercent >= 82
           ? "High-confidence match from vault"
           : "Best match from vault — add another angle to confirm",
       explanation: {
-        whyThisNameWon: [description],
+        whyThisNameWon: isPlaceholder ? [userMessage] : [description],
         whatRuledOutOthers: [],
         varianceNotes: [],
       },

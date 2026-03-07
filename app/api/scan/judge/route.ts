@@ -156,6 +156,8 @@ export async function POST(req: Request) {
         candidates: [],
         askForBetterPics: true,
         reason: "No matches above threshold",
+        noRealMatch: true,
+        userMessage: "We could not confidently identify a known cultivar from this scan.",
       });
     }
 

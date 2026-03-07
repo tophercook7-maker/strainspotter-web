@@ -501,6 +501,7 @@ export default function ScannerPage() {
       setIsScanning(false);
     } finally {
       scanLockRef.current = false;
+      setIsScanning(false);
       setProcessing(false);
     }
   }
@@ -1024,9 +1025,9 @@ export default function ScannerPage() {
           {/* STEP 5.5.6 — FAIL-SAFE UX: Show fallback if no results at all */}
           {!result && !analysis && scanError && (
             <div className="mt-8 rounded-xl border border-white/15 bg-white/[0.06] p-6 text-center shadow-lg shadow-black/20">
-              <h2 className="text-xl font-semibold text-white/90 mb-2">Closest Known Cultivar</h2>
+              <h2 className="text-xl font-semibold text-white/90 mb-2">Low-confidence scan result</h2>
               <p className="text-sm text-white/70 leading-relaxed">
-                Unable to identify this cultivar with high confidence. Try adding photos from different angles or improving lighting.
+                We could not confidently identify a known cultivar from this scan. Try adding photos from different angles or improving lighting.
               </p>
             </div>
           )}

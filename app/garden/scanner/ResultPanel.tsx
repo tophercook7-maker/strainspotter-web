@@ -17,7 +17,11 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
       {/* STABILIZATION RESET — READ ONLY from nameFirstDisplay and confidence */}
       {(() => {
         // STABILIZATION RESET — Only read from nameFirstDisplay (no fallbacks to name/title)
-        const primaryName = result.nameFirstDisplay?.primaryStrainName || "Closest Known Cultivar";
+        const raw = result.nameFirstDisplay?.primaryStrainName;
+        const weakNames = ["closest known cultivar", "closest cultivar", "unknown cultivar", "unknown"];
+        const primaryName = (!raw || weakNames.includes(raw.toLowerCase().trim()))
+          ? "Low-confidence scan result"
+          : raw;
         const confidenceTier = result.confidenceTier?.label || (result.nameFirstDisplay as any)?.nameConfidenceTier || "Moderate Confidence";
         
         return (
