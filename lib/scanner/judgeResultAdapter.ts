@@ -37,9 +37,14 @@ export function judgeResultToScanResult(
   _imageCount: number
 ): ScanResult {
   const cultivarName = judge.cultivar_name ?? judge.best?.strain_name ?? null;
-  const hasNoRealMatch = judge.noRealMatch || !judge.best || !cultivarName;
   const rawStrainName = cultivarName ?? judge.best?.strain_name;
-  const isPlaceholder = hasNoRealMatch || isWeakCultivarName(rawStrainName);
+  const hasMeaningfulMatch =
+    judge.best &&
+    rawStrainName &&
+    !isWeakCultivarName(rawStrainName) &&
+    (typeof judge.confidence === "number" ? judge.confidence >= 0.3 : true);
+  // Only treat as placeholder when we lack a meaningful named match; do not downgrade purely due to noRealMatch when we have one
+  const isPlaceholder = !hasMeaningfulMatch;
   const strainName = isPlaceholder
     ? "Low-confidence scan result"
     : (rawStrainName ?? "Low-confidence scan result");

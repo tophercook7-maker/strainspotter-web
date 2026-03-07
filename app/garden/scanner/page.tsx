@@ -330,9 +330,27 @@ export default function ScannerPage() {
             result_payload: payload,
             image_url: candidateImageUrl,
           }).catch(() => {});
+
+          // Persist to Log Book: backend may not set garden_id, so we update existing row to ensure visibility
           if (process.env.NODE_ENV === "development") {
-            console.log("[StrainSpotter] Scan success (backend) — saved via backend");
+            console.log("[StrainSpotter] saveScanHistory: path=backend", "scanId=", scanId, "image_url=", !!candidateImageUrl, "status=success");
           }
+          saveScanHistory({
+            result_payload: payload,
+            image_url: candidateImageUrl,
+            existing_scan_id: scanId,
+          })
+            .then(() => {
+              if (process.env.NODE_ENV === "development") {
+                console.log("[StrainSpotter] Scan success (backend) — persisted to Log Book");
+              }
+            })
+            .catch((err) => {
+              setHistorySaveNotice("Scan completed but could not save to Log Book. Results are still visible.");
+              if (process.env.NODE_ENV === "development") {
+                console.warn("[StrainSpotter] Backend scan Log Book save failed:", err);
+              }
+            });
           return;
         } catch (backendErr) {
           setBackendPhase(null);
@@ -384,6 +402,9 @@ export default function ScannerPage() {
 
       // Save to history with canonical result_payload; pass image_url for DB-valid insert (garden_id set in action)
       if (scanResult.status === "success" || scanResult.status === "partial") {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[StrainSpotter] saveScanHistory: path=local", "scanId=", null, "image_url=", !!imageDataUrl, "status=", scanResult.status);
+        }
         saveScanHistory({
           metadata: scanResult,
           image_url: imageDataUrl,

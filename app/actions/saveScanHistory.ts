@@ -47,6 +47,8 @@ export async function saveScanHistory(scan: {
   vision_payload?: any;
   model_version?: string | null;
   matched_strain_slug?: string | null;
+  /** When set, update existing scan (backend path) instead of inserting. Avoids duplicates. */
+  existing_scan_id?: string | null;
 }) {
   try {
     let payload: ScanResultPayloadV1 | null = null;
@@ -55,7 +57,12 @@ export async function saveScanHistory(scan: {
     } else if (scan.metadata && scan.metadata.result) {
       payload = scanResultToPayloadV1(scan.metadata);
     }
-    if (!payload) return;
+    if (!payload) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[StrainSpotter] saveScanHistory: no payload, skipping");
+      }
+      return;
+    }
 
     let imageUrl = (scan.image_url ?? "").trim();
     if (imageUrl.length === 0) {
@@ -63,18 +70,74 @@ export async function saveScanHistory(scan: {
     }
 
     const supabase = createServerClient();
-    if (!supabase) return;
+    if (!supabase) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[StrainSpotter] saveScanHistory: Supabase client unavailable");
+      }
+      return;
+    }
 
     // Prefer durable URL: upload data URL to storage when not already durable
     if (!isDurableUrl(imageUrl)) {
-      const durableUrl = await uploadScanImageToStorage(supabase, imageUrl);
-      if (durableUrl) imageUrl = durableUrl;
+      try {
+        const durableUrl = await uploadScanImageToStorage(supabase, imageUrl);
+        if (durableUrl) imageUrl = durableUrl;
+      } catch (uploadErr) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[StrainSpotter] saveScanHistory: storage upload failed, using original URL", uploadErr);
+        }
+      }
     }
 
     const now = new Date().toISOString();
     const gardenId = await getPublicGardenId(supabase);
 
-    await supabase.from("scans").insert({
+    // Backend path: update existing scan so it appears in Log Book (garden_id filter)
+    if (scan.existing_scan_id && typeof scan.existing_scan_id === "string" && scan.existing_scan_id.length > 0) {
+      const { data: existing, error: fetchErr } = await supabase
+        .from("scans")
+        .select("id, garden_id")
+        .eq("id", scan.existing_scan_id)
+        .maybeSingle();
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("[StrainSpotter] saveScanHistory: existing_scan_id", scan.existing_scan_id, "found:", !!existing, "fetchErr:", fetchErr?.message ?? null);
+      }
+
+      if (existing) {
+        const hasGarden = !!existing.garden_id;
+        const updatePayload: Record<string, unknown> = {
+          garden_id: gardenId,
+          status: "done",
+          processed_at: now,
+          result_payload: payload,
+          image_url: imageUrl,
+        };
+        if (scan.vision_payload != null) updatePayload.vision_payload = scan.vision_payload;
+        if (scan.model_version != null) updatePayload.model_version = scan.model_version;
+        if (scan.matched_strain_slug != null) updatePayload.matched_strain_slug = scan.matched_strain_slug;
+
+        const { error: updateErr } = await supabase
+          .from("scans")
+          .update(updatePayload)
+          .eq("id", scan.existing_scan_id);
+
+        if (updateErr) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("[StrainSpotter] saveScanHistory: update failed", updateErr);
+          }
+          throw updateErr;
+        }
+        createCandidateReferenceIfEligible({ result_payload: payload, image_url: imageUrl }).catch(() => {});
+        if (process.env.NODE_ENV === "development") {
+          console.log("[StrainSpotter] History save OK (updated existing scan for Log Book)");
+        }
+        return;
+      }
+    }
+
+    // Local path: insert new row
+    const insertPayload = {
       user_id: null,
       garden_id: gardenId,
       image_url: imageUrl,
@@ -84,9 +147,19 @@ export async function saveScanHistory(scan: {
       ...(scan.vision_payload != null && { vision_payload: scan.vision_payload }),
       ...(scan.model_version != null && { model_version: scan.model_version }),
       ...(scan.matched_strain_slug != null && { matched_strain_slug: scan.matched_strain_slug }),
-    });
+    };
+    if (process.env.NODE_ENV === "development") {
+      console.log("[StrainSpotter] saveScanHistory: inserting", { hasPayload: !!payload, hasImage: !!imageUrl });
+    }
 
-    // Optional: create candidate reference image for high-confidence matched strains
+    const { error: insertErr } = await supabase.from("scans").insert(insertPayload);
+    if (insertErr) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[StrainSpotter] saveScanHistory: insert error", insertErr);
+      }
+      throw insertErr;
+    }
+
     createCandidateReferenceIfEligible({ result_payload: payload, image_url: imageUrl }).catch(() => {});
     if (process.env.NODE_ENV === "development") {
       console.log("[StrainSpotter] History save OK");
