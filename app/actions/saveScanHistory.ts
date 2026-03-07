@@ -3,6 +3,10 @@
 import { createServerClient } from "../_server/supabase/server";
 import { isScanResultPayloadV1, type ScanResultPayloadV1 } from "@/lib/scanner/types";
 import { scanResultToPayloadV1 } from "@/lib/scanner/resultPayloadAdapter";
+import {
+  createCandidateReferenceImage,
+  extractCandidateEligibility,
+} from "@/lib/referenceImages";
 
 type SupabaseClient = ReturnType<typeof createServerClient>;
 
@@ -72,6 +76,18 @@ export async function saveScanHistory(scan: {
       ...(scan.model_version != null && { model_version: scan.model_version }),
       ...(scan.matched_strain_slug != null && { matched_strain_slug: scan.matched_strain_slug }),
     });
+
+    // Optional: create candidate reference image for high-confidence matched strains
+    const eligibility = extractCandidateEligibility(payload);
+    if (eligibility) {
+      createCandidateReferenceImage(supabase, {
+        strain_slug: eligibility.strain_slug,
+        image_url: imageUrl,
+        match_confidence: eligibility.confidence,
+        source_type: "scan_candidate",
+        metadata: { model: payload.model },
+      }).catch((e) => console.warn("Candidate reference creation skipped:", e));
+    }
   } catch (err) {
     console.warn("Scan history save skipped:", err);
   }
