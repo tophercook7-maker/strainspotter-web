@@ -105,7 +105,6 @@ export async function saveScanHistory(scan: {
       }
 
       if (existing) {
-        const hasGarden = !!existing.garden_id;
         const updatePayload: Record<string, unknown> = {
           garden_id: gardenId,
           status: "done",
