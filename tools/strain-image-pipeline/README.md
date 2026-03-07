@@ -1,90 +1,51 @@
-# Strain Image Ingestion Pipeline
+# Strain Image Pipeline
 
-Collects and organizes cannabis strain images into the external Vault drive, preparing them for the 5,000-strain database.
+End-to-end pipeline for strain reference image ingestion: fetch → extract → download → classify → quality → dedupe → promote → review queue.
 
-**See also:**
-- [Implementation Plan](../../docs/strain-image-ingestion-implementation-plan.md)
-- [Source Strategy](../../docs/strain-image-ingestion-source-strategy.md)
-- [Vault Structure](../../docs/strain-image-ingestion-vault-structure.md)
-- [Review Model](../../docs/strain-image-ingestion-review-model.md)
-- [Legal & Safety](../../docs/strain-image-ingestion-legal-safety.md)
-- [Execution Roadmap](../../docs/strain-image-ingestion-roadmap.md)
+## Quick Start (Small Test Batch)
 
-## Prerequisites
-
-- Node.js 18+
-- External Vault drive at `/Volumes/Vault` or `/Volumes/TheVault` (auto-detected)
-- Run `npm install` in this folder
-
-## Installation
+Run the pipeline in **fixture mode** (no live HTTP requests) with a small batch of 5 strains:
 
 ```bash
 cd tools/strain-image-pipeline
-npm install
+npm run run fixtures/test-batch.txt
 ```
 
-## Pipeline Stages
-
-1. **Download** — Fetch images from sources (20 per strain, 500 per run max)
-2. **Classify** — Detect image type: bud, whole_plant, leaf, trichome, packaging
-3. **Quality filter** — Reject blur, low resolution (<512px), too dark, heavy watermark
-4. **Dedupe** — Remove near-duplicates via perceptual hashing
-5. **Promote** — Move approved images to staging
-
-## How Images Move Through the Vault
-
-| Stage   | Source                                               | Destination                                                      |
-|---------|------------------------------------------------------|------------------------------------------------------------------|
-| Download| Image sources (API/config)                            | `/Volumes/Vault/strainspotter-vault/raw_sources/images/{strain}/` |
-| Quality | raw_sources/images                                   | Rejected → `/raw_sources/rejected/`                              |
-| Promote | raw_sources/images (after quality + dedupe)           | `/staging/candidate_strain_images/{strain}/`                     |
-
-## Running the Pipeline
+Or use the default batch (same 5 strains) when no Vault strain list is found:
 
 ```bash
-# Full pipeline (download → classify → quality → dedupe → promote)
-npm run run
-
-# With custom strain list
-STRAIN_LIST=/path/to/strains.txt npm run run
-# or
-npx tsx pipeline_runner.ts /path/to/strains.txt
-
-# Individual stages
-npm run download
-npm run classify
-npm run quality
-npm run dedupe
+USE_FIXTURE=1 npm run run
 ```
 
-## Configuration
+Fixture mode reads HTML from `fixtures/*.html` and extracts image URLs. Images are downloaded from those URLs (picsum.photos placeholders). Note: placeholder images may be rejected by the quality check (blur threshold); the pipeline flow still runs end-to-end.
 
-Edit `config.ts`:
+## Test Mode: Fixture vs Live
 
-- `VAULT_ROOT` — Base path (default: `/Volumes/Vault/strainspotter-vault`)
-- `MAX_IMAGES_PER_RUN` — 500
-- `MAX_IMAGES_PER_STRAIN` — 20
-- `MIN_RESOLUTION_PX` — 512
-- `BLUR_THRESHOLD` — Laplacian-based blur cutoff
-- `PHASH_SIZE` / `PHASH_THRESHOLD` — Deduplication sensitivity
+- **Fixture mode** (default): Reads from `fixtures/{strain}.html`, no live page fetch. Safe for CI and local testing.
+- **Live mode**: Set `USE_FIXTURE=0` and provide source URLs via the source queue. Uses throttling and user-agent.
 
-## Output
+## Outputs (Vault Structure)
 
-After each run, the pipeline prints:
+Outputs are written under `VAULT_ROOT`. Default: `/Volumes/TheVault/strainspotter-vault` or `/Volumes/Vault/strainspotter-vault`. If neither volume exists, falls back to `./vault-output`.
 
-- Number of strains processed
-- Number of images downloaded
-- Number rejected (quality + dedupe)
-- Number promoted to staging
+| Path | Description |
+|------|-------------|
+| `raw_sources/html/` | Raw HTML (or fixture copies) per strain |
+| `raw_sources/images/{strain}/` | Downloaded images before quality/dedupe |
+| `raw_sources/rejected/` | Images rejected by quality check |
+| `staging/candidate_strain_images/{strain}/` | Promoted candidates |
+| `review_queue/images/` | Copies for human review |
+| `review_queue/manifest.json` | Review queue manifest |
+| `logs/` | Run logs and manifests |
 
-## Image Sources
+## Inspecting Results
 
-The download step uses `getImageUrlsForStrain()` in `download_images.ts`, which returns an empty list by default. To fetch real images:
+- **Run log**: `{VAULT_ROOT}/logs/run_{runId}.log`
+- **Manifest**: `{VAULT_ROOT}/logs/manifest_{runId}.json` — summarizes strains, pages fetched, URLs extracted, downloaded, rejected, promoted
+- **Review manifest**: `{VAULT_ROOT}/review_queue/manifest.json`
 
-1. Add a Google Custom Search API key or similar
-2. Implement `getImageUrlsForStrain()` to return image URLs
-3. Or pass `imageUrlsByStrain` when calling `runDownload()`
+## Environment
 
-## No Web App Changes
-
-This pipeline runs as a standalone tool. It does not modify the StrainSpotter web app.
+- `VAULT_ROOT` — Override output root
+- `USE_FIXTURE` — `1` (default) or `0` for live fetch
+- `STRAIN_LIST` — Path to strain list file (one strain per line)
