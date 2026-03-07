@@ -1,89 +1,39 @@
-import { GlassBackground } from "@/app/_components/GlassBackground";
-import { IconButton } from "@/app/_components/IconButton";
+import Link from "next/link";
 import { PageHeaderNav } from "@/app/_components/PageHeaderNav";
-import { FeedbackButton } from "@/app/_components/FeedbackButton";
-import GardenConsoleLiveClient from "./GardenConsoleLiveClient";
-import { getLatestGardenSensorReading } from "@/lib/garden/getLatestGardenSensorReading";
 
-type Tile = {
-  label: string;
-  href: string;
-  icon: string;
-  subtitle?: string;
-};
-
-const DASH_TILES: Tile[] = [
-  { label: "AI Strain Scan", href: "/garden/scanner", icon: "📷" },
-  { label: "Scraper Status", href: "/garden/scraper-status", icon: "🧲" },
-  { label: "Strain Browser", href: "/coming-soon", icon: "🌿" },
-  { label: "Reviews Hub", href: "/coming-soon", icon: "⭐️" },
-
-  { label: "Community Groups", href: "/coming-soon", icon: "👥" },
-  { label: "Grow Coach", href: "/coming-soon", icon: "🌱" },
-  { label: "Grow Logbook", href: "/garden/plants", icon: "📓" },
-
-  { label: "Grower Directory", href: "/coming-soon", icon: "🧑‍🌾" },
-  { label: "Seed Vendors", href: "/coming-soon", icon: "🌾" },
-  { label: "Dispensaries", href: "/coming-soon", icon: "🏪" },
-
-  { label: "Chat with Spot", href: "/coming-soon", icon: "💬" },
-  { label: "AI Chat", href: "/coming-soon", icon: "🤖" },
-  { label: "Favorites", href: "/coming-soon", icon: "⭐️" },
-
-  { label: "Achievements", href: "/coming-soon", icon: "🏆" },
-  { label: "Cannabis News", href: "/coming-soon", icon: "📰" },
+const tiles = [
+  {
+    title: "Scanner",
+    desc: "Scan packaging or plant photos. AI-assisted results.",
+    href: "/garden/scanner",
+  },
+  {
+    title: "Log Book",
+    desc: "Your scan history + notes across the grow cycle.",
+    href: "/garden/history",
+  },
+  {
+    title: "Grow Coach",
+    desc: "Full grow-cycle guidance: seed → veg → flower → dry/cure.",
+    href: "/garden/grow-coach",
+  },
 ];
 
-export const dynamic = "force-dynamic";
-
-export default async function GardenPage() {
-  let initial: { gardenId: string; reading: Awaited<ReturnType<typeof getLatestGardenSensorReading>>["reading"] } | null = null;
-
-  try {
-    const res = await getLatestGardenSensorReading();
-    if (res) {
-      initial = { gardenId: res.gardenId, reading: res.reading };
-    }
-  } catch {
-    initial = null;
-  }
-
+export default function GardenPage() {
   return (
-    <main className="min-h-screen text-white">
-      <GlassBackground />
-      <FeedbackButton />
-
-      <div className="mx-auto w-full max-w-[980px] px-4 py-6 space-y-6">
-        {/* Garden IS Home */}
-        <PageHeaderNav title="The Garden" hideHome />
-
-        {/* Live first */}
-        <section className="rounded-2xl border border-white/10 bg-black/25 backdrop-blur-md p-6">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="text-lg font-semibold text-white">Live Environment</div>
-            <div className="text-xs text-white/60">Auto-refresh every 5 seconds</div>
-          </div>
-
-          <div className="mt-4">
-            <GardenConsoleLiveClient initial={initial} />
-          </div>
-        </section>
-
-        {/* Then dashboard icon buttons */}
-        <section className="rounded-2xl border border-white/10 bg-black/25 backdrop-blur-md p-6">
-          <div className="text-lg font-semibold text-white">Dashboard</div>
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {DASH_TILES.map((t) => (
-              <IconButton
-                key={t.label}
-                href={t.href}
-                icon={t.icon}
-                label={t.label}
-                subtitle={t.subtitle}
-              />
-            ))}
-          </div>
-        </section>
+    <main className="pb-[72px]">
+      <PageHeaderNav title="StrainSpotter" hideHome />
+      <div className="p-4 flex flex-col gap-3">
+        {tiles.map((t) => (
+          <Link
+            key={t.href}
+            href={t.href}
+            className="block p-4 rounded-xl border border-white/10 bg-white/[0.03] no-underline text-white"
+          >
+            <div className="text-lg font-extrabold mb-1.5">{t.title}</div>
+            <div className="opacity-85">{t.desc}</div>
+          </Link>
+        ))}
       </div>
     </main>
   );

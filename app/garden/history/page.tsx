@@ -1,50 +1,129 @@
 import TopNav from "../_components/TopNav";
 import { createServerClient } from "../../_server/supabase/server";
 import Link from "next/link";
+import { getScanPrimaryLabel } from "@/lib/scanPrimary";
+import { getPublicGardenId } from "@/lib/garden/getPublicGardenId";
+
+function isActivityPing(scan: { result_payload?: unknown }): boolean {
+  const r = scan?.result_payload;
+  return !!r && typeof r === "object" && (r as { kind?: string }).kind === "activity_ping";
+}
+
+function isGrowCoachPlan(scan: { result_payload?: unknown; result?: unknown }) {
+  const r = scan?.result_payload ?? scan?.result;
+  return r && typeof r === "object" && (r as { kind?: string }).kind === "grow_coach_plan";
+}
+
+function isCoachEntry(scan: { image_url?: string | null; result_payload?: unknown; result?: unknown }): boolean {
+  const img = scan?.image_url;
+  const r = scan?.result_payload ?? scan?.result;
+  if (r && typeof r === "object" && (r as { kind?: string }).kind === "grow_coach_plan") return true;
+  if (typeof img === "string" && img.startsWith("data:application/json")) return true;
+  return false;
+}
+
+function getThumbUrl(scan: { image_url?: string | null }): string | null {
+  const img = scan?.image_url;
+  if (!img || typeof img !== "string") return null;
+  if (img.startsWith("data:application/json")) return null;
+  if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:image")) {
+    return img;
+  }
+  return img;
+}
+
+function getGrowCoachMeta(scan: {
+  result_payload?: unknown;
+  result?: unknown;
+}) {
+  const r = (scan?.result_payload ?? scan?.result) as
+    | { phase?: string; scale?: string; plan?: { confidence?: number } }
+    | undefined;
+  if (!r) return { phase: null, scale: null, conf: null };
+  const phase = r.phase ?? null;
+  const scale = r.scale ?? null;
+  const conf = r.plan?.confidence ?? null;
+  return { phase, scale, conf };
+}
+
+function daysSince(isoDate?: string | null): number | null {
+  if (!isoDate) return null;
+  const then = new Date(isoDate).getTime();
+  if (Number.isNaN(then)) return null;
+  const now = Date.now();
+  const diffMs = now - then;
+  if (diffMs < 0) return 0;
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+
+function getLatestCreatedAt(
+  items: { created_at?: string; createdAt?: string }[]
+): string | null {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  let best: string | null = null;
+  for (const s of items) {
+    const t = s?.created_at ?? s?.createdAt;
+    if (typeof t === "string" && (!best || new Date(t) > new Date(best))) {
+      best = t;
+    }
+  }
+  return best;
+}
 
 /** Same robust v1 detection as history detail: version only, no strict shape. */
 function isV1Payload(p: unknown): boolean {
   return !!p && typeof p === "object" && (p as { version?: string }).version === "1.0";
 }
 
-async function getScanHistory(strainFilter?: string) {
+async function getScanHistory(): Promise<{
+  scans: Array<{ id: string; created_at?: string; result_payload?: unknown; image_url?: string | null }>;
+  lastActiveAt: string | null;
+}> {
   try {
     const supabase = createServerClient();
+    const gardenId = await getPublicGardenId(supabase);
 
-    // Fetch unfiltered so we can match both legacy (primary_name) and v1 (result_payload) rows.
-    // Filter is applied client-side using displayName() so v1 rows are included.
-    const { data, error } = await supabase
-      .from("scans")
-      .select("id, created_at, primary_name, confidence, result_payload")
-      .order("created_at", { ascending: false })
-      .limit(strainFilter ? 200 : 20);
+    const [scansRes, gardenRes] = await Promise.all([
+      supabase
+        .from("scans")
+        .select("id, created_at, result_payload, image_url")
+        .eq("garden_id", gardenId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("gardens")
+        .select("last_active_at")
+        .eq("id", gardenId)
+        .maybeSingle(),
+    ]);
 
-    if (error) {
-      console.error("Error fetching scan history:", error);
-      return [];
+    if (scansRes.error) {
+      console.error("Error fetching scan history:", scansRes.error);
+      return { scans: [], lastActiveAt: null };
     }
 
-    const rows = data || [];
-    if (!strainFilter) return rows;
+    const rows = (scansRes.data || []) as Array<{
+      id: string;
+      created_at?: string;
+      result_payload?: unknown;
+      image_url?: string | null;
+    }>;
 
-    const term = strainFilter.toLowerCase();
-    return rows.filter((scan) => displayName(scan).toLowerCase().includes(term));
+    const lastActiveAt =
+      gardenRes.data && typeof (gardenRes.data as { last_active_at?: string }).last_active_at === "string"
+        ? (gardenRes.data as { last_active_at: string }).last_active_at
+        : null;
+
+    return { scans: rows, lastActiveAt };
   } catch (err) {
     console.error("Error fetching scan history:", err);
-    return [];
+    return { scans: [], lastActiveAt: null };
   }
 }
 
 function displayName(scan: { primary_name?: string | null; result_payload?: unknown }): string {
-  if (isV1Payload(scan.result_payload)) {
-    try {
-      const name = (scan.result_payload as { primary_match?: { strain_name?: string } })?.primary_match?.strain_name;
-      if (typeof name === "string" && name.trim()) return name.trim();
-    } catch (_) {}
-    return "Unverified Cultivar";
-  }
-  if (scan.primary_name) return scan.primary_name;
-  return "Unverified Cultivar";
+  const { label } = getScanPrimaryLabel(scan);
+  return label === "Scan" ? "Unverified Cultivar" : label;
 }
 
 function displayConfidence(scan: { confidence?: number | null; result_payload?: unknown }): number | null {
@@ -68,53 +147,101 @@ function confidenceTier(pct: number): "High" | "Medium" | "Low" {
   return "Low";
 }
 
-export default async function HistoryPage({
-  searchParams,
-}: {
-  searchParams?: { strain?: string };
-}) {
-  const strainFilter = searchParams?.strain;
-  const scans = await getScanHistory(strainFilter);
+export default async function HistoryPage() {
+  const { scans, lastActiveAt } = await getScanHistory();
+  const displayableScans = scans.filter((s) => !isActivityPing(s));
+  const latestScan = getLatestCreatedAt(scans);
+  const latestActivity = [latestScan, lastActiveAt].filter(Boolean) as string[];
+  const latest = latestActivity.length > 0
+    ? latestActivity.reduce((a, b) => (new Date(a) > new Date(b) ? a : b))
+    : null;
+  const gap = daysSince(latest ?? undefined);
 
   return (
     <>
-      <TopNav title="History" showBack />
+      <TopNav title="Log Book" showBack />
       <main className="min-h-screen bg-black text-white">
-        <div className="mx-auto w-full max-w-[720px] px-4 py-6">
-          {strainFilter && (
-            <div className="mb-4 rounded-lg border border-white/15 bg-white/10 p-3 flex items-center justify-between">
-              <span className="text-white/80 text-sm">
-                Filtered by: <span className="font-semibold text-white">{strainFilter}</span>
-              </span>
-              <Link
-                href="/garden/history"
-                className="text-white/80 hover:text-white text-sm underline"
-              >
-                Clear
-              </Link>
-            </div>
-          )}
-          {scans.length === 0 ? (
+        <div className="w-full py-6">
+          {gap !== null && gap >= 1 ? (
+            (() => {
+            const cardStyle = {
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: 14,
+              padding: 14,
+              marginBottom: 16,
+            };
+
+            const btnStyle = {
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "10px 12px",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(0,0,0,0.25)",
+              textDecoration: "none",
+              fontWeight: 800,
+              color: "inherit",
+            };
+
+            return (
+              <div style={cardStyle}>
+                <div style={{ fontSize: 16, fontWeight: 900 }}>Catch-up check</div>
+                <div style={{ marginTop: 4, opacity: 0.9 }}>
+                  You haven&apos;t logged anything in <b>{gap}</b> day{gap === 1 ? "" : "s"}.
+                </div>
+                <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <Link href="/garden/grow-coach" style={btnStyle}>
+                    Open Grow Coach
+                  </Link>
+                  <Link href="/garden/scanner" style={btnStyle}>
+                    Scan a Photo
+                  </Link>
+                </div>
+                <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+                  Tip: generate a &quot;Today&apos;s Plan&quot; then save it to Log Book.
+                </div>
+              </div>
+            );
+          })()
+          ) : null}
+          {displayableScans.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-white/70 text-lg">
-                {strainFilter ? `No scans found for "${strainFilter}"` : "No scans yet"}
-              </p>
+              <p className="text-white/70 text-lg">No scans yet</p>
               <p className="text-white/50 text-sm mt-2">
-                {strainFilter
-                  ? "Try a different strain or clear the filter"
-                  : "Your scan history will appear here"}
+                Your scan history will appear here
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {scans.map((scan) => (
+              {displayableScans.map((scan) => (
                 <Link
                   key={scan.id}
                   href={`/garden/history/${scan.id}`}
                   className="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
+                  <div className="flex items-start gap-4">
+                    {(() => {
+                      const thumb = getThumbUrl(scan);
+                      if (!thumb || isCoachEntry(scan)) return null;
+                      return (
+                        <img
+                          src={thumb}
+                          alt=""
+                          style={{
+                            width: 72,
+                            height: 72,
+                            objectFit: "cover",
+                            borderRadius: 12,
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            background: "rgba(0,0,0,0.25)",
+                            flex: "0 0 auto",
+                          }}
+                        />
+                      );
+                    })()}
+                    <div className="flex-1 min-w-0">
                       <h3 className="text-white font-semibold text-lg">
                         {displayName(scan)}
                       </h3>
@@ -131,6 +258,35 @@ export default async function HistoryPage({
                           </p>
                         );
                       })()}
+                      {isGrowCoachPlan(scan) ? (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className="rounded-full border border-white/15 bg-white/5 px-2 py-1 text-xs font-extrabold">
+                            Grow Coach
+                          </span>
+                          {(() => {
+                            const m = getGrowCoachMeta(scan);
+                            return (
+                              <>
+                                {m.phase ? (
+                                  <span className="rounded-full border border-white/15 bg-white/5 px-2 py-1 text-xs font-bold">
+                                    Phase: {String(m.phase)}
+                                  </span>
+                                ) : null}
+                                {m.scale ? (
+                                  <span className="rounded-full border border-white/15 bg-white/5 px-2 py-1 text-xs font-bold">
+                                    Scale: {String(m.scale)}
+                                  </span>
+                                ) : null}
+                                {typeof m.conf === "number" ? (
+                                  <span className="rounded-full border border-white/15 bg-white/5 px-2 py-1 text-xs font-bold">
+                                    Confidence: {Math.round(m.conf * 100)}%
+                                  </span>
+                                ) : null}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ) : null}
                     </div>
                     {scan.created_at && (
                       <p className="text-white/50 text-xs whitespace-nowrap">

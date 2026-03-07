@@ -4,22 +4,11 @@
 import type { FullScanResult } from "@/lib/scanner/types";
 import type { FeatureFlag } from "@/lib/flags";
 import CollapsibleSection from "./CollapsibleSection";
-import AddAsPlantButton from "./AddAsPlantButton";
 import { generateWhyThisMatchReasons } from "@/lib/scanner/whyThisMatchEngine";
 import { generateConfidenceExplanationV514 } from "@/lib/scanner/confidenceExplanation";
 import { generateConfidenceExplanation } from "@/lib/scanner/confidenceExplanation";
 import { isScanResultPayloadV1 } from "@/lib/scanner/types";
 import { resultPayloadToFullScanResult } from "@/lib/scanner/resultPayloadAdapter";
-
-/** Best-effort strain name for Add as Plant only. Works for backend-first and judge/fallback viewModels. */
-function getStrainNameForAddPlant(viewModel: Record<string, unknown> | null | undefined): string {
-  const raw =
-    (viewModel?.nameFirstDisplay as { primaryStrainName?: string } | undefined)?.primaryStrainName ??
-    (viewModel?.name as string | undefined) ??
-    (viewModel?.primaryMatch as { strain?: { name?: string } } | undefined)?.strain?.name ??
-    (viewModel?.namingInfo as { primaryName?: string } | undefined)?.primaryName;
-  return raw != null && String(raw).trim() !== "" ? String(raw).trim() : "New Plant";
-}
 
 export default function WikiStyleResultPanel({
   result,
@@ -100,8 +89,6 @@ export default function WikiStyleResultPanel({
   };
 
   const strainFamily = getStrainFamily();
-
-  const strainNameForButton = getStrainNameForAddPlant(viewModel as Record<string, unknown>);
 
   return (
     <section className="w-full max-w-[720px] mx-auto rounded-2xl border border-white/12 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/20 p-5 sm:p-7 space-y-5">
@@ -2746,11 +2733,6 @@ export default function WikiStyleResultPanel({
           </div>
         );
       })()}
-
-      {/* Bottom Actions — Add as Plant (Scan → Plant fast-path) */}
-      <div className="flex flex-wrap items-center gap-3 pt-6 mt-6 border-t border-white/10">
-        <AddAsPlantButton strainName={strainNameForButton} coverImageUrl={imageDataUrl} />
-      </div>
     </section>
   );
 }

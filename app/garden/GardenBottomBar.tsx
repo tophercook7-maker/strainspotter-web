@@ -1,33 +1,42 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+function Item({ href, label }: { href: string; label: string }) {
+  const pathname = usePathname();
+  const active =
+    pathname === href || (href === "/garden" && pathname === "/garden");
+  return (
+    <Link
+      href={href}
+      className="flex-1 text-center py-3 px-2 no-underline text-white"
+      style={{
+        borderTop: active ? "2px solid #3ddc84" : "2px solid transparent",
+        opacity: active ? 1 : 0.8,
+        fontWeight: active ? 700 : 500,
+      }}
+    >
+      {label}
+    </Link>
+  );
+}
 
 export default function GardenBottomBar() {
-  const btn =
-    "flex-1 text-center px-3 py-2 rounded-lg text-sm font-medium bg-white/15 text-white hover:bg-white/25 transition-colors";
-
   return (
-    <div className="fixed bottom-3 left-0 right-0 z-50 px-3">
-      <div className="mx-auto w-full max-w-[900px] rounded-2xl border border-white/10 bg-black/55 backdrop-blur-md p-2 flex gap-2">
-        <button className={btn} onClick={() => window.history.back()} type="button">
-          Back
-        </button>
-        <Link className={btn} href="/home">
-          Home
-        </Link>
-        <Link className={btn} href="/garden/plants">
-          Plants
-        </Link>
-        <Link className={btn} href="/garden/scanner">
-          Scan
-        </Link>
-        <Link className={btn} href="/garden/history">
-          History
-        </Link>
-        <Link className={btn} href="/garden/scraper-status">
-          Scraper
-        </Link>
+    <nav
+      className="fixed left-0 right-0 bottom-0 flex justify-center text-white z-50"
+      style={{
+        background: "rgba(10, 14, 10, 0.96)",
+        backdropFilter: "blur(8px)",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <div className="mx-auto w-full max-w-xl px-4 flex">
+        <Item href="/garden/scanner" label="Scanner" />
+        <Item href="/garden/history" label="Log Book" />
+        <Item href="/garden/grow-coach" label="Grow Coach" />
       </div>
-    </div>
+    </nav>
   );
 }

@@ -13,8 +13,9 @@ export function PageHeaderNav({ title, hideHome, showBack = true }: Props) {
   const router = useRouter();
 
   return (
-    <header className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
+    <header className="w-full">
+      <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3 px-4">
+        <div className="flex items-center gap-2">
         {showBack ? (
           <button
             type="button"
@@ -33,11 +34,12 @@ export function PageHeaderNav({ title, hideHome, showBack = true }: Props) {
             Home
           </Link>
         )}
+        </div>
+
+        <div className="text-lg font-semibold text-white">{title}</div>
+
+        <div className="w-[140px]" />
       </div>
-
-      <div className="text-lg font-semibold text-white">{title}</div>
-
-      <div className="w-[140px]" />
     </header>
   );
 }

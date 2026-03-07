@@ -19,7 +19,7 @@ export default function PageHeader({ title, showBack = true }: PageHeaderProps) 
         <button
           onClick={() => router.push("/garden")}
           className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition"
-          aria-label="Back to Garden"
+          aria-label="Back to home"
         >
           ←
         </button>
