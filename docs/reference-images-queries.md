@@ -2,6 +2,8 @@
 
 Dev/admin queries for `strain_reference_images` (use Supabase SQL editor or psql).
 
+**See also:** [reference-images-dev-testing.md](./reference-images-dev-testing.md) for a full dev test checklist.
+
 ## List candidates (unapproved)
 ```sql
 SELECT id, strain_slug, match_confidence, created_at
