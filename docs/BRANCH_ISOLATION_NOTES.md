@@ -7,4 +7,4 @@
 
 ## Deployment
 
-See [VERCEL_DEPLOY_READY.md](./VERCEL_DEPLOY_READY.md) for Vercel deployment target (commit `8a3b768`).
+See [VERCEL_DEPLOY_READY.md](./VERCEL_DEPLOY_READY.md) for Vercel deployment target (commit `f090034`).
