@@ -74,7 +74,7 @@ export async function saveScanHistory(scan: {
       if (process.env.NODE_ENV === "development") {
         console.warn("[StrainSpotter] saveScanHistory: Supabase client unavailable");
       }
-      return;
+      throw new Error("Supabase client unavailable");
     }
 
     // Prefer durable URL: upload data URL to storage when not already durable
