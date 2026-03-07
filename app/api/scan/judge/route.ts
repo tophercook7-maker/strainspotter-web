@@ -28,6 +28,70 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+type StructuredJudgePayload = {
+  ok: boolean;
+  cultivar_name: string | null;
+  confidence: number;
+  noRealMatch: boolean;
+  userMessage: string | null;
+  observations: string[];
+  reasoning: string;
+  best: Candidate | null;
+  candidates: Candidate[];
+  askForBetterPics: boolean;
+  guidance?: string;
+};
+
+/** Build stable JSON response; includes legacy fields for adapter compatibility. */
+function buildStructuredResponse(p: StructuredJudgePayload) {
+  const description = p.observations?.length ? p.observations.join(". ") : p.reasoning;
+  return {
+    ok: p.ok,
+    cultivar_name: p.cultivar_name,
+    confidence: p.confidence,
+    noRealMatch: p.noRealMatch,
+    userMessage: p.userMessage,
+    observations: p.observations ?? [],
+    reasoning: p.reasoning,
+    best: p.best,
+    candidates: p.candidates ?? [],
+    askForBetterPics: p.askForBetterPics,
+    guidance: p.guidance ?? null,
+    description,
+    reason: p.reasoning,
+  };
+}
+
+/** Parse vision JSON; fallback to safe defaults on malformed/freeform output. */
+function parseVisionJson(raw: string): {
+  observations?: string[];
+  labelText?: string | null;
+  hasReadableLabel?: boolean;
+} {
+  if (!raw || typeof raw !== "string") return {};
+  const trimmed = raw.trim();
+  const jsonStart = trimmed.indexOf("{");
+  const jsonEnd = trimmed.lastIndexOf("}");
+  if (jsonStart >= 0 && jsonEnd > jsonStart) {
+    try {
+      const parsed = JSON.parse(trimmed.slice(jsonStart, jsonEnd + 1));
+      const obs = parsed.observations;
+      const arr = Array.isArray(obs) ? obs.filter((x: unknown) => typeof x === "string") : [];
+      return {
+        observations: arr.length ? arr : undefined,
+        labelText: typeof parsed.labelText === "string" ? parsed.labelText : parsed.labelText === null ? null : undefined,
+        hasReadableLabel: typeof parsed.hasReadableLabel === "boolean" ? parsed.hasReadableLabel : undefined,
+      };
+    } catch {
+      /* fall through */
+    }
+  }
+  if (trimmed.length > 0 && trimmed.length < 500) {
+    return { observations: [trimmed], labelText: undefined, hasReadableLabel: false };
+  }
+  return {};
+}
+
 export async function POST(req: Request) {
   try {
     const openai = getOpenAIClient();
@@ -76,35 +140,50 @@ export async function POST(req: Request) {
       ? toBase64FromDataUrl(imageDataUrl)
       : { base64: imageBase64 as string, mime: imageMime };
 
-    // 1) Vision: short, consistent description (keeps embeddings aligned w/ backfill approach)
-    // Throttle-safe: tiny retry loop for 429s.
-    let description = "";
+    // 1) Vision: structured JSON output for consistent embeddings and parsing
+    const VISION_JSON_SCHEMA = `{
+  "observations": ["string"],
+  "labelText": "string or null",
+  "hasReadableLabel": boolean
+}`;
+    const VISION_SYSTEM = `You must return ONLY valid JSON, no other text. Schema:
+${VISION_JSON_SCHEMA}
+
+Rules:
+- observations: 1-3 short factual bullets (packaging, colors, logo, plant parts). No cultivar guesses.
+- labelText: exact text visible on label/packaging, or null if none readable
+- hasReadableLabel: true only if label/packaging text is clearly readable
+- Do NOT invent cultivar or strain names
+- Be concise; minimize tokens`;
+
+    let embeddingText = "";
+    let observations: string[] = [];
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
         const vision = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           temperature: 0,
+          response_format: { type: "json_object" },
           messages: [
-            {
-              role: "system",
-              content:
-                "Describe the cannabis product/strain image briefly for identification. 1-2 sentences. Focus on visible packaging/label text, logo, colors, and key visual elements. No guesses beyond what is visible.",
-            },
+            { role: "system", content: VISION_SYSTEM },
             {
               role: "user",
               content: [
-                {
-                  type: "image_url",
-                  image_url: { url: `data:${mime};base64,${base64}` },
-                },
+                { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
               ],
             },
           ],
         });
 
-        description =
-          vision.choices?.[0]?.message?.content?.trim() ||
-          "Unclear image; no readable label text.";
+        const raw = vision.choices?.[0]?.message?.content?.trim() || "";
+        const parsed = parseVisionJson(raw);
+        observations = parsed.observations?.length
+          ? parsed.observations
+          : parsed.labelText
+            ? [parsed.labelText]
+            : ["Unclear image; no readable label text."];
+        embeddingText =
+          observations.join(". ") || parsed.labelText || "Unclear image; no readable label text.";
         break;
       } catch (e: any) {
         const msg = String(e?.message || e);
@@ -119,7 +198,7 @@ export async function POST(req: Request) {
     // 2) Embedding
     const emb = await openai.embeddings.create({
       model: "text-embedding-3-small",
-      input: description,
+      input: embeddingText || "Unclear image; no readable label text.",
     });
     const embedding = emb.data[0].embedding;
 
@@ -149,16 +228,18 @@ export async function POST(req: Request) {
       }>) || [];
 
     if (rows.length === 0) {
-      return NextResponse.json({
+      return NextResponse.json(buildStructuredResponse({
         ok: true,
-        description,
+        cultivar_name: null,
+        confidence: 0,
+        noRealMatch: true,
+        userMessage: "We could not confidently identify a known cultivar from this scan.",
+        observations,
+        reasoning: "No vault matches above threshold",
         best: null,
         candidates: [],
         askForBetterPics: true,
-        reason: "No matches above threshold",
-        noRealMatch: true,
-        userMessage: "We could not confidently identify a known cultivar from this scan.",
-      });
+      }));
     }
 
     // 4) Hydrate strain names
@@ -199,12 +280,10 @@ export async function POST(req: Request) {
       .slice(0, topK);
 
     const best = candidates[0] || null;
-
-    // 6) Confidence + "ask for better pics"
     const bestSim = best?.similarity ?? 0;
-    const askForBetterPics = bestSim < 0.82; // tune later
+    const askForBetterPics = bestSim < 0.82;
 
-    // 7) Memory (optional table)
+    // 6) Memory (optional table)
     // If table doesn't exist, this silently fails without breaking the judge response.
     try {
       await supabase.from("vault_scan_events").insert({
@@ -218,16 +297,22 @@ export async function POST(req: Request) {
       // ignore
     }
 
-    return NextResponse.json({
+    const guidance = askForBetterPics
+      ? "Best match shown. For higher confidence, upload a sharper, front-on photo of the label and one of the full package."
+      : "High-confidence match. You can still add another angle to confirm.";
+    return NextResponse.json(buildStructuredResponse({
       ok: true,
-      description,
+      cultivar_name: best?.strain_name ?? null,
+      confidence: bestSim,
+      noRealMatch: false,
+      userMessage: null,
+      observations,
+      reasoning: `Vault match: ${(bestSim * 100).toFixed(0)}% similarity`,
       best,
       candidates,
       askForBetterPics,
-      guidance: askForBetterPics
-        ? "Best match shown. For higher confidence, upload a sharper, front-on photo of the label and one of the full package."
-        : "High-confidence match. You can still add another angle to confirm.",
-    });
+      guidance,
+    }));
   } catch (err: any) {
     return NextResponse.json(
       { ok: false, error: String(err?.message || err) },

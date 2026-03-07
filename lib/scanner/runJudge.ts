@@ -16,6 +16,12 @@ export type JudgeResponse = {
   askForBetterPics?: boolean;
   guidance?: string;
   reason?: string;
+  cultivar_name?: string | null;
+  confidence?: number;
+  noRealMatch?: boolean;
+  userMessage?: string | null;
+  observations?: string[];
+  reasoning?: string;
 };
 
 export async function runJudge(imageDataUrl: string): Promise<JudgeResponse> {

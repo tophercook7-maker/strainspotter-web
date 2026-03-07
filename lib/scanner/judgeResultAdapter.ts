@@ -24,23 +24,38 @@ function isWeakCultivarName(name: string | null | undefined): boolean {
   return WEAK_NAMES.has(lower) || lower.length < 3;
 }
 
+type JudgeWithStructure = JudgeResponse & {
+  noRealMatch?: boolean;
+  userMessage?: string;
+  cultivar_name?: string | null;
+  confidence?: number;
+  observations?: string[];
+};
+
 export function judgeResultToScanResult(
-  judge: JudgeResponse & { noRealMatch?: boolean; userMessage?: string },
-  imageCount: number
+  judge: JudgeWithStructure,
+  _imageCount: number
 ): ScanResult {
-  const hasNoRealMatch = judge.noRealMatch || !judge.best;
-  const rawStrainName = judge.best?.strain_name;
+  const cultivarName = judge.cultivar_name ?? judge.best?.strain_name ?? null;
+  const hasNoRealMatch = judge.noRealMatch || !judge.best || !cultivarName;
+  const rawStrainName = cultivarName ?? judge.best?.strain_name;
   const isPlaceholder = hasNoRealMatch || isWeakCultivarName(rawStrainName);
   const strainName = isPlaceholder
     ? "Low-confidence scan result"
     : (rawStrainName ?? "Low-confidence scan result");
-  const confidencePercent = judge.best
-    ? Math.round(judge.best.similarity * 100)
-    : 50;
+  const confidencePercent =
+    typeof judge.confidence === "number"
+      ? Math.round(judge.confidence * 100)
+      : judge.best
+        ? Math.round(judge.best.similarity * 100)
+        : 50;
   const userMessage =
-    (judge as { userMessage?: string }).userMessage ??
+    judge.userMessage ??
     "We could not confidently identify a known cultivar from this scan.";
-  const description = judge.description ?? "No description.";
+  const obs = Array.isArray(judge.observations) && judge.observations.length > 0
+    ? judge.observations
+    : null;
+  const description = obs ? obs.join(". ") : (judge.description ?? "No description.");
   const guidance = isPlaceholder ? userMessage : (judge.guidance ?? "Try a sharper, front-on photo of the label.");
   const askForBetterPics = judge.askForBetterPics ?? true;
 
