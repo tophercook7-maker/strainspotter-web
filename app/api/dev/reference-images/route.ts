@@ -14,6 +14,12 @@ export async function GET() {
 
   try {
     const supabase = createServerClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Database unavailable. Missing Supabase configuration." },
+        { status: 503 }
+      );
+    }
 
     const [candidatesRes, approvedRes] = await Promise.all([
       supabase

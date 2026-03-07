@@ -5,20 +5,18 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({ apiKey });
+}
+
 type Candidate = {
   strain_id: string;
   strain_name: string;
   storage_path: string | null;
   similarity: number;
 };
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-function requireEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
 
 function toBase64FromDataUrl(dataUrl: string) {
   const m = dataUrl.match(/^data:(.+);base64,(.*)$/);
@@ -32,12 +30,26 @@ function sleep(ms: number) {
 
 export async function POST(req: Request) {
   try {
-    const SUPABASE_URL = requireEnv("SUPABASE_URL");
-    const SUPABASE_SERVICE_KEY = requireEnv("SUPABASE_SERVICE_KEY");
-    const OPENAI_API_KEY = requireEnv("OPENAI_API_KEY");
-    void OPENAI_API_KEY;
+    const openai = getOpenAIClient();
+    if (!openai) {
+      return NextResponse.json(
+        { ok: false, error: "Missing OPENAI_API_KEY" },
+        { status: 503 }
+      );
+    }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { ok: false, error: "Missing Supabase configuration" },
+        { status: 503 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false },
     });
 

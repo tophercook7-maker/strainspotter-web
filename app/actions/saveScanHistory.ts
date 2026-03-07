@@ -63,6 +63,7 @@ export async function saveScanHistory(scan: {
     }
 
     const supabase = createServerClient();
+    if (!supabase) return;
 
     // Prefer durable URL: upload data URL to storage when not already durable
     if (!isDurableUrl(imageUrl)) {

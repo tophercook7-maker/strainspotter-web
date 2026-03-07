@@ -67,6 +67,12 @@ export async function POST(req: Request) {
   }
 
   const supabase = createServerClient();
+  if (!supabase) {
+    return NextResponse.json(
+      { error: "Database unavailable. Missing Supabase configuration." },
+      { status: 503 }
+    );
+  }
 
   const payload = {
     kind: "grow_coach_plan",

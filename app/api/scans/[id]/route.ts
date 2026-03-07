@@ -30,6 +30,9 @@ export async function GET(
     }
 
     const supabase = createServerClient();
+    if (!supabase) {
+      return NextResponse.json({ error: "server_error" }, { status: 503, headers: NO_CACHE_HEADERS });
+    }
     const { data, error } = await supabase
       .from("scans")
       .select("status, result_payload, image_url")

@@ -5,6 +5,12 @@ import { getPublicGardenId } from "@/lib/garden/getPublicGardenId";
 export async function POST() {
   try {
     const supabase = createServerClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Database unavailable. Missing Supabase configuration." },
+        { status: 503 }
+      );
+    }
     const gardenId = await getPublicGardenId(supabase);
     const now = new Date().toISOString();
 

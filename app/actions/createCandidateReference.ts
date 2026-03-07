@@ -28,6 +28,7 @@ export async function createCandidateReferenceIfEligible(opts: {
     if (!eligibility) return;
 
     const supabase = createServerClient();
+    if (!supabase) return;
     await createCandidateReferenceImage(supabase, {
       strain_slug: eligibility.strain_slug,
       image_url: imageUrl,

@@ -81,6 +81,7 @@ async function getScanHistory(): Promise<{
 }> {
   try {
     const supabase = createServerClient();
+    if (!supabase) return { scans: [], lastActiveAt: null };
     const gardenId = await getPublicGardenId(supabase);
 
     const [scansRes, gardenRes] = await Promise.all([

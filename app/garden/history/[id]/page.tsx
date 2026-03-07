@@ -14,7 +14,8 @@ type PageProps = {
 async function getScanById(id: string) {
   try {
     const supabase = createServerClient();
-    
+    if (!supabase) return null;
+
     const { data, error } = await supabase
       .from("scans")
       .select("*")
