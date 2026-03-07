@@ -1,0 +1,225 @@
+# StrainSpotter Membership & In-App Purchase Integration Guide
+
+## Overview
+Users get 2 free trial scans with no account required. After trial limit, they're prompted to join StrainSpotter Club via Apple/Google Pay for $4.99/month, unlocking unlimited scans and all features.
+
+## Architecture
+
+### 1. Trial Enforcement (Anonymous + Authenticated)
+- **Edge Function**: `supabase/functions/try-me/index.ts`
+  - Tracks usage by `deviceId` (anonymous) or `userId` (authenticated)
+  - Allows 2 free scans per device
+  - Returns remaining_uses in response
+  - Club members get unlimited scans (usage = -1)
+
+### 2. Database Schema
+Create this table in Supabase SQL editor:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.try_me_usage (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  identifier TEXT NOT NULL UNIQUE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_try_me_usage_identifier ON public.try_me_usage(identifier);
+CREATE INDEX idx_try_me_usage_user_id ON public.try_me_usage(user_id);
+```
+
+### 3. Supabase Secrets Required
+Set in Supabase Dashboard → Project Settings → Functions → Secrets:
+
+- `GOOGLE_VISION_API_KEY`: Your Google Vision API key
+- `STRAIN_LIBRARY_URL`: Public URL to your strain_library.json (e.g., GitHub raw URL or Supabase Storage public link)
+- `APPLE_ISSUER_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, `APPLE_BUNDLE_ID`: For Apple receipt validation
+- `GOOGLE_SERVICE_ACCOUNT_JSON`, `GOOGLE_PACKAGE_NAME`: For Google Play receipt validation
+
+### 4. Frontend Integration
+
+#### A. Device ID Generation
+Add to your app's initialization (e.g., `App.jsx` or main component):
+
+```javascript
+import { Device } from '@capacitor/device';
+
+async function getDeviceId() {
+  const info = await Device.getId();
+  return info.identifier; // Use this as deviceId in scan requests
+}
+```
+
+#### B. Scan Flow with Trial Enforcement
+```javascript
+import { tryMeScan, getMembershipStatus } from './lib/membership';
+import MembershipSignup from './components/MembershipSignup';
+
+function ScanScreen() {
+  const [showSignup, setShowSignup] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
+  
+  async function handleScan(imageBase64) {
+    const deviceId = await getDeviceId();
+    try {
+      const result = await tryMeScan({ 
+        imageBase64, 
+        supabase, 
+        deviceId 
+      });
+      setScanResult(result);
+    } catch (e) {
+      if (e.code === 'TRIAL_LIMIT') {
+        setShowSignup(true);
+      } else {
+        alert(e.message);
+      }
+    }
+  }
+  
+  return (
+    <>
+      <button onClick={() => handleScan(capturedImage)}>Scan</button>
+      {showSignup && (
+        <MembershipSignup
+          supabase={supabase}
+          onSuccess={() => {
+            setShowSignup(false);
+            // Refresh membership status
+          }}
+          onCancel={() => setShowSignup(false)}
+        />
+      )}
+    </>
+  );
+}
+```
+
+### 5. In-App Purchase Setup
+
+#### A. Install Capacitor IAP Plugin
+```bash
+npm install @capacitor-community/in-app-purchases
+npx cap sync
+```
+
+#### B. Configure Products
+
+**iOS (App Store Connect)**:
+1. Go to App Store Connect → Your App → Subscriptions
+2. Create subscription group: "StrainSpotter Club"
+3. Add subscription:
+   - Reference name: StrainSpotter Club Monthly
+   - Product ID: `strainspotter_club_monthly`
+   - Price: $4.99/month
+   - Auto-renewable
+
+**Android (Google Play Console)**:
+1. Go to Play Console → Your App → Monetize → Products → Subscriptions
+2. Create subscription:
+   - Product ID: `strainspotter_club_monthly`
+   - Name: StrainSpotter Club
+   - Price: $4.99/month
+   - Billing period: 1 month
+
+#### C. Update MembershipSignup Component
+Replace mock receipts with real IAP calls:
+
+```javascript
+import { InAppPurchases } from '@capacitor-community/in-app-purchases';
+
+async function handleApplePay() {
+  setLoading(true);
+  try {
+    // Initialize store
+    await InAppPurchases.restorePurchases();
+    
+    // Purchase product
+    const result = await InAppPurchases.purchaseProduct({
+      productId: 'strainspotter_club_monthly'
+    });
+    
+    // Get receipt
+    const receipt = result.receipt; // iOS transaction receipt
+    
+    // Verify with backend
+    const verified = await verifySubscription({
+      payload: { platform: 'apple', receipt },
+      supabase
+    });
+    
+    if (verified.status === 'active') {
+      onSuccess?.();
+    }
+  } catch (e) {
+    setError(e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+```
+
+### 6. Backend verify-subscription Function
+Your Edge Function at `supabase/functions/verify-subscription/index.ts` will:
+1. Receive `{ platform, receipt/purchaseToken }` from frontend
+2. Validate receipt with Apple/Google APIs using secrets
+3. If valid, create/update user with `user_metadata.membership = 'club'`
+4. Return `{ status: 'active', membership: 'club' }`
+
+The backend will implement full validation once secrets are confirmed.
+
+### 7. Membership Gating for Other Features
+Use `getMembershipStatus` to gate premium features:
+
+```javascript
+const { isMember } = await getMembershipStatus({ supabase });
+
+if (!isMember) {
+  // Show upgrade prompt or lock feature
+  return <UpgradePrompt />;
+}
+
+// Show premium feature
+return <PremiumFeature />;
+```
+
+### 8. Testing
+
+**Test Mode (before real IAP setup)**:
+- Use `{ test: true }` in verify-subscription payload to simulate successful purchase
+- Frontend can call: `verifySubscription({ payload: { platform: 'apple', test: true }, supabase })`
+
+**Sandbox Testing**:
+- iOS: Use Sandbox tester account in App Store Connect
+- Android: Use test account in Play Console
+
+### 9. Deployment Checklist
+- [ ] Add `try_me_usage` table to Supabase
+- [ ] Set all required secrets in Supabase Functions
+- [ ] Deploy Edge Functions: `supabase functions deploy try-me` and `supabase functions deploy verify-subscription`
+- [ ] Configure App Store subscription products
+- [ ] Configure Play Store subscription products
+- [ ] Add Capacitor IAP plugin to mobile app
+- [ ] Update MembershipSignup with real IAP calls
+- [ ] Test trial limit (2 scans)
+- [ ] Test purchase flow (sandbox)
+- [ ] Test unlimited scans after membership
+
+### 10. User Flow Summary
+1. User downloads free app
+2. Opens app → no sign-in required
+3. Takes photo → hits "Scan" → first scan processes and shows results
+4. Repeat for second scan → shows "1 scan remaining"
+5. Third scan attempt → blocked with modal: "Join StrainSpotter Club for unlimited scans"
+6. Taps "Pay with Apple Pay" or "Google Pay"
+7. Completes payment → account auto-created with membership
+8. Redirected back to scan → unlimited scans unlocked
+
+### 11. Next Steps
+Reply "secrets set" to your backend contact once:
+- All Supabase secrets are added
+- Edge Functions are redeployed
+- Database table is created
+
+They'll finalize the verify-subscription validation logic and confirm the membership upsert flow.

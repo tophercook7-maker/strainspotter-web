@@ -1,0 +1,35 @@
+import type { ReactNode } from "react";
+import GardenBottomBar from "./GardenBottomBar";
+
+export default function GardenLayout({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="min-h-screen w-full text-white"
+      style={{
+        backgroundImage: "url(/strainspotter-bg.jpeg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      {/* subtle dark wash for legibility */}
+      <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+      {/* Desktop side fade so wide screens feel intentional */}
+      <div className="hidden lg:block absolute inset-0 pointer-events-none">
+        <div
+          className="absolute inset-y-0 left-0 w-[60%] bg-gradient-to-r from-black/60 via-black/20 to-transparent"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-y-0 right-0 w-[60%] bg-gradient-to-l from-black/70 via-black/20 to-transparent"
+          aria-hidden
+        />
+      </div>
+      {/* content frame - max-w-xl mobile-first, pb-24 so fixed bottom bar doesn't cover content */}
+      <div className="mx-auto w-full max-w-xl px-4 pt-4 pb-24">
+        {children}
+      </div>
+      <GardenBottomBar />
+    </div>
+  );
+}

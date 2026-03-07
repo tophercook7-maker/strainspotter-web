@@ -1,0 +1,25 @@
+import "./globals.css";
+import { DatabaseInitializer } from "@/lib/scanner/dbInitializer";
+
+export const metadata = {
+  title: "StrainSpotter",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className="min-h-screen bg-black text-white antialiased">
+        <DatabaseInitializer />
+
+        {/* Responsive rail */}
+        <div className="mx-auto w-full max-w-5xl px-6 pt-8 pb-28">
+          {children}
+        </div>
+      </body>
+    </html>
+  );
+}
