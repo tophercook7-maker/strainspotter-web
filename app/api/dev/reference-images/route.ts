@@ -18,13 +18,13 @@ export async function GET() {
     const [candidatesRes, approvedRes] = await Promise.all([
       supabase
         .from("strain_reference_images")
-        .select("id, strain_slug, match_confidence, created_at")
+        .select("id, strain_slug, image_url, match_confidence, created_at")
         .eq("approval_status", "candidate")
         .order("created_at", { ascending: false })
         .limit(50),
       supabase
         .from("strain_reference_images")
-        .select("id, strain_slug, match_confidence, created_at")
+        .select("id, strain_slug, image_url, match_confidence, created_at")
         .eq("approved", true)
         .order("created_at", { ascending: false })
         .limit(50),

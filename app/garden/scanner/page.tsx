@@ -5,6 +5,7 @@ import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import { runJudge } from "@/lib/scanner/runJudge";
 import { judgeResultToScanResult } from "@/lib/scanner/judgeResultAdapter";
 import { saveScanHistory } from "@/app/actions/saveScanHistory";
+import { createCandidateReferenceIfEligible } from "@/app/actions/createCandidateReference";
 import { getUserTierFlags } from "@/lib/flags";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
@@ -33,6 +34,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function ScannerPage() {
   const [images, setImages] = useState<File[]>([]);
+  const [cultivarStatus, setCultivarStatus] = useState<string>("");
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
   const [analysis, setAnalysis] = useState<FullScanResult | null>(null);
@@ -55,6 +57,25 @@ export default function ScannerPage() {
   const [limitedStrainsMode, setLimitedStrainsMode] = useState(false); // Cultivar DB not loaded or < 10k (dev only)
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
   const scanLockRef = useRef(false); // Hard guard: no concurrent handleAnalyzePlant
+
+  // Append new files into slots (do NOT overwrite previous images). Dedup by name+size+lastModified, cap to MAX_IMAGES.
+  function addFiles(newFiles: File[]) {
+    const onlyImages = (newFiles || []).filter((f) => f?.type?.startsWith("image/"));
+    if (!onlyImages.length) return;
+
+    setImages((prev) => {
+      const combined = [...prev, ...onlyImages];
+      const seen = new Set<string>();
+      const deduped: File[] = [];
+      for (const f of combined) {
+        const key = `${f.name}__${f.size}__${f.lastModified}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(f);
+      }
+      return deduped.slice(0, MAX_IMAGES);
+    });
+  }
 
   // NEVER clear result on re-render
   // Only clear when user selects NEW images
@@ -99,7 +120,7 @@ export default function ScannerPage() {
       const previews = await Promise.all(
         images.map(async (img) => {
           const url = URL.createObjectURL(img);
-          // Convert file to base64 and keep full data URL for cover image (Add as Plant)
+          // Convert file to base64 and keep full data URL for scan/history
           const { base64, dataUrl } = await new Promise<{ base64: string; dataUrl: string }>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
@@ -284,6 +305,19 @@ export default function ScannerPage() {
 
           if (!isScanResultPayloadV1(payload)) throw new Error("Invalid result_payload");
 
+          // Prefer durable image_url from saved scan (backend wrote it); fallback to data URL
+          let candidateImageUrl = imageDataUrl;
+          try {
+            const scanRes = await fetch(`/api/scans/${scanId}`);
+            const scanJson = await scanRes.json().catch(() => null);
+            const storedUrl = (scanJson?.image_url ?? "").trim();
+            if (storedUrl && (storedUrl.startsWith("http://") || storedUrl.startsWith("https://"))) {
+              candidateImageUrl = storedUrl;
+            }
+          } catch (_) {
+            /* use imageDataUrl */
+          }
+
           setBackendPhase(null);
           setBackendFallbackNotice(null);
           requestAnimationFrame(() => {
@@ -297,6 +331,11 @@ export default function ScannerPage() {
           setSynthesis(null);
           setDiversityHint(null);
           setAnalysis(full);
+          // Create candidate reference if eligible (prefer durable URL from scan)
+          createCandidateReferenceIfEligible({
+            result_payload: payload,
+            image_url: candidateImageUrl,
+          }).catch(() => {});
           // Backend-first path succeeded; fallback is skipped.
           return;
         } catch (_) {
@@ -470,19 +509,58 @@ export default function ScannerPage() {
     setImages(images.filter((_, i) => i !== index));
   };
 
+  async function handleLoadCultivarDb() {
+    setCultivarStatus("Loading cultivar DB…");
+    try {
+      const w = window as { __STRAINSPOTTER_LOAD_CULTIVARS__?: () => Promise<void> };
+      if (typeof w.__STRAINSPOTTER_LOAD_CULTIVARS__ === "function") {
+        await w.__STRAINSPOTTER_LOAD_CULTIVARS__();
+        setCultivarStatus("Cultivar DB loaded ✅");
+        setLimitedStrainsMode(getLimitedStrainsMode());
+        window.location.reload();
+        return;
+      }
+      await getStrainDatabase();
+      setCultivarStatus("Cultivar DB loaded ✅");
+      setLimitedStrainsMode(getLimitedStrainsMode());
+      window.location.reload();
+    } catch (e: unknown) {
+      setCultivarStatus(e instanceof Error ? e.message : "Failed to load cultivar DB.");
+    }
+  }
+
   return (
     <>
       <TopNav title="Scanner" showBack />
       
       {/* UI FIX — Content Well Wrapper */}
-      <main className="min-h-screen bg-black text-white">
+      <main className="min-h-screen text-white">
         {/* Phase 5.2.6 — MOBILE-FIRST CONSTRAINTS: Max content width (not edge-to-edge) */}
         {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
-      <div className="mx-auto w-full max-w-[720px] px-4 pb-24 md:pb-16 space-y-6">
+      <div className="w-full pb-24 md:pb-16 space-y-6">
         {/* Limited cultivar database: show once so user knows matching is limited */}
         {limitedStrainsMode && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
-            Cultivar database is not loaded. Matching will be limited until strains are imported.
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200 space-y-3">
+            <p>Cultivar database is not loaded. Matching will be limited until strains are imported.</p>
+            {cultivarStatus ? (
+              <div className="text-xs text-white/80">{cultivarStatus}</div>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/15"
+                onClick={handleLoadCultivarDb}
+              >
+                Load Cultivar DB
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
+                onClick={() => console.log("DEBUG: DevTools → Application → IndexedDB for cultivar tables.")}
+              >
+                Debug
+              </button>
+            </div>
           </div>
         )}
         {/* A) Upload + Preview Card */}
@@ -520,12 +598,10 @@ export default function ScannerPage() {
                       );
                       
                       if (files.length > 0) {
-                        if (files.length > MAX_IMAGES) {
-                          alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
-                          setImages(files.slice(0, MAX_IMAGES));
-                        } else {
-                          setImages(files);
+                        if (files.length + images.length > MAX_IMAGES) {
+                          alert(`Up to ${MAX_IMAGES} images total. Appending will cap at ${MAX_IMAGES}.`);
                         }
+                        addFiles(files);
                       }
                     }}
                   >
@@ -560,12 +636,11 @@ export default function ScannerPage() {
                     onChange={(e) => {
                       if (!e.target.files) return;
                       const selected = Array.from(e.target.files);
-                      if (selected.length > MAX_IMAGES) {
-                        alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
-                        setImages(selected.slice(0, MAX_IMAGES));
-                      } else {
-                        setImages(selected);
+                      if (selected.length + images.length > MAX_IMAGES) {
+                        alert(`Up to ${MAX_IMAGES} images total. Appending will cap at ${MAX_IMAGES}.`);
                       }
+                      addFiles(selected);
+                      e.target.value = "";
                     }}
                     className="hidden"
                   />
@@ -862,7 +937,7 @@ export default function ScannerPage() {
                 height: 52,
               }}
             >
-              {(isScanning || processing) ? "Analyzing plant…" : "Run Scan"}
+              {(isScanning || processing) ? "Scanning…" : "Run Scan"}
             </ClearButton>
           </div>
         </div>
@@ -872,7 +947,7 @@ export default function ScannerPage() {
         {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
         {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
         {/* Phase 4.4.1 — Center the result column with intentional containment */}
-        <section className="space-y-6 w-full max-w-[720px] mx-auto px-4">
+        <section className="space-y-6 w-full">
           {/* Backend-first intermediate status (uploading / processing / finalizing) */}
           {backendPhase !== null && (
             <p className="text-sm text-white/70">

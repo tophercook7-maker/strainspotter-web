@@ -29,3 +29,11 @@ WHERE id = '<uuid>' AND approval_status = 'candidate';
 
 ## Dev API (development only)
 `GET /api/dev/reference-images` — Returns JSON summary of candidates and approved (404 in production).
+
+---
+
+## image_url durability
+
+- **Backend-first path:** Uses `image_url` from the scan row (written by external backend). If the backend stores a durable storage URL, that is used. Otherwise falls back to data URL.
+- **Fallback path:** Attempts to upload the image to Supabase storage bucket `strain-reference-images` and uses the public URL. If upload fails (e.g. bucket missing, storage not configured), falls back to data URL.
+- **Temporary URLs:** When no durable URL is available, `image_url` may be a `data:` base64 URL. These work but are large and not ideal for long-term storage.

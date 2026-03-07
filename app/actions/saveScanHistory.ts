@@ -3,10 +3,11 @@
 import { createServerClient } from "../_server/supabase/server";
 import { isScanResultPayloadV1, type ScanResultPayloadV1 } from "@/lib/scanner/types";
 import { scanResultToPayloadV1 } from "@/lib/scanner/resultPayloadAdapter";
+import { createCandidateReferenceIfEligible } from "./createCandidateReference";
 import {
-  createCandidateReferenceImage,
-  extractCandidateEligibility,
-} from "@/lib/referenceImages";
+  uploadScanImageToStorage,
+  isDurableUrl,
+} from "@/lib/referenceImages/uploadScanImage";
 
 type SupabaseClient = ReturnType<typeof createServerClient>;
 
@@ -56,12 +57,19 @@ export async function saveScanHistory(scan: {
     }
     if (!payload) return;
 
-    const imageUrl = (scan.image_url ?? "").trim();
+    let imageUrl = (scan.image_url ?? "").trim();
     if (imageUrl.length === 0) {
       throw new Error("image_url_required");
     }
 
     const supabase = createServerClient();
+
+    // Prefer durable URL: upload data URL to storage when not already durable
+    if (!isDurableUrl(imageUrl)) {
+      const durableUrl = await uploadScanImageToStorage(supabase, imageUrl);
+      if (durableUrl) imageUrl = durableUrl;
+    }
+
     const now = new Date().toISOString();
     const gardenId = await getPublicGardenId(supabase);
 
@@ -78,16 +86,7 @@ export async function saveScanHistory(scan: {
     });
 
     // Optional: create candidate reference image for high-confidence matched strains
-    const eligibility = extractCandidateEligibility(payload);
-    if (eligibility) {
-      createCandidateReferenceImage(supabase, {
-        strain_slug: eligibility.strain_slug,
-        image_url: imageUrl,
-        match_confidence: eligibility.confidence,
-        source_type: "scan_candidate",
-        metadata: { model: payload.model },
-      }).catch((e) => console.warn("Candidate reference creation skipped:", e));
-    }
+    createCandidateReferenceIfEligible({ result_payload: payload, image_url: imageUrl }).catch(() => {});
   } catch (err) {
     console.warn("Scan history save skipped:", err);
   }

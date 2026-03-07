@@ -32,7 +32,7 @@ export async function GET(
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from("scans")
-      .select("status, result_payload")
+      .select("status, result_payload, image_url")
       .eq("id", id)
       .maybeSingle();
 
@@ -47,6 +47,7 @@ export async function GET(
       {
         status: data.status ?? null,
         result_payload: data.result_payload ?? null,
+        image_url: (data as { image_url?: string }).image_url ?? null,
       },
       { status: 200, headers: NO_CACHE_HEADERS }
     );
