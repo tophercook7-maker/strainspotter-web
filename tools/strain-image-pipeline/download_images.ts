@@ -10,7 +10,7 @@ import type { DownloadStats } from "./types.js";
 
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
 const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
+  "StrainSpotterImagePipeline/1.0 (https://strainspotter.app; ingestion for reference images)";
 
 export interface DownloadOptions {
   strainNames: string[];

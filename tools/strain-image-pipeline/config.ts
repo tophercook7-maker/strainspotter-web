@@ -5,15 +5,23 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
- * Pipeline configuration. Uses VAULT_ROOT env, or /Volumes/Vault|TheVault if mounted.
- * Fallback: ./vault-output in pipeline dir when volumes are not available.
+ * Pipeline configuration.
+ *
+ * VAULT ROOT: One consistent external-drive location.
+ * - Preferred: /Volumes/TheVault/strainspotter-vault (primary external drive)
+ * - Fallback: /Volumes/Vault/strainspotter-vault (if TheVault not mounted)
+ * - Env override: VAULT_ROOT (e.g. for CI or different mount)
+ * - Last resort: ./vault-output in pipeline dir
  */
+const PREFERRED_VAULT_ROOT = "/Volumes/TheVault/strainspotter-vault";
+const FALLBACK_VAULT_ROOT = "/Volumes/Vault/strainspotter-vault";
+
 const VAULT_ROOT =
   process.env.VAULT_ROOT ??
-  (existsSync("/Volumes/Vault")
-    ? "/Volumes/Vault/strainspotter-vault"
-    : existsSync("/Volumes/TheVault")
-      ? "/Volumes/TheVault/strainspotter-vault"
+  (existsSync("/Volumes/TheVault")
+    ? PREFERRED_VAULT_ROOT
+    : existsSync("/Volumes/Vault")
+      ? FALLBACK_VAULT_ROOT
       : join(__dirname, "vault-output"));
 
 export const CONFIG = {
@@ -21,7 +29,8 @@ export const CONFIG = {
   MAX_IMAGES_PER_RUN: 500,
   MAX_IMAGES_PER_STRAIN: 20,
   MIN_RESOLUTION_PX: 512,
-  BLUR_THRESHOLD: 100,
+  /** Blur threshold (gradient magnitude). Calibrated for real cannabis imagery from Wikimedia Commons. */
+  BLUR_THRESHOLD: 35,
   PHASH_SIZE: 16,
   PHASH_THRESHOLD: 5,
 } as const;

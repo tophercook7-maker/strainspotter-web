@@ -2,31 +2,40 @@
 
 End-to-end pipeline for strain reference image ingestion: fetch → extract → download → classify → quality → dedupe → promote → review queue.
 
-## Quick Start (Small Test Batch)
+## Quick Start (Successful Small Batch)
 
-Run the pipeline in **fixture mode** (no live HTTP requests) with a small batch of 5 strains:
+Run the pipeline in **fixture mode** with realistic cannabis strain fixtures:
 
 ```bash
 cd tools/strain-image-pipeline
 npm run run fixtures/test-batch.txt
 ```
 
-Or use the default batch (same 5 strains) when no Vault strain list is found:
+This processes 4 strains (blue-dream, white-widow, rbog, white-widow-ruderalis) using real CC-licensed images from Wikimedia Commons. Expected: ~5 image URLs extracted, ~5 downloaded, ~3–4 passing quality and reaching the review queue.
 
-```bash
-USE_FIXTURE=1 npm run run
-```
+## Vault Root
 
-Fixture mode reads HTML from `fixtures/*.html` and extracts image URLs. Images are downloaded from those URLs (picsum.photos placeholders). Note: placeholder images may be rejected by the quality check (blur threshold); the pipeline flow still runs end-to-end.
+Outputs are written to a single consistent external-drive location:
+
+- **Preferred**: `/Volumes/TheVault/strainspotter-vault`
+- **Fallback**: `/Volumes/Vault/strainspotter-vault` (if TheVault not mounted)
+- **Override**: `VAULT_ROOT` env var
+- **CI/Dev**: `./vault-output` when no external volumes exist
+
+## Test Inputs: Realistic Fixtures (Fixture Mode)
+
+The successful test batch uses **realistic fixtures**:
+
+- **Source**: Local HTML files in `fixtures/*.html` with image URLs pointing to Wikimedia Commons
+- **Images**: Real cannabis strain photos (Blue Dream, White Widow, RBOG, Cannabis ruderalis) — CC BY-SA licensed
+- **Mode**: Fixture only; no live page crawling. Images are downloaded from Commons (permitted for our use case).
 
 ## Test Mode: Fixture vs Live
 
-- **Fixture mode** (default): Reads from `fixtures/{strain}.html`, no live page fetch. Safe for CI and local testing.
-- **Live mode**: Set `USE_FIXTURE=0` and provide source URLs via the source queue. Uses throttling and user-agent.
+- **Fixture mode** (default): Reads HTML from `fixtures/{strain}.html`, extracts image URLs, downloads images. Safe and reproducible.
+- **Live mode**: Set `USE_FIXTURE=0`; fetches pages from source URLs. Uses throttling and descriptive user-agent.
 
 ## Outputs (Vault Structure)
-
-Outputs are written under `VAULT_ROOT`. Default: `/Volumes/TheVault/strainspotter-vault` or `/Volumes/Vault/strainspotter-vault`. If neither volume exists, falls back to `./vault-output`.
 
 | Path | Description |
 |------|-------------|
@@ -41,7 +50,7 @@ Outputs are written under `VAULT_ROOT`. Default: `/Volumes/TheVault/strainspotte
 ## Inspecting Results
 
 - **Run log**: `{VAULT_ROOT}/logs/run_{runId}.log`
-- **Manifest**: `{VAULT_ROOT}/logs/manifest_{runId}.json` — summarizes strains, pages fetched, URLs extracted, downloaded, rejected, promoted
+- **Manifest**: `{VAULT_ROOT}/logs/manifest_{runId}.json` — strains processed, pages fetched, URLs extracted, downloaded, rejected, promoted
 - **Review manifest**: `{VAULT_ROOT}/review_queue/manifest.json`
 
 ## Environment

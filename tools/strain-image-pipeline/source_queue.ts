@@ -32,7 +32,7 @@ export async function loadStrainQueue(sourcePath?: string): Promise<string[]> {
       continue;
     }
   }
-  return ["blue-dream", "og-kush", "sour-diesel", "gelato", "wedding-cake"];
+  return ["blue-dream", "white-widow", "rbog", "white-widow-ruderalis"];
 }
 
 /**
