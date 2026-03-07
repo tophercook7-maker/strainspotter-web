@@ -1,0 +1,69 @@
+# ===============================
+# BLOCK EVERYTHING THAT IS NOT THE NEXT.JS WEB APP
+# ===============================
+
+# Tooling / experiments
+pipeline-control/
+scripts/
+ml-training/
+supabase/functions/
+supabase/_shared/
+__quarantine__/
+env/
+logs/
+
+# Desktop / native
+src-tauri/
+tauri.conf.json
+
+# Local/editor
+.vscode/
+.DS_Store
+.env.local
+.env.dataset
+
+# Backup / temp files
+*.bak
+*.bak*
+*_backup
+*.before_grid
+*.backup
+
+# Node noise
+node_modules/
+
+# Ignore everything by default
+*
+
+# ===============================
+# ALLOW ONLY THE WEB APP
+# ===============================
+!app/
+!app/**
+!components/
+!components/**
+!styles/
+!styles/**
+!public/
+!next.config.*
+!package.json
+!package-lock.json
+!tsconfig.json
+!postcss.config.js
+!tailwind.config.js
+!GLASS_UI*.md
+# ===============================
+# ALLOW DESKTOP APP
+# ===============================
+!desktop/
+!desktop/strainspotter-desktop/
+!desktop/strainspotter-desktop/**
+!lib/
+!lib/**
+!lib/**.env.local
+# Reference image pipeline
+!supabase/
+!supabase/migrations/
+!supabase/migrations/**
+!docs/
+!docs/**
