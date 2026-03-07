@@ -283,6 +283,19 @@ Rules:
     const bestSim = best?.similarity ?? 0;
     const askForBetterPics = bestSim < 0.82;
 
+    // Placeholder strain names from vault — treat as no real match for consistent weak-result handling
+    const PLACEHOLDER_STRAIN_NAMES = new Set([
+      "closest known cultivar", "closest cultivar", "closest known strain",
+      "unknown cultivar", "unknown", "unverified cultivar (visual match only)",
+    ]);
+    const bestName = (best?.strain_name ?? "").toLowerCase().trim();
+    const isPlaceholderStrain = PLACEHOLDER_STRAIN_NAMES.has(bestName) || bestName.length < 3;
+    const effectiveNoRealMatch = isPlaceholderStrain;
+    const effectiveCultivarName = effectiveNoRealMatch ? null : (best?.strain_name ?? null);
+    const effectiveUserMessage = effectiveNoRealMatch
+      ? "We could not confidently identify a known cultivar from this scan."
+      : null;
+
     // 6) Memory (optional table)
     // If table doesn't exist, this silently fails without breaking the judge response.
     try {
@@ -302,10 +315,10 @@ Rules:
       : "High-confidence match. You can still add another angle to confirm.";
     return NextResponse.json(buildStructuredResponse({
       ok: true,
-      cultivar_name: best?.strain_name ?? null,
+      cultivar_name: effectiveCultivarName,
       confidence: bestSim,
-      noRealMatch: false,
-      userMessage: null,
+      noRealMatch: effectiveNoRealMatch,
+      userMessage: effectiveUserMessage,
       observations,
       reasoning: `Vault match: ${(bestSim * 100).toFixed(0)}% similarity`,
       best,

@@ -80,16 +80,19 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
 
   const viewModel = normalized.result;
   
-  // Name Guarantee
+  // Name Guarantee — reject placeholder cultivar names; allow real tentative matches
+  const WEAK_NAMES = new Set([
+    "closest known cultivar", "closest cultivar", "closest known strain",
+    "unknown cultivar", "unknown", "unverified cultivar (visual match only)",
+  ]);
   let displayName = viewModel.nameFirstDisplay?.primaryStrainName;
-  const weakNames = ["closest known cultivar", "closest cultivar", "unknown cultivar", "unknown"];
   const isWeak = !displayName || displayName.trim() === "" ||
-    weakNames.includes(displayName.toLowerCase().trim());
+    WEAK_NAMES.has(displayName.toLowerCase().trim()) || displayName.trim().length < 3;
   if (isWeak) {
-      displayName = viewModel.name || "Low-confidence scan result";
-      if (weakNames.includes((displayName || "").toLowerCase().trim())) {
-        displayName = "Low-confidence scan result";
-      }
+    displayName = viewModel.name || "Low-confidence scan result";
+    if (WEAK_NAMES.has((displayName || "").toLowerCase().trim()) || (displayName || "").trim().length < 3) {
+      displayName = "Low-confidence scan result";
+    }
   }
 
   // Confidence Guarantee

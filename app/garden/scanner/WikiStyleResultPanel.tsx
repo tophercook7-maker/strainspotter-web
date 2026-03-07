@@ -2,6 +2,18 @@
 // Phase 3.6 — Extensive Wiki-Style Result Expansion
 
 import type { FullScanResult } from "@/lib/scanner/types";
+
+/** Placeholder cultivar names — never show as real strain headings. */
+const PLACEHOLDER_NAMES = new Set([
+  "closest known cultivar", "closest cultivar", "closest known strain",
+  "unknown cultivar", "unknown", "unverified cultivar (visual match only)",
+  "low-confidence scan result",
+]);
+function isPlaceholderName(name: string | null | undefined): boolean {
+  if (!name || typeof name !== "string") return true;
+  const t = name.trim();
+  return PLACEHOLDER_NAMES.has(t.toLowerCase()) || t.length < 3;
+}
 import type { FeatureFlag } from "@/lib/flags";
 import CollapsibleSection from "./CollapsibleSection";
 import { generateWhyThisMatchReasons } from "@/lib/scanner/whyThisMatchEngine";
@@ -116,9 +128,7 @@ export default function WikiStyleResultPanel({
                   vm.nameFirstDisplay?.primaryStrainName ??
                   vm.name ??
                   "";
-                const weak = ["closest known cultivar", "closest cultivar", "unknown cultivar", "unknown", "unverified cultivar (visual match only)"];
-                const isWeak = !raw || weak.includes(raw.toLowerCase().trim());
-                return isWeak ? "Low-confidence scan result" : raw;
+                return isPlaceholderName(raw) ? "Low-confidence scan result" : raw;
               })()}
             </h1>
             
@@ -365,10 +375,8 @@ export default function WikiStyleResultPanel({
           {(() => {
             const primaryStrainName = vm.nameFirstDisplay.primaryStrainName;
             
-            // Skip if fallback name
-            if (!primaryStrainName || ["closest known cultivar", "closest cultivar", "low-confidence scan result"].includes(primaryStrainName.toLowerCase().trim())) {
-              return null;
-            }
+            // Skip if fallback/placeholder name
+            if (isPlaceholderName(primaryStrainName)) return null;
             
             // Get family info from family-first result if available
             const familyFirst = (vm.nameFirstDisplay as any)?.familyFirst;
@@ -618,7 +626,7 @@ export default function WikiStyleResultPanel({
               
               {/* Phase 4.2 — Trust indicator badge */}
               {/* Phase 4.4 — Visual Authority Upgrade: Enhanced badge styling */}
-              {!["closest known cultivar", "closest cultivar", "low-confidence scan result"].includes((vm.nameFirstDisplay.primaryStrainName || "").toLowerCase().trim()) && (
+              {!isPlaceholderName(vm.nameFirstDisplay.primaryStrainName) && (
                 <div className="mt-2">
                   <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-500/30 shadow-sm">
                     <span className="mr-1.5 text-sm">✓</span>
@@ -635,10 +643,8 @@ export default function WikiStyleResultPanel({
             const primaryName = vm.nameFirstDisplay.primaryStrainName;
             const confidence = Math.round(vm.nameFirstDisplay.confidencePercent ?? vm.nameFirstDisplay.confidence ?? 0);
             
-            // Skip if fallback name
-            if (!primaryName || ["closest known cultivar", "closest cultivar", "low-confidence scan result"].includes(primaryName.toLowerCase().trim())) {
-              return null;
-            }
+            // Skip if fallback/placeholder name
+            if (isPlaceholderName(primaryName)) return null;
             
             // Phase 5.1.2 — Generate exactly 3 clear reasons using "WHY THIS MATCH" ENGINE
             const finalDecision = (vm.nameFirstDisplay as any)?.finalDecision;
@@ -949,8 +955,7 @@ export default function WikiStyleResultPanel({
             }
             
             // Fallback: Show existing trust message
-            const pn = (vm.nameFirstDisplay.primaryStrainName || "").toLowerCase().trim();
-            const isWeak = !pn || ["closest known cultivar", "closest cultivar", "low-confidence scan result"].includes(pn);
+            const isWeak = isPlaceholderName(vm.nameFirstDisplay.primaryStrainName);
             return !isWeak ? (
               <div className="mt-6 rounded-xl border border-white/15 bg-white/[0.06] p-4 backdrop-blur-sm">
                 <p className="text-sm text-white/75 leading-relaxed">
