@@ -1,23 +1,514 @@
-import TopNav from "../_components/TopNav";
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { PageHeaderNav } from "@/app/_components/PageHeaderNav";
+
+type Scale = "home" | "craft" | "commercial";
+type PhaseKey = "setup" | "seedling" | "veg" | "flower" | "harvest" | "dry_cure";
+
+type Phase = {
+  key: PhaseKey;
+  title: string;
+  goal: string;
+  checklist: string[];
+  todaysPrompt: string;
+};
+
+type Plan = {
+  phase: PhaseKey;
+  scale: Scale;
+  headline: string;
+  flavor: string;
+  actions: string[];
+  watchouts: string[];
+  questions: string[];
+  confidence: number;
+};
 
 export default function GrowCoachPage() {
+  const phases: Phase[] = useMemo(
+    () => [
+      {
+        key: "setup",
+        title: "Setup & Planning",
+        goal: "Dial the environment + plan the run.",
+        checklist: [
+          "Choose medium (soil/coco/hydro) + nutrients",
+          "Set target environment (temp/RH/VPD) for your space",
+          "Confirm light schedule + PPFD goals",
+          "IPM baseline: prevention routine",
+        ],
+        todaysPrompt:
+          "Tell me your grow type (home/craft/commercial), medium, light, and current temp/RH. I'll give a setup plan.",
+      },
+      {
+        key: "seedling",
+        title: "Seedling",
+        goal: "Establish roots without overwatering.",
+        checklist: [
+          "Low EC / gentle feeding (or none if soil)",
+          "High-ish humidity, stable temps",
+          "Watch for damping-off, stretching, clawing",
+          "Photoperiod schedule + distance from light",
+        ],
+        todaysPrompt:
+          "Upload a seedling photo + tell me medium, watering frequency, and light distance. I'll spot issues and adjust.",
+      },
+      {
+        key: "veg",
+        title: "Vegetative",
+        goal: "Build structure + healthy growth.",
+        checklist: [
+          "Train (LST/topping) based on cultivar + space",
+          "Increase feed gradually; monitor runoff pH/EC (if applicable)",
+          "Prune lower growth to improve airflow",
+          "Watch for deficiencies (N, Mg, Ca) and pests",
+        ],
+        todaysPrompt:
+          "What week of veg are you in? Upload a plant/leaf photo + tell me feed/water schedule. I'll recommend next steps.",
+      },
+      {
+        key: "flower",
+        title: "Flower",
+        goal: "Control stretch + prevent mold while bulking.",
+        checklist: [
+          "Lower humidity; airflow and canopy management",
+          "Adjust nutrients toward bloom (watch Ca/Mg)",
+          "Defoliate carefully; avoid stressing late flower",
+          "Scout for powdery mildew/botrytis daily",
+        ],
+        todaysPrompt:
+          "What week of flower? Upload bud/leaf photos + tell me temp/RH. I'll give a 'today plan' and risk alerts.",
+      },
+      {
+        key: "harvest",
+        title: "Harvest Window",
+        goal: "Time the chop for your desired effect + quality.",
+        checklist: [
+          "Track trichomes (clear/cloudy/amber)",
+          "Reduce stress; keep environment stable",
+          "Plan dry room conditions and hang method",
+          "Prep trim workflow",
+        ],
+        todaysPrompt:
+          "Upload trichome/bud photos and tell me your target effects (heady vs heavy). I'll estimate harvest window.",
+      },
+      {
+        key: "dry_cure",
+        title: "Dry & Cure",
+        goal: "Preserve terpenes and prevent mold.",
+        checklist: [
+          "Dry: stable temp/RH, slow and steady",
+          "Cure: jar/box target RH; burp schedule",
+          "Watch for ammonia smell or wet spots (mold risk)",
+          "Track flavor/smoothness improvements over weeks",
+        ],
+        todaysPrompt:
+          "Tell me your dry room temp/RH and hang time so far. I'll give a cure plan and mold-risk checks.",
+      },
+    ],
+    []
+  );
+
+  const [phaseKey, setPhaseKey] = useState<PhaseKey>("setup");
+  const [scale, setScale] = useState<Scale>("home");
+
+  // env inputs
+  const [tempF, setTempF] = useState<string>("76");
+  const [humidity, setHumidity] = useState<string>("55");
+  const [ph, setPh] = useState<string>("");
+  const [ec, setEc] = useState<string>("");
+  const [ppfd, setPpfd] = useState<string>("");
+
+  // context
+  const [notes, setNotes] = useState<string>("");
+  const [tags, setTags] = useState<string>(""); // comma separated
+  const [lastPrimaryLabel, setLastPrimaryLabel] = useState<string>("");
+
+  const [loading, setLoading] = useState(false);
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [error, setError] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState<string>("");
+
+  const phase = phases.find((p) => p.key === phaseKey)!;
+
+  async function savePlan() {
+    if (!plan) return;
+    setSaving(true);
+    setSavedMsg("");
+    try {
+      const env: Record<string, number> = {};
+      if (tempF.trim()) {
+        const n = Number(tempF);
+        if (!Number.isNaN(n)) env.tempF = n;
+      }
+      if (humidity.trim()) {
+        const n = Number(humidity);
+        if (!Number.isNaN(n)) env.humidity = n;
+      }
+      if (ph.trim()) {
+        const n = Number(ph);
+        if (!Number.isNaN(n)) env.ph = n;
+      }
+      if (ec.trim()) {
+        const n = Number(ec);
+        if (!Number.isNaN(n)) env.ec = n;
+      }
+      if (ppfd.trim()) {
+        const n = Number(ppfd);
+        if (!Number.isNaN(n)) env.ppfd = n;
+      }
+
+      const tagList = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      const res = await fetch("/api/grow-coach/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phase: plan.phase,
+          scale: plan.scale,
+          env: Object.keys(env).length ? env : undefined,
+          notes: notes || undefined,
+          recentSignals: {
+            tags: tagList.length ? tagList : undefined,
+            lastPrimaryLabel: lastPrimaryLabel || undefined,
+          },
+          plan,
+        }),
+      });
+
+      const j = (await res.json().catch(() => null)) as
+        | { ok?: boolean; error?: string }
+        | null;
+
+      if (!res.ok) {
+        throw new Error(j?.error || `Save failed (${res.status})`);
+      }
+
+      setSavedMsg("Saved to Log Book ✅");
+      window.location.href = "/garden/history";
+    } catch (e: unknown) {
+      setSavedMsg(
+        e instanceof Error ? e.message : "Save failed."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function generatePlan() {
+    setLoading(true);
+    setError("");
+    setPlan(null);
+
+    const env: Record<string, number> = {};
+    const tf = Number(tempF);
+    const rh = Number(humidity);
+    if (!Number.isNaN(tf) && tempF.trim() !== "") env.tempF = tf;
+    if (!Number.isNaN(rh) && humidity.trim() !== "") env.humidity = rh;
+
+    const phN = Number(ph);
+    const ecN = Number(ec);
+    const ppfdN = Number(ppfd);
+
+    if (!Number.isNaN(phN) && ph.trim() !== "") env.ph = phN;
+    if (!Number.isNaN(ecN) && ec.trim() !== "") env.ec = ecN;
+    if (!Number.isNaN(ppfdN) && ppfd.trim() !== "") env.ppfd = ppfdN;
+
+    const tagList = tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const body = {
+      phase: phaseKey,
+      scale,
+      env: Object.keys(env).length ? env : undefined,
+      notes: notes || undefined,
+      recentSignals: {
+        tags: tagList.length ? tagList : undefined,
+        lastPrimaryLabel: lastPrimaryLabel || undefined,
+      },
+    };
+
+    try {
+      const res = await fetch("/api/grow-coach/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(
+          (j as { error?: string })?.error || `Request failed (${res.status})`
+        );
+      }
+
+      const j = (await res.json()) as Plan;
+      setPlan(j);
+    } catch (e: unknown) {
+      setError(
+        e instanceof Error ? e.message : "Failed to generate plan."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <>
-      <TopNav title="Grow Coach" showBack />
-      <main className="min-h-screen bg-black text-white">
-        <div className="mx-auto w-full max-w-[720px] px-4 py-12">
-          <div className="rounded-3xl border border-white/15 bg-white/10 p-8 backdrop-blur-xl shadow-2xl shadow-black/30">
-            <h1 className="text-4xl font-extrabold tracking-tight mb-4">Grow Coach</h1>
-            <p className="text-white/80 text-lg mb-6">
-              Get personalized growing advice based on your identified strains. 
-              Learn optimal conditions, feeding schedules, and cultivation tips.
-            </p>
-            <div className="inline-flex items-center rounded-full border border-white/15 bg-black/30 px-4 py-2 text-sm text-white/80">
-              🚧 In development
-            </div>
+    <main className="pb-[72px]">
+      <PageHeaderNav title="Grow Coach" hideHome />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Phase picker */}
+        <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.03]">
+          <div className="text-sm opacity-85 mb-2">
+            Where are you in the cycle?
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {phases.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setPhaseKey(p.key)}
+                className={`px-2.5 py-2 rounded-full border border-white/14 cursor-pointer font-semibold transition-colors ${
+                  p.key === phaseKey
+                    ? "bg-[rgba(61,220,132,0.18)] font-extrabold"
+                    : "bg-white/[0.04]"
+                }`}
+              >
+                {p.title}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-2.5 opacity-90">
+            <b>Goal:</b> {phase.goal}
           </div>
         </div>
-      </main>
-    </>
+
+        {/* Scale + Env */}
+        <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.03]">
+          <div className="flex flex-col gap-2.5">
+            <div>
+              <div className="font-extrabold mb-1.5">Grow Scale</div>
+              <div className="flex gap-2 flex-wrap">
+                {(["home", "craft", "commercial"] as Scale[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setScale(s)}
+                    className={`px-2.5 py-2 rounded-full border border-white/14 cursor-pointer font-semibold capitalize ${
+                      s === scale
+                        ? "bg-[rgba(61,220,132,0.18)] font-extrabold"
+                        : "bg-white/[0.04]"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="font-extrabold mb-1.5">
+                Environment (optional)
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <Field
+                  label="Temp (°F)"
+                  value={tempF}
+                  setValue={setTempF}
+                  placeholder="76"
+                />
+                <Field
+                  label="Humidity (%)"
+                  value={humidity}
+                  setValue={setHumidity}
+                  placeholder="55"
+                />
+                <Field label="pH" value={ph} setValue={setPh} placeholder="6.3" />
+                <Field label="EC" value={ec} setValue={setEc} placeholder="1.6" />
+                <Field
+                  label="PPFD"
+                  value={ppfd}
+                  setValue={setPpfd}
+                  placeholder="650"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="font-extrabold mb-1.5">Signals (optional)</div>
+              <div className="flex flex-col gap-2.5">
+                <Field
+                  label="Tags (comma separated)"
+                  value={tags}
+                  setValue={setTags}
+                  placeholder="powdery_mildew_risk, botrytis_risk"
+                  wide
+                />
+                <Field
+                  label="Last known strain/label"
+                  value={lastPrimaryLabel}
+                  setValue={setLastPrimaryLabel}
+                  placeholder="Northern Lights"
+                  wide
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="font-extrabold mb-1.5">Notes (optional)</div>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="What's going on today? (watering/feed schedule, symptoms, week of flower, etc.)"
+                className="w-full min-h-[90px] p-2.5 rounded-xl border border-white/14 bg-black/25 text-inherit resize-y"
+              />
+            </div>
+
+            <div className="flex gap-2.5 flex-wrap">
+              <button
+                onClick={generatePlan}
+                disabled={loading}
+                className={`px-3 py-2.5 rounded-xl border border-white/14 font-black transition-colors ${
+                  loading
+                    ? "bg-white/[0.06] cursor-not-allowed"
+                    : "bg-[rgba(61,220,132,0.18)] cursor-pointer hover:bg-[rgba(61,220,132,0.25)]"
+                }`}
+              >
+                {loading ? "Generating…" : "Generate Today's Plan"}
+              </button>
+
+              <Link
+                href="/garden/scanner"
+                className="px-3 py-2.5 rounded-xl border border-white/14 bg-white/[0.04] no-underline font-extrabold text-white"
+              >
+                Scan a Photo
+              </Link>
+
+              <Link
+                href="/garden/history"
+                className="px-3 py-2.5 rounded-xl border border-white/14 bg-white/[0.04] no-underline font-extrabold text-white"
+              >
+                Open Log Book
+              </Link>
+            </div>
+
+            <div className="opacity-80 text-[13px]">{phase.todaysPrompt}</div>
+          </div>
+        </div>
+
+        {/* Plan output */}
+        {error ? (
+          <div className="p-3.5 rounded-xl border border-red-500/25 bg-red-500/10">
+            <b>Error:</b> {error}
+          </div>
+        ) : null}
+
+        {plan ? (
+          <div className="p-4 rounded-xl border border-white/10 bg-white/[0.03]">
+            <div className="text-xl font-black mb-1.5">{plan.headline}</div>
+            <div className="opacity-90 mb-2.5">{plan.flavor}</div>
+
+            <div className="flex gap-2.5 flex-wrap mb-2.5">
+              <Badge label={`Phase: ${plan.phase}`} />
+              <Badge label={`Scale: ${plan.scale}`} />
+              <Badge
+                label={`Confidence: ${Math.round(plan.confidence * 100)}%`}
+              />
+            </div>
+
+            <Section title="Actions" items={plan.actions} />
+            <Section title="Watchouts" items={plan.watchouts} />
+            <Section
+              title="Questions to answer (to improve accuracy)"
+              items={plan.questions}
+            />
+
+            <div className="flex gap-2.5 flex-wrap mt-3 items-center">
+              <button
+                onClick={savePlan}
+                disabled={saving}
+                className={`px-3 py-2.5 rounded-xl border border-white/14 font-black transition-colors ${
+                  saving
+                    ? "bg-white/[0.06] cursor-not-allowed"
+                    : "bg-[rgba(61,220,132,0.18)] cursor-pointer hover:bg-[rgba(61,220,132,0.25)]"
+                }`}
+              >
+                {saving ? "Saving…" : "Save Today's Plan to Log Book"}
+              </button>
+              {savedMsg ? (
+                <span className="opacity-85 text-sm">{savedMsg}</span>
+              ) : null}
+            </div>
+
+            <div className="mt-3 opacity-75 text-[13px]">
+              You can save this plan into your Log Book so it becomes part of
+              your grow cycle record.
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </main>
+  );
+}
+
+function Field({
+  label,
+  value,
+  setValue,
+  placeholder,
+  wide,
+}: {
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+  placeholder?: string;
+  wide?: boolean;
+}) {
+  return (
+    <label
+      className={`flex flex-col gap-1.5 ${wide ? "col-span-2" : ""}`}
+    >
+      <div className="text-[13px] opacity-85">{label}</div>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-2.5 py-2.5 rounded-xl border border-white/14 bg-black/25 text-inherit"
+      />
+    </label>
+  );
+}
+
+function Badge({ label }: { label: string }) {
+  return (
+    <span className="px-2.5 py-1.5 rounded-full border border-white/14 bg-white/[0.04] font-extrabold text-xs opacity-92">
+      {label}
+    </span>
+  );
+}
+
+function Section({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="mt-3">
+      <div className="font-black mb-1.5">{title}</div>
+      {items?.length ? (
+        <ul className="mt-0 opacity-92 list-disc pl-5 space-y-1.5">
+          {items.map((x) => (
+            <li key={x}>{x}</li>
+          ))}
+        </ul>
+      ) : (
+        <div className="opacity-70">None.</div>
+      )}
+    </div>
   );
 }

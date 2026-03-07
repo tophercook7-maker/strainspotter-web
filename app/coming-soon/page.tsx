@@ -10,7 +10,7 @@ export default function ComingSoonPage() {
         <div className="rounded-2xl border border-white/10 bg-black/25 backdrop-blur-md p-6">
           <h1 className="text-3xl font-semibold text-green-300">Coming soon</h1>
           <p className="mt-2 text-white/80">
-            This section is on the roadmap. You can keep using the Garden and Scanner right now.
+            This section is not available yet. You can keep using StrainSpotter — Scanner, Log Book, and Grow Coach — right now.
           </p>
 
           <div className="mt-4 flex flex-wrap gap-3">
@@ -18,7 +18,7 @@ export default function ComingSoonPage() {
               href="/garden"
               className="inline-flex items-center justify-center rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-500 transition-colors"
             >
-              Enter Garden
+              Open StrainSpotter
             </Link>
 
             <Link

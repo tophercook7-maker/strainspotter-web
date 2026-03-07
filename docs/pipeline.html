@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StrainSpotter Pipeline Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #0b1a0b; color: #e6f5e6; padding: 24px; }
+    .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 16px; margin: 12px 0; }
+    h1 { margin: 0 0 8px 0; font-weight: 800; }
+    .muted { color: #b6d8b6; font-size: 14px; }
+    .row { display: flex; flex-wrap: wrap; gap: 16px; }
+    .col { flex: 1 1 300px; }
+    .stat { font-size: 28px; font-weight: 800; }
+    .label { font-size: 12px; color: #a7caa7; }
+    a { color: #86f68a; }
+    canvas { background: rgba(0,0,0,0.12); border-radius: 8px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>StrainSpotter Pipeline Dashboard</h1>
+  <div class="muted">Daily strain data pipeline results (auto-updated by GitHub Actions)</div>
+
+  <div class="row">
+    <div class="col card">
+      <div class="label">Total Strains (Enhanced)</div>
+      <div id="stat-enhanced" class="stat">—</div>
+    </div>
+    <div class="col card">
+      <div class="label">Total Strains (Main)</div>
+      <div id="stat-main" class="stat">—</div>
+    </div>
+    <div class="col card">
+      <div class="label">Attributes / Matched</div>
+      <div id="stat-attrs" class="stat">—</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <canvas id="strainChart" height="120"></canvas>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Recent Runs</h3>
+    <div id="runs"></div>
+  </div>
+
+  <script>
+    const OWNER = 'tophercook7-maker';
+    const REPO = 'StrainSpotter';
+    const BRANCH = 'main';
+    const HISTORY_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/reports/pipeline-history.json`;
+
+    async function loadHistory() {
+      const res = await fetch(HISTORY_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to load history.json');
+      return await res.json();
+    }
+
+    function setText(id, val) { document.getElementById(id).textContent = val; }
+
+    function renderRuns(history) {
+      const container = document.getElementById('runs');
+      container.innerHTML = '';
+      const latest = history[history.length - 1] || {};
+
+      setText('stat-enhanced', latest?.totals?.strainsEnhanced ?? '—');
+      setText('stat-main', latest?.totals?.strainsMain ?? '—');
+      const matched = latest?.report?.counts?.matched ?? 0;
+      const attrs = latest?.report?.counts?.attributes ?? 0;
+      setText('stat-attrs', `${attrs} / ${matched}`);
+
+      const ul = document.createElement('ul');
+      ul.style.lineHeight = '1.8';
+      history.slice(-10).reverse().forEach(e => {
+        const li = document.createElement('li');
+        const d = new Date(e.date);
+        li.textContent = `${d.toLocaleString()} – enhanced=${e.totals?.strainsEnhanced ?? '—'} main=${e.totals?.strainsMain ?? '—'} matched=${e.report?.counts?.matched ?? '—'}`;
+        ul.appendChild(li);
+      });
+      container.appendChild(ul);
+    }
+
+    function renderChart(history) {
+      const labels = history.map(e => e.date_utc);
+      const enhanced = history.map(e => e.totals?.strainsEnhanced ?? null);
+      const main = history.map(e => e.totals?.strainsMain ?? null);
+
+      const ctx = document.getElementById('strainChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Enhanced Library',
+              data: enhanced,
+              borderColor: '#86f68a',
+              backgroundColor: 'rgba(134,246,138,0.15)',
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 2
+            },
+            {
+              label: 'Main Library',
+              data: main,
+              borderColor: '#4ecb71',
+              backgroundColor: 'rgba(78,203,113,0.12)',
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: { ticks: { color: '#b6d8b6' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+            y: { ticks: { color: '#b6d8b6' }, grid: { color: 'rgba(255,255,255,0.08)' } }
+          },
+          plugins: {
+            legend: { labels: { color: '#e6f5e6' } }
+          }
+        }
+      });
+    }
+
+    (async () => {
+      try {
+        const history = await loadHistory();
+        renderRuns(history);
+        renderChart(history);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('runs').textContent = 'Failed to load history.';
+      }
+    })();
+  </script>
+</body>
+</html>

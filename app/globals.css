@@ -1,7 +1,5 @@
-/* HARD FIX: Tailwind directives first, plain CSS only (no @apply) */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4: single import */
+@import "tailwindcss";
 
 /* Import glass variables after Tailwind */
 @import '../styles/glass.css';
