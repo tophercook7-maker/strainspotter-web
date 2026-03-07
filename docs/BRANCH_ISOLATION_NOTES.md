@@ -7,4 +7,4 @@
 
 ## Deployment
 
-See [VERCEL_DEPLOY_READY.md](./VERCEL_DEPLOY_READY.md) for Vercel deployment target (commit `f090034`).
+See [VERCEL_DEPLOY_READY.md](./VERCEL_DEPLOY_READY.md) for Vercel deployment target (branch `feature/reference-image-pipeline`, commit `f090034` or later).
