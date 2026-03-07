@@ -84,39 +84,7 @@ export async function POST(req: Request) {
     plan: body.plan,
   };
 
-  // 1) Try grow_logs if schema exists
-  try {
-    const { data, error } = await supabase
-      .from("grow_logs")
-      .insert([{ ai_diagnosis: payload, notes: body.notes ?? null }])
-      .select("id")
-      .maybeSingle();
-
-    if (!error && data?.id) {
-      return NextResponse.json({
-        ok: true,
-        storage: "grow_logs",
-        id: data.id,
-      });
-    }
-
-    const { data: dataB, error: errB } = await supabase
-      .from("grow_logs")
-      .insert([{ entry: payload, notes: body.notes ?? null }])
-      .select("id");
-
-    if (!errB && dataB?.[0]?.id) {
-      return NextResponse.json({
-        ok: true,
-        storage: "grow_logs",
-        id: dataB[0].id,
-      });
-    }
-  } catch {
-    // fallback to scans
-  }
-
-  // 2) Fallback: insert into scans so it appears in Log Book (History)
+  // Insert into scans first so the plan appears in Log Book (History reads from scans only)
   try {
     const gardenId = await getPublicGardenId(supabase);
     const now = new Date().toISOString();
@@ -150,8 +118,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       {
-        error:
-          "Save failed. Check Supabase scans table schema (garden_id, image_url, result_payload).",
+        error: "Could not save to Log Book. Check Supabase scans table schema.",
         detail: (error as Error)?.message ?? String(error),
       },
       { status: 500 }

@@ -88,7 +88,11 @@ export async function saveScanHistory(scan: {
 
     // Optional: create candidate reference image for high-confidence matched strains
     createCandidateReferenceIfEligible({ result_payload: payload, image_url: imageUrl }).catch(() => {});
+    if (process.env.NODE_ENV === "development") {
+      console.log("[StrainSpotter] History save OK");
+    }
   } catch (err) {
-    console.warn("Scan history save skipped:", err);
+    console.warn("[StrainSpotter] Scan history save failed:", err);
+    throw err; // Propagate so caller can show user-facing notice
   }
 }

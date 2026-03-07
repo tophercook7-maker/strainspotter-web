@@ -22,14 +22,28 @@ function isCoachEntry(scan: { image_url?: string | null; result_payload?: unknow
   return false;
 }
 
-function getThumbUrl(scan: { image_url?: string | null }): string | null {
+/**
+ * Priority: 1) image_url 2) result_payload.image_url 3) resultPayload.image_url
+ * 4) result_payload.coverImage 5) resultPayload.coverImage
+ */
+function getHistoryImageUrl(scan: {
+  image_url?: string | null;
+  result_payload?: unknown;
+  resultPayload?: unknown;
+}): string | null {
   const img = scan?.image_url;
-  if (!img || typeof img !== "string") return null;
-  if (img.startsWith("data:application/json")) return null;
-  if (img.startsWith("http://") || img.startsWith("https://") || img.startsWith("data:image")) {
-    return img;
+  if (img && typeof img === "string" && !img.startsWith("data:application/json")) return img;
+  const rp = scan?.result_payload as { image_url?: string; coverImage?: string } | undefined;
+  if (rp && typeof rp === "object") {
+    const u = rp.image_url ?? rp.coverImage;
+    if (u && typeof u === "string") return u;
   }
-  return img;
+  const rpAlt = scan?.resultPayload as { image_url?: string; coverImage?: string } | undefined;
+  if (rpAlt && typeof rpAlt === "object") {
+    const u = rpAlt.image_url ?? rpAlt.coverImage;
+    if (u && typeof u === "string") return u;
+  }
+  return null;
 }
 
 function getGrowCoachMeta(scan: {
@@ -164,86 +178,65 @@ export default async function HistoryPage() {
       <main className="min-h-screen bg-black text-white">
         <div className="w-full py-6">
           {gap !== null && gap >= 1 ? (
-            (() => {
-            const cardStyle = {
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "rgba(255,255,255,0.05)",
-              borderRadius: 14,
-              padding: 14,
-              marginBottom: 16,
-            };
-
-            const btnStyle = {
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(0,0,0,0.25)",
-              textDecoration: "none",
-              fontWeight: 800,
-              color: "inherit",
-            };
-
-            return (
-              <div style={cardStyle}>
-                <div style={{ fontSize: 16, fontWeight: 900 }}>Catch-up check</div>
-                <div style={{ marginTop: 4, opacity: 0.9 }}>
-                  You haven&apos;t logged anything in <b>{gap}</b> day{gap === 1 ? "" : "s"}.
-                </div>
-                <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <Link href="/garden/grow-coach" style={btnStyle}>
-                    Open Grow Coach
-                  </Link>
-                  <Link href="/garden/scanner" style={btnStyle}>
-                    Scan a Photo
-                  </Link>
-                </div>
-                <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-                  Tip: generate a &quot;Today&apos;s Plan&quot; then save it to Log Book.
-                </div>
+            <div className="rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20 p-4 mb-6">
+              <div className="text-base font-black">Catch-up check</div>
+              <p className="mt-2 text-white/90">
+                You haven&apos;t logged anything in <b>{gap}</b> day{gap === 1 ? "" : "s"}.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  href="/garden/grow-coach"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-bold text-white no-underline hover:bg-white/[0.1] hover:border-white/20 transition-colors"
+                >
+                  Open Grow Coach
+                </Link>
+                <Link
+                  href="/garden/scanner"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-bold text-white no-underline hover:bg-white/[0.1] hover:border-white/20 transition-colors"
+                >
+                  Scan a Photo
+                </Link>
               </div>
-            );
-          })()
-          ) : null}
-          {displayableScans.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-white/70 text-lg">No scans yet</p>
-              <p className="text-white/50 text-sm mt-2">
-                Your scan history will appear here
+              <p className="mt-3 text-xs text-white/70">
+                Tip: generate a &quot;Today&apos;s Plan&quot; then save it to Log Book.
               </p>
             </div>
+          ) : null}
+          {displayableScans.length === 0 ? (
+            <div className="text-center py-14">
+              <p className="text-white/80 text-lg font-semibold">No scans yet</p>
+              <p className="text-white/60 text-sm mt-2">
+                Your scan history will appear here
+              </p>
+              <Link
+                href="/garden/scanner"
+                className="mt-5 inline-flex items-center justify-center min-h-[44px] rounded-xl border border-white/15 bg-white/[0.06] px-5 py-2.5 text-white font-bold shadow-lg shadow-black/20 hover:bg-white/[0.1] hover:border-white/20 transition-colors"
+              >
+                Scan a Photo
+              </Link>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {displayableScans.map((scan) => (
                 <Link
                   key={scan.id}
                   href={`/garden/history/${scan.id}`}
-                  className="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer"
+                  className="block rounded-xl border border-white/15 bg-white/[0.06] p-4 shadow-lg shadow-black/20 hover:bg-white/[0.08] hover:border-white/20 transition-colors cursor-pointer min-h-[44px]"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3 sm:gap-4">
                     {(() => {
-                      const thumb = getThumbUrl(scan);
+                      const thumb = getHistoryImageUrl(scan);
                       if (!thumb || isCoachEntry(scan)) return null;
                       return (
                         <img
                           src={thumb}
                           alt=""
-                          style={{
-                            width: 72,
-                            height: 72,
-                            objectFit: "cover",
-                            borderRadius: 12,
-                            border: "1px solid rgba(255,255,255,0.12)",
-                            background: "rgba(0,0,0,0.25)",
-                            flex: "0 0 auto",
-                          }}
+                          className="flex-shrink-0 w-16 h-16 rounded-xl object-cover border border-white/12 bg-black/25"
                         />
                       );
                     })()}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold text-lg">
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <h3 className="text-white font-semibold text-base sm:text-lg line-clamp-2">
                         {displayName(scan)}
                       </h3>
                       {(() => {
@@ -290,7 +283,7 @@ export default async function HistoryPage() {
                       ) : null}
                     </div>
                     {scan.created_at && (
-                      <p className="text-white/50 text-xs whitespace-nowrap">
+                      <p className="text-white/50 text-xs whitespace-nowrap flex-shrink-0">
                         {new Date(scan.created_at).toLocaleDateString()}
                       </p>
                     )}

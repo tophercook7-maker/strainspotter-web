@@ -10,7 +10,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
   const ratio = result.ratio ?? null; // Optional section
 
   return (
-    <div className="w-full max-w-[720px] mx-auto px-4">
+    <div className="w-full max-w-[720px] mx-auto px-2 sm:px-4">
       {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
       
       {/* Phase 4.9 — 1. Name display rules (LOCKED): Primary strain name MUST render large, first, above all other content */}
@@ -21,11 +21,11 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
         const confidenceTier = result.confidenceTier?.label || (result.nameFirstDisplay as any)?.nameConfidenceTier || "Moderate Confidence";
         
         return (
-          <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+          <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
             {/* Phase 4.9 — 1. Primary name: Large, first, above all other content */}
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <div className="flex-1">
-                <div className="text-3xl md:text-4xl font-extrabold">
+            <div className="flex items-start justify-between gap-3 sm:gap-4 mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold break-words">
                   {/* Phase 4.2.1 — Always render name, no conditional hiding */}
                   {primaryName}
                 </div>
@@ -118,7 +118,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
               });
               
               return (
-                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20">
+                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/15">
                   <span className="text-xs opacity-70">Confidence:</span>
                   <span className="text-sm font-medium">
                     {confidenceCopy}
@@ -154,7 +154,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
       {/* Phase 4.7.5 — Failure Safety */}
       {/* FEATURE FLAG: Paid Tier Only */}
       {flags?.paid_tier && result.ratio && (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+        <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7.4 — Trust-First Presentation: Visualization first, not raw numbers */}
           {/* Phase 4.7.5 — Failure Safety: Check confidence threshold */}
           {(() => {
@@ -243,7 +243,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
                       <span className="text-white/50 group-open:rotate-180 transition-transform">▼</span>
                     </span>
                   </summary>
-                  <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                  <div className="mt-3 pt-3 border-t border-white/15 space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-white/80">Indica</span>
                       <span className="text-white/90 font-medium">{displayIndica}%</span>
@@ -273,7 +273,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
           
           {/* Phase 5.1 — 4. User-facing explanation: Generate 2–3 bullets (if available) */}
           {result.finalRatio && result.finalRatio.explanation && result.finalRatio.explanation.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-white/10 space-y-1">
+            <div className="mt-4 pt-4 border-t border-white/15 space-y-1">
               {result.finalRatio.explanation.map((line, i) => (
                 <div key={i} className="text-sm text-white/70">
                   • {line}
@@ -293,7 +293,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
       {/* Phase 4.2 — 4. Handle similar strains gracefully (collapsible, if present) */}
       {/* FEATURE FLAG: Paid Tier Only */}
       {flags?.paid_tier && result.nameDisambiguationV407 && result.nameDisambiguationV407.alternates.length > 0 && (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+        <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7 — 4. Section separators: section cards */}
           <details className="cursor-pointer">
             <summary className="text-base md:text-lg font-semibold text-yellow-400 hover:text-yellow-300">
@@ -313,7 +313,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
 
       {/* Phase 4.0.1 — render graceful fallback UI */}
       {result.softFail && (
-        <section className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-6 mb-4">
+        <section className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-base md:text-lg font-semibold">Limited Scan Confidence</div>
           <div className="text-sm md:text-base mt-2 opacity-80">
@@ -343,7 +343,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
 
       {/* Phase 4.0.5 — render final ratio (fallback if result.ratio not available) */}
       {!result.ratio && result.finalRatio && (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+        <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-lg md:text-xl font-semibold mb-3">
             {result.finalRatio.classification}
@@ -369,7 +369,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
 
       {/* Phase 4.3.2 — render stabilized ratio (legacy fallback - deprecated) */}
       {!result.finalRatio && result.stabilizedRatio && (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+        <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-base md:text-lg font-semibold mb-2">
             Indica / Sativa / Hybrid
@@ -387,7 +387,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
       
       {/* Fallback to existing ratio structure */}
       {!result.stabilizedRatio && ratio && (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+        <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-base md:text-lg font-semibold mb-2">Indica / Sativa / Hybrid</div>
           <div className="text-sm md:text-base text-white/70 mb-2">
@@ -402,7 +402,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
       {/* Phase 4.3.3 — render visual anchors */}
       {/* FEATURE FLAG: Paid Tier Only */}
       {flags?.paid_tier && result.visualAnchors?.length ? (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+        <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-base md:text-lg font-semibold mb-3">
             Key Visual Anchors
@@ -421,7 +421,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
 
       {/* Phase 4.3.6 — render confidence explanation */}
       {result.confidenceExplanation && (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+        <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-lg md:text-xl font-semibold mb-3">
             Confidence: {result.confidenceExplanation.tier} (
@@ -438,7 +438,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
 
       {/* Phase 4.4.0 — render name-first section */}
       {result.nameFirst && (
-        <section className="rounded-xl bg-white/5 border border-white/10 p-6 mb-4">
+        <section className="rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-6 mb-4 shadow-lg shadow-black/20">
           {/* Phase 4.7 — 4. Section separators */}
           <div className="text-2xl md:text-3xl font-bold mb-2">
             {result.nameFirst.primaryName}
@@ -567,7 +567,7 @@ export default function ResultPanel({ result, flags }: { result: ScannerViewMode
 
               <div className="space-y-3 mt-3">
                 {result.nameDisambiguation.alternatives.map((alt, i) => (
-                  <div key={i} className="border border-white/10 rounded p-3">
+                  <div key={i} className="border border-white/15 rounded-xl p-3 bg-white/[0.03]">
                     <div className="font-semibold">
                       {alt.name} — {alt.confidence}%
                     </div>

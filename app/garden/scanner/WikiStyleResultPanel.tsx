@@ -91,7 +91,7 @@ export default function WikiStyleResultPanel({
   const strainFamily = getStrainFamily();
 
   return (
-    <section className="w-full max-w-[720px] mx-auto rounded-2xl border border-white/12 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/20 p-5 sm:p-7 space-y-5">
+    <section className="w-full max-w-[720px] mx-auto rounded-xl border border-white/15 bg-white/[0.06] backdrop-blur-xl shadow-lg shadow-black/20 p-4 sm:p-5 md:p-7 space-y-5">
       {/* Phase 4.5 Step 4.5.1 — NAME LOCK HEADER (TOP PRIORITY) */}
       {/* Phase 15.5.5 — Make strain name + confidence feel real */}
       {/* Phase 4.1 — UI NEVER EMPTY: nameFirstDisplay is guaranteed */}
@@ -110,7 +110,7 @@ export default function WikiStyleResultPanel({
           <div className="mb-6">
             {/* 1. Strain Name — Largest text */}
             {/* STEP 5.5.6 — FAIL-SAFE UX: Always show best name, never empty */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-4 break-words">
               {(() => {
                 const displayName =
                   vm.nameFirstDisplay?.primaryStrainName ??
@@ -841,7 +841,7 @@ export default function WikiStyleResultPanel({
               return (
                 <div className="mt-6 space-y-4">
                   {/* Primary Trust Message */}
-                  <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 backdrop-blur-sm">
+                  <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 backdrop-blur-sm">
                     <p className="text-sm text-white/90 leading-relaxed font-medium">
                       {trustExplanation.primaryTrustMessage}
                     </p>
@@ -880,7 +880,7 @@ export default function WikiStyleResultPanel({
                   
                   {/* Uncertainty Acknowledgment */}
                   {trustExplanation.uncertaintyAcknowledgment?.hasUncertainty && (
-                    <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 backdrop-blur-sm">
+                    <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 backdrop-blur-sm">
                       <h4 className="text-sm font-semibold text-yellow-200 mb-2">Understanding the uncertainty</h4>
                       <ul className="space-y-1.5 mb-3">
                         {trustExplanation.uncertaintyAcknowledgment.reasons.map((reason, idx) => (
@@ -936,7 +936,7 @@ export default function WikiStyleResultPanel({
                   </CollapsibleSection>
                   
                   {/* Authority Indicators */}
-                  <div className="rounded-lg border border-white/10 bg-white/5 p-3 backdrop-blur-sm">
+                  <div className="rounded-xl border border-white/15 bg-white/[0.06] p-3 backdrop-blur-sm">
                     <p className="text-sm text-white/75 leading-relaxed">
                       <span className="font-semibold text-white/85">Analysis powered by:</span>{" "}
                       {trustExplanation.authorityIndicators.databaseSize} • {trustExplanation.authorityIndicators.analysisDepth}
@@ -948,7 +948,7 @@ export default function WikiStyleResultPanel({
             
             // Fallback: Show existing trust message
             return vm.nameFirstDisplay.primaryStrainName !== "Closest Known Cultivar" ? (
-              <div className="mt-6 rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div className="mt-6 rounded-xl border border-white/15 bg-white/[0.06] p-4 backdrop-blur-sm">
                 <p className="text-sm text-white/75 leading-relaxed">
                   <span className="font-semibold text-white/90">Name Selection:</span>{" "}
                   This strain name was selected through systematic analysis comparing your images against a database of 35,000+ documented cultivars. The identification is based on visual morphology, genetic lineage, and known cultivar characteristics.
@@ -965,7 +965,7 @@ export default function WikiStyleResultPanel({
             const visualContradictionNote = (vm.nameFirstDisplay as any)?.visualContradictionNote;
             if (visualContradictionNote) {
               return (
-                <div className="mt-6 rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 backdrop-blur-sm">
+                <div className="mt-6 rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 backdrop-blur-sm">
                   <p className="text-sm text-orange-200/90 leading-relaxed flex items-start">
                     <span className="mr-2 text-base">⚠️</span>
                     <span>{visualContradictionNote}</span>
@@ -1139,7 +1139,7 @@ export default function WikiStyleResultPanel({
               // Show stability message for medium/high confidence or when name is stable
               if (confidence >= 70 || vm.nameFirstDisplay?.nameStabilityScore) {
                 return (
-                  <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/10 p-2.5">
+                  <div className="mt-3 rounded-xl border border-green-500/20 bg-green-500/10 p-2.5">
                     <div className="flex items-start gap-2">
                       <span className="text-green-400 text-sm">✓</span>
                       <div className="flex-1">
@@ -1163,7 +1163,7 @@ export default function WikiStyleResultPanel({
               // Phase 4.3.3 — Partial status reframing (neutral, authoritative)
               if (scanStatus === "partial") {
                 return (
-                  <div className="mt-3 rounded-lg border border-white/15 bg-white/5 p-2.5">
+                  <div className="mt-3 rounded-xl border border-white/15 bg-white/[0.06] p-2.5">
                     <div className="flex items-start gap-2">
                       <span className="text-white/60 text-sm">ℹ</span>
                       <div className="flex-1">
@@ -1179,7 +1179,7 @@ export default function WikiStyleResultPanel({
               
               if (confidence < 70) {
                 return (
-                  <div className="mt-3 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-2.5">
+                  <div className="mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-2.5">
                     <div className="flex items-start gap-2">
                       <span className="text-yellow-400 text-sm">ℹ</span>
                       <div className="flex-1">
@@ -1210,7 +1210,7 @@ export default function WikiStyleResultPanel({
             {(((result as any).diversityNote || (vm.notes && vm.notes.some(n => 
               n.toLowerCase().includes("similar") || n.toLowerCase().includes("diversity") || n.toLowerCase().includes("varied angles")
             ))) || (result as any).scanWarning || ((result as any).warnings && (result as any).warnings.length > 0) || (result as any).meta?.guidanceHints?.length || (result as any).meta?.friendlyFeedback) && (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-3">
+              <div className="rounded-xl border border-white/15 bg-white/[0.06] p-5 space-y-3">
                 <h3 className="text-base font-semibold text-white/95 tracking-tight mb-3">Notes & Uncertainty</h3>
                 
                 {/* STEP 5.5.2 — User-facing friendly feedback (one message only) */}
@@ -1290,7 +1290,7 @@ export default function WikiStyleResultPanel({
           {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES & EXPERIENCE PROFILE */}
           {/* Show terpenes from terpeneGuess if terpeneExperience is not available (free tier) */}
           {(vm.terpeneExperience || (safeTerpeneGuess && safeTerpeneGuess.length > 0)) && (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-4">
+            <div className="rounded-xl border border-white/15 bg-white/[0.06] p-5 space-y-4">
             {/* Phase 5.1 Step 5.1.5 — DOMINANT TERPENES */}
             {/* Phase 5.3.6 — Show terpenes from terpeneExperience OR terpeneGuess (free tier always gets terpenes) */}
             {((vm.terpeneExperience?.dominantTerpenes && vm.terpeneExperience.dominantTerpenes.length > 0) || 
@@ -1324,7 +1324,7 @@ export default function WikiStyleResultPanel({
 
             {/* STEP 5.4.4 — EXPERIENCE CARD */}
             {/* Phase 5.1 Step 5.1.5 — EXPERIENCE PROFILE */}
-            <div className="space-y-3 pt-4 mt-4 border-t border-white/10">
+            <div className="space-y-3 pt-4 mt-4 border-t border-white/15">
               <h3 className="text-base font-semibold text-white/95 tracking-tight">Experience Profile</h3>
               <div className="space-y-2.5">
                 {/* Body Relaxation */}
@@ -1437,7 +1437,7 @@ export default function WikiStyleResultPanel({
             >
               <div className="space-y-2 pt-2">
                 {vm.closelyRelatedVariants.map((variant, idx) => (
-                  <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  <div key={idx} className="rounded-xl border border-white/15 bg-white/[0.06] p-3">
                     <p className="text-sm text-white/90 font-medium mb-1">
                       {variant.name}
                     </p>
@@ -1483,7 +1483,7 @@ export default function WikiStyleResultPanel({
                     const closeness = idx === 0 ? "Very close" : idx === 1 ? "Close" : "Possible";
                     
                     return (
-                      <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                      <div key={idx} className="rounded-xl border border-white/15 bg-white/[0.06] p-3">
                         <div className="flex items-start justify-between gap-3 mb-1">
                           <p className="text-sm text-white/90 font-medium">
                             {alt.name}
@@ -1519,7 +1519,7 @@ export default function WikiStyleResultPanel({
             >
               <div className="space-y-2 pt-2">
                 {vm.nameFirstDisplay.alternateMatches.map((alt, idx) => (
-                  <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  <div key={idx} className="rounded-xl border border-white/15 bg-white/[0.06] p-3">
                     <p className="text-sm text-white/90 font-medium mb-1">
                       {alt.name}
                     </p>
@@ -1730,7 +1730,7 @@ export default function WikiStyleResultPanel({
             <div className="space-y-3">
               {/* Show name resolution alternate first if available */}
               {vm.nameResolution?.closestAlternate && (
-                <div className="p-3 rounded-lg border border-white/10 bg-white/5">
+                <div className="p-3 rounded-xl border border-white/15 bg-white/[0.06]">
                   <div className="flex items-start justify-between mb-1">
                     <p className="font-semibold text-white">
                       {vm.nameResolution.closestAlternate.name}
@@ -1747,7 +1747,7 @@ export default function WikiStyleResultPanel({
               
               {/* Show other alternates */}
               {safeSecondaryMatches.slice(0, 3).map((match, idx) => (
-                <div key={idx} className="p-3 rounded-lg border border-white/10 bg-white/5">
+                <div key={idx} className="p-3 rounded-xl border border-white/15 bg-white/[0.06]">
                   <div className="flex items-start justify-between mb-1">
                     <p className="font-semibold text-white">{match.name}</p>
                   </div>
@@ -1761,7 +1761,7 @@ export default function WikiStyleResultPanel({
         )}
 
       {/* STEP 5.4.4 — GENETICS CARD */}
-      <div className="rounded-lg border border-white/10 bg-white/5 p-5 space-y-4">
+      <div className="rounded-xl border border-white/15 bg-white/[0.06] p-5 space-y-4">
         <h3 className="text-base font-semibold text-white/95 tracking-tight mb-4">Genetics</h3>
         <div className="space-y-4">
           {/* Dominance & Lineage — uses cultivarType (traits.type / genetics.dominance / analysis.dominance) */}
@@ -1878,7 +1878,7 @@ export default function WikiStyleResultPanel({
 
           {/* STEP 5.4.5 — Uncertainty Note: readable text, bullet points */}
           {(!extendedProfile?.genetics.lineage && !vm.genetics?.lineage) && (
-            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
+            <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
               <p className="text-sm font-semibold text-yellow-200 mb-2">Lineage Inference Limitation</p>
               <ul className="space-y-1.5 text-sm text-yellow-200/90 leading-relaxed">
                 <li>Genetic lineage identification from visual analysis alone has limitations</li>
@@ -1984,7 +1984,7 @@ export default function WikiStyleResultPanel({
 
           {/* Match Decision Tie-in */}
           {vm.primaryMatch?.whyThisMatch && (
-            <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+            <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-3">
               <p className="text-sm text-green-200 leading-relaxed">
                 <strong>Match Decision:</strong> {vm.primaryMatch.whyThisMatch}
               </p>
@@ -2000,7 +2000,7 @@ export default function WikiStyleResultPanel({
         icon="🌿"
       >
         <div className="space-y-4">
-          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 mb-4">
+          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 mb-4">
             <p className="text-sm text-yellow-200 leading-relaxed font-semibold">
               ⚠️ Inferred Profile — Not Lab Tested
             </p>
@@ -2101,7 +2101,7 @@ export default function WikiStyleResultPanel({
           
           {/* Phase 3.9 Part D — Entourage Effect Explanation */}
           {vm.entourageExplanation && (
-            <div className="mt-4 p-3 rounded-lg border border-blue-500/30 bg-blue-500/10">
+            <div className="mt-4 p-3 rounded-xl border border-blue-500/30 bg-blue-500/10">
               <h4 className="text-base font-semibold text-blue-200 mb-2">
                 The Entourage Effect
               </h4>
@@ -2323,7 +2323,7 @@ export default function WikiStyleResultPanel({
                 </h4>
                 <div className="space-y-3">
                   {vm.relatedStrains.map((related, idx) => (
-                    <div key={idx} className="p-3 rounded-lg border border-white/10 bg-white/5">
+                    <div key={idx} className="p-3 rounded-xl border border-white/15 bg-white/[0.06]">
                       <div className="flex items-start justify-between mb-1">
                         <p className="font-semibold text-white">{related.name}</p>
                         <span className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded">
@@ -2455,7 +2455,7 @@ export default function WikiStyleResultPanel({
               <h4 className="text-base font-semibold text-white/90 mb-2">
                 Confidence Assessment
               </h4>
-              <div className="p-3 rounded-lg border border-white/10 bg-white/5 mb-2">
+              <div className="p-3 rounded-xl border border-white/15 bg-white/[0.06] mb-2">
                 <div className="flex items-center gap-2 mb-1">
                   <span
                     className={`text-xs font-semibold px-3 py-1 rounded-full ${
@@ -2525,7 +2525,7 @@ export default function WikiStyleResultPanel({
           </div>
           
           {/* Non-Lab Disclaimer */}
-          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
+          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
             <h4 className="text-base font-semibold text-yellow-200 mb-2">
               Important: Visual Identification Only
             </h4>
@@ -2569,7 +2569,7 @@ export default function WikiStyleResultPanel({
 
           {/* Multiple Images Benefit */}
           {imageCount > 1 && (
-            <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+            <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-3">
               <h4 className="text-base font-semibold text-green-200 mb-2">
                 Multiple Images Improve Accuracy
               </h4>
@@ -2621,7 +2621,7 @@ export default function WikiStyleResultPanel({
           // Free tier: Show soft nudge
           return (
             <div className="mt-8 pt-8">
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-white/15 bg-white/[0.06] p-4">
                 <p className="text-sm text-white/75 text-center leading-relaxed">
                   Increase certainty with more angles, or unlock Pro for deeper analysis.
                 </p>
@@ -2674,7 +2674,7 @@ export default function WikiStyleResultPanel({
               >
                 <div className="space-y-4">
                   {proEnhancements.perImageAnalysis.map((analysis, idx) => (
-                    <div key={idx} className="p-4 rounded-lg border border-white/10 bg-white/5">
+                    <div key={idx} className="p-4 rounded-xl border border-white/15 bg-white/[0.06]">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-semibold text-white/90">Image {analysis.imageIndex}</h4>
                         <span className="text-xs text-white/60">{analysis.confidence}% confidence</span>
@@ -2708,7 +2708,7 @@ export default function WikiStyleResultPanel({
             
             {/* Phase 5.3.7.4 — Confidence Delta */}
             {proEnhancements.confidenceDelta && (
-              <div className="p-4 rounded-lg border border-blue-500/30 bg-blue-500/10">
+              <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/10">
                 <h4 className="text-sm font-semibold text-blue-200 mb-2">Confidence Improvement Potential</h4>
                 <p className="text-sm text-blue-200/90 leading-relaxed mb-2">
                   {proEnhancements.confidenceDelta.explanation}

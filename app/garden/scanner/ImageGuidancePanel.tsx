@@ -24,7 +24,7 @@ export default function ImageGuidancePanel({
   return (
     <div className="space-y-4">
       {/* Primary Message */}
-      <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
+      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 shadow-lg shadow-black/20">
         <p className="text-sm font-medium text-blue-200 leading-relaxed">
           {guidance.primaryMessage}
         </p>
@@ -40,7 +40,7 @@ export default function ImageGuidancePanel({
         <h4 className="text-xs font-semibold text-white/70 uppercase tracking-wide">
           Image Slots ({guidance.filledSlots}/5)
         </h4>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {guidance.slots.map((slot) => {
             const isRecommended = guidance.recommendedNextSlot?.slotNumber === slot.slotNumber;
             const isRequired = slot.requirement === "required";
@@ -49,14 +49,14 @@ export default function ImageGuidancePanel({
             return (
               <div
                 key={slot.slotNumber}
-                className={`rounded-lg border p-2 text-center transition-all ${
+                className={`rounded-xl border p-2 sm:p-2.5 text-center transition-all min-w-0 ${
                   slot.filled
                     ? "border-green-500/30 bg-green-500/10"
                     : isRecommended
                     ? "border-yellow-500/40 bg-yellow-500/15 border-2"
                     : isRequired
                     ? "border-orange-500/30 bg-orange-500/10"
-                    : "border-white/10 bg-white/5"
+                    : "border-white/15 bg-white/[0.06]"
                 }`}
               >
                 <div className="text-lg mb-1">
@@ -118,12 +118,12 @@ export default function ImageGuidancePanel({
               return (
                 <div
                   key={status.angle}
-                  className={`rounded-lg border p-3 text-center transition-all ${
-                    status.captured
+                className={`rounded-xl border p-3 text-center transition-all ${
+                  status.captured
                       ? "border-green-500/30 bg-green-500/10"
                       : isRecommended
                       ? "border-yellow-500/40 bg-yellow-500/15 border-2"
-                      : "border-white/10 bg-white/5"
+                      : "border-white/15 bg-white/[0.06]"
                   }`}
                 >
                   <div className="text-2xl mb-1">
@@ -191,12 +191,12 @@ export default function ImageGuidancePanel({
             {guidance.qualityIssues.map((issue, idx) => (
               <div
                 key={idx}
-                className={`rounded-md border p-2 text-xs flex items-start gap-2 ${
+                className={`rounded-xl border p-2 text-xs flex items-start gap-2 ${
                   issue.severity === "high"
                     ? "border-orange-500/30 bg-orange-500/10 text-orange-200"
                     : issue.severity === "medium"
                     ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-200"
-                    : "border-white/10 bg-white/5 text-white/60"
+                    : "border-white/15 bg-white/[0.06] text-white/60"
                 }`}
               >
                 <span className="mt-0.5">

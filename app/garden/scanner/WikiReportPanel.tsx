@@ -76,7 +76,7 @@ export default function WikiReportPanel({
       {/* Phase 4.7.5 — Failure Safety */}
       {/* STEP 5.4.4 — INDICA/SATIVA/HYBRID CARD */}
       {analysis?.dominance && (
-        <div className="mt-6 rounded-lg border border-white/10 bg-white/5 p-5">
+        <div className="mt-6 rounded-xl border border-white/15 bg-white/[0.06] p-4 sm:p-5 shadow-lg shadow-black/20">
           {/* Phase 4.7.4 — Trust-First Presentation: Visualization first, not raw numbers */}
           {/* Phase 4.7.5 — Failure Safety: Check confidence threshold */}
           {(() => {

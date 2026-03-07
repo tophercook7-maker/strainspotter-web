@@ -183,19 +183,25 @@ export default function GrowCoachPage() {
       });
 
       const j = (await res.json().catch(() => null)) as
-        | { ok?: boolean; error?: string }
+        | { ok?: boolean; error?: string; detail?: string }
         | null;
 
       if (!res.ok) {
-        throw new Error(j?.error || `Save failed (${res.status})`);
+        const errMsg = j?.error || j?.detail || `Save failed (${res.status})`;
+        throw new Error(errMsg);
       }
 
+      if (process.env.NODE_ENV === "development") {
+        console.log("[StrainSpotter] Grow Coach plan saved to Log Book");
+      }
       setSavedMsg("Saved to Log Book ✅");
       window.location.href = "/garden/history";
     } catch (e: unknown) {
-      setSavedMsg(
-        e instanceof Error ? e.message : "Save failed."
-      );
+      const msg = e instanceof Error ? e.message : "Save failed.";
+      setSavedMsg(msg);
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[StrainSpotter] Grow Coach save failed:", e);
+      }
     } finally {
       setSaving(false);
     }
@@ -252,10 +258,15 @@ export default function GrowCoachPage() {
 
       const j = (await res.json()) as Plan;
       setPlan(j);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[StrainSpotter] Grow Coach plan generated");
+      }
     } catch (e: unknown) {
-      setError(
-        e instanceof Error ? e.message : "Failed to generate plan."
-      );
+      const errMsg = e instanceof Error ? e.message : "Failed to generate plan.";
+      setError(errMsg);
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[StrainSpotter] Grow Coach plan generation failed:", e);
+      }
     } finally {
       setLoading(false);
     }
@@ -267,7 +278,7 @@ export default function GrowCoachPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Phase picker */}
-        <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.03]">
+        <div className="p-4 rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20">
           <div className="text-sm opacity-85 mb-2">
             Where are you in the cycle?
           </div>
@@ -277,7 +288,7 @@ export default function GrowCoachPage() {
               <button
                 key={p.key}
                 onClick={() => setPhaseKey(p.key)}
-                className={`px-2.5 py-2 rounded-full border border-white/14 cursor-pointer font-semibold transition-colors ${
+                className={`px-3 py-2.5 min-h-[44px] rounded-full border border-white/14 cursor-pointer font-semibold transition-colors ${
                   p.key === phaseKey
                     ? "bg-[rgba(61,220,132,0.18)] font-extrabold"
                     : "bg-white/[0.04]"
@@ -294,7 +305,7 @@ export default function GrowCoachPage() {
         </div>
 
         {/* Scale + Env */}
-        <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.03]">
+        <div className="p-4 rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20">
           <div className="flex flex-col gap-2.5">
             <div>
               <div className="font-extrabold mb-1.5">Grow Scale</div>
@@ -303,7 +314,7 @@ export default function GrowCoachPage() {
                   <button
                     key={s}
                     onClick={() => setScale(s)}
-                    className={`px-2.5 py-2 rounded-full border border-white/14 cursor-pointer font-semibold capitalize ${
+                    className={`px-3 py-2.5 min-h-[44px] rounded-full border border-white/14 cursor-pointer font-semibold capitalize ${
                       s === scale
                         ? "bg-[rgba(61,220,132,0.18)] font-extrabold"
                         : "bg-white/[0.04]"
@@ -369,7 +380,7 @@ export default function GrowCoachPage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="What's going on today? (watering/feed schedule, symptoms, week of flower, etc.)"
-                className="w-full min-h-[90px] p-2.5 rounded-xl border border-white/14 bg-black/25 text-inherit resize-y"
+                className="w-full min-h-[90px] p-3 rounded-xl border border-white/15 bg-white/[0.03] text-inherit resize-y"
               />
             </div>
 
@@ -388,14 +399,14 @@ export default function GrowCoachPage() {
 
               <Link
                 href="/garden/scanner"
-                className="px-3 py-2.5 rounded-xl border border-white/14 bg-white/[0.04] no-underline font-extrabold text-white"
+                className="inline-flex items-center justify-center min-h-[44px] px-4 py-3 rounded-xl border border-white/15 bg-white/[0.06] no-underline font-extrabold text-white hover:bg-white/[0.1] hover:border-white/20 transition-colors"
               >
                 Scan a Photo
               </Link>
 
               <Link
                 href="/garden/history"
-                className="px-3 py-2.5 rounded-xl border border-white/14 bg-white/[0.04] no-underline font-extrabold text-white"
+                className="inline-flex items-center justify-center min-h-[44px] px-4 py-3 rounded-xl border border-white/15 bg-white/[0.06] no-underline font-extrabold text-white hover:bg-white/[0.1] hover:border-white/20 transition-colors"
               >
                 Open Log Book
               </Link>
@@ -407,13 +418,13 @@ export default function GrowCoachPage() {
 
         {/* Plan output */}
         {error ? (
-          <div className="p-3.5 rounded-xl border border-red-500/25 bg-red-500/10">
+          <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 shadow-lg shadow-black/20">
             <b>Error:</b> {error}
           </div>
         ) : null}
 
         {plan ? (
-          <div className="p-4 rounded-xl border border-white/10 bg-white/[0.03]">
+          <div className="p-4 rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20">
             <div className="text-xl font-black mb-1.5">{plan.headline}</div>
             <div className="opacity-90 mb-2.5">{plan.flavor}</div>
 
@@ -436,7 +447,7 @@ export default function GrowCoachPage() {
               <button
                 onClick={savePlan}
                 disabled={saving}
-                className={`px-3 py-2.5 rounded-xl border border-white/14 font-black transition-colors ${
+                className={`px-4 py-3 min-h-[44px] rounded-xl border border-white/14 font-black transition-colors ${
                   saving
                     ? "bg-white/[0.06] cursor-not-allowed"
                     : "bg-[rgba(61,220,132,0.18)] cursor-pointer hover:bg-[rgba(61,220,132,0.25)]"
@@ -482,7 +493,7 @@ function Field({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-2.5 py-2.5 rounded-xl border border-white/14 bg-black/25 text-inherit"
+        className="w-full px-3 py-2.5 rounded-xl border border-white/15 bg-white/[0.03] text-inherit"
       />
     </label>
   );
@@ -490,7 +501,7 @@ function Field({
 
 function Badge({ label }: { label: string }) {
   return (
-    <span className="px-2.5 py-1.5 rounded-full border border-white/14 bg-white/[0.04] font-extrabold text-xs opacity-92">
+    <span className="px-2.5 py-1.5 rounded-full border border-white/15 bg-white/[0.06] font-extrabold text-xs">
       {label}
     </span>
   );

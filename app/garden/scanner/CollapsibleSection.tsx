@@ -21,12 +21,12 @@ export default function CollapsibleSection({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl shadow-xl shadow-black/30 overflow-hidden">
+    <div className="rounded-xl border border-white/15 bg-white/[0.06] backdrop-blur-xl shadow-lg shadow-black/20 overflow-hidden">
       {/* STEP 5.4.7 — Minimum 44px tap target */}
       {/* Header - clickable to toggle */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between w-full text-left px-4 md:px-6 min-h-[44px] py-4 hover:bg-white/5 transition-colors"
+        className="flex items-center justify-between w-full text-left px-4 md:px-6 min-h-[44px] py-4 hover:bg-white/[0.04] transition-colors"
         aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-3">

@@ -5,7 +5,6 @@ import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import { runJudge } from "@/lib/scanner/runJudge";
 import { judgeResultToScanResult } from "@/lib/scanner/judgeResultAdapter";
 import { saveScanHistory } from "@/app/actions/saveScanHistory";
-import { createCandidateReferenceIfEligible } from "@/app/actions/createCandidateReference";
 import { getUserTierFlags } from "@/lib/flags";
 import type { ScannerViewModel } from "@/lib/scanner/viewModel";
 import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
@@ -34,7 +33,6 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function ScannerPage() {
   const [images, setImages] = useState<File[]>([]);
-  const [cultivarStatus, setCultivarStatus] = useState<string>("");
   const [result, setResult] = useState<ScannerViewModel | null>(null);
   const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
   const [analysis, setAnalysis] = useState<FullScanResult | null>(null);
@@ -57,25 +55,6 @@ export default function ScannerPage() {
   const [limitedStrainsMode, setLimitedStrainsMode] = useState(false); // Cultivar DB not loaded or < 10k (dev only)
   const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
   const scanLockRef = useRef(false); // Hard guard: no concurrent handleAnalyzePlant
-
-  // Append new files into slots (do NOT overwrite previous images). Dedup by name+size+lastModified, cap to MAX_IMAGES.
-  function addFiles(newFiles: File[]) {
-    const onlyImages = (newFiles || []).filter((f) => f?.type?.startsWith("image/"));
-    if (!onlyImages.length) return;
-
-    setImages((prev) => {
-      const combined = [...prev, ...onlyImages];
-      const seen = new Set<string>();
-      const deduped: File[] = [];
-      for (const f of combined) {
-        const key = `${f.name}__${f.size}__${f.lastModified}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        deduped.push(f);
-      }
-      return deduped.slice(0, MAX_IMAGES);
-    });
-  }
 
   // NEVER clear result on re-render
   // Only clear when user selects NEW images
@@ -120,7 +99,7 @@ export default function ScannerPage() {
       const previews = await Promise.all(
         images.map(async (img) => {
           const url = URL.createObjectURL(img);
-          // Convert file to base64 and keep full data URL for scan/history
+          // Convert file to base64 and keep full data URL for cover image (Add as Plant)
           const { base64, dataUrl } = await new Promise<{ base64: string; dataUrl: string }>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
@@ -222,13 +201,15 @@ export default function ScannerPage() {
     }
 
     // Step 4.3 — Warn if <3 images but proceed
-    if (validation.warning && process.env.NODE_ENV === "development") {
-      console.log("[StrainSpotter] Image count note:", validation.warning);
+    if (validation.warning) {
+      console.warn("IMAGE COUNT WARNING:", validation.warning);
+      // Don't block, just warn
     }
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("[StrainSpotter] Scan start", { imageCount: images.length });
-    }
+    console.log("HANDLER START");
+    console.log("IMAGES:", images);
+    console.log("IMAGE COUNT:", images.length);
+    console.log("ANALYZING", images.length, "IMAGES");
 
     setIsScanning(true);
     setProcessing(true);
@@ -237,6 +218,10 @@ export default function ScannerPage() {
     const scrollPosition = window.scrollY;
 
     try {
+      console.log("STEP 1: PREP DONE");
+      console.log("STEP 2: CONTEXT BUILT");
+      console.log("STEP 3: ENGINE CALLED");
+
       // Primary image as data URL — read once, reuse for upload and judge/saveScanHistory fallback
       const imageDataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -299,19 +284,6 @@ export default function ScannerPage() {
 
           if (!isScanResultPayloadV1(payload)) throw new Error("Invalid result_payload");
 
-          // Prefer durable image_url from saved scan (backend wrote it); fallback to data URL
-          let candidateImageUrl = imageDataUrl;
-          try {
-            const scanRes = await fetch(`/api/scans/${scanId}`);
-            const scanJson = await scanRes.json().catch(() => null);
-            const storedUrl = (scanJson?.image_url ?? "").trim();
-            if (storedUrl && (storedUrl.startsWith("http://") || storedUrl.startsWith("https://"))) {
-              candidateImageUrl = storedUrl;
-            }
-          } catch (_) {
-            /* use imageDataUrl */
-          }
-
           setBackendPhase(null);
           setBackendFallbackNotice(null);
           requestAnimationFrame(() => {
@@ -325,21 +297,11 @@ export default function ScannerPage() {
           setSynthesis(null);
           setDiversityHint(null);
           setAnalysis(full);
-          // Create candidate reference if eligible (prefer durable URL from scan)
-          createCandidateReferenceIfEligible({
-            result_payload: payload,
-            image_url: candidateImageUrl,
-          }).catch(() => {});
-          if (process.env.NODE_ENV === "development") {
-            console.log("[StrainSpotter] Scan success (backend) — saved via backend");
-          }
+          // Backend-first path succeeded; fallback is skipped.
           return;
-        } catch (backendErr) {
+        } catch (_) {
           setBackendPhase(null);
           setBackendFallbackNotice("Backend failed — using local scan…");
-          if (process.env.NODE_ENV === "development") {
-            console.warn("[StrainSpotter] Backend scan failed, using local:", backendErr);
-          }
           // Fall through to fallback
         }
       }
@@ -359,12 +321,12 @@ export default function ScannerPage() {
           description,
         } = result;
         localScanResult = judgeResultToScanResult(result, images.length);
+        console.log("STEP 4: JUDGE RESULT RECEIVED", { best, candidates, askForBetterPics, guidance, description }, localScanResult);
       } catch (judgeErr) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("[StrainSpotter] Judge failed, using orchestrator:", judgeErr);
-        }
+        console.warn("Judge path failed, falling back to orchestrator:", judgeErr);
         const orchestrated = await orchestrateScan(images);
         localScanResult = orchestrated.normalizedScanResult;
+        console.log("STEP 4: RESULT RECEIVED (orchestrator)", localScanResult);
       }
 
       const scanResult = localScanResult;
@@ -389,21 +351,7 @@ export default function ScannerPage() {
           image_url: imageDataUrl,
           model_version: (scanResult as any).meta?.model_version ?? null,
           matched_strain_slug: (scanResult.result as any)?.primaryMatch?.strain?.slug ?? (scanResult.result as any)?.namingInfo?.strainSlug ?? null,
-        })
-          .then(() => {
-            if (process.env.NODE_ENV === "development") {
-              console.log("[StrainSpotter] Scan success (local) — saved to Log Book");
-            }
-          })
-          .catch((err) => {
-            setHistorySaveNotice("Scan completed but could not save to Log Book. Results are still visible.");
-            if (process.env.NODE_ENV === "development") {
-              console.warn("[StrainSpotter] History save failed:", err);
-            }
-          });
-      } else if (process.env.NODE_ENV === "development") {
-        const status = (scanResult as { status?: string }).status;
-        console.log("[StrainSpotter] Scan completed (local) — status:", status, "— not saved to history");
+        }).catch(() => setHistorySaveNotice("Could not save to history (scan succeeded)."));
       }
       
       // Phase 4.0.2 — Check for diversity warning (images are similar)
@@ -489,16 +437,19 @@ export default function ScannerPage() {
       setScanError({ reason: "low-confidence" });
       
       // FAILURE MESSAGING SOFTENED — Create a minimal partial result so user always sees something
+      // Use a simplified fallback that shows useful information
       const softErrorMessage = errorMessage.includes("failed") || errorMessage.includes("error") || errorMessage.includes("Error")
         ? "Low confidence — results may vary"
         : errorMessage.includes("similar") || errorMessage.includes("identical")
         ? "Images appear similar — try different angles"
         : "Low confidence — results may vary";
-
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[StrainSpotter] Scan failed:", errorMessage, "— user sees partial result");
-      }
+      
+      // Import the scanImages function to get a proper fallback result
+      // For now, create a minimal result that will be replaced when scan completes
+      // The key is: never block, always show something
+      console.warn("FAILURE MESSAGING SOFTENED: Scan error caught, user will see partial result:", softErrorMessage);
       setIsScanning(false);
+      console.log("HANDLER COMPLETE — Soft failure handled");
     } finally {
       scanLockRef.current = false;
       setProcessing(false);
@@ -519,26 +470,6 @@ export default function ScannerPage() {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  async function handleLoadCultivarDb() {
-    setCultivarStatus("Loading cultivar DB…");
-    try {
-      const w = window as { __STRAINSPOTTER_LOAD_CULTIVARS__?: () => Promise<void> };
-      if (typeof w.__STRAINSPOTTER_LOAD_CULTIVARS__ === "function") {
-        await w.__STRAINSPOTTER_LOAD_CULTIVARS__();
-        setCultivarStatus("Cultivar DB loaded ✅");
-        setLimitedStrainsMode(getLimitedStrainsMode());
-        window.location.reload();
-        return;
-      }
-      await getStrainDatabase();
-      setCultivarStatus("Cultivar DB loaded ✅");
-      setLimitedStrainsMode(getLimitedStrainsMode());
-      window.location.reload();
-    } catch (e: unknown) {
-      setCultivarStatus(e instanceof Error ? e.message : "Failed to load cultivar DB.");
-    }
-  }
-
   return (
     <>
       <TopNav title="Scanner" showBack />
@@ -550,31 +481,12 @@ export default function ScannerPage() {
       <div className="w-full pb-24 md:pb-16 space-y-6">
         {/* Limited cultivar database: show once so user knows matching is limited */}
         {limitedStrainsMode && (
-          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200 space-y-3 shadow-lg shadow-black/20">
-            <p>Cultivar database is not loaded. Matching will be limited until strains are imported.</p>
-            {cultivarStatus ? (
-              <div className="text-xs text-white/80">{cultivarStatus}</div>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-xl border border-white/15 bg-white/[0.06] px-3 py-2 text-sm font-semibold hover:bg-white/[0.1] hover:border-white/20 transition-colors"
-                onClick={handleLoadCultivarDb}
-              >
-                Load Cultivar DB
-              </button>
-              <button
-                type="button"
-                className="rounded-xl border border-white/15 bg-white/[0.03] px-3 py-2 text-sm hover:bg-white/[0.06] transition-colors"
-                onClick={() => console.log("DEBUG: DevTools → Application → IndexedDB for cultivar tables.")}
-              >
-                Debug
-              </button>
-            </div>
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
+            Cultivar database is not loaded. Matching will be limited until strains are imported.
           </div>
         )}
         {/* A) Upload + Preview Card */}
-        <div className="rounded-xl border border-white/15 bg-white/[0.06] backdrop-blur-xl p-5 sm:p-6 space-y-4 shadow-lg shadow-black/20">
+        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 space-y-4">
               {/* Phase 5.2.4 — Improved File Upload UX with Drag and Drop */}
               <div className="space-y-2">
                 <label className="block">
@@ -582,7 +494,7 @@ export default function ScannerPage() {
                     className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl transition-all cursor-pointer group ${
                       isDragging
                         ? "border-blue-500/60 bg-blue-500/20 border-solid"
-                        : "border-white/20 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.06]"
+                        : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
                     }`}
                     onDragEnter={(e) => {
                       e.preventDefault();
@@ -608,10 +520,12 @@ export default function ScannerPage() {
                       );
                       
                       if (files.length > 0) {
-                        if (files.length + images.length > MAX_IMAGES) {
-                          alert(`Up to ${MAX_IMAGES} images total. Appending will cap at ${MAX_IMAGES}.`);
+                        if (files.length > MAX_IMAGES) {
+                          alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
+                          setImages(files.slice(0, MAX_IMAGES));
+                        } else {
+                          setImages(files);
                         }
-                        addFiles(files);
                       }
                     }}
                   >
@@ -646,11 +560,12 @@ export default function ScannerPage() {
                     onChange={(e) => {
                       if (!e.target.files) return;
                       const selected = Array.from(e.target.files);
-                      if (selected.length + images.length > MAX_IMAGES) {
-                        alert(`Up to ${MAX_IMAGES} images total. Appending will cap at ${MAX_IMAGES}.`);
+                      if (selected.length > MAX_IMAGES) {
+                        alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
+                        setImages(selected.slice(0, MAX_IMAGES));
+                      } else {
+                        setImages(selected);
                       }
-                      addFiles(selected);
-                      e.target.value = "";
                     }}
                     className="hidden"
                   />
@@ -728,14 +643,14 @@ export default function ScannerPage() {
                 
                 return (
                   <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                      <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1">
                         <p className="text-sm font-medium text-blue-200 leading-relaxed">
                           {incentiveMessage || "More angles = higher certainty"}
                         </p>
                       </div>
                       {nextCap > currentCap && (
-                        <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2">
                           <span className="text-xs text-blue-300/80">Current:</span>
                           <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-200 text-sm font-semibold">
                             Up to {currentCap}%
@@ -761,12 +676,12 @@ export default function ScannerPage() {
                     {qualityFeedback.messages.map((message, idx) => (
                       <div
                         key={idx}
-                        className={`rounded-xl border p-3 text-sm ${
+                        className={`rounded-lg border p-3 text-sm ${
                           qualityFeedback.overallTone === "positive"
                             ? "border-green-500/30 bg-green-500/10 text-green-200"
                             : qualityFeedback.overallTone === "suggestive"
                             ? "border-blue-500/30 bg-blue-500/10 text-blue-200"
-                            : "border-white/15 bg-white/[0.06] text-white/70"
+                            : "border-white/10 bg-white/5 text-white/70"
                         }`}
                       >
                         <div className="flex items-start gap-2">
@@ -806,33 +721,34 @@ export default function ScannerPage() {
                         return (
                           <div
                             key={idx}
-                            className="flex flex-col rounded-xl border border-white/20 overflow-hidden group"
+                            className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group"
                           >
                             {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
                             {/* Phase 4.4.5 — Image scale lock: max 260px, object-contain, rounded, never full-screen */}
                             {/* Phase 5.2.6 — Image previews capped in height (mobile-first) */}
-                            <div className="relative aspect-square rounded-t-xl overflow-hidden bg-black/20">
-                              <img
-                                src={preview.url}
-                                alt={`scan-${idx + 1}`}
-                                className="w-full h-full object-contain max-h-[200px] sm:max-h-[260px]"
-                              />
-                              {/* Phase 5.2.2 — Slot label and checkmark when filled */}
-                              {slot && (
-                                <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-md">
-                                  <span className="text-green-400 text-xs">✓</span>
-                                  <span className="text-xs text-white font-medium">
-                                    {slot.label}
-                                  </span>
-                                </div>
-                              )}
-                              {/* Phase 4.0.2 — Angle badges on previews */}
-                              <span className="absolute bottom-1 right-1 text-xs px-2 py-0.5 rounded bg-black/70">
-                                {preview.angleLabel}
-                              </span>
-                            </div>
-                            {/* Phase 5.2.2 — Image label and controls (always visible, no overflow) */}
-                            <div className="flex items-center justify-between gap-2 px-2 py-2 min-h-[44px] bg-black/20 border-t border-white/10">
+                            <img
+                              src={preview.url}
+                              alt={`scan-${idx + 1}`}
+                              className="w-full h-full object-contain max-h-[200px] sm:max-h-[260px] rounded-xl"
+                            />
+                            
+                            {/* Phase 5.2.2 — Slot label and checkmark when filled */}
+                            {slot && (
+                              <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-md">
+                                <span className="text-green-400 text-xs">✓</span>
+                                <span className="text-xs text-white font-medium">
+                                  {slot.label}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {/* Phase 4.0.2 — Angle badges on previews */}
+                            <span className="absolute bottom-1 right-1 text-xs px-2 py-0.5 rounded bg-black/70">
+                              {preview.angleLabel}
+                            </span>
+                            
+                            {/* Phase 5.2.2 — Image label and controls */}
+                            <div className="mt-2 flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
                                   {idx + 1}
@@ -873,7 +789,7 @@ export default function ScannerPage() {
                             .map((slot) => (
                               <div
                                 key={slot.slotNumber}
-                                className="rounded-xl border border-white/15 bg-white/[0.06] p-3 text-center"
+                                className="rounded-lg border border-white/10 bg-white/5 p-2 text-center"
                               >
                                 <div className="text-sm mb-1">{slot.icon}</div>
                                 <div className="text-xs text-white/60 font-medium mb-0.5">
@@ -916,7 +832,7 @@ export default function ScannerPage() {
         {/* Phase 5.2.5 — SCAN CTA BEHAVIOR (FIX) */}
         {/* Phase 5.2.6 — Sticky scan button on mobile only */}
         {/* B) Big Scan Button Card */}
-        <div className="rounded-xl border border-white/15 bg-white/[0.06] backdrop-blur-xl p-5 sm:p-6 sticky bottom-0 md:static z-10 bg-black/95 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none shadow-lg shadow-black/20">
+        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 sticky bottom-0 md:static z-10 bg-black/95 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none">
           {/* Phase 4.0 Part A — Multi-image validation warning */}
           {images.length > 0 && images.length < 2 && !singleImageConfirmed && (
             <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md mx-auto">
@@ -946,7 +862,7 @@ export default function ScannerPage() {
                 height: 52,
               }}
             >
-              {(isScanning || processing) ? "Scanning…" : "Run Scan"}
+              {(isScanning || processing) ? "Analyzing plant…" : "Run Scan"}
             </ClearButton>
           </div>
         </div>
@@ -969,13 +885,11 @@ export default function ScannerPage() {
             <p className="text-sm text-yellow-200/80">{backendFallbackNotice}</p>
           )}
           {historySaveNotice && (
-            <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-200 shadow-lg shadow-black/20">
-              <span className="font-medium">Note:</span> {historySaveNotice}
-            </div>
+            <p className="text-sm text-yellow-200/80">{historySaveNotice}</p>
           )}
           {/* FAILURE MESSAGING SOFTENED — User-facing warnings (non-fatal, non-blocking) */}
           {scanError?.reason === "images-too-similar" && (
-            <div className="mt-4 max-w-md mx-auto rounded-xl bg-yellow-900/30 border border-yellow-700/50 p-4 text-sm shadow-lg shadow-black/20">
+            <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
               <strong>Images appear similar</strong>
               <p className="mt-1 opacity-80">
                 Try different angles for better accuracy. Results shown with reduced confidence.
@@ -984,7 +898,7 @@ export default function ScannerPage() {
           )}
           
           {scanError?.reason === "low-confidence" && (
-            <div className="mt-4 max-w-md mx-auto rounded-xl bg-yellow-900/30 border border-yellow-700/50 p-4 text-sm shadow-lg shadow-black/20">
+            <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
               <strong>Low confidence — results may vary</strong>
               <p className="mt-1 opacity-80">
                 Try photos from different angles, zoom levels, or lighting for more accurate results.
@@ -994,7 +908,7 @@ export default function ScannerPage() {
 
           {/* Phase 4.3.3 — Partial status reframing (neutral, authoritative) */}
           {scanResult && 'status' in scanResult && scanResult.status === "partial" && (
-            <div className="mt-4 rounded-xl border border-white/15 bg-white/[0.06] p-4 text-sm text-white/80 shadow-lg shadow-black/20">
+            <div className="mt-4 rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-white/80">
               <p className="leading-relaxed">
                 This identification is based on limited visual agreement.
                 Additional images may improve confidence.
@@ -1023,7 +937,7 @@ export default function ScannerPage() {
           
           {/* STEP 5.5.6 — FAIL-SAFE UX: Show fallback if no results at all */}
           {!result && !analysis && scanError && (
-            <div className="mt-8 rounded-xl border border-white/15 bg-white/[0.06] p-6 text-center shadow-lg shadow-black/20">
+            <div className="mt-8 rounded-lg border border-white/10 bg-white/5 p-6 text-center">
               <h2 className="text-xl font-semibold text-white/90 mb-2">Closest Known Cultivar</h2>
               <p className="text-sm text-white/70 leading-relaxed">
                 Unable to identify this cultivar with high confidence. Try adding photos from different angles or improving lighting.
