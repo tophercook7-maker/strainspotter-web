@@ -61,6 +61,10 @@ node_modules/
 !lib/
 !lib/**
 !lib/**.env.local
+# Strain image ingestion pipeline
+!tools/
+!tools/**
+
 # Reference image pipeline
 !supabase/
 !supabase/migrations/

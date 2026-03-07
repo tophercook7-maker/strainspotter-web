@@ -1,0 +1,20 @@
+{
+  "name": "strain-image-pipeline",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run": "tsx pipeline_runner.ts",
+    "download": "tsx download_images.ts",
+    "classify": "tsx image_classifier.ts",
+    "quality": "tsx image_quality_check.ts",
+    "dedupe": "tsx image_dedupe.ts"
+  },
+  "dependencies": {
+    "image-hash": "^5.2.0",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
