@@ -57,6 +57,43 @@ Supported formats: `.txt` (one per line), `.csv` (name/strain column), `.json` (
 - **dedupe_review.json** — Sorted by variant count (largest groups first). Fields: `normalized`, `variantCount`, `variants`, `suggestedCanonical`, `reviewStatus`, `mergeTarget`, `notes`.
 - **review_state.json** — Lightweight review decisions (pending/approved/rejected, merge target, notes). Edit manually or via future tooling.
 
+## 35k Dataset Import
+
+Import the full strain list from TheVault (`/Volumes/TheVault/full_strains_35000.txt`). Format: `Display Name|slug` (pipe-delimited).
+
+```bash
+npm run master-list:import-35k
+```
+
+This parses 35k+ records, adds display names and slugs to the raw pool, merges into `raw_imported_names.json`, and runs dedupe/canonical generation.
+
+### Full 35k pipeline (import + image index + launch priority)
+
+```bash
+npm run master-list:full-35k-pipeline
+```
+
+## Image Linking
+
+After importing and building canonical outputs, scan StrainSpotter/datasets for image folders:
+
+```bash
+npm run master-list:build-image-index
+```
+
+Then link master list to image availability and produce launch priority:
+
+```bash
+npm run master-list:build-launch-priority
+```
+
+**Outputs:**
+- `image_folder_index.json` — strain folders with image counts
+- `image_index_summary.json` — totals and distribution
+- `strain_image_link.json` — canonical ↔ image availability
+- `image_backed_strains.json` — strains that have image folders
+- `launch_priority_5000.json` — top 5,000 strains ranked for launch (has images first, alias count, image count)
+
 ## Vault Outputs
 
 | Path | Description |
@@ -67,6 +104,11 @@ Supported formats: `.txt` (one per line), `.csv` (name/strain column), `.json` (
 | `master_list/review_state.json` | Review decisions scaffold |
 | `master_list/canonical_strains.json` | Canonical list with aliases |
 | `master_list/alias_map.json` | Alias → canonical mapping for scanner lookups |
+| `master_list/image_folder_index.json` | Strain image folders (from StrainSpotter/datasets) |
+| `master_list/image_index_summary.json` | Image folder counts and distribution |
+| `master_list/strain_image_link.json` | Master list ↔ image availability |
+| `master_list/image_backed_strains.json` | Strains with image folders |
+| `master_list/launch_priority_5000.json` | Top 5,000 strains for launch |
 
 ## Sample Files
 

@@ -62,10 +62,41 @@ npm run master-list:import -- path/to/your_file.txt
 
 Exact duplicate raw names (same string) are skipped when re-importing. Source file and import timestamp are preserved where available.
 
+## 35k Dataset Import
+
+Import the full strain list from TheVault:
+
+- **Source**: `/Volumes/TheVault/full_strains_35000.txt`
+- **Format**: `Display Name|slug` (pipe-delimited, ~35,550 records)
+- **Image root**: `/Volumes/TheVault/StrainSpotter/datasets`
+
+```bash
+cd tools/strain-image-pipeline
+npm run master-list:import-35k
+```
+
+### Full pipeline (import + image index + launch priority)
+
+```bash
+npm run master-list:full-35k-pipeline
+```
+
+1. Imports 35k strain list into `raw_imported_names.json`
+2. Runs dedupe/canonical generation
+3. Builds `image_folder_index.json` from StrainSpotter/datasets
+4. Links canonical strains to image availability
+5. Produces `launch_priority_5000.json` (top 5,000, prioritized by image availability)
+
+### Image linking outputs
+
+- **image_folder_index.json** — strain folders with image counts and example paths
+- **strain_image_link.json** — which canonical strains have images
+- **launch_priority_5000.json** — ranked list for launch (image-backed strains first)
+
 ## Path to 5,000 Trusted Strain Records
 
-1. Drop source files into `sources/` (by vendor or library).
-2. Run `npm run master-list:bulk-import`.
+1. Drop source files into `sources/` (by vendor or library), or run `master-list:import-35k` for the full dataset.
+2. Run `npm run master-list:bulk-import` or `npm run master-list:import-35k`.
 3. Review `dedupe_review.json` and adjust canonical choices if needed.
-4. Feed the canonical list into the Vault’s `approved/vault_strains` for scanner use.
-5. Continue adding sources and re-running bulk import until the master list reaches ~5,000 strains.
+4. Run `npm run master-list:build-launch-priority` for launch_priority_5000.json.
+5. Feed the canonical list into the Vault’s `approved/vault_strains` for scanner use.

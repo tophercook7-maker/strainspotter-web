@@ -15,7 +15,12 @@
     "master-list:import": "tsx master-list/import_raw_strain_names.ts",
     "master-list:bulk-import": "tsx master-list/bulk_import_sources.ts",
     "master-list:dedupe": "tsx master-list/dedupe-scaffold.ts",
-    "master-list:rebuild": "tsx master-list/dedupe-scaffold.ts"
+    "master-list:rebuild": "tsx master-list/dedupe-scaffold.ts",
+    "master-list:inspect-35k": "tsx master-list/inspect_vault_35k.ts",
+    "master-list:import-35k": "tsx master-list/import_35k_strains.ts",
+    "master-list:build-image-index": "tsx master-list/build_image_index.ts",
+    "master-list:build-launch-priority": "tsx master-list/build_launch_priority.ts",
+    "master-list:full-35k-pipeline": "tsx master-list/import_35k_strains.ts && npm run master-list:build-image-index && npm run master-list:build-launch-priority"
   },
   "dependencies": {
     "image-hash": "^5.2.0",
