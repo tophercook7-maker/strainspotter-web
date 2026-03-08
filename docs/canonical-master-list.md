@@ -93,7 +93,8 @@ npm run master-list:full-35k-pipeline
 
 - **image_folder_index.json** — strain folders with image counts and example paths
 - **strain_image_link.json** — which canonical strains have images
-- **launch_priority_5000.json** — ranked list for launch (image-backed strains first)
+- **launch_priority_5000.json** — top 5,000 ranked (image-backed first, then image-less)
+- **launch_ready_image_backed_5000.json** — launch-ready set for the image pipeline: **only** image-backed strains, ranked by coverage and quality. Use this for scanner/ingestion. Each record has `canonicalName`, `slug`, `aliases`, `imageFolderKey`, `imageCount`, `examplePaths`.
 
 ## Path to 5,000 Trusted Strain Records
 
@@ -101,4 +102,5 @@ npm run master-list:full-35k-pipeline
 2. Run `npm run master-list:bulk-import` or `npm run master-list:import-35k`.
 3. Review `dedupe_review.json` and adjust canonical choices if needed.
 4. Run `npm run master-list:build-launch-priority` for launch_priority_5000.json.
-5. Feed the canonical list into the Vault’s `approved/vault_strains` for scanner use.
+5. Run `npm run master-list:build-launch-ready` for the launch-ready image-backed set.
+6. Feed `launch_ready_image_backed_5000.json` to the image pipeline (use `imageFolderKey`, `examplePaths`). Promote to approved/vault_strains for scanner use.

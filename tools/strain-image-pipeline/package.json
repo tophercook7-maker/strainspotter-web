@@ -20,6 +20,7 @@
     "master-list:import-35k": "tsx master-list/import_35k_strains.ts",
     "master-list:build-image-index": "tsx master-list/build_image_index.ts",
     "master-list:build-launch-priority": "tsx master-list/build_launch_priority.ts",
+    "master-list:build-launch-ready": "tsx master-list/build_launch_ready_image_backed.ts",
     "master-list:full-35k-pipeline": "tsx master-list/import_35k_strains.ts && npm run master-list:build-image-index && npm run master-list:build-launch-priority"
   },
   "dependencies": {

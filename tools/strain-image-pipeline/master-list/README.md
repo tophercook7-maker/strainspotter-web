@@ -92,7 +92,23 @@ npm run master-list:build-launch-priority
 - `image_index_summary.json` — totals and distribution
 - `strain_image_link.json` — canonical ↔ image availability
 - `image_backed_strains.json` — strains that have image folders
-- `launch_priority_5000.json` — top 5,000 strains ranked for launch (has images first, alias count, image count)
+- `launch_priority_5000.json` — top 5,000 strains ranked for launch (image-backed first, then image-less)
+- `launch_ready_image_backed_5000.json` — launch-ready set: **only** image-backed strains, ranked by coverage
+- `launch_ready_image_backed_summary.json` — totals, distribution, shortfall if any
+
+### Launch-ready image-backed set
+
+The launch-ready set is a subset for scanner/image pipeline use: only strains with actual image folders, ranked by image coverage and canonical quality.
+
+```bash
+npm run master-list:build-launch-ready
+```
+
+Run after `master-list:build-launch-priority`. Outputs:
+- **launch_ready_image_backed_5000.json** — top 5,000 image-backed strains (or fewer if shortfall)
+- **launch_ready_image_backed_summary.json** — counts, image distribution, shortfall report
+
+Each record includes: `canonicalName`, `slug`, `aliases`, `imageFolderKey`, `imageCount`, `examplePaths`, `launchPriorityScore`, `launchPriorityReason`. Use `imageFolderKey` and `examplePaths` for image ingestion/review.
 
 ## Vault Outputs
 
@@ -108,7 +124,9 @@ npm run master-list:build-launch-priority
 | `master_list/image_index_summary.json` | Image folder counts and distribution |
 | `master_list/strain_image_link.json` | Master list ↔ image availability |
 | `master_list/image_backed_strains.json` | Strains with image folders |
-| `master_list/launch_priority_5000.json` | Top 5,000 strains for launch |
+| `master_list/launch_priority_5000.json` | Top 5,000 strains (image-backed first, then image-less) |
+| `master_list/launch_ready_image_backed_5000.json` | Launch-ready: only image-backed strains for scanner pipeline |
+| `master_list/launch_ready_image_backed_summary.json` | Summary, distribution, shortfall |
 
 ## Sample Files
 
