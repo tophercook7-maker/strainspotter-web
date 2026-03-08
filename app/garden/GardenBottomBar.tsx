@@ -10,7 +10,7 @@ function Item({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="flex-1 text-center py-3.5 px-3 min-h-[48px] flex items-center justify-center no-underline text-white transition-colors"
+      className="flex-1 text-center py-2.5 px-2 min-h-[44px] flex items-center justify-center no-underline text-white transition-colors"
       style={{
         borderTop: active ? "3px solid #3ddc84" : "3px solid transparent",
         opacity: active ? 1 : 0.75,

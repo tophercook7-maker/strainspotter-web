@@ -7,21 +7,19 @@ const BG_ASSET = "/brand/core/strainspotter-bg.jpg";
 export default function GardenLayout({ children }: { children: ReactNode }) {
   return (
     <div className="relative min-h-screen w-full text-white">
-      {/* Fixed full-viewport background so it's visible regardless of root layout centering */}
-      <div
+      {/* Fixed full-viewport background using img for reliable loading (avoids background-image 404 fallback to black) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={BG_ASSET}
+        alt=""
         aria-hidden
-        className="fixed inset-0 z-0"
-        style={{
-          backgroundImage: `url(${BG_ASSET})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+        className="fixed inset-0 z-0 w-full h-full object-cover object-center"
       />
       {/* Minimal overlay so cannabis photo remains clearly visible */}
-      <div className="fixed inset-0 z-0 bg-black/8 pointer-events-none" />
+      <div className="fixed inset-0 z-0 bg-black/[0.06] pointer-events-none" />
 
       {/* Content rail — above background */}
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px)+2rem)]">
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px)+1.5rem)]">
         <ActivityPing />
         {children}
       </div>
