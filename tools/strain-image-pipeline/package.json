@@ -11,6 +11,7 @@
     "promote-approved": "tsx promote_approved.ts",
     "generate-embeddings": "tsx generate_embeddings.ts",
     "retrieve": "tsx retrieve_approved.ts",
+    "master-list:seed": "tsx master-list/seed_raw_strains.ts",
     "master-list:dedupe": "tsx master-list/dedupe-scaffold.ts"
   },
   "dependencies": {

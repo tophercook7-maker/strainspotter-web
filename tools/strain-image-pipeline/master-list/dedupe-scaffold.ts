@@ -1,14 +1,15 @@
-#!/usr/bin/env npx ts-node
+#!/usr/bin/env npx tsx
 /**
  * Master-list dedupe scaffold: ingest raw strain names, normalize, group likely duplicates,
- * output a reviewable candidate merge list. Human review decides which become canonical.
+ * output dedupe_candidates.json, canonical_strains.json, and alias_map.json.
  *
  * Usage:
- *   npx ts-node dedupe-scaffold.ts <raw-names-file> [--output-dir <dir>]
- *   echo "Strain A\nStrain B" | npx ts-node dedupe-scaffold.ts -
+ *   npm run master-list:dedupe                    # loads raw_imported_names.json from Vault
+ *   npm run master-list:dedupe -- <path>          # loads from specific file
+ *   echo "Strain A\nStrain B" | npm run master-list:dedupe -- -
  *
- * Reads raw names (one per line or JSON array), normalizes, groups by normalized slug,
- * writes dedupe_candidates.json and raw_imported_names.json to Vault master_list/.
+ * Input: raw_imported_names.json (array of { name: string } or { names: string[] })
+ * Output: dedupe_candidates.json, canonical_strains.json, alias_map.json
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
@@ -22,40 +23,40 @@ const VAULT_ROOT =
     ? "/Volumes/TheVault/strainspotter-vault"
     : join(__dirname, "../../vault-output"));
 
-function slugify(s: string): string {
+/** Normalize for grouping: lowercase, remove hyphens, punctuation, trim */
+function normalizeKey(s: string): string {
   return s
     .toLowerCase()
     .trim()
-    .replace(/\s*[-–—]\s*/g, "-")
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "") || "unknown";
-}
-
-function normalizeDisplay(s: string): string {
-  return s
-    .trim()
+    .replace(/[-–—#]/g, " ")
+    .replace(/[^a-z0-9\s]+/g, "")
     .replace(/\s+/g, " ")
-    .replace(/\s*[-–—]\s*/g, " × ");
+    .trim() || "unknown";
 }
 
-interface DedupeGroup {
-  canonical_slug: string;
-  canonical_name: string;
-  variants: { raw_name: string; normalized: string }[];
-  count: number;
-}
-
-interface DedupeOutput {
-  generated_at: string;
-  total_raw: number;
-  unique_slugs: number;
-  groups: DedupeGroup[];
+/** Pick the most readable canonical name from variants (prefer Title Case, fewer special chars) */
+function pickCanonicalName(variants: string[]): string {
+  const scored = variants.map((v) => {
+    let score = 0;
+    const hasHyphen = /-/.test(v);
+    const hasNum = /\d/.test(v);
+    const hasPunct = /[#&]/.test(v);
+    const isTitleCase = /^[A-Z][a-z]/.test(v.trim());
+    const wordCount = v.trim().split(/\s+/).length;
+    if (isTitleCase) score += 10;
+    if (!hasHyphen) score += 5;
+    if (!hasPunct) score += 3;
+    if (wordCount <= 3) score += 2;
+    if (!hasNum || /^[A-Za-z]+\s*(#?\d+)$/.test(v)) score += 1;
+    return { v, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0]?.v ?? variants[0];
 }
 
 function main() {
   const args = process.argv.slice(2);
-  const inputPath = args[0] ?? "-";
+  const inputPath = args[0] ?? join(VAULT_ROOT, "master_list", "raw_imported_names.json");
   let rawNames: string[] = [];
 
   if (inputPath === "-") {
@@ -63,60 +64,69 @@ function main() {
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter(Boolean);
-  } else {
+  } else if (existsSync(inputPath)) {
     const content = readFileSync(inputPath, "utf-8");
-    try {
-      const parsed = JSON.parse(content);
-      rawNames = Array.isArray(parsed) ? parsed : [content];
-    } catch {
-      rawNames = content.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    const parsed = JSON.parse(content) as unknown;
+    if (Array.isArray(parsed)) {
+      rawNames = parsed.map((x) => (typeof x === "object" && x && "name" in x ? String((x as { name: string }).name) : String(x)));
+    } else if (typeof parsed === "object" && parsed && "names" in parsed) {
+      rawNames = (parsed as { names: string[] }).names;
+    } else {
+      rawNames = [content];
+    }
+  } else {
+    console.error(`Input file not found: ${inputPath}`);
+    process.exit(1);
+  }
+
+  const byKey = new Map<string, string[]>();
+  for (const raw of rawNames) {
+    const key = normalizeKey(raw);
+    const list = byKey.get(key) ?? [];
+    if (!list.includes(raw)) list.push(raw);
+    byKey.set(key, list);
+  }
+
+  const dedupeCandidates: { normalized: string; variants: string[] }[] = [];
+  const canonicalStrains: { canonicalName: string; aliases: string[] }[] = [];
+  const aliasMap: Record<string, string> = {};
+
+  for (const [normalized, variants] of byKey.entries()) {
+    const canonical = pickCanonicalName(variants);
+    const aliases = variants.filter((v) => v !== canonical);
+    dedupeCandidates.push({ normalized, variants });
+    canonicalStrains.push({ canonicalName: canonical, aliases });
+    for (const v of variants) {
+      const vNorm = v
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ")
+        .replace(/[-–—]/g, "-");
+      if (!aliasMap[vNorm]) aliasMap[vNorm] = canonical;
+      const vKey = normalizeKey(v);
+      if (!aliasMap[vKey]) aliasMap[vKey] = canonical;
     }
   }
-
-  const bySlug = new Map<string, string[]>();
-  for (const raw of rawNames) {
-    const slug = slugify(raw);
-    const list = bySlug.get(slug) ?? [];
-    if (!list.includes(raw)) list.push(raw);
-    bySlug.set(slug, list);
-  }
-
-  const groups: DedupeGroup[] = [];
-  for (const [slug, variants] of bySlug.entries()) {
-    const canonical = normalizeDisplay(variants[0]);
-    groups.push({
-      canonical_slug: slug,
-      canonical_name: canonical,
-      variants: variants.map((v) => ({ raw_name: v, normalized: slugify(v) })),
-      count: variants.length,
-    });
-  }
-
-  const output: DedupeOutput = {
-    generated_at: new Date().toISOString(),
-    total_raw: rawNames.length,
-    unique_slugs: groups.length,
-    groups: groups.sort((a, b) => b.count - a.count),
-  };
 
   const outDir = join(VAULT_ROOT, "master_list");
   mkdirSync(outDir, { recursive: true });
 
   writeFileSync(
     join(outDir, "dedupe_candidates.json"),
-    JSON.stringify(output, null, 2)
+    JSON.stringify(dedupeCandidates, null, 2)
   );
   writeFileSync(
-    join(outDir, "raw_imported_names.json"),
-    JSON.stringify(
-      { imported_at: new Date().toISOString(), names: rawNames },
-      null,
-      2
-    )
+    join(outDir, "canonical_strains.json"),
+    JSON.stringify(canonicalStrains, null, 2)
+  );
+  writeFileSync(
+    join(outDir, "alias_map.json"),
+    JSON.stringify(aliasMap, null, 2)
   );
 
-  console.log(`Wrote ${outDir}/dedupe_candidates.json (${groups.length} unique slugs)`);
-  console.log(`Wrote ${outDir}/raw_imported_names.json (${rawNames.length} raw names)`);
+  console.log(`Wrote ${outDir}/dedupe_candidates.json (${dedupeCandidates.length} groups)`);
+  console.log(`Wrote ${outDir}/canonical_strains.json (${canonicalStrains.length} canonical)`);
+  console.log(`Wrote ${outDir}/alias_map.json (${Object.keys(aliasMap).length} aliases)`);
 }
 
 main();
