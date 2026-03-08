@@ -4,9 +4,12 @@
  * Source: /Volumes/TheVault/full_strains_35000.txt
  * Format: Display Name|slug (pipe-delimited)
  *
+ * CANONICAL MERGE: One source line = one raw record. We add only displayName as
+ * the raw name; slug is stored in the record for dedupe to use as a linking key.
+ * We do NOT add slug as a separate raw record — that caused canonical inflation
+ * (display+slug normalizing to different keys, e.g. "Santa Cruz OG" vs "831-og").
+ *
  * Handles malformed lines (e.g. extra pipes in display name).
- * Adds both display name and slug to raw pool for dedupe/alias coverage.
- * Merges into raw_imported_names.json, then runs dedupe/canonical generation.
  *
  * Usage:
  *   npm run master-list:import-35k
@@ -109,7 +112,11 @@ function main() {
   const parsed = parse35k(content);
   console.log(`Parsed ${parsed.length} records from ${SOURCE_LABEL}`);
 
-  const existing = loadExisting();
+  let existing = loadExisting();
+
+  // Remove any prior 35k records (they had both display+slug as separate records)
+  existing = existing.filter((r) => r.source_file !== SOURCE_LABEL);
+
   const seen = new Set<string>(existing.map((r) => r.name));
   const now = new Date().toISOString();
   let added = 0;
@@ -127,18 +134,11 @@ function main() {
       seen.add(displayName);
       existing.push(rec);
       added++;
-    }
-    if (slug !== displayName && !seen.has(slug)) {
-      seen.add(slug);
-      existing.push({
-        name: slug,
-        slug,
-        displayName,
-        source_file: SOURCE_LABEL,
-        imported_at: now,
-        source_line: raw,
-      });
-      added++;
+    } else {
+      const idx = existing.findIndex((r) => r.name === displayName);
+      if (idx >= 0 && !existing[idx]!.slug) {
+        existing[idx] = { ...existing[idx]!, ...rec };
+      }
     }
   }
 

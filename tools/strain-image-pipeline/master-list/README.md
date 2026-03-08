@@ -65,7 +65,7 @@ Import the full strain list from TheVault (`/Volumes/TheVault/full_strains_35000
 npm run master-list:import-35k
 ```
 
-This parses 35k+ records, adds display names and slugs to the raw pool, merges into `raw_imported_names.json`, and runs dedupe/canonical generation.
+One source line = one raw record. Display name is the raw name; slug is stored in the record and used as the dedupe linking key. Slugs are not added as separate raw records — that prevents canonical inflation (e.g. "Santa Cruz OG" and "831-og" now merge to one canonical).
 
 ### Full 35k pipeline (import + image index + launch priority)
 

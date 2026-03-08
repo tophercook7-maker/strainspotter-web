@@ -1,15 +1,15 @@
 #!/usr/bin/env npx tsx
 /**
  * Master-list dedupe scaffold: ingest raw strain names, normalize, group likely duplicates,
- * output dedupe_candidates.json, canonical_strains.json, and alias_map.json.
+ * output dedupe_candidates.json, canonical_strains.json, alias_map.json.
+ *
+ * CANONICAL MERGE: For 35k records (with slug), we use slug as the primary grouping key.
+ * displayName and slug from the same source line stay as one canonical. We do NOT treat
+ * them as separate raw names — the importer no longer adds slug as a raw record.
  *
  * Usage:
- *   npm run master-list:dedupe                    # loads raw_imported_names.json from Vault
- *   npm run master-list:dedupe -- <path>          # loads from specific file
- *   echo "Strain A\nStrain B" | npm run master-list:dedupe -- -
- *
- * Input: raw_imported_names.json (array of { name: string } or { names: string[] })
- * Output: dedupe_candidates.json, canonical_strains.json, alias_map.json
+ *   npm run master-list:dedupe
+ *   npm run master-list:dedupe -- <path>
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
@@ -23,18 +23,31 @@ const VAULT_ROOT =
     ? "/Volumes/TheVault/strainspotter-vault"
     : join(__dirname, "../../vault-output"));
 
-/** Normalize for grouping: lowercase, remove hyphens, punctuation, trim */
+/** Normalize for grouping: lowercase, collapse punctuation/spacing, trim */
 function normalizeKey(s: string): string {
-  return s
+  const t = s
     .toLowerCase()
     .trim()
     .replace(/[-–—#]/g, " ")
     .replace(/[^a-z0-9\s]+/g, "")
     .replace(/\s+/g, " ")
-    .trim() || "unknown";
+    .trim();
+  return t || "unknown";
 }
 
-/** Pick the most readable canonical name from variants (prefer Title Case, fewer special chars) */
+/** Slug canonical: strip trailing UUID, apply normalization. Links slug variants. */
+function slugCanonical(slug: string): string {
+  const stripped = slug.replace(/-[a-f0-9]{32}$/i, "").trim();
+  return normalizeKey(stripped);
+}
+
+/** Primary grouping key: use slug when present (source-aware), else normalized name */
+function primaryKey(record: { name: string; slug?: string }): string {
+  if (record.slug) return slugCanonical(record.slug);
+  return normalizeKey(record.name);
+}
+
+/** Pick the most readable canonical name (prefer Title Case, fewer special chars) */
 function pickCanonicalName(variants: string[]): string {
   const scored = variants.map((v) => {
     let score = 0;
@@ -54,37 +67,103 @@ function pickCanonicalName(variants: string[]): string {
   return scored[0]?.v ?? variants[0];
 }
 
+type RawRecord = {
+  name: string;
+  slug?: string;
+  displayName?: string;
+  source_file?: string;
+  imported_at?: string;
+  source_line?: string;
+};
+
 function main() {
   const args = process.argv.slice(2);
   const inputPath = args[0] ?? join(VAULT_ROOT, "master_list", "raw_imported_names.json");
-  let rawNames: string[] = [];
+  let rawRecords: RawRecord[] = [];
 
   if (inputPath === "-") {
-    rawNames = readFileSync(0, "utf-8")
+    const lines = readFileSync(0, "utf-8")
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter(Boolean);
+    rawRecords = lines.map((name) => ({ name }));
   } else if (existsSync(inputPath)) {
     const content = readFileSync(inputPath, "utf-8");
     const parsed = JSON.parse(content) as unknown;
     if (Array.isArray(parsed)) {
-      rawNames = parsed.map((x) => (typeof x === "object" && x && "name" in x ? String((x as { name: string }).name) : String(x)));
+      rawRecords = parsed.map((x) => {
+        if (typeof x === "object" && x && "name" in x) {
+          return {
+            name: String((x as RawRecord).name),
+            slug: (x as RawRecord).slug,
+            displayName: (x as RawRecord).displayName,
+            source_file: (x as RawRecord).source_file,
+            imported_at: (x as RawRecord).imported_at,
+            source_line: (x as RawRecord).source_line,
+          };
+        }
+        return { name: String(x) };
+      });
     } else if (typeof parsed === "object" && parsed && "names" in parsed) {
-      rawNames = (parsed as { names: string[] }).names;
+      rawRecords = (parsed as { names: string[] }).names.map((n) => ({ name: n }));
     } else {
-      rawNames = [content];
+      rawRecords = [{ name: String(content) }];
     }
   } else {
     console.error(`Input file not found: ${inputPath}`);
     process.exit(1);
   }
 
-  const byKey = new Map<string, string[]>();
-  for (const raw of rawNames) {
-    const key = normalizeKey(raw);
-    const list = byKey.get(key) ?? [];
-    if (!list.includes(raw)) list.push(raw);
-    byKey.set(key, list);
+  // Group by primary key (slug-aware)
+  const byKey = new Map<string, { variants: Set<string>; records: RawRecord[] }>();
+  for (const rec of rawRecords) {
+    const key = primaryKey(rec);
+    const existing = byKey.get(key) ?? { variants: new Set<string>(), records: [] };
+    existing.variants.add(rec.name);
+    if (rec.slug && rec.slug !== rec.name) existing.variants.add(rec.slug);
+    existing.records.push(rec);
+    byKey.set(key, existing);
+  }
+
+  // Merge groups when variants from one group normalize to another group's key
+  const keys = Array.from(byKey.keys());
+  const parent = new Map<string, string>();
+  for (const k of keys) parent.set(k, k);
+  function find(k: string): string {
+    const p = parent.get(k);
+    if (!p || p === k) return k;
+    const r = find(p);
+    parent.set(k, r);
+    return r;
+  }
+  function union(a: string, b: string) {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent.set(ra, rb);
+  }
+  for (const key of keys) {
+    const group = byKey.get(key)!;
+    for (const v of group.variants) {
+      const nk = normalizeKey(v);
+      const sk = slugCanonical(v);
+      if (nk && nk !== key && byKey.has(nk)) union(key, nk);
+      if (sk && sk !== key && byKey.has(sk)) union(key, sk);
+    }
+  }
+  const merged = new Map<string, { variants: Set<string>; records: RawRecord[] }>();
+  for (const key of keys) {
+    const root = find(key);
+    const existing = merged.get(root) ?? { variants: new Set<string>(), records: [] };
+    const group = byKey.get(key)!;
+    for (const v of group.variants) existing.variants.add(v);
+    existing.records.push(...group.records);
+    merged.set(root, existing);
+  }
+  for (const [k, g] of merged) {
+    byKey.set(k, g);
+  }
+  for (const k of keys) {
+    if (find(k) !== k) byKey.delete(k);
   }
 
   const dedupeCandidates: { normalized: string; variants: string[] }[] = [];
@@ -93,16 +172,16 @@ function main() {
     variantCount: number;
     variants: string[];
     suggestedCanonical: string;
-    reviewStatus: "pending" | "approved" | "rejected";
-    mergeTarget?: string;
-    notes?: string;
+    reviewStatus: string;
   }[] = [];
   const canonicalStrains: { canonicalName: string; aliases: string[] }[] = [];
   const aliasMap: Record<string, string> = {};
 
-  for (const [normalized, variants] of byKey.entries()) {
+  for (const [normalized, { variants: variantSet }] of byKey.entries()) {
+    const variants = Array.from(variantSet);
     const canonical = pickCanonicalName(variants);
     const aliases = variants.filter((v) => v !== canonical);
+
     dedupeCandidates.push({ normalized, variants });
     dedupeReview.push({
       normalized,
@@ -112,6 +191,7 @@ function main() {
       reviewStatus: "pending",
     });
     canonicalStrains.push({ canonicalName: canonical, aliases });
+
     for (const v of variants) {
       const vNorm = v
         .toLowerCase()
@@ -136,7 +216,7 @@ function main() {
   writeFileSync(
     join(outDir, "dedupe_review.json"),
     JSON.stringify(
-      { generated_at: new Date().toISOString(), total_raw: rawNames.length, groups: dedupeReview },
+      { generated_at: new Date().toISOString(), total_raw: rawRecords.length, groups: dedupeReview },
       null,
       2
     )

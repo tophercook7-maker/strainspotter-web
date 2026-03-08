@@ -62,6 +62,8 @@ npm run master-list:import -- path/to/your_file.txt
 
 Exact duplicate raw names (same string) are skipped when re-importing. Source file and import timestamp are preserved where available.
 
+For 35k records, display name and slug from the same source line are merged into one canonical (slug is used as the linking key; slugs are not added as separate raw records).
+
 ## 35k Dataset Import
 
 Import the full strain list from TheVault:
