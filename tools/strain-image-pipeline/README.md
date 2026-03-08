@@ -92,6 +92,33 @@ npm run generate-embeddings
 
 Only approved images are embedded. Unapproved candidates are never embedded.
 
+## Approved-Image Retrieval (Scaffolding)
+
+After generating embeddings, you can retrieve top candidates by similarity:
+
+```bash
+npm run retrieve [seed] [topK]
+```
+
+Example:
+
+```bash
+npm run retrieve blue-dream 5
+```
+
+- **Input**: Query embedding (mock: deterministic from `seed` string). Pass seed as first arg; default `blue-dream`.
+- **Output**: Top-K approved images ranked by cosine similarity to the query embedding.
+- **Use case**: Later, the scanner will pass a real image embedding from a scan; this returns the most similar approved strain reference images.
+- **Not wired** into production scanner yet; local pipeline only.
+
+### How It Will Connect to the Scanner
+
+1. Scanner captures/uploads a plant image.
+2. Scanner generates an embedding for that image (via CLIP or similar).
+3. Scanner calls retrieval with that embedding.
+4. Retrieval returns top approved reference images (strain candidates).
+5. Scanner shows those as suggested matches.
+
 ## Inspecting Results
 
 - **Run log**: `{VAULT_ROOT}/logs/run_{runId}.log`

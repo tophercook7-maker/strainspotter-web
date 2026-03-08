@@ -9,7 +9,8 @@
     "quality": "tsx image_quality_check.ts",
     "dedupe": "tsx image_dedupe.ts",
     "promote-approved": "tsx promote_approved.ts",
-    "generate-embeddings": "tsx generate_embeddings.ts"
+    "generate-embeddings": "tsx generate_embeddings.ts",
+    "retrieve": "tsx retrieve_approved.ts"
   },
   "dependencies": {
     "image-hash": "^5.2.0",

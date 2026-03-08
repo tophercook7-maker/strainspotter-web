@@ -13,11 +13,11 @@ export default function GardenPage() {
     <main className="pb-[72px]">
       <PageHeaderNav title="StrainSpotter" hideHome showBack={false} />
 
-      {/* Hero: marijuana-photo background, circular leaf mark */}
+      {/* Hero: branded marijuana-photo background, circular leaf mark */}
       <section
-        className="relative rounded-xl overflow-hidden mb-5 min-h-[140px] flex flex-col items-center justify-center py-6 px-4"
+        className="relative rounded-xl overflow-hidden mb-5 min-h-[120px] flex flex-col items-center justify-center py-5 px-4"
         style={{
-          backgroundImage: "url(/strainspotter-bg.jpeg)",
+          backgroundImage: "url(/brand/core/strainspotter-bg.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -25,16 +25,16 @@ export default function GardenPage() {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.2) 100%)",
+            background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.15) 100%)",
           }}
         />
         <Image
           src="/emblem/hero-brand-mark.svg"
           alt="StrainSpotter"
-          width={64}
-          height={64}
+          width={56}
+          height={56}
           priority
-          className="relative z-10 mb-2"
+          className="relative z-10 mb-1.5"
         />
         <h1 className="relative z-10 text-xl font-bold text-white tracking-tight">StrainSpotter</h1>
         <p className="relative z-10 text-white/85 text-sm mt-0.5">Your personal cannabis companion</p>
