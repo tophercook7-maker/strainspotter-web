@@ -110,6 +110,23 @@ Run after `master-list:build-launch-priority`. Outputs:
 
 Each record includes: `canonicalName`, `slug`, `aliases`, `imageFolderKey`, `imageCount`, `examplePaths`, `launchPriorityScore`, `launchPriorityReason`. Use `imageFolderKey` and `examplePaths` for image ingestion/review.
 
+### Launch reference index (retrieval readiness)
+
+After building the launch-ready set and running the approval/embedding pipeline, index retrieval readiness:
+
+```bash
+npm run master-list:build-launch-reference-index
+```
+
+Outputs (in master_list/):
+- **launch_reference_index_5000.json** — joined view of all 5,000 launch strains with image/approved/embedding status
+- **launch_reference_summary.json** — counts: image folders, approved images, embeddings, retrieval-ready
+- **launch_reference_ready.json** — strains where retrievalReady = true (has images, approved, embeddings)
+- **launch_reference_needs_approval.json** — image-backed but no approved reference images yet
+- **launch_reference_needs_embeddings.json** — has approved images but no embeddings yet
+
+Rerun after new approvals or embedding generation. Linking uses slug (approved folders and embedding manifest use strain slug).
+
 ## Vault Outputs
 
 | Path | Description |
@@ -127,6 +144,11 @@ Each record includes: `canonicalName`, `slug`, `aliases`, `imageFolderKey`, `ima
 | `master_list/launch_priority_5000.json` | Top 5,000 strains (image-backed first, then image-less) |
 | `master_list/launch_ready_image_backed_5000.json` | Launch-ready: only image-backed strains for scanner pipeline |
 | `master_list/launch_ready_image_backed_summary.json` | Summary, distribution, shortfall |
+| `master_list/launch_reference_index_5000.json` | Launch reference index (image + approved + embedding status) |
+| `master_list/launch_reference_summary.json` | Retrieval readiness counts |
+| `master_list/launch_reference_ready.json` | Retrieval-ready strains |
+| `master_list/launch_reference_needs_approval.json` | Strains needing approval |
+| `master_list/launch_reference_needs_embeddings.json` | Strains needing embeddings |
 
 ## Sample Files
 

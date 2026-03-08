@@ -92,6 +92,19 @@ npm run generate-embeddings
 
 Only approved images are embedded. Unapproved candidates are never embedded.
 
+### Launch Reference Index (Retrieval Readiness)
+
+The master-list pipeline produces a launch reference index that tracks which of the 5,000 launch strains are retrieval-ready:
+
+```bash
+cd tools/strain-image-pipeline
+npm run master-list:build-launch-reference-index
+```
+
+- **retrieval-ready** = has source images + has approved reference images + has embeddings
+- Outputs: `launch_reference_index_5000.json`, `launch_reference_ready.json`, `launch_reference_needs_approval.json`, `launch_reference_needs_embeddings.json`
+- Rerun after approvals or embedding generation.
+
 ## Approved-Image Retrieval (Scaffolding)
 
 After generating embeddings, you can retrieve top candidates by similarity:
