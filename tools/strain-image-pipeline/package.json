@@ -10,7 +10,8 @@
     "dedupe": "tsx image_dedupe.ts",
     "promote-approved": "tsx promote_approved.ts",
     "generate-embeddings": "tsx generate_embeddings.ts",
-    "retrieve": "tsx retrieve_approved.ts"
+    "retrieve": "tsx retrieve_approved.ts",
+    "master-list:dedupe": "tsx master-list/dedupe-scaffold.ts"
   },
   "dependencies": {
     "image-hash": "^5.2.0",

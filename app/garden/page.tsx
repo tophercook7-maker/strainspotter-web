@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { PageHeaderNav } from "@/app/_components/PageHeaderNav";
 
-const BG_PATH = "/brand/core/strainspotter-bg.jpg";
-const HERO_MARK_PATH = "/emblem/hero-brand-mark.svg";
+const BG_ASSET = "/brand/core/strainspotter-bg.jpg";
+const HERO_MARK_ASSET = "/emblem/hero-brand-mark.svg";
 
 const cards = [
   { title: "Scanner", subtitle: "Scan plants & packaging", href: "/garden/scanner", icon: "/brand/icons/scanner/scan.svg" },
@@ -16,32 +16,37 @@ export default function GardenPage() {
     <main className="pb-6">
       <PageHeaderNav title="StrainSpotter" hideHome showBack={false} />
 
-      {/* Hero: branded marijuana-photo background, circular leaf mark */}
+      {/* Hero: branded marijuana-photo background, circular leaf mark — compact layout */}
       <section
-        className="relative rounded-xl overflow-hidden mb-5 min-h-[120px] flex flex-col items-center justify-center py-5 px-4"
+        className="relative rounded-xl overflow-hidden mb-4 min-h-[100px] flex flex-col items-center justify-center py-4 px-4"
         style={{
-          backgroundImage: `url(${BG_PATH})`,
+          backgroundImage: `url(${BG_ASSET})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        {/* Lighter gradient so background and emblem stay visible */}
+        {/* Light gradient for text contrast; keep background photo visible */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "linear-gradient(to top, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.1) 45%, transparent 100%)",
+            background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.08) 50%, transparent 100%)",
           }}
         />
-        <Image
-          src={HERO_MARK_PATH}
-          alt="StrainSpotter"
-          width={72}
-          height={72}
-          priority
-          className="relative z-10 mb-1.5 drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
-        />
-        <h1 className="relative z-10 text-xl font-bold text-white tracking-tight">StrainSpotter</h1>
-        <p className="relative z-10 text-white/85 text-sm mt-0.5">Your personal cannabis companion</p>
+        {/* Dark circular backdrop ensures hero mark is always visible */}
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="rounded-full bg-black/50 p-2 mb-1.5 ring-2 ring-white/30">
+            <Image
+              src={HERO_MARK_ASSET}
+              alt="StrainSpotter"
+              width={64}
+              height={64}
+              priority
+              className="drop-shadow-[0_0_8px_rgba(0,255,174,0.6)]"
+            />
+          </div>
+          <h1 className="text-lg font-bold text-white tracking-tight drop-shadow-md">StrainSpotter</h1>
+          <p className="text-white/90 text-sm mt-0.5 drop-shadow-md">Your personal cannabis companion</p>
+        </div>
       </section>
 
       {/* Compact cards */}
