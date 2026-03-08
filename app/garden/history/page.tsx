@@ -198,7 +198,7 @@ export default async function HistoryPage() {
                 </Link>
               </div>
               <p className="mt-3 text-xs text-white/70">
-                Tip: generate a &quot;Today&apos;s Plan&quot; then save it to Log Book.
+                Tip: Get a plan from Grow Coach, then save it here.
               </p>
             </div>
           ) : null}

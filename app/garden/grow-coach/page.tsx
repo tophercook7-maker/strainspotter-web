@@ -32,80 +32,80 @@ export default function GrowCoachPage() {
       {
         key: "setup",
         title: "Setup & Planning",
-        goal: "Dial the environment + plan the run.",
+        goal: "Get your space ready and plan your grow.",
         checklist: [
-          "Choose medium (soil/coco/hydro) + nutrients",
-          "Set target environment (temp/RH/VPD) for your space",
-          "Confirm light schedule + PPFD goals",
-          "IPM baseline: prevention routine",
+          "Choose your medium (soil, coco, or hydro) and nutrients",
+          "Set target temp and humidity for your space",
+          "Plan your light schedule",
+          "Start a simple pest-prevention routine",
         ],
         todaysPrompt:
-          "Tell me your grow type (home/craft/commercial), medium, light, and current temp/RH. I'll give a setup plan.",
+          "Share your grow type, medium, light, and current temp/humidity. I'll give you a setup plan.",
       },
       {
         key: "seedling",
         title: "Seedling",
-        goal: "Establish roots without overwatering.",
+        goal: "Build strong roots without overwatering.",
         checklist: [
-          "Low EC / gentle feeding (or none if soil)",
-          "High-ish humidity, stable temps",
-          "Watch for damping-off, stretching, clawing",
-          "Photoperiod schedule + distance from light",
+          "Light feeding (or none if using soil)",
+          "Keep humidity up and temps steady",
+          "Watch for weak stems, stretching, or drooping",
+          "Set your light schedule and distance",
         ],
         todaysPrompt:
-          "Upload a seedling photo + tell me medium, watering frequency, and light distance. I'll spot issues and adjust.",
+          "Upload a seedling photo and share your medium, watering, and light setup. I'll check for issues.",
       },
       {
         key: "veg",
-        title: "Vegetative",
-        goal: "Build structure + healthy growth.",
+        title: "Veg",
+        goal: "Build structure and healthy growth.",
         checklist: [
-          "Train (LST/topping) based on cultivar + space",
-          "Increase feed gradually; monitor runoff pH/EC (if applicable)",
-          "Prune lower growth to improve airflow",
-          "Watch for deficiencies (N, Mg, Ca) and pests",
+          "Train plants (bend or top) based on your space",
+          "Increase feed slowly; check pH if you measure it",
+          "Trim lower leaves for better airflow",
+          "Watch for yellowing, spots, or pests",
         ],
         todaysPrompt:
-          "What week of veg are you in? Upload a plant/leaf photo + tell me feed/water schedule. I'll recommend next steps.",
+          "What week of veg? Upload a plant photo and share your feed/water schedule. I'll suggest next steps.",
       },
       {
         key: "flower",
         title: "Flower",
-        goal: "Control stretch + prevent mold while bulking.",
+        goal: "Control stretch and prevent mold while buds bulk up.",
         checklist: [
-          "Lower humidity; airflow and canopy management",
-          "Adjust nutrients toward bloom (watch Ca/Mg)",
-          "Defoliate carefully; avoid stressing late flower",
-          "Scout for powdery mildew/botrytis daily",
+          "Lower humidity; keep air moving",
+          "Switch to bloom nutrients; watch calcium and magnesium",
+          "Remove leaves carefully; don't stress plants late in flower",
+          "Check daily for mold or mildew",
         ],
         todaysPrompt:
-          "What week of flower? Upload bud/leaf photos + tell me temp/RH. I'll give a 'today plan' and risk alerts.",
+          "What week of flower? Upload bud photos and share temp/humidity. I'll give you a plan for today.",
       },
       {
         key: "harvest",
         title: "Harvest Window",
-        goal: "Time the chop for your desired effect + quality.",
+        goal: "Time your harvest for the effect and quality you want.",
         checklist: [
-          "Track trichomes (clear/cloudy/amber)",
-          "Reduce stress; keep environment stable",
-          "Plan dry room conditions and hang method",
-          "Prep trim workflow",
+          "Check trichomes (clear, cloudy, or amber)",
+          "Keep conditions stable; avoid stress",
+          "Plan your dry room and how you'll hang plants",
+          "Get your trim setup ready",
         ],
         todaysPrompt:
-          "Upload trichome/bud photos and tell me your target effects (heady vs heavy). I'll estimate harvest window.",
+          "Upload trichome or bud photos and describe the effect you want. I'll estimate when to harvest.",
       },
       {
         key: "dry_cure",
         title: "Dry & Cure",
-        goal: "Preserve terpenes and prevent mold.",
+        goal: "Preserve flavor and avoid mold.",
         checklist: [
-          "Dry: stable temp/RH, slow and steady",
-          "Cure: jar/box target RH; burp schedule",
-          "Watch for ammonia smell or wet spots (mold risk)",
-          "Track flavor/smoothness improvements over weeks",
+          "Dry: Keep temp and humidity steady; go slow",
+          "Cure: Jar at the right humidity; burp on a schedule",
+          "Watch for ammonia smell or damp spots",
+          "Flavor and smoothness improve over a few weeks",
         ],
         todaysPrompt:
-          "Tell me your dry room temp/RH and hang time so far. I'll give a cure plan and mold-risk checks.",
+          "Share your dry room temp and humidity, and how long you've been drying. I'll give you a cure plan.",
       },
     ],
     []
@@ -273,14 +273,14 @@ export default function GrowCoachPage() {
   }
 
   return (
-    <main className="pb-[72px]">
+    <main className="pb-6">
       <PageHeaderNav title="Grow Coach" hideHome />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Phase picker */}
         <div className="p-4 rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20">
           <div className="text-sm opacity-85 mb-2">
-            Where are you in the cycle?
+            Where are you in your grow?
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -299,8 +299,8 @@ export default function GrowCoachPage() {
             ))}
           </div>
 
-          <div className="mt-2.5 opacity-90">
-            <b>Goal:</b> {phase.goal}
+          <div className="mt-2.5 opacity-90 text-sm">
+            <b>Focus:</b> {phase.goal}
           </div>
         </div>
 
@@ -308,19 +308,23 @@ export default function GrowCoachPage() {
         <div className="p-4 rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20">
           <div className="flex flex-col gap-2.5">
             <div>
-              <div className="font-extrabold mb-1.5">Grow Scale</div>
+              <div className="font-extrabold mb-1.5">Grow size</div>
               <div className="flex gap-2 flex-wrap">
-                {(["home", "craft", "commercial"] as Scale[]).map((s) => (
+                {[
+                  { k: "home" as Scale, label: "Home (few plants)" },
+                  { k: "craft" as Scale, label: "Craft (small batch)" },
+                  { k: "commercial" as Scale, label: "Commercial" },
+                ].map(({ k, label }) => (
                   <button
-                    key={s}
-                    onClick={() => setScale(s)}
-                    className={`px-3 py-2.5 min-h-[44px] rounded-full border border-white/14 cursor-pointer font-semibold capitalize ${
-                      s === scale
+                    key={k}
+                    onClick={() => setScale(k)}
+                    className={`px-3 py-2.5 min-h-[44px] rounded-full border border-white/14 cursor-pointer font-semibold ${
+                      k === scale
                         ? "bg-[rgba(61,220,132,0.18)] font-extrabold"
                         : "bg-white/[0.04]"
                     }`}
                   >
-                    {s}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -328,7 +332,7 @@ export default function GrowCoachPage() {
 
             <div>
               <div className="font-extrabold mb-1.5">
-                Environment (optional)
+                Room conditions (optional)
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <Field
@@ -355,20 +359,20 @@ export default function GrowCoachPage() {
             </div>
 
             <div>
-              <div className="font-extrabold mb-1.5">Signals (optional)</div>
+              <div className="font-extrabold mb-1.5">Recent issues or strain (optional)</div>
               <div className="flex flex-col gap-2.5">
                 <Field
-                  label="Tags (comma separated)"
+                  label="Tags"
                   value={tags}
                   setValue={setTags}
-                  placeholder="powdery_mildew_risk, botrytis_risk"
+                  placeholder="e.g. mold risk, nutrient burn"
                   wide
                 />
                 <Field
-                  label="Last known strain/label"
+                  label="Strain name"
                   value={lastPrimaryLabel}
                   setValue={setLastPrimaryLabel}
-                  placeholder="Northern Lights"
+                  placeholder="e.g. Northern Lights"
                   wide
                 />
               </div>
@@ -379,7 +383,7 @@ export default function GrowCoachPage() {
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="What's going on today? (watering/feed schedule, symptoms, week of flower, etc.)"
+                placeholder="What's going on today? Watering, feeding, symptoms, week of flower..."
                 className="w-full min-h-[90px] p-3 rounded-xl border border-white/15 bg-white/[0.03] text-inherit resize-y"
               />
             </div>
@@ -394,7 +398,7 @@ export default function GrowCoachPage() {
                     : "bg-[rgba(61,220,132,0.18)] cursor-pointer hover:bg-[rgba(61,220,132,0.25)]"
                 }`}
               >
-                {loading ? "Generating…" : "Generate Today's Plan"}
+                {loading ? "Generating…" : "Get My Plan"}
               </button>
 
               <Link
@@ -419,7 +423,7 @@ export default function GrowCoachPage() {
         {/* Plan output */}
         {error ? (
           <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 shadow-lg shadow-black/20">
-            <b>Error:</b> {error}
+            <b>Something went wrong:</b> {error}
           </div>
         ) : null}
 
@@ -439,7 +443,7 @@ export default function GrowCoachPage() {
             <Section title="Actions" items={plan.actions} />
             <Section title="Watchouts" items={plan.watchouts} />
             <Section
-              title="Questions to answer (to improve accuracy)"
+              title="What to check next"
               items={plan.questions}
             />
 
@@ -453,7 +457,7 @@ export default function GrowCoachPage() {
                     : "bg-[rgba(61,220,132,0.18)] cursor-pointer hover:bg-[rgba(61,220,132,0.25)]"
                 }`}
               >
-                {saving ? "Saving…" : "Save Today's Plan to Log Book"}
+                {saving ? "Saving…" : "Save to Log Book"}
               </button>
               {savedMsg ? (
                 <span className="opacity-85 text-sm">{savedMsg}</span>
@@ -461,8 +465,7 @@ export default function GrowCoachPage() {
             </div>
 
             <div className="mt-3 opacity-75 text-[13px]">
-              You can save this plan into your Log Book so it becomes part of
-              your grow cycle record.
+              Save this plan to your Log Book to keep a record of your grow.
             </div>
           </div>
         ) : null}

@@ -10,7 +10,7 @@ const cards = [
 
 export default function GardenPage() {
   return (
-    <main className="pb-[72px]">
+    <main className="pb-6">
       <PageHeaderNav title="StrainSpotter" hideHome showBack={false} />
 
       {/* Hero: branded marijuana-photo background, circular leaf mark */}
@@ -25,14 +25,14 @@ export default function GardenPage() {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.15) 100%)",
+            background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)",
           }}
         />
         <Image
           src="/emblem/hero-brand-mark.svg"
           alt="StrainSpotter"
-          width={56}
-          height={56}
+          width={72}
+          height={72}
           priority
           className="relative z-10 mb-1.5"
         />

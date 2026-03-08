@@ -12,11 +12,11 @@ export default function GardenLayout({ children }: { children: ReactNode }) {
         backgroundPosition: "center",
       }}
     >
-      {/* subtle overlay so text stays readable */}
-      <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+      {/* light overlay so cannabis photo shows through */}
+      <div className="absolute inset-0 bg-black/18 pointer-events-none" />
 
-      {/* centered rail */}
-      <div className="relative mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 pb-28">
+      {/* centered rail — extra bottom padding so content clears fixed bottom bar + safe area */}
+      <div className="relative mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px)+2rem)]">
         <ActivityPing />
         {children}
       </div>
