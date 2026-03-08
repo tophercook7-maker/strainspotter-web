@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { PageHeaderNav } from "@/app/_components/PageHeaderNav";
 
+const BG_PATH = "/brand/core/strainspotter-bg.jpg";
+const HERO_MARK_PATH = "/emblem/hero-brand-mark.svg";
+
 const cards = [
   { title: "Scanner", subtitle: "Scan plants & packaging", href: "/garden/scanner", icon: "/brand/icons/scanner/scan.svg" },
   { title: "Log Book", subtitle: "Track your grows", href: "/garden/history", icon: "/brand/icons/garden/grow-logs.svg" },
@@ -17,24 +20,25 @@ export default function GardenPage() {
       <section
         className="relative rounded-xl overflow-hidden mb-5 min-h-[120px] flex flex-col items-center justify-center py-5 px-4"
         style={{
-          backgroundImage: "url(/brand/core/strainspotter-bg.jpg)",
+          backgroundImage: `url(${BG_PATH})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
+        {/* Lighter gradient so background and emblem stay visible */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)",
+            background: "linear-gradient(to top, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.1) 45%, transparent 100%)",
           }}
         />
         <Image
-          src="/emblem/hero-brand-mark.svg"
+          src={HERO_MARK_PATH}
           alt="StrainSpotter"
           width={72}
           height={72}
           priority
-          className="relative z-10 mb-1.5"
+          className="relative z-10 mb-1.5 drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
         />
         <h1 className="relative z-10 text-xl font-bold text-white tracking-tight">StrainSpotter</h1>
         <p className="relative z-10 text-white/85 text-sm mt-0.5">Your personal cannabis companion</p>
