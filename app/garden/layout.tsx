@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import GardenBottomBar from "./GardenBottomBar";
 import ActivityPing from "@/app/_components/ActivityPing";
 
-const BG_ASSET = "/brand/core/strainspotter-bg.jpg";
+const BG_ASSET = "/strainspotter-bg.jpeg";
 
 export default function GardenLayout({ children }: { children: ReactNode }) {
   return (
@@ -13,7 +13,7 @@ export default function GardenLayout({ children }: { children: ReactNode }) {
         src={BG_ASSET}
         alt=""
         aria-hidden
-        className="fixed inset-0 z-0 w-full h-full object-cover object-center"
+        className="fixed inset-0 w-full h-full object-cover object-center z-0"
       />
       {/* Minimal overlay so cannabis photo remains clearly visible */}
       <div className="fixed inset-0 z-0 bg-black/[0.06] pointer-events-none" />

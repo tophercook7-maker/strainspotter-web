@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { PageHeaderNav } from "@/app/_components/PageHeaderNav";
 
-const BG_ASSET = "/brand/core/strainspotter-bg.jpg";
-/** Use PNG for reliable rendering (SVG can fail with Next/Image optimizer) */
-const HERO_MARK_ASSET = "/emblem/hero-brand-mark.png";
+const BG_ASSET = "/strainspotter-bg.jpeg";
+const HERO_MARK_ASSET = "/StrainSpotterEmblem.png";
 
 const cards = [
-  { title: "Scanner", subtitle: "Scan plants & packaging", href: "/garden/scanner", icon: "/brand/icons/scanner/scan.svg" },
-  { title: "Log Book", subtitle: "Track your grows", href: "/garden/history", icon: "/brand/icons/garden/grow-logs.svg" },
-  { title: "Grow Coach", subtitle: "Seed → harvest tips", href: "/garden/grow-coach", icon: "/brand/icons/garden/grow-coach.svg" },
+  { title: "Scanner", subtitle: "Scan plants & packaging", href: "/garden/scanner", icon: "/icons/scan.svg" },
+  { title: "Log Book", subtitle: "Track your grows", href: "/garden/history", icon: "/icons/logbook.svg" },
+  { title: "Grow Coach", subtitle: "Seed → harvest tips", href: "/garden/grow-coach", icon: "/icons/doctor.svg" },
 ] as const;
 
 export default function GardenPage() {

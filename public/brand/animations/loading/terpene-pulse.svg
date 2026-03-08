@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pulsing terpene droplet -->
+  <circle cx="32" cy="32" r="16" fill="#42FFB2" opacity="0.8">
+    <animate attributeName="r" values="16;20;16" dur="1.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="32" cy="32" r="12" fill="#42FFB2" opacity="0.6">
+    <animate attributeName="r" values="12;18;12" dur="1.5s" repeatCount="indefinite" begin="0.2s"/>
+    <animate attributeName="opacity" values="0.6;0.8;0.6" dur="1.5s" repeatCount="indefinite" begin="0.2s"/>
+  </circle>
+  <!-- Droplet shape -->
+  <path d="M32 20 Q28 24, 32 28 Q36 24, 32 20 Z" fill="#E6EFE9" opacity="0.9">
+    <animateTransform attributeName="transform" 
+                      type="scale" 
+                      values="1;1.1;1" 
+                      dur="1.5s" 
+                      repeatCount="indefinite"/>
+  </path>
+</svg>

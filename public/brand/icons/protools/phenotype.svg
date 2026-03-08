@@ -1,0 +1,9 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Phenotype - DNA/double helix -->
+  <path d="M10 6 Q8 10, 10 14 Q12 18, 10 22 Q8 26, 10 26" stroke="#42FFB2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M22 6 Q24 10, 22 14 Q20 18, 22 22 Q24 26, 22 26" stroke="#42FFB2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="10" cy="10" r="1.5" fill="#42FFB2"/>
+  <circle cx="22" cy="18" r="1.5" fill="#42FFB2"/>
+  <circle cx="10" cy="22" r="1.5" fill="#42FFB2"/>
+  <circle cx="22" cy="14" r="1.5" fill="#42FFB2"/>
+</svg>

@@ -45,6 +45,7 @@ node_modules/
 !styles/
 !styles/**
 !public/
+!public/**
 !next.config.*
 !package.json
 !package-lock.json

@@ -1,0 +1,9 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Private strain - lock with leaf -->
+  <rect x="12" y="14" width="8" height="10" rx="1" stroke="#42FFB2" stroke-width="2.5" fill="none"/>
+  <path d="M12 14 L12 10 C12 8, 13 7, 15 7 L17 7 C19 7, 20 8, 20 10 L20 14" stroke="#42FFB2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="16" cy="19" r="2" stroke="#42FFB2" stroke-width="2" fill="none"/>
+  <path d="M16 12 L16 14" stroke="#42FFB2" stroke-width="2" stroke-linecap="round"/>
+  <!-- Leaf accent -->
+  <path d="M24 8 Q22 10, 24 12 Q26 10, 24 8 Z" stroke="#42FFB2" stroke-width="1.5" fill="none"/>
+</svg>
