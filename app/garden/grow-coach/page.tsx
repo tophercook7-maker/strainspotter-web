@@ -273,7 +273,7 @@ export default function GrowCoachPage() {
   }
 
   return (
-    <main className="pb-6">
+    <main className="pb-10">
       <PageHeaderNav title="Grow Coach" hideHome />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
