@@ -13,6 +13,7 @@
     "retrieve": "tsx retrieve_approved.ts",
     "master-list:seed": "tsx master-list/seed_raw_strains.ts",
     "master-list:import": "tsx master-list/import_raw_strain_names.ts",
+    "master-list:bulk-import": "tsx master-list/bulk_import_sources.ts",
     "master-list:dedupe": "tsx master-list/dedupe-scaffold.ts",
     "master-list:rebuild": "tsx master-list/dedupe-scaffold.ts"
   },

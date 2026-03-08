@@ -88,6 +88,15 @@ function main() {
   }
 
   const dedupeCandidates: { normalized: string; variants: string[] }[] = [];
+  const dedupeReview: {
+    normalized: string;
+    variantCount: number;
+    variants: string[];
+    suggestedCanonical: string;
+    reviewStatus: "pending" | "approved" | "rejected";
+    mergeTarget?: string;
+    notes?: string;
+  }[] = [];
   const canonicalStrains: { canonicalName: string; aliases: string[] }[] = [];
   const aliasMap: Record<string, string> = {};
 
@@ -95,6 +104,13 @@ function main() {
     const canonical = pickCanonicalName(variants);
     const aliases = variants.filter((v) => v !== canonical);
     dedupeCandidates.push({ normalized, variants });
+    dedupeReview.push({
+      normalized,
+      variantCount: variants.length,
+      variants,
+      suggestedCanonical: canonical,
+      reviewStatus: "pending",
+    });
     canonicalStrains.push({ canonicalName: canonical, aliases });
     for (const v of variants) {
       const vNorm = v
@@ -111,9 +127,19 @@ function main() {
   const outDir = join(VAULT_ROOT, "master_list");
   mkdirSync(outDir, { recursive: true });
 
+  dedupeReview.sort((a, b) => b.variantCount - a.variantCount);
+
   writeFileSync(
     join(outDir, "dedupe_candidates.json"),
     JSON.stringify(dedupeCandidates, null, 2)
+  );
+  writeFileSync(
+    join(outDir, "dedupe_review.json"),
+    JSON.stringify(
+      { generated_at: new Date().toISOString(), total_raw: rawNames.length, groups: dedupeReview },
+      null,
+      2
+    )
   );
   writeFileSync(
     join(outDir, "canonical_strains.json"),
@@ -124,7 +150,25 @@ function main() {
     JSON.stringify(aliasMap, null, 2)
   );
 
+  const reviewStatePath = join(outDir, "review_state.json");
+  if (!existsSync(reviewStatePath)) {
+    writeFileSync(
+      reviewStatePath,
+      JSON.stringify(
+        {
+          schema: "review_state_v1",
+          updated_at: new Date().toISOString(),
+          decisions: [] as { normalized: string; status: "approved" | "rejected"; canonical?: string; notes?: string }[],
+        },
+        null,
+        2
+      )
+    );
+    console.log(`Wrote ${reviewStatePath} (scaffold)`);
+  }
+
   console.log(`Wrote ${outDir}/dedupe_candidates.json (${dedupeCandidates.length} groups)`);
+  console.log(`Wrote ${outDir}/dedupe_review.json (${dedupeReview.length} groups, sorted by variant count)`);
   console.log(`Wrote ${outDir}/canonical_strains.json (${canonicalStrains.length} canonical)`);
   console.log(`Wrote ${outDir}/alias_map.json (${Object.keys(aliasMap).length} aliases)`);
 }
