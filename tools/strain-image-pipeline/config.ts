@@ -52,6 +52,9 @@ export const PATHS = {
   /** Approved reference images: approved/strain_reference_images/{image_type}/{strain-slug}/ */
   approvedStrainImage: (strainSlug: string, imageType: string) =>
     `${CONFIG.VAULT_ROOT}/approved/strain_reference_images/${imageType}/${strainSlug}`,
+  /** Embedding vectors and records for approved images */
+  embeddingVectors: `${CONFIG.VAULT_ROOT}/embeddings/image_vectors`,
+  embeddingManifest: `${CONFIG.VAULT_ROOT}/embeddings/image_vectors/manifest.json`,
 } as const;
 
 export function slugify(s: string): string {

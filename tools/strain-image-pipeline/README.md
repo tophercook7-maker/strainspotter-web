@@ -47,6 +47,7 @@ The successful test batch uses **realistic fixtures**:
 | `review_queue/manifest.json` | Review queue manifest |
 | `review_queue/rejected_log.json` | Rejected candidates (traceability) |
 | `approved/strain_reference_images/{type}/{strain}/` | Approved reference images |
+| `embeddings/image_vectors/` | Embedding records (JSON) and manifest |
 | `logs/` | Run logs and manifests |
 
 ## Review Workflow (Human Approval)
@@ -68,14 +69,40 @@ After the pipeline runs, candidates land in `review_queue`. To approve or reject
    with a `.metadata.json` per image (source URL, quality score, approval timestamp).
    Rejected items remain traceable in `rejected_log.json` after the next pipeline run.
 
+## Embedding Generation
+
+After promoting approved images, generate embeddings so they are retrieval-ready for the scanner:
+
+```bash
+npm run generate-embeddings
+```
+
+- **Input**: Approved images in `approved/strain_reference_images/{type}/{strain}/`
+- **Output**: Each image gets `{image-id}.embedding.json` in `embeddings/image_vectors/` with vector, metadata, model, timestamp
+- **Manifest**: `embeddings/image_vectors/manifest.json` — lists all embedded images, model used, which have embeddings
+- **Mode**: Currently **mock** (deterministic pseudo-vectors from path hash). Set `EMBEDDING_MODE=real` when a real provider is wired.
+- **Duplicates**: Skips images already in the manifest. Use `FORCE_EMBEDDINGS=1` to re-embed all.
+
+### Approved vs Embedded
+
+| Stage | Location | Meaning |
+|-------|----------|---------|
+| Approved | `approved/strain_reference_images/` | Human-approved reference images with metadata |
+| Embedded | `embeddings/image_vectors/` | Same images plus vector embeddings for retrieval |
+
+Only approved images are embedded. Unapproved candidates are never embedded.
+
 ## Inspecting Results
 
 - **Run log**: `{VAULT_ROOT}/logs/run_{runId}.log`
 - **Manifest**: `{VAULT_ROOT}/logs/manifest_{runId}.json` — strains processed, pages fetched, URLs extracted, downloaded, rejected, promoted
 - **Review manifest**: `{VAULT_ROOT}/review_queue/manifest.json`
+- **Embedding manifest**: `{VAULT_ROOT}/embeddings/image_vectors/manifest.json` — which images have embeddings, model used
 
 ## Environment
 
 - `VAULT_ROOT` — Override output root
 - `USE_FIXTURE` — `1` (default) or `0` for live fetch
 - `STRAIN_LIST` — Path to strain list file (one strain per line)
+- `EMBEDDING_MODE` — `real` for live provider (when wired); default is mock
+- `FORCE_EMBEDDINGS` — `1` to re-embed all approved images

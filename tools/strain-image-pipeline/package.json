@@ -8,7 +8,8 @@
     "classify": "tsx image_classifier.ts",
     "quality": "tsx image_quality_check.ts",
     "dedupe": "tsx image_dedupe.ts",
-    "promote-approved": "tsx promote_approved.ts"
+    "promote-approved": "tsx promote_approved.ts",
+    "generate-embeddings": "tsx generate_embeddings.ts"
   },
   "dependencies": {
     "image-hash": "^5.2.0",
