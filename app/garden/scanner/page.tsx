@@ -569,7 +569,7 @@ export default function ScannerPage() {
       <main className="min-h-screen text-white">
         {/* Phase 5.2.6 — MOBILE-FIRST CONSTRAINTS: Max content width (not edge-to-edge) */}
         {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
-      <div className="w-full pb-32 sm:pb-24 space-y-6">
+      <div className="w-full pt-6 pb-32 sm:pb-24 space-y-6">
         {/* Limited cultivar database: show once so user knows matching is limited */}
         {limitedStrainsMode && (
           <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200 space-y-3 shadow-lg shadow-black/20">

@@ -278,7 +278,7 @@ export default function GrowCoachPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Phase picker */}
-        <div className="p-4 rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20">
+        <div className="p-4 rounded-xl border border-white/20 bg-black/50 backdrop-blur-md shadow-lg shadow-black/30">
           <div className="text-sm opacity-85 mb-2">
             Where are you in your grow?
           </div>
@@ -291,7 +291,7 @@ export default function GrowCoachPage() {
                 className={`px-3 py-2.5 min-h-[44px] rounded-full border border-white/14 cursor-pointer font-semibold transition-colors ${
                   p.key === phaseKey
                     ? "bg-[rgba(61,220,132,0.18)] font-extrabold"
-                    : "bg-white/[0.04]"
+                    : "bg-white/10"
                 }`}
               >
                 {p.title}
@@ -305,7 +305,7 @@ export default function GrowCoachPage() {
         </div>
 
         {/* Scale + Env */}
-        <div className="p-4 rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20">
+        <div className="p-4 rounded-xl border border-white/20 bg-black/50 backdrop-blur-md shadow-lg shadow-black/30">
           <div className="flex flex-col gap-2.5">
             <div>
               <div className="font-extrabold mb-1.5">Grow size</div>
@@ -321,7 +321,7 @@ export default function GrowCoachPage() {
                     className={`px-3 py-2.5 min-h-[44px] rounded-full border border-white/14 cursor-pointer font-semibold ${
                       k === scale
                         ? "bg-[rgba(61,220,132,0.18)] font-extrabold"
-                        : "bg-white/[0.04]"
+                        : "bg-white/10"
                     }`}
                   >
                     {label}
@@ -384,7 +384,7 @@ export default function GrowCoachPage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="What's going on today? Watering, feeding, symptoms, week of flower..."
-                className="w-full min-h-[90px] p-3 rounded-xl border border-white/15 bg-white/[0.03] text-inherit resize-y"
+                className="w-full min-h-[90px] p-3 rounded-xl border border-white/20 bg-black/30 text-inherit resize-y"
               />
             </div>
 
@@ -422,13 +422,13 @@ export default function GrowCoachPage() {
 
         {/* Plan output */}
         {error ? (
-          <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 shadow-lg shadow-black/20">
+          <div className="p-4 rounded-xl border border-red-500/40 bg-red-900/50 backdrop-blur-md shadow-lg shadow-black/30">
             <b>Something went wrong:</b> {error}
           </div>
         ) : null}
 
         {plan ? (
-          <div className="p-4 rounded-xl border border-white/15 bg-white/[0.06] shadow-lg shadow-black/20">
+          <div className="p-4 rounded-xl border border-white/20 bg-black/50 backdrop-blur-md shadow-lg shadow-black/30">
             <div className="text-xl font-black mb-1.5">{plan.headline}</div>
             <div className="opacity-90 mb-2.5">{plan.flavor}</div>
 
@@ -496,7 +496,7 @@ function Field({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2.5 rounded-xl border border-white/15 bg-white/[0.03] text-inherit"
+        className="w-full px-3 py-2.5 rounded-xl border border-white/20 bg-black/30 text-inherit"
       />
     </label>
   );

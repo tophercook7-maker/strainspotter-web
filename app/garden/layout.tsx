@@ -19,7 +19,7 @@ export default function GardenLayout({ children }: { children: ReactNode }) {
       <div className="fixed inset-0 z-0 bg-black/[0.06] pointer-events-none" />
 
       {/* Content rail — above background */}
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px)+2.5rem)]">
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px)+1rem)]">
         <ActivityPing />
         {children}
       </div>

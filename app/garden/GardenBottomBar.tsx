@@ -28,9 +28,9 @@ export default function GardenBottomBar() {
     <nav
       className="fixed left-0 right-0 bottom-0 flex justify-center text-white z-50 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
       style={{
-        background: "rgba(5, 8, 5, 0.97)",
-        borderTop: "1px solid rgba(255,255,255,0.1)",
-        boxShadow: "0 -2px 12px rgba(0,0,0,0.3)",
+        background: "rgba(5, 8, 5, 0.94)",
+        borderTop: "1px solid rgba(255,255,255,0.12)",
+        boxShadow: "0 -2px 12px rgba(0,0,0,0.25)",
       }}
     >
       <div className="mx-auto w-full max-w-xl px-4 flex">
