@@ -49,6 +49,9 @@ export const PATHS = {
     `${basePath}/${filename.replace(/\.[^.]+$/, "")}.metadata.json`,
   logs: `${CONFIG.VAULT_ROOT}/logs`,
   fixtures: (filename: string) => join(__dirname, "fixtures", filename),
+  /** Approved reference images: approved/strain_reference_images/{image_type}/{strain-slug}/ */
+  approvedStrainImage: (strainSlug: string, imageType: string) =>
+    `${CONFIG.VAULT_ROOT}/approved/strain_reference_images/${imageType}/${strainSlug}`,
 } as const;
 
 export function slugify(s: string): string {

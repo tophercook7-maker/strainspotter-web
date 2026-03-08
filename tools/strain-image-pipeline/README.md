@@ -45,7 +45,28 @@ The successful test batch uses **realistic fixtures**:
 | `staging/candidate_strain_images/{strain}/` | Promoted candidates |
 | `review_queue/images/` | Copies for human review |
 | `review_queue/manifest.json` | Review queue manifest |
+| `review_queue/rejected_log.json` | Rejected candidates (traceability) |
+| `approved/strain_reference_images/{type}/{strain}/` | Approved reference images |
 | `logs/` | Run logs and manifests |
+
+## Review Workflow (Human Approval)
+
+After the pipeline runs, candidates land in `review_queue`. To approve or reject:
+
+1. **Inspect candidates**: Open `{VAULT_ROOT}/review_queue/images/` and view the images.
+2. **Edit manifest**: Open `{VAULT_ROOT}/review_queue/manifest.json`. Each candidate has:
+   - `id`, `strainSlug`, `imagePath`, `imageType`, `sourceUrl`, `qualityScore`
+   - `reviewStatus`: `"pending"` | `"approved"` | `"rejected"`
+   - `reviewNotes`: optional (e.g. rejection reason)
+3. **Mark decisions**: Set `reviewStatus` to `"approved"` or `"rejected"`. Add `reviewNotes` for rejected items.
+4. **Run promotion**:
+   ```bash
+   npm run promote-approved
+   ```
+5. **Result**: Approved images are copied to
+   `{VAULT_ROOT}/approved/strain_reference_images/{image_type}/{strain-slug}/`
+   with a `.metadata.json` per image (source URL, quality score, approval timestamp).
+   Rejected items remain traceable in `rejected_log.json` after the next pipeline run.
 
 ## Inspecting Results
 
