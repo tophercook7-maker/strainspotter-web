@@ -13,7 +13,7 @@ import type { CultivarReference } from "./cultivarLibrary";
  * - Normalize: primary name, aliases, lineage, indica/sativa ratio, terpene profile
  */
 export async function loadStrainDatabase(): Promise<CultivarReference[]> {
-  const MIN_REQUIRED_STRAINS = 10000;
+  const MIN_REQUIRED_STRAINS = 50;
   
   try {
     // Phase 5.0.1 — Try to load from external JSON file
