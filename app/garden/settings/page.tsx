@@ -16,6 +16,7 @@ import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import BugReportIcon from "@mui/icons-material/BugReport";
+import ScanPaywall from "@/components/ScanPaywall";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface UserSettings {
@@ -124,6 +125,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     setSettings(loadSettings());
@@ -291,6 +293,7 @@ export default function SettingsPage() {
                 </Typography>
               </Box>
               <ButtonBase
+                onClick={() => setShowPaywall(true)}
                 sx={{
                   px: 2,
                   py: 0.75,
@@ -481,6 +484,9 @@ export default function SettingsPage() {
           </Box>
         </div>
       </main>
+      {showPaywall && (
+        <ScanPaywall mode="warning" onClose={() => setShowPaywall(false)} />
+      )}
     </>
   );
 }
