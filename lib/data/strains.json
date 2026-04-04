@@ -1,0 +1,4460 @@
+[
+  {
+    "name": "OG Kush",
+    "aliases": [
+      "OGK",
+      "Ocean Grown Kush"
+    ],
+    "genetics": "Chemdawg \u00d7 Lemon Thai \u00d7 Hindu Kush",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Forest green with amber pistils and heavy frost"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "limonene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "uplift",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "limonene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Blue Dream",
+    "aliases": [
+      "BD",
+      "Azure Haze"
+    ],
+    "genetics": "Blueberry \u00d7 Haze",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Blue-green hues with orange hairs and sugary trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "creativity",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Northern Lights",
+    "aliases": [
+      "NL",
+      "Northern Light",
+      "NL #5"
+    ],
+    "genetics": "Afghan \u00d7 Thai",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark green with purple hues and crystal coating"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "sedation",
+      "pain relief"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "White Widow",
+    "aliases": [
+      "WW"
+    ],
+    "genetics": "Brazilian Sativa \u00d7 South Indian Indica",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "white",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Pale green buds coated in white trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "euphoria",
+      "energy",
+      "creativity",
+      "focus"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "white",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Sour Diesel",
+    "aliases": [
+      "Sour D",
+      "Sour Deez"
+    ],
+    "genetics": "Chemdawg 91 \u00d7 Super Skunk",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "red"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Light green with orange hairs and sticky resin"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "creativity",
+      "focus"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "red"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Jack Herer",
+    "aliases": [
+      "JH",
+      "The Jack"
+    ],
+    "genetics": "Haze \u00d7 Northern Lights #5 \u00d7 Shiva Skunk",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright green with orange pistils and crystalline trichomes"
+    },
+    "terpeneProfile": [
+      "terpinolene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "creativity",
+      "euphoria",
+      "energy",
+      "focus",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "terpinolene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Purple Haze",
+    "aliases": [
+      "PH"
+    ],
+    "genetics": "Purple Thai \u00d7 Haze",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Deep purple and green with orange hairs"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "ocimene"
+    ],
+    "effects": [
+      "euphoria",
+      "creativity",
+      "energy",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "ocimene"
+    ]
+  },
+  {
+    "name": "Granddaddy Purple",
+    "aliases": [
+      "GDP",
+      "Grand Daddy Purp",
+      "Granddaddy Purp"
+    ],
+    "genetics": "Purple Urkle \u00d7 Big Bud",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Deep purple and green with orange pistils and heavy frosting"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "appetite"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Girl Scout Cookies",
+    "aliases": [
+      "GSC",
+      "Cookies"
+    ],
+    "genetics": "OG Kush \u00d7 Durban Poison",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark green with purple leaves and orange hairs, frosty"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "humulene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "creativity"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "humulene"
+    ]
+  },
+  {
+    "name": "AK-47",
+    "aliases": [
+      "AK"
+    ],
+    "genetics": "Colombian \u00d7 Mexican \u00d7 Thai \u00d7 Afghan",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "white"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Light green with white trichomes and orange hairs"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "uplift",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "white"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Gelato",
+    "aliases": [
+      "Gelato #33",
+      "Larry Bird"
+    ],
+    "genetics": "Sunset Sherbet \u00d7 Thin Mint GSC",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark purple and green with orange hairs, extremely frosty"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "uplift"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Wedding Cake",
+    "aliases": [
+      "Triangle Mints #23",
+      "Pink Cookies"
+    ],
+    "genetics": "Triangle Kush \u00d7 Animal Mints",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Rich purple and green with thick trichome coverage"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sedation"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Runtz",
+    "aliases": [
+      "Runtz OG"
+    ],
+    "genetics": "Zkittlez \u00d7 Gelato",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Colorful purple, green, and pink hues with dense frost"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "giggly"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Zkittlez",
+    "aliases": [
+      "Skittlez",
+      "Skittles"
+    ],
+    "genetics": "Grape Ape \u00d7 Grapefruit",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "red"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Green and purple buds with bright orange pistils"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "linalool",
+      "humulene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleepy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "red"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "linalool",
+      "humulene"
+    ]
+  },
+  {
+    "name": "Gorilla Glue #4",
+    "aliases": [
+      "GG4",
+      "Original Glue",
+      "Gorilla Glue"
+    ],
+    "genetics": "Chem's Sister \u00d7 Sour Dubb \u00d7 Chocolate Diesel",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Chunky green buds covered in resinous trichomes"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "uplift"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Mimosa",
+    "aliases": [
+      "Purple Mimosa"
+    ],
+    "genetics": "Clementine \u00d7 Purple Punch",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright green with orange hairs and sugary trichomes"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "myrcene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "happy",
+      "focus"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "myrcene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Ice Cream Cake",
+    "aliases": [
+      "ICC"
+    ],
+    "genetics": "Wedding Cake \u00d7 Gelato #33",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense purple and green buds with heavy trichome frost"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Mac 1",
+    "aliases": [
+      "Miracle Alien Cookies #1",
+      "The MAC"
+    ],
+    "genetics": "Alien Cookies \u00d7 Starfighter \u00d7 Columbian",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Bright green with purple accents, heavy crystal coverage"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "creativity",
+      "relaxation",
+      "focus"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Gary Payton",
+    "aliases": [
+      "GP"
+    ],
+    "genetics": "The Y \u00d7 Snowman",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense tricolor buds of green, purple, and orange"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "giggly"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Biscotti",
+    "aliases": [
+      "Biscotti Mintz"
+    ],
+    "genetics": "Gelato #25 \u00d7 South Florida OG",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark green with purple patches and amber pistils"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "creative",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Bubba Kush",
+    "aliases": [
+      "BK",
+      "Bubba"
+    ],
+    "genetics": "OG Kush \u00d7 Unknown Indica",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "amber",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark green to purple buds with thick trichome layer"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "happy",
+      "euphoria"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "amber",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Master Kush",
+    "aliases": [
+      "MK",
+      "High Rise"
+    ],
+    "genetics": "Hindu Kush \u00d7 Skunk #1",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark green dense buds with orange pistils"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "sleep",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Skywalker OG",
+    "aliases": [
+      "Skywalker Kush"
+    ],
+    "genetics": "Skywalker \u00d7 OG Kush",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Olive green buds with fiery orange hairs and frosty trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "pain relief"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Hindu Kush",
+    "aliases": [
+      "HK"
+    ],
+    "genetics": "Landrace (Hindu Kush Mountains)",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Deep green with thick resinous coating"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "happy",
+      "calm"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Purple Kush",
+    "aliases": [
+      "PK"
+    ],
+    "genetics": "Hindu Kush \u00d7 Purple Afghani",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Vibrant purple and green with orange pistils"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Afghan Kush",
+    "aliases": [
+      "Afghan",
+      "Afghani"
+    ],
+    "genetics": "Landrace (Afghanistan)",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense dark green buds with heavy resin production"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "pinene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "happy",
+      "appetite"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "pinene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Chemdawg",
+    "aliases": [
+      "Chemdog",
+      "Chem Dawg",
+      "Chem Dog"
+    ],
+    "genetics": "Unknown (Thai \u00d7 Nepalese suspected)",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Light green with amber trichomes and pungent resin"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "euphoria",
+      "creativity",
+      "relaxation",
+      "uplift"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "NYC Diesel",
+    "aliases": [
+      "New York City Diesel"
+    ],
+    "genetics": "Sour Diesel \u00d7 Afghan/Hawaiian",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "red"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright green with red and orange hairs"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "energy",
+      "creative",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "red"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "East Coast Sour Diesel",
+    "aliases": [
+      "ECSD"
+    ],
+    "genetics": "Sour Diesel phenotype",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Pale green with orange pistils and sticky resin"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "focus",
+      "uplift"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Super Silver Haze",
+    "aliases": [
+      "SSH"
+    ],
+    "genetics": "Northern Lights \u00d7 Haze \u00d7 Skunk #1",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Light green with silvery trichomes and amber hairs"
+    },
+    "terpeneProfile": [
+      "terpinolene",
+      "myrcene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "creativity",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "terpinolene",
+      "myrcene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Amnesia Haze",
+    "aliases": [
+      "Amnesia"
+    ],
+    "genetics": "South Asian \u00d7 Jamaican \u00d7 Hawaiian \u00d7 Afghani/Haze",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright lime green with crystalline trichomes"
+    },
+    "terpeneProfile": [
+      "terpinolene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "euphoria",
+      "energy",
+      "creativity",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "terpinolene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Lemon Haze",
+    "aliases": [
+      "LH"
+    ],
+    "genetics": "Silver Haze \u00d7 Lemon Skunk",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "yellow",
+        "amber"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright yellow-green with amber trichomes"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "terpinolene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "yellow",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "terpinolene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Thin Mint GSC",
+    "aliases": [
+      "Thin Mint Cookies",
+      "Thin Mints"
+    ],
+    "genetics": "Girl Scout Cookies phenotype",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark green and purple with frosty trichomes"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Platinum Cookies",
+    "aliases": [
+      "Platinum GSC",
+      "Platinum Girl Scout Cookies"
+    ],
+    "genetics": "OG Kush \u00d7 Durban Poison \u00d7 Unknown",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Silvery-green with purple accents and heavy frost"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "humulene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "humulene"
+    ]
+  },
+  {
+    "name": "Animal Cookies",
+    "aliases": [
+      "Animal Crackers"
+    ],
+    "genetics": "Girl Scout Cookies \u00d7 Fire OG",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green buds with amber pistils and heavy trichomes"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleepy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Sunset Sherbet",
+    "aliases": [
+      "Sherbet",
+      "Sunset Sherbert"
+    ],
+    "genetics": "Girl Scout Cookies \u00d7 Pink Panties",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Green and purple with orange pistils, sticky resin"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "uplift"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Gelato #41",
+    "aliases": [
+      "Bacio Gelato"
+    ],
+    "genetics": "Sunset Sherbet \u00d7 Thin Mint GSC",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark purple and green with heavy frost"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "humulene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "humulene"
+    ]
+  },
+  {
+    "name": "Gelato #45",
+    "aliases": [
+      "Lava Cake",
+      "Gelato 45"
+    ],
+    "genetics": "Sunset Sherbet \u00d7 Thin Mint GSC",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark purple nugs with orange hairs and crystal coating"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "sleepy",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Purple Punch",
+    "aliases": [
+      "PP"
+    ],
+    "genetics": "Larry OG \u00d7 Granddaddy Purple",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Deep purple and green with orange hairs and frost"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Grape Ape",
+    "aliases": [
+      "Grape Ape Kush"
+    ],
+    "genetics": "Mendocino Purps \u00d7 Skunk #1 \u00d7 Afghan",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Deep purple grape-colored buds with orange hairs"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Tangie",
+    "aliases": [
+      "Tangerine Dream"
+    ],
+    "genetics": "California Orange \u00d7 Skunk #1",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright orange-green buds with citrus-colored hairs"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "myrcene",
+      "pinene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "creativity",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "myrcene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Strawberry Cough",
+    "aliases": [
+      "SC"
+    ],
+    "genetics": "Strawberry Fields \u00d7 Haze",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "red",
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright green with red-orange hairs and frosty trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "pinene",
+      "limonene"
+    ],
+    "effects": [
+      "euphoria",
+      "energy",
+      "happy",
+      "uplift"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "red",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "pinene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Pineapple Express",
+    "aliases": [
+      "PE"
+    ],
+    "genetics": "Trainwreck \u00d7 Hawaiian",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright green with amber trichomes and orange hairs"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "creativity",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Mango Kush",
+    "aliases": [
+      "Mango"
+    ],
+    "genetics": "Hindu Kush \u00d7 Mango",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green and orange buds with fruity appearance"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "limonene",
+      "pinene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "limonene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Blueberry",
+    "aliases": [
+      "BB"
+    ],
+    "genetics": "Purple Thai \u00d7 Thai \u00d7 Afghan",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "blue",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Blue and purple hued buds with sweet berry appearance"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "pinene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "sleep",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "blue",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "pinene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Lemon Skunk",
+    "aliases": [
+      "LS"
+    ],
+    "genetics": "Skunk #1 phenotype",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "yellow",
+        "amber"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Yellow-green buds with golden trichomes"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "yellow",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Trainwreck",
+    "aliases": [
+      "TW"
+    ],
+    "genetics": "Mexican \u00d7 Thai \u00d7 Afghan",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Lime green with orange hairs and sugary trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "limonene",
+      "pinene"
+    ],
+    "effects": [
+      "euphoria",
+      "creativity",
+      "energy",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "limonene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Green Crack",
+    "aliases": [
+      "Green Crush",
+      "Mango Crack"
+    ],
+    "genetics": "Skunk #1 \u00d7 Unknown Indica",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright green dense buds with orange hairs"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "energy",
+      "focus",
+      "euphoria",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Headband",
+    "aliases": [
+      "HB"
+    ],
+    "genetics": "OG Kush \u00d7 Sour Diesel",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green buds with golden trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "limonene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "limonene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Durban Poison",
+    "aliases": [
+      "DP",
+      "Durban"
+    ],
+    "genetics": "Landrace (South Africa)",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Chunky round buds with thick resin coating"
+    },
+    "terpeneProfile": [
+      "terpinolene",
+      "myrcene",
+      "ocimene"
+    ],
+    "effects": [
+      "energy",
+      "euphoria",
+      "creativity",
+      "focus",
+      "uplift"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "terpinolene",
+      "myrcene",
+      "ocimene"
+    ]
+  },
+  {
+    "name": "Skunk #1",
+    "aliases": [
+      "Skunk",
+      "SK1"
+    ],
+    "genetics": "Colombian Gold \u00d7 Acapulco Gold \u00d7 Afghan",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Classic green buds with orange pistils"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "medium",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Banana Kush",
+    "aliases": [
+      "BK"
+    ],
+    "genetics": "Ghost OG \u00d7 Skunk Haze",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "yellow",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Light green with yellow hues and amber trichomes"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "myrcene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "yellow",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "myrcene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Cereal Milk",
+    "aliases": [
+      "CM"
+    ],
+    "genetics": "Y Life \u00d7 Snowman",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Bright green and purple with heavy frost"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "giggly"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Cake Crasher",
+    "aliases": [
+      "CC"
+    ],
+    "genetics": "Wedding Cake \u00d7 Wedding Crasher",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Purple-green buds with massive trichome coverage"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Birthday Cake Kush",
+    "aliases": [
+      "Birthday Cake"
+    ],
+    "genetics": "Girl Scout Cookies \u00d7 Cherry Pie",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green buds with orange hairs and sugar-like trichomes"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleep"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "White Widow Auto",
+    "aliases": [
+      "WW Auto"
+    ],
+    "genetics": "White Widow \u00d7 Ruderalis",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "white",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Compact frosty white buds"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "euphoria",
+      "energy",
+      "creativity",
+      "relaxation"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "white",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Northern Lights Auto",
+    "aliases": [
+      "NL Auto"
+    ],
+    "genetics": "Northern Lights \u00d7 Ruderalis",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark green compact buds with crystal trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "happy",
+      "calm"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "Gorilla Glue Auto",
+    "aliases": [
+      "GG Auto"
+    ],
+    "genetics": "Gorilla Glue #4 \u00d7 Ruderalis",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "amber",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Resinous green buds with amber coating"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "amber",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "London Pound Cake",
+    "aliases": [
+      "LPC",
+      "London Poundcake"
+    ],
+    "genetics": "Sunset Sherbet \u00d7 Unknown",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Deep purple and green with orange pistils"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleepy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Jealousy",
+    "aliases": [],
+    "genetics": "Gelato #41 \u00d7 Sherbet Bx1",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green and purple buds covered in trichomes"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "linalool"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Permanent Marker",
+    "aliases": [],
+    "genetics": "Biscotti \u00d7 Jealousy \u00d7 Sherbet Bx1",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark purple-black buds with heavy frost"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "creative",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Pink Runtz",
+    "aliases": [
+      "Pink Runtz OG"
+    ],
+    "genetics": "Pink Panties \u00d7 Rainbow Sherbet",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "pink",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Pink and green buds with candy-like appearance"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "giggly"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "pink",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "White Runtz",
+    "aliases": [
+      "White Runtz OG"
+    ],
+    "genetics": "Gelato \u00d7 Zkittlez",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "white",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "White-frosted green buds with orange accents"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "giggly"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "white",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Dosidos",
+    "aliases": [
+      "Do-Si-Dos",
+      "Dosi"
+    ],
+    "genetics": "Girl Scout Cookies \u00d7 Face Off OG",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Olive green and purple with lavender hues"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleepy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Tropicana Cookies",
+    "aliases": [
+      "Tropicana",
+      "Trop Cookies"
+    ],
+    "genetics": "Girl Scout Cookies \u00d7 Tangie",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Vibrant purple with bright orange hairs"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "myrcene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "euphoria",
+      "energy",
+      "creative",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "myrcene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Georgia Pie",
+    "aliases": [
+      "Peach Pie"
+    ],
+    "genetics": "Gelatti \u00d7 Kush Mints",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green buds with peach-orange hairs"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Sherbert",
+    "aliases": [
+      "Sherbet",
+      "Sunset Sherbert"
+    ],
+    "genetics": "Girl Scout Cookies \u00d7 Pink Panties",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Green and purple with sticky trichomes"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Zookies",
+    "aliases": [],
+    "genetics": "Animal Cookies \u00d7 Gorilla Glue #4",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense olive green with amber hairs and heavy frost"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "creative",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Cherry Pie",
+    "aliases": [
+      "Cherry Kush"
+    ],
+    "genetics": "Granddaddy Purple \u00d7 Durban Poison",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "red",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green and purple buds with red-orange pistils"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "red",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "pinene"
+    ]
+  },
+  {
+    "name": "WiFi OG",
+    "aliases": [
+      "White Fire OG",
+      "WiFi"
+    ],
+    "genetics": "Fire OG \u00d7 The White",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "white"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Frosty white and green buds with orange hairs"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "creative",
+      "focus"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "white"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Blue Cheese",
+    "aliases": [
+      "BC"
+    ],
+    "genetics": "Blueberry \u00d7 UK Cheese",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "blue"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Blue-green dense buds with orange hairs"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleep"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "blue"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Lava Cake",
+    "aliases": [
+      "Lava"
+    ],
+    "genetics": "Thin Mint GSC \u00d7 Grape Pie",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark purple and green with heavy crystal coverage"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "sleep",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Obama Runtz",
+    "aliases": [],
+    "genetics": "Runtz \u00d7 Afghani",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark purple and green with candy-colored trichomes"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Sundae Driver",
+    "aliases": [
+      "Sundae"
+    ],
+    "genetics": "Fruity Pebbles OG \u00d7 Grape Pie",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Multi-colored green and purple with orange hairs"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Apple Fritter",
+    "aliases": [],
+    "genetics": "Sour Apple \u00d7 Animal Cookies",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green buds with amber hairs and sugary trichomes"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Slurricane",
+    "aliases": [
+      "Slurricane IX"
+    ],
+    "genetics": "Do-Si-Dos \u00d7 Purple Punch",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Deep purple with orange pistils and frosty trichomes"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Kush Mints",
+    "aliases": [
+      "Kush Mints #11"
+    ],
+    "genetics": "Animal Mints \u00d7 Bubba Kush",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense forest green with amber trichomes and mint appearance"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "creative",
+      "focus"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Grease Monkey",
+    "aliases": [
+      "GM"
+    ],
+    "genetics": "Gorilla Glue #4 \u00d7 Cookies & Cream",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense olive green with sticky resinous coating"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleepy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Mai Tai",
+    "aliases": [],
+    "genetics": "Sunset Sherbet \u00d7 Purple Punch",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Colorful green and purple with tropical orange hairs"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "creative"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Black Cherry Punch",
+    "aliases": [
+      "BCP"
+    ],
+    "genetics": "Black Cherry Pie \u00d7 Purple Punch",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "red"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark cherry-purple with red pistils"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "red"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Oreoz",
+    "aliases": [
+      "Oreo Cookies"
+    ],
+    "genetics": "Cookies & Cream \u00d7 Secret Weapon",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "brown"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dark brown and green with heavy white trichome coverage"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "limonene",
+      "linalool"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleepy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "brown"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "limonene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Watermelon Zkittlez",
+    "aliases": [
+      "Watermelon Z"
+    ],
+    "genetics": "Watermelon \u00d7 Zkittlez",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "pink",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Green and pink buds with watermelon-like appearance"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleep"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "pink",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Motor Breath",
+    "aliases": [
+      "Motorbreath",
+      "Motorbreath #15"
+    ],
+    "genetics": "Chemdawg \u00d7 SFV OG Kush",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense dark green buds with amber trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "pain relief"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Triangle Kush",
+    "aliases": [
+      "TK",
+      "Triangle"
+    ],
+    "genetics": "OG Kush (Florida cut)",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense pine-green buds with amber trichomes"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "limonene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "sleep",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "limonene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "Crescendo",
+    "aliases": [],
+    "genetics": "Chem Dawg \u00d7 I-95 \u00d7 Mandarin Cookies",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Green and purple with exceptional trichome density"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "creativity",
+      "energy",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Gelonade",
+    "aliases": [],
+    "genetics": "Gelato #41 \u00d7 Lemon Tree",
+    "type": "Sativa",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "yellow"
+      ],
+      "budStructure": "medium",
+      "leafShape": "narrow",
+      "colorProfile": "Bright lime green with golden trichomes"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "energy",
+      "creative",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Sativa",
+    "morphology": {
+      "budDensity": "medium",
+      "leafShape": "narrow",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "yellow"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Rainbow Belts",
+    "aliases": [
+      "Rainbow Belt"
+    ],
+    "genetics": "Zkittlez \u00d7 Moonbow",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange",
+        "pink"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Multi-colored purple, green, and pink buds"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "giggly"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "purple",
+        "orange",
+        "pink"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "linalool"
+    ]
+  },
+  {
+    "name": "Gushers",
+    "aliases": [
+      "Fruit Gushers",
+      "White Gushers"
+    ],
+    "genetics": "Gelato #41 \u00d7 Triangle Kush",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Deep green and purple with frost"
+    },
+    "terpeneProfile": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ],
+    "effects": [
+      "euphoria",
+      "relaxation",
+      "happy",
+      "giggly"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "purple"
+      ]
+    },
+    "commonTerpenes": [
+      "limonene",
+      "caryophyllene",
+      "myrcene"
+    ]
+  },
+  {
+    "name": "Papaya",
+    "aliases": [
+      "Papaya Punch"
+    ],
+    "genetics": "Citral #13 \u00d7 Ice #2",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense green and orange buds with tropical appearance"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "limonene",
+      "caryophyllene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleep"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "limonene",
+      "caryophyllene"
+    ]
+  },
+  {
+    "name": "GMO Cookies",
+    "aliases": [
+      "GMO",
+      "Garlic Cookies",
+      "Garlic Mushroom Onion"
+    ],
+    "genetics": "Girl Scout Cookies \u00d7 Chemdawg",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Dense olive green buds with heavy resin"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "sleep",
+      "pain relief"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Platinum OG",
+    "aliases": [
+      "Platinum OG Kush"
+    ],
+    "genetics": "Master Kush \u00d7 OG Kush \u00d7 Unknown",
+    "type": "Indica",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "white"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Platinum-silver trichome coating on green buds"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "sleep",
+      "euphoria",
+      "happy"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Indica",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "white"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "Fire OG",
+    "aliases": [
+      "Fire OG Kush"
+    ],
+    "genetics": "OG Kush \u00d7 SFV OG Kush",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "red",
+        "orange"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Green buds with fiery red-orange pistils"
+    },
+    "terpeneProfile": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "sleep"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "red",
+        "orange"
+      ]
+    },
+    "commonTerpenes": [
+      "myrcene",
+      "caryophyllene",
+      "limonene"
+    ]
+  },
+  {
+    "name": "GG4",
+    "aliases": [
+      "Original Glue",
+      "Gorilla Glue #4"
+    ],
+    "genetics": "Chem's Sister \u00d7 Sour Dubb \u00d7 Chocolate Diesel",
+    "type": "Hybrid",
+    "visualProfile": {
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ],
+      "budStructure": "high",
+      "leafShape": "broad",
+      "colorProfile": "Chunky green buds coated in sticky resin"
+    },
+    "terpeneProfile": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ],
+    "effects": [
+      "relaxation",
+      "euphoria",
+      "happy",
+      "uplift"
+    ],
+    "sources": [
+      "Leafly",
+      "AllBud"
+    ],
+    "dominantType": "Hybrid",
+    "morphology": {
+      "budDensity": "high",
+      "leafShape": "broad",
+      "trichomeDensity": "high",
+      "pistilColor": [
+        "orange",
+        "amber"
+      ]
+    },
+    "commonTerpenes": [
+      "caryophyllene",
+      "myrcene",
+      "limonene"
+    ]
+  }
+]
