@@ -1,136 +1,529 @@
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
 import TopNav from "../_components/TopNav";
-import { createServerClient } from "../../_server/supabase/server";
-import Link from "next/link";
-import type { EcosystemStrainNode } from "@/lib/ecosystem/types";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import ButtonBase from "@mui/material/ButtonBase";
+import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
+import SpaIcon from "@mui/icons-material/Spa";
+import GrassIcon from "@mui/icons-material/Grass";
 
-type ScanRow = {
-  id: string;
-  primary_name: string | null;
-  confidence: number | null;
-  created_at: string;
-};
-
-async function getStrainNodes(): Promise<EcosystemStrainNode[]> {
-  try {
-    const supabase = createServerClient();
-    
-    const { data, error } = await supabase
-      .from("scans")
-      .select("id, primary_name, confidence, created_at")
-      .order("created_at", { ascending: false })
-      .limit(200);
-
-    if (error) {
-      console.error("Error fetching scans:", error);
-      return [];
-    }
-
-    if (!data || data.length === 0) {
-      return [];
-    }
-
-    // Group by primary_name
-    const strainMap = new Map<string, {
-      scans: ScanRow[];
-      totalConfidence: number;
-      confidenceCount: number;
-      latestDate: string;
-    }>();
-
-    for (const scan of data) {
-      const name = scan.primary_name || "Unknown Strain";
-      
-      if (!strainMap.has(name)) {
-        strainMap.set(name, {
-          scans: [],
-          totalConfidence: 0,
-          confidenceCount: 0,
-          latestDate: scan.created_at,
-        });
-      }
-
-      const stats = strainMap.get(name)!;
-      stats.scans.push(scan);
-      
-      if (scan.confidence !== null) {
-        stats.totalConfidence += scan.confidence;
-        stats.confidenceCount++;
-      }
-
-      // Track latest date
-      if (scan.created_at > stats.latestDate) {
-        stats.latestDate = scan.created_at;
-      }
-    }
-
-    // Convert to array and compute averages
-    const results: EcosystemStrainNode[] = Array.from(strainMap.entries())
-      .map(([name, stats], index) => ({
-        id: `node-${index}`,
-        name,
-        scanCount: stats.scans.length,
-        avgConfidence: stats.confidenceCount > 0
-          ? Math.round((stats.totalConfidence / stats.confidenceCount) * 10) / 10
-          : 0,
-        lastSeen: stats.latestDate,
-      }))
-      .sort((a, b) => {
-        // Sort by scan count (desc), then by last seen (desc)
-        if (b.scanCount !== a.scanCount) {
-          return b.scanCount - a.scanCount;
-        }
-        return new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime();
-      });
-
-    return results;
-  } catch (err) {
-    console.error("Error fetching strain nodes:", err);
-    return [];
-  }
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface StrainEntry {
+  name: string;
+  aliases: string[];
+  genetics: string;
+  type: "Indica" | "Sativa" | "Hybrid";
+  visualProfile: {
+    trichomeDensity: string;
+    pistilColor: string[];
+    budStructure: string;
+    leafShape: string;
+    colorProfile: string;
+  };
+  terpeneProfile: string[];
+  effects: string[];
+  sources: string[];
 }
 
-export default async function StrainsPage() {
-  const nodes = await getStrainNodes();
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function glassCard(extra: Record<string, any> = {}) {
+  return {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    borderRadius: "16px",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    ...extra,
+  };
+}
+
+const TYPE_COLORS: Record<string, string> = {
+  Indica: "#9b59b6",
+  Sativa: "#e67e22",
+  Hybrid: "#2ecc71",
+};
+
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+  Indica: <SpaIcon fontSize="small" />,
+  Sativa: <GrassIcon fontSize="small" />,
+  Hybrid: <LocalFloristIcon fontSize="small" />,
+};
+
+const TERPENE_COLORS: Record<string, string> = {
+  myrcene: "#a8e6cf",
+  limonene: "#ffd93d",
+  caryophyllene: "#ff8b94",
+  pinene: "#6bcb77",
+  linalool: "#c9b1ff",
+  terpinolene: "#ffc09f",
+  humulene: "#d4a574",
+  ocimene: "#89CFF0",
+};
+
+// ─── Component ───────────────────────────────────────────────────────────────
+export default function StrainsPage() {
+  const [strains, setStrains] = useState<StrainEntry[]>([]);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("All");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load strains from JSON
+  useEffect(() => {
+    async function load() {
+      try {
+        // Try loading from data endpoint
+        const res = await fetch("/data/strains.json");
+        if (res.ok) {
+          const data = await res.json();
+          setStrains(data);
+        }
+      } catch (err) {
+        console.error("Failed to load strains:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    let result = strains;
+    if (typeFilter !== "All") {
+      result = result.filter((s) => s.type === typeFilter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.aliases.some((a) => a.toLowerCase().includes(q)) ||
+          s.genetics.toLowerCase().includes(q) ||
+          s.terpeneProfile.some((t) => t.toLowerCase().includes(q)) ||
+          s.effects.some((e) => e.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [strains, search, typeFilter]);
+
+  const counts = useMemo(() => {
+    const c = { All: strains.length, Indica: 0, Sativa: 0, Hybrid: 0 };
+    strains.forEach((s) => {
+      if (s.type in c) c[s.type as keyof typeof c]++;
+    });
+    return c;
+  }, [strains]);
 
   return (
     <>
-      <TopNav title="Strain Nodes" showBack />
+      <TopNav title="Strain Database" showBack />
       <main className="min-h-screen bg-black text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
-          {nodes.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-white/70 text-lg">No strain nodes yet</p>
-              <p className="text-white/50 text-sm mt-2">
-                Scan some plants to see identified strain nodes here
-              </p>
-            </div>
+          {/* Stats Bar */}
+          <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+            {(["All", "Indica", "Sativa", "Hybrid"] as const).map((t) => (
+              <ButtonBase
+                key={t}
+                onClick={() => setTypeFilter(t)}
+                sx={{
+                  ...glassCard({
+                    padding: "8px 16px",
+                    borderRadius: "12px",
+                    transition: "all 0.2s",
+                    border:
+                      typeFilter === t
+                        ? `1px solid ${t === "All" ? "#fff" : TYPE_COLORS[t]}`
+                        : "1px solid rgba(255,255,255,0.15)",
+                    background:
+                      typeFilter === t
+                        ? `${t === "All" ? "rgba(255,255,255,0.15)" : TYPE_COLORS[t]}22`
+                        : "rgba(255,255,255,0.06)",
+                  }),
+                }}
+              >
+                <Typography sx={{ color: "white", fontSize: 13, fontWeight: 600 }}>
+                  {t === "All" ? "🌿" : ""} {t}{" "}
+                  <span style={{ opacity: 0.5 }}>
+                    ({counts[t as keyof typeof counts]})
+                  </span>
+                </Typography>
+              </ButtonBase>
+            ))}
+          </Box>
+
+          {/* Search */}
+          <Box sx={{ position: "relative", mb: 3 }}>
+            <SearchIcon
+              sx={{
+                position: "absolute",
+                left: 14,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "rgba(255,255,255,0.4)",
+                fontSize: 20,
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Search strains, genetics, terpenes, effects..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px 16px 12px 44px",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "12px",
+                color: "white",
+                fontSize: 14,
+                outline: "none",
+                backdropFilter: "blur(12px)",
+              }}
+            />
+          </Box>
+
+          {/* Results count */}
+          <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 13, mb: 2 }}>
+            {loading
+              ? "Loading strain database..."
+              : `${filtered.length} strain${filtered.length !== 1 ? "s" : ""}`}
+          </Typography>
+
+          {/* Strain Cards */}
+          {loading ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Typography sx={{ color: "rgba(255,255,255,0.5)" }}>
+                Loading strains...
+              </Typography>
+            </Box>
+          ) : filtered.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 16 }}>
+                No strains found
+              </Typography>
+              <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: 13, mt: 1 }}>
+                Try a different search or filter
+              </Typography>
+            </Box>
           ) : (
-            <div className="space-y-3">
-              {nodes.map((node) => (
-                <Link
-                  key={node.id}
-                  href={`/garden/history?strain=${encodeURIComponent(node.name)}`}
-                  className="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg">
-                        {node.name}
-                      </h3>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-white/70">
-                        <span>{node.scanCount} signal{node.scanCount !== 1 ? 's' : ''}</span>
-                        {node.avgConfidence > 0 && (
-                          <span>{node.avgConfidence}% avg confidence</span>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              {filtered.map((strain) => {
+                const isExpanded = expandedId === strain.name;
+                return (
+                  <ButtonBase
+                    key={strain.name}
+                    onClick={() =>
+                      setExpandedId(isExpanded ? null : strain.name)
+                    }
+                    sx={{
+                      ...glassCard({
+                        padding: "16px",
+                        textAlign: "left",
+                        width: "100%",
+                        display: "block",
+                        transition: "all 0.2s",
+                        "&:hover": {
+                          background: "rgba(255,255,255,0.1)",
+                          borderColor: "rgba(255,255,255,0.25)",
+                        },
+                      }),
+                    }}
+                  >
+                    {/* Header Row */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 2,
+                      }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: "8px",
+                              background: `${TYPE_COLORS[strain.type]}33`,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: TYPE_COLORS[strain.type],
+                            }}
+                          >
+                            {TYPE_ICONS[strain.type]}
+                          </Box>
+                          <Box>
+                            <Typography
+                              sx={{
+                                color: "white",
+                                fontWeight: 700,
+                                fontSize: 16,
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {strain.name}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                color: "rgba(255,255,255,0.5)",
+                                fontSize: 12,
+                                mt: 0.25,
+                              }}
+                            >
+                              {strain.genetics}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                      <Box
+                        sx={{
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: "8px",
+                          background: `${TYPE_COLORS[strain.type]}22`,
+                          border: `1px solid ${TYPE_COLORS[strain.type]}44`,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            color: TYPE_COLORS[strain.type],
+                            fontSize: 11,
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          {strain.type}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Terpene chips (always visible) */}
+                    <Box sx={{ display: "flex", gap: 0.75, mt: 1.5, flexWrap: "wrap" }}>
+                      {strain.terpeneProfile.slice(0, 3).map((t) => (
+                        <Box
+                          key={t}
+                          sx={{
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: "6px",
+                            background: `${TERPENE_COLORS[t] || "#888"}22`,
+                            border: `1px solid ${TERPENE_COLORS[t] || "#888"}44`,
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              fontSize: 10,
+                              color: TERPENE_COLORS[t] || "#888",
+                              fontWeight: 600,
+                              textTransform: "capitalize",
+                            }}
+                          >
+                            {t}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <Box
+                        sx={{
+                          mt: 2,
+                          pt: 2,
+                          borderTop: "1px solid rgba(255,255,255,0.1)",
+                        }}
+                      >
+                        {/* Aliases */}
+                        {strain.aliases.length > 0 && (
+                          <Box sx={{ mb: 1.5 }}>
+                            <Typography
+                              sx={{
+                                color: "rgba(255,255,255,0.4)",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                letterSpacing: 1,
+                                mb: 0.5,
+                              }}
+                            >
+                              Also Known As
+                            </Typography>
+                            <Typography
+                              sx={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}
+                            >
+                              {strain.aliases.join(", ")}
+                            </Typography>
+                          </Box>
                         )}
-                      </div>
-                    </div>
-                    <p className="text-white/50 text-xs whitespace-nowrap">
-                      Last activity: {new Date(node.lastSeen).toLocaleDateString()}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+
+                        {/* Visual Profile */}
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography
+                            sx={{
+                              color: "rgba(255,255,255,0.4)",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                              letterSpacing: 1,
+                              mb: 0.5,
+                            }}
+                          >
+                            Visual Profile
+                          </Typography>
+                          <Typography
+                            sx={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}
+                          >
+                            {strain.visualProfile.colorProfile}
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 2,
+                              mt: 1,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                sx={{
+                                  color: "rgba(255,255,255,0.35)",
+                                  fontSize: 10,
+                                }}
+                              >
+                                Trichomes
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  color: "white",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  textTransform: "capitalize",
+                                }}
+                              >
+                                {strain.visualProfile.trichomeDensity}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography
+                                sx={{
+                                  color: "rgba(255,255,255,0.35)",
+                                  fontSize: 10,
+                                }}
+                              >
+                                Bud Density
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  color: "white",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  textTransform: "capitalize",
+                                }}
+                              >
+                                {strain.visualProfile.budStructure}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography
+                                sx={{
+                                  color: "rgba(255,255,255,0.35)",
+                                  fontSize: 10,
+                                }}
+                              >
+                                Leaf Shape
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  color: "white",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  textTransform: "capitalize",
+                                }}
+                              >
+                                {strain.visualProfile.leafShape}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography
+                                sx={{
+                                  color: "rgba(255,255,255,0.35)",
+                                  fontSize: 10,
+                                }}
+                              >
+                                Pistil Colors
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  color: "white",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  textTransform: "capitalize",
+                                }}
+                              >
+                                {strain.visualProfile.pistilColor.join(", ")}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+
+                        {/* Effects */}
+                        <Box sx={{ mb: 1 }}>
+                          <Typography
+                            sx={{
+                              color: "rgba(255,255,255,0.4)",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                              letterSpacing: 1,
+                              mb: 0.5,
+                            }}
+                          >
+                            Effects
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 0.75,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {strain.effects.map((e) => (
+                              <Box
+                                key={e}
+                                sx={{
+                                  px: 1,
+                                  py: 0.25,
+                                  borderRadius: "6px",
+                                  background: "rgba(255,255,255,0.08)",
+                                  border: "1px solid rgba(255,255,255,0.15)",
+                                }}
+                              >
+                                <Typography
+                                  sx={{
+                                    fontSize: 11,
+                                    color: "rgba(255,255,255,0.7)",
+                                    textTransform: "capitalize",
+                                  }}
+                                >
+                                  {e}
+                                </Typography>
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                      </Box>
+                    )}
+                  </ButtonBase>
+                );
+              })}
+            </Box>
           )}
         </div>
       </main>
