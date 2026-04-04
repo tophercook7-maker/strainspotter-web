@@ -1,10 +1,30 @@
 // lib/scanner/wikiEngine.ts
-// 🔒 B.1 — DEEPEN WIKI INTELLIGENCE (FOUNDATION LAYER)
+// 🔒 B.1 — AI-POWERED WIKI INTELLIGENCE (GPT-4o VISION)
+// Sends actual images to /api/scan for real AI analysis
+// Falls back to heuristic analysis if API call fails
 
 import type { WikiResult, ScanContext } from "./types";
 
 /**
- * 🔒 B.1.2 — Build ScanContext from parameters
+ * In-memory cache to avoid duplicate API calls during a single scan session.
+ * Key: file identity (name + size + lastModified)
+ * Value: cached WikiResult
+ */
+const scanCache = new Map<string, WikiResult>();
+
+function getCacheKey(file: File): string {
+  return `${file.name}::${file.size}::${file.lastModified}`;
+}
+
+/**
+ * Clear the scan cache (call between scan sessions)
+ */
+export function clearScanCache(): void {
+  scanCache.clear();
+}
+
+/**
+ * Build ScanContext from parameters
  */
 function buildScanContext({
   imageCount,
@@ -19,283 +39,262 @@ function buildScanContext({
   };
 }
 
-export async function runWikiEngine(imageFile: File, imageCount: number = 1): Promise<WikiResult> {
-  // Generate hash with variation from file metadata + timestamp
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 10000);
-  const imageSeed = `${imageFile.name}-${imageFile.size}-${imageFile.lastModified}-${timestamp}-${random}`;
-  const context = buildScanContext({
-    imageCount,
-    anglesInferred: imageCount >= 3,
+/**
+ * Convert a File to base64 data URL
+ */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result); // Returns full data:image/...;base64,... URL
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
-  return buildWikiResult({ imageSeed, context });
 }
 
+/**
+ * Call the real AI scanner API
+ */
+async function callScanAPI(
+  images: string[]
+): Promise<Record<string, unknown> | null> {
+  try {
+    const response = await fetch("/api/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ images }),
+    });
+
+    if (!response.ok) {
+      console.warn("Scan API returned", response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data.ok && data.result) {
+      return data.result;
+    }
+
+    console.warn("Scan API returned unexpected shape:", data);
+    return null;
+  } catch (error) {
+    console.error("Scan API call failed:", error);
+    return null;
+  }
+}
+
+/**
+ * Main entry: Analyze image(s) with real AI vision
+ * Caches results to avoid duplicate API calls during a scan session.
+ */
+export async function runWikiEngine(
+  imageFile: File,
+  imageCount: number = 1
+): Promise<WikiResult> {
+  // Check cache first (avoids double API calls from pipeline + consensus paths)
+  const cacheKey = getCacheKey(imageFile);
+  const cached = scanCache.get(cacheKey);
+  if (cached) {
+    console.log("wikiEngine: cache hit for", imageFile.name);
+    return cached;
+  }
+
+  // Skip API call for empty/synthetic files (no real image data)
+  if (imageFile.size === 0) {
+    console.warn("wikiEngine: empty file, returning fallback");
+    const fallback = buildFallbackResult(imageFile, imageCount);
+    scanCache.set(cacheKey, fallback);
+    return fallback;
+  }
+
+  // Convert image to base64
+  const base64 = await fileToBase64(imageFile);
+
+  // Call the real AI scanner
+  const aiResult = await callScanAPI([base64]);
+
+  if (aiResult) {
+    const result = mapToWikiResult(aiResult);
+    scanCache.set(cacheKey, result);
+    return result;
+  }
+
+  // Fallback to heuristic if API fails
+  console.warn("Falling back to heuristic analysis");
+  const fallback = buildFallbackResult(imageFile, imageCount);
+  scanCache.set(cacheKey, fallback);
+  return fallback;
+}
+
+/**
+ * Alternate entry point (used by some scanner paths)
+ */
 export async function analyzeWithWiki(input: {
   image: File | null;
   imageCount?: number;
 }): Promise<WikiResult> {
-  // Generate deterministic hash from file metadata
-  const imageSeed = input.image
-    ? `${input.image.name}-${input.image.size}-${input.image.lastModified}`
-    : `default-${Date.now()}`;
-  const imageCount = input.imageCount || 1;
-  const context = buildScanContext({
-    imageCount,
-    anglesInferred: imageCount >= 3,
-  });
-  return buildWikiResult({ imageSeed, context });
+  if (!input.image) {
+    return buildFallbackResult(null, input.imageCount || 1);
+  }
+  return runWikiEngine(input.image, input.imageCount || 1);
 }
 
 /**
- * 🔒 B.1.3 & B.1.4 — Build WikiResult with expanded structure and variance
+ * For multi-image scanning — analyze all images in one API call
+ */
+export async function runWikiEngineMulti(
+  imageFiles: File[]
+): Promise<WikiResult> {
+  // Convert all images to base64
+  const base64Images = await Promise.all(imageFiles.map(fileToBase64));
+
+  // Call API with all images for better analysis
+  const aiResult = await callScanAPI(base64Images);
+
+  if (aiResult) {
+    return mapToWikiResult(aiResult);
+  }
+
+  // Fallback
+  console.warn("Multi-image scan falling back to single-image heuristic");
+  return buildFallbackResult(imageFiles[0] || null, imageFiles.length);
+}
+
+/**
+ * Map AI API response to WikiResult type
+ */
+function mapToWikiResult(data: Record<string, unknown>): WikiResult {
+  const identity = (data.identity as Record<string, unknown>) || {};
+  const genetics = (data.genetics as Record<string, unknown>) || {};
+  const morphology = (data.morphology as Record<string, unknown>) || {};
+  const chemistry = (data.chemistry as Record<string, unknown>) || {};
+  const experience = (data.experience as Record<string, unknown>) || {};
+  const cultivation = (data.cultivation as Record<string, unknown>) || {};
+  const reasoning = (data.reasoning as Record<string, unknown>) || {};
+
+  return {
+    identity: {
+      strainName: (identity.strainName as string) || "Unknown Cultivar",
+      confidence: Number(identity.confidence) || 60,
+      alternateMatches: Array.isArray(identity.alternateMatches)
+        ? (identity.alternateMatches as Array<{ strainName: string; confidence: number }>)
+        : [],
+    },
+    genetics: {
+      dominance: (genetics.dominance as "Indica" | "Sativa" | "Hybrid" | "Unknown") || "Hybrid",
+      lineage: (genetics.lineage as string[]) || [],
+      breederNotes: (genetics.breederNotes as string) || "",
+      confidenceNotes: (genetics.confidenceNotes as string) || undefined,
+    },
+    morphology: {
+      budStructure: (morphology.budStructure as string) || "",
+      coloration: (morphology.coloration as string) || "",
+      trichomes: (morphology.trichomes as string) || "",
+      visualTraits: (morphology.visualTraits as string[]) || [],
+      growthIndicators: (morphology.growthIndicators as string[]) || [],
+    },
+    chemistry: {
+      terpenes: (chemistry.terpenes as Array<{ name: string; confidence: number }>) || [],
+      cannabinoids: (chemistry.cannabinoids as { THC: string; CBD: string }) || {
+        THC: "Unknown",
+        CBD: "Unknown",
+      },
+      likelyTerpenes: (chemistry.likelyTerpenes as Array<{ name: string; confidence: number }>) ||
+        (chemistry.terpenes as Array<{ name: string; confidence: number }>)?.slice(0, 3) || [],
+      cannabinoidRange: (chemistry.cannabinoidRange as string) || "",
+    },
+    experience: {
+      effects: (experience.effects as string[]) || [],
+      onset: (experience.onset as string) || "Moderate",
+      duration: (experience.duration as string) || "2-4 hours",
+      bestUse: (experience.bestUse as string[]) || [],
+      primaryEffects: (experience.primaryEffects as string[]) || [],
+      secondaryEffects: (experience.secondaryEffects as string[]) || [],
+      varianceNotes: (experience.varianceNotes as string) || undefined,
+    },
+    cultivation: {
+      difficulty: (cultivation.difficulty as string) || "Moderate",
+      floweringTime: (cultivation.floweringTime as string) || "8-10 weeks",
+      yield: (cultivation.yield as string) || "Medium",
+      notes: (cultivation.notes as string) || "",
+    },
+    reasoning: {
+      whyThisMatch: (reasoning.whyThisMatch as string) || "AI visual analysis",
+      conflictingSignals: (reasoning.conflictingSignals as string[]) || undefined,
+    },
+    disclaimer:
+      "AI-assisted visual analysis. Not a substitute for laboratory testing.",
+  };
+}
+
+/**
+ * Fallback heuristic when API is unavailable
+ * Uses file metadata to produce a reasonable default
+ */
+function buildFallbackResult(
+  imageFile: File | null,
+  imageCount: number
+): WikiResult {
+  return {
+    identity: {
+      strainName: "Analysis Pending",
+      confidence: 55,
+      alternateMatches: [],
+    },
+    genetics: {
+      dominance: "Unknown",
+      lineage: [],
+      breederNotes:
+        "Unable to reach AI analysis service. Please try again.",
+      confidenceNotes:
+        "This is a fallback result — the AI scanner could not process your image at this time.",
+    },
+    morphology: {
+      budStructure: "Unable to analyze — scanner temporarily unavailable",
+      coloration: "Unable to analyze",
+      trichomes: "Unable to analyze",
+      visualTraits: [],
+      growthIndicators: [],
+    },
+    chemistry: {
+      terpenes: [{ name: "Unknown", confidence: 0 }],
+      cannabinoids: { THC: "Unknown", CBD: "Unknown" },
+      likelyTerpenes: [],
+      cannabinoidRange: "Unknown",
+    },
+    experience: {
+      effects: ["Unable to predict"],
+      onset: "Unknown",
+      duration: "Unknown",
+      bestUse: [],
+      primaryEffects: [],
+      secondaryEffects: [],
+    },
+    cultivation: {
+      difficulty: "Unknown",
+      floweringTime: "Unknown",
+      yield: "Unknown",
+      notes: "Retry scan for full analysis",
+    },
+    reasoning: {
+      whyThisMatch:
+        "AI scanner temporarily unavailable. Please try scanning again.",
+      conflictingSignals: ["Scanner API unreachable"],
+    },
+    disclaimer:
+      "AI-assisted visual analysis. Not a substitute for laboratory testing.",
+  };
+}
+
+/**
+ * Legacy export — kept for compatibility with buildWikiResult calls elsewhere
  */
 export function buildWikiResult(input: {
   imageSeed: string;
   context?: ScanContext;
 }): WikiResult {
-  // Create more varied seed from seed string characters
-  let seed = 0;
-  for (let i = 0; i < input.imageSeed.length; i++) {
-    seed += input.imageSeed.charCodeAt(i);
-  }
-  seed = seed % 1000; // Normalize to 0-999 range
-
-  // Build context if not provided
-  const context = input.context || buildScanContext({
-    imageCount: 1,
-    anglesInferred: false,
-  });
-
-  // 🔒 B.1.4 — Ensure variance: use seed variations for different calculations
-  const seed2 = (seed * 1.7) % 1000;
-  const seed3 = (seed * 2.3) % 1000;
-  const confidenceBase = 65 + (seed % 30); // 65-94% range (never hard 81%)
-  const confidence = Math.min(94, Math.max(65, confidenceBase));
-
-  // More variety in strain names
-  const strainOptions = [
-    "Northern Lights",
-    "Afghan Kush",
-    "Blue Dream",
-    "Girl Scout Cookies",
-    "OG Kush",
-    "White Widow",
-    "Sour Diesel",
-    "Granddaddy Purple",
-    "Pineapple Express",
-    "Jack Herer",
-    "Purple Haze",
-    "AK-47",
-  ];
-  const strainIndex = seed % strainOptions.length;
-  const alternateStrainIndex = (seed2 % (strainOptions.length - 1));
-  const alternateMatch = alternateStrainIndex >= strainIndex 
-    ? strainOptions[alternateStrainIndex + 1]
-    : strainOptions[alternateStrainIndex];
-
-  // More variety in dominance
-  const dominanceOptions: Array<"Indica" | "Sativa" | "Hybrid" | "Unknown"> = [
-    "Indica",
-    "Sativa",
-    "Hybrid",
-    "Hybrid",
-  ];
-  const dominanceIndex = Math.floor((seed * 1.3) % dominanceOptions.length);
-
-  // Conditional branches based on context (B.1.4)
-  // Multiple images or inferred angles may reduce confidence slightly
-  const hasUncertainty = context.anglesInferred || context.imageCount > 1;
-  const confidenceAdjustment = hasUncertainty ? -5 : 0;
-  const finalConfidence = Math.max(65, confidence + confidenceAdjustment);
-
-  // Expanded terpene profiles
-  const terpeneProfiles = [
-    [
-      { name: "Myrcene", confidence: 0.82 },
-      { name: "Caryophyllene", confidence: 0.61 },
-      { name: "Limonene", confidence: 0.44 }
-    ],
-    [
-      { name: "Linalool", confidence: 0.75 },
-      { name: "Pinene", confidence: 0.68 },
-      { name: "Terpinolene", confidence: 0.52 }
-    ],
-    [
-      { name: "Humulene", confidence: 0.71 },
-      { name: "Ocimene", confidence: 0.64 },
-      { name: "Myrcene", confidence: 0.58 }
-    ],
-    [
-      { name: "Caryophyllene", confidence: 0.79 },
-      { name: "Limonene", confidence: 0.66 },
-      { name: "Pinene", confidence: 0.54 }
-    ],
-    [
-      { name: "Terpinolene", confidence: 0.83 },
-      { name: "Myrcene", confidence: 0.72 },
-      { name: "Pinene", confidence: 0.61 }
-    ],
-  ];
-  const selectedTerpenes = terpeneProfiles[seed % terpeneProfiles.length];
-
-  // Visual traits based on context
-  const visualTraitsOptions = [
-    ["Broad leaves", "Dense bud structure", "Amber trichomes"],
-    ["Narrow leaves", "Loose bud structure", "Clear trichomes"],
-    ["Variegated coloration", "Medium density", "Mixed trichomes"],
-    ["Deep green hue", "Tight calyxes", "Milky trichomes"],
-  ];
-  const visualTraits = visualTraitsOptions[seed2 % visualTraitsOptions.length];
-
-  // Growth indicators
-  const growthIndicatorsOptions = [
-    ["Resilient to temperature swings", "Medium flowering period"],
-    ["Prefers stable conditions", "Fast flowering"],
-    ["Adaptable growth pattern", "Extended flowering"],
-  ];
-  const growthIndicators = growthIndicatorsOptions[seed3 % growthIndicatorsOptions.length];
-
-  // Experience variations
-  const experienceProfiles = [
-    {
-      effects: ["Relaxation", "Sedation", "Body calm"],
-      primaryEffects: ["Relaxation", "Sedation"],
-      secondaryEffects: ["Body calm", "Pain relief"],
-      onset: "Gradual",
-      duration: "2–4 hours",
-      bestUse: ["Evening", "Sleep support"],
-      varianceNotes: seed % 3 === 0 ? "Effects may vary with individual tolerance" : undefined,
-    },
-    {
-      effects: ["Euphoric", "Creative", "Energetic"],
-      primaryEffects: ["Euphoric", "Creative"],
-      secondaryEffects: ["Energetic", "Focus"],
-      onset: "Quick",
-      duration: "3–5 hours",
-      bestUse: ["Daytime", "Creative work"],
-      varianceNotes: seed % 3 === 0 ? "Onset time varies by consumption method" : undefined,
-    },
-    {
-      effects: ["Happy", "Uplifted", "Focused"],
-      primaryEffects: ["Happy", "Uplifted"],
-      secondaryEffects: ["Focused", "Social"],
-      onset: "Moderate",
-      duration: "2–3 hours",
-      bestUse: ["Social", "Recreation"],
-      varianceNotes: seed % 4 === 0 ? "Experience influenced by set and setting" : undefined,
-    },
-    {
-      effects: ["Relaxed", "Sleepy", "Hungry"],
-      primaryEffects: ["Relaxed", "Sleepy"],
-      secondaryEffects: ["Hungry", "Calm"],
-      onset: "Gradual",
-      duration: "2–4 hours",
-      bestUse: ["Meditation", "Relaxation"],
-      varianceNotes: undefined,
-    },
-    {
-      effects: ["Giggly", "Talkative", "Happy"],
-      primaryEffects: ["Giggly", "Talkative"],
-      secondaryEffects: ["Happy", "Euphoric"],
-      onset: "Quick",
-      duration: "1–3 hours",
-      bestUse: ["Social", "Entertainment"],
-      varianceNotes: seed % 5 === 0 ? "Effects may be stronger for new users" : undefined,
-    },
-  ];
-  const experienceProfile = experienceProfiles[seed % experienceProfiles.length];
-
-  // Reasoning section (B.1.3)
-  const reasoningTexts = [
-    "Visual characteristics align with typical morphology for this cultivar. Trichome density and leaf structure match historical specimens.",
-    "Bud structure and coloration patterns are consistent with known genetic profiles. Pistil color suggests proper maturity.",
-    "Morphological traits correspond to documented lineage. Some variance in trichome presentation may indicate phenotype variation.",
-  ];
-  const reasoningIndex = seed % reasoningTexts.length;
-
-  // Genetics lineage variations
-  const lineageOptions = [
-    ["Afghani", "Thai"],
-    ["Skunk", "Northern Lights"],
-    ["OG Kush", "Unknown"],
-    ["Hindu Kush", "Colombian Gold"],
-    ["Purple Afghan", "Thai Stick"],
-  ];
-  const selectedLineage = lineageOptions[seed2 % lineageOptions.length];
-
-  // Confidence notes based on uncertainty
-  const confidenceNotes = hasUncertainty
-    ? "Some visual traits show variance from typical profile, suggesting possible phenotype or environmental influence."
-    : seed % 4 === 0
-    ? "Visual characteristics strongly align with documented specimens of this cultivar."
-    : undefined;
-
-  // Conflicting signals for reasoning (generated deterministically from seed)
-  const conflictingSignals = seed % 7 === 0 ? [
-    "Leaf structure suggests different lineage",
-    "Trichome density unusual for reported type"
-  ] : undefined;
-
-  return {
-    identity: {
-      strainName: strainOptions[strainIndex],
-      confidence: finalConfidence,
-      alternateMatches: seed % 5 === 0 ? [] : [
-        {
-          strainName: alternateMatch,
-          confidence: Math.max(55, finalConfidence - 8 - (seed % 10)),
-        },
-      ],
-    },
-
-    genetics: {
-      dominance: dominanceOptions[dominanceIndex],
-      lineage: selectedLineage,
-      breederNotes: "This cultivar traces back to early resin-focused breeding programs.",
-      confidenceNotes,
-    },
-
-    morphology: {
-      budStructure: "Dense, conical flowers with heavy trichome coverage",
-      coloration: "Deep forest green with amber pistils",
-      trichomes: "Capitate-stalked, high density",
-      visualTraits,
-      growthIndicators,
-    },
-
-    chemistry: {
-      terpenes: selectedTerpenes,
-      cannabinoids: {
-        THC: "18–22%",
-        CBD: "<1%",
-      },
-      likelyTerpenes: selectedTerpenes.slice(0, 3),
-      cannabinoidRange: seed % 3 === 0 ? "18–22% THC, <1% CBD" : seed % 3 === 1 ? "20–24% THC, <1% CBD" : "16–20% THC, 1–2% CBD",
-    },
-
-    experience: {
-      effects: experienceProfile.effects,
-      onset: experienceProfile.onset,
-      duration: experienceProfile.duration,
-      bestUse: experienceProfile.bestUse,
-      primaryEffects: experienceProfile.primaryEffects,
-      secondaryEffects: experienceProfile.secondaryEffects,
-      varianceNotes: experienceProfile.varianceNotes,
-    },
-
-    cultivation: {
-      difficulty: "Easy–Moderate",
-      floweringTime: "7–9 weeks",
-      yield: "Medium–High",
-      notes: "Responds well to topping and low-stress training",
-    },
-
-    reasoning: {
-      whyThisMatch: reasoningTexts[reasoningIndex],
-      conflictingSignals,
-    },
-
-    disclaimer: "AI-assisted analysis. Not a substitute for laboratory testing.",
-  };
+  // This is the legacy mock path — return a minimal fallback
+  return buildFallbackResult(null, input.context?.imageCount || 1);
 }
