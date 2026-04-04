@@ -19,7 +19,7 @@ export default function GardenPage() {
       <TopNav title="The Garden" showBack={false} />
       <section className="relative min-h-screen flex flex-col items-center justify-start pt-16 pb-20 text-white">
         {/* Brand */}
-        <div className="flex flex-col items-center mb-10">
+        <div className="flex flex-col items-center mb-12">
           <div className="text-5xl mb-3">🍃</div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
             StrainSpotter
@@ -29,59 +29,59 @@ export default function GardenPage() {
           </p>
         </div>
 
-        {/* Button grid */}
-        <div className="w-full max-w-2xl grid grid-cols-3 gap-3 sm:gap-4 px-4">
+        {/* Button grid — compact cards, generous spacing */}
+        <div className="w-full max-w-md grid grid-cols-3 gap-5 px-6">
           <GlassIconButton
             label="Scanner"
-            icon={<CameraAltIcon sx={{ fontSize: 26 }} />}
+            icon={<CameraAltIcon sx={{ fontSize: 20 }} />}
             href="/garden/scanner"
             accent="rgba(76,175,80,0.35)"
           />
           <GlassIconButton
             label="Strains"
-            icon={<YardIcon sx={{ fontSize: 26 }} />}
+            icon={<YardIcon sx={{ fontSize: 20 }} />}
             href="/garden/strains"
             accent="rgba(102,187,106,0.3)"
           />
           <GlassIconButton
             label="Grow Coach"
-            icon={<AutoAwesomeIcon sx={{ fontSize: 26 }} />}
+            icon={<AutoAwesomeIcon sx={{ fontSize: 20 }} />}
             href="/garden/grow-coach"
             accent="rgba(255,183,77,0.35)"
           />
           <GlassIconButton
             label="Ecosystem"
-            icon={<AccountTreeIcon sx={{ fontSize: 26 }} />}
+            icon={<AccountTreeIcon sx={{ fontSize: 20 }} />}
             href="/garden/ecosystem"
             accent="rgba(129,212,250,0.3)"
           />
           <GlassIconButton
             label="Dispensaries"
-            icon={<StorefrontIcon sx={{ fontSize: 26 }} />}
+            icon={<StorefrontIcon sx={{ fontSize: 20 }} />}
             href="/garden/dispensaries"
             accent="rgba(239,83,80,0.3)"
           />
           <GlassIconButton
             label="Seed Vendors"
-            icon={<SpaIcon sx={{ fontSize: 26 }} />}
+            icon={<SpaIcon sx={{ fontSize: 20 }} />}
             href="/garden/seed-vendors"
             accent="rgba(171,71,188,0.3)"
           />
           <GlassIconButton
             label="History"
-            icon={<HistoryIcon sx={{ fontSize: 26 }} />}
+            icon={<HistoryIcon sx={{ fontSize: 20 }} />}
             href="/garden/history"
             accent="rgba(255,255,255,0.12)"
           />
           <GlassIconButton
             label="Favorites"
-            icon={<FavoriteIcon sx={{ fontSize: 26 }} />}
+            icon={<FavoriteIcon sx={{ fontSize: 20 }} />}
             href="/garden/favorites"
             accent="rgba(244,67,54,0.3)"
           />
           <GlassIconButton
             label="Settings"
-            icon={<SettingsIcon sx={{ fontSize: 26 }} />}
+            icon={<SettingsIcon sx={{ fontSize: 20 }} />}
             href="/garden/settings"
             accent="rgba(255,255,255,0.12)"
           />
