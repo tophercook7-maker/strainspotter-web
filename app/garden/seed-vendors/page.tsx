@@ -106,6 +106,16 @@ const VENDORS: SeedVendor[] = [
     shipping: "US: 3-5 days",
     featured: false,
   },
+  {
+    id: "seed-9",
+    name: "STRNG Seeds",
+    website: "https://strngseeds.com",
+    description: "Premium US-grown cannabis seeds from trusted American farmers. 100% federally legal with grow kits, feminized, autoflower, and platinum strains. Backed by 100,000+ happy customers.",
+    tags: ["US-Based", "Premium", "Grow Kits", "Feminized", "Autoflower", "Legal"],
+    rating: 4.9,
+    shipping: "US: 2-5 days",
+    featured: true,
+  },
 ];
 
 const ALL_TAGS = Array.from(new Set(VENDORS.flatMap((v) => v.tags))).sort();
