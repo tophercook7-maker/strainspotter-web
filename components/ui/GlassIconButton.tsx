@@ -24,15 +24,15 @@ export default function GlassIconButton({
     <Box
       sx={{
         width: '100%',
-        minHeight: 120,
-        borderRadius: '20px',
+        minHeight: 88,
+        borderRadius: '16px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 1.2,
-        px: 2,
-        py: 2.5,
+        gap: 0.8,
+        px: 1.5,
+        py: 1.5,
         background: 'rgba(255,255,255,0.06)',
         border: '1px solid rgba(255,255,255,0.12)',
         backdropFilter: 'blur(16px)',
@@ -46,49 +46,48 @@ export default function GlassIconButton({
           top: 0,
           left: 0,
           right: 0,
-          height: '3px',
+          height: '2px',
           background: accent,
-          borderRadius: '20px 20px 0 0',
+          borderRadius: '16px 16px 0 0',
         },
         '&:hover': {
           background: 'rgba(255,255,255,0.10)',
           border: '1px solid rgba(255,255,255,0.22)',
-          transform: 'translateY(-4px)',
-          boxShadow: `0 12px 32px rgba(0,0,0,0.3), 0 0 20px ${accent}22`,
+          transform: 'translateY(-3px)',
+          boxShadow: `0 8px 24px rgba(0,0,0,0.3), 0 0 16px ${accent}22`,
         },
         '&:active': {
           transform: 'scale(0.97)',
         },
       }}
     >
-      {/* Icon circle */}
+      {/* Icon */}
       <Box
         sx={{
-          width: 48,
-          height: 48,
-          borderRadius: '14px',
+          width: 36,
+          height: 36,
+          borderRadius: '10px',
           display: 'grid',
           placeItems: 'center',
           background: accent,
           color: 'white',
-          fontSize: 26,
-          boxShadow: `0 4px 12px ${accent}44`,
+          boxShadow: `0 3px 8px ${accent}44`,
         }}
       >
         {icon}
       </Box>
 
-      {/* Label inside the button */}
+      {/* Label */}
       <Typography
         component="span"
         sx={{
           color: 'white',
-          fontSize: 14,
+          fontSize: 11.5,
           fontWeight: 700,
           letterSpacing: '0.02em',
           textAlign: 'center',
-          lineHeight: 1.2,
-          textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+          lineHeight: 1.15,
+          textShadow: '0 1px 3px rgba(0,0,0,0.5)',
         }}
       >
         {label}
@@ -97,7 +96,7 @@ export default function GlassIconButton({
   )
 
   const btnSx = {
-    borderRadius: '20px',
+    borderRadius: '16px',
     width: '100%',
     display: 'block',
   }
