@@ -1,5 +1,6 @@
 import './globals.css'
 import { DatabaseInitializer } from '@/lib/scanner/dbInitializer'
+import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
@@ -56,6 +57,7 @@ export default function RootLayout({
       <body>
         <DatabaseInitializer />
         {children}
+        <Analytics />
       </body>
     </html>
   )
