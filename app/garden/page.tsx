@@ -2,6 +2,7 @@
 
 import TopNav from './_components/TopNav'
 import GlassIconButton from '@/components/ui/GlassIconButton'
+import MembershipCTA from '@/components/MembershipCTA'
 import CameraAltIcon from '@mui/icons-material/CameraAlt'
 import StorefrontIcon from '@mui/icons-material/Storefront'
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
@@ -18,7 +19,7 @@ export default function GardenPage() {
       <TopNav title="The Garden" showBack={false} />
       <section className="relative min-h-screen flex flex-col items-center justify-start pt-16 pb-20 text-white">
         {/* Brand */}
-        <div className="flex flex-col items-center mb-14">
+        <div className="flex flex-col items-center mb-10">
           <div className="text-5xl mb-3">🍃</div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
             StrainSpotter
@@ -26,6 +27,11 @@ export default function GardenPage() {
           <p className="text-white/45 text-xs mt-2 tracking-widest uppercase">
             AI Cannabis Identification
           </p>
+        </div>
+
+        {/* Membership CTA Banner */}
+        <div className="w-full max-w-sm mb-8">
+          <MembershipCTA variant="banner" />
         </div>
 
         {/* iOS-style icon grid */}
@@ -87,6 +93,14 @@ export default function GardenPage() {
             href="/garden/settings"
             gradient="linear-gradient(135deg, #90A4AE, #455A64)"
           />
+        </div>
+
+        {/* Bottom benefit text */}
+        <div className="mt-12 text-center max-w-xs">
+          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', lineHeight: 1.6 }}>
+            Identify any cannabis strain with AI • Get personalized grow coaching • 
+            Find dispensaries near you • Explore strain genetics & terpenes
+          </p>
         </div>
       </section>
     </>
