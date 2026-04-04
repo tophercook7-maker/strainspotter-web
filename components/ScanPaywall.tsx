@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   getScansRemaining,
-  shouldShowWarning,
   MEMBERSHIP_TIERS,
   TOPUP_PACKS,
   FREE_SCAN_TOTAL,
@@ -14,20 +13,41 @@ interface ScanPaywallProps {
   mode: "warning" | "locked";
 }
 
+async function startCheckout(priceKey: string, email?: string) {
+  const res = await fetch("/api/stripe/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ priceKey, email }),
+  });
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url;
+  } else {
+    alert("Something went wrong. Please try again.");
+  }
+}
+
 export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
   const remaining = getScansRemaining();
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [showTopups, setShowTopups] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
 
   const handleEmailSubmit = () => {
     if (email && email.includes("@")) {
-      // TODO: Wire to Supabase/email list
       if (typeof window !== "undefined") {
         localStorage.setItem("ss_email_collected", JSON.stringify({ email, ts: Date.now() }));
       }
       setEmailSubmitted(true);
     }
+  };
+
+  const handleCheckout = async (priceKey: string) => {
+    setLoading(priceKey);
+    const savedEmail = emailSubmitted ? email : undefined;
+    await startCheckout(priceKey, savedEmail);
+    setLoading(null);
   };
 
   return (
@@ -119,20 +139,22 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
               ))}
             </ul>
             <button
+              onClick={() => handleCheckout("member")}
+              disabled={loading === "member"}
               style={{
                 width: "100%",
                 marginTop: "12px",
                 padding: "12px",
                 borderRadius: "12px",
                 border: "none",
-                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                background: loading === "member" ? "#555" : "linear-gradient(135deg, #43A047, #2E7D32)",
                 color: "#fff",
                 fontSize: "14px",
                 fontWeight: 700,
-                cursor: "pointer",
+                cursor: loading === "member" ? "wait" : "pointer",
               }}
             >
-              Join as Member — {MEMBERSHIP_TIERS.member.price}
+              {loading === "member" ? "Loading..." : `Join as Member — ${MEMBERSHIP_TIERS.member.price}`}
             </button>
           </div>
 
@@ -180,20 +202,22 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
               ))}
             </ul>
             <button
+              onClick={() => handleCheckout("pro")}
+              disabled={loading === "pro"}
               style={{
                 width: "100%",
                 marginTop: "12px",
                 padding: "12px",
                 borderRadius: "12px",
                 border: "none",
-                background: "linear-gradient(135deg, #FFD54F, #FF8F00)",
+                background: loading === "pro" ? "#555" : "linear-gradient(135deg, #FFD54F, #FF8F00)",
                 color: "#000",
                 fontSize: "14px",
                 fontWeight: 700,
-                cursor: "pointer",
+                cursor: loading === "pro" ? "wait" : "pointer",
               }}
             >
-              Go Pro — {MEMBERSHIP_TIERS.pro.price}
+              {loading === "pro" ? "Loading..." : `Go Pro — ${MEMBERSHIP_TIERS.pro.price}`}
             </button>
           </div>
         </div>
@@ -219,7 +243,7 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
 
           {showTopups && (
             <div style={{ marginTop: "10px" }}>
-              {/* Email gate for free top-ups */}
+              {/* Email gate for top-ups */}
               {!emailSubmitted && (
                 <div
                   style={{
@@ -239,6 +263,7 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
                       placeholder="your@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
                       style={{
                         flex: 1,
                         background: "rgba(255,255,255,0.06)",
@@ -275,21 +300,25 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
                   {TOPUP_PACKS.map((pack) => (
                     <button
                       key={pack.id}
+                      onClick={() => handleCheckout(pack.id)}
+                      disabled={loading === pack.id}
                       style={{
-                        background: "rgba(255,255,255,0.04)",
+                        background: loading === pack.id ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
                         border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: "12px",
                         padding: "14px 16px",
                         color: "#fff",
                         fontSize: "14px",
-                        cursor: "pointer",
+                        cursor: loading === pack.id ? "wait" : "pointer",
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
                       }}
                     >
                       <span>📷 {pack.scans} Scans</span>
-                      <span style={{ color: "#4FC3F7", fontWeight: 700 }}>{pack.price}</span>
+                      <span style={{ color: "#4FC3F7", fontWeight: 700 }}>
+                        {loading === pack.id ? "Loading..." : pack.price}
+                      </span>
                     </button>
                   ))}
                 </div>
