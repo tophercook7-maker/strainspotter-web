@@ -5,7 +5,7 @@
 // Scanner MUST always return a strain name string
 const ALWAYS_GUESS = true;
 
-import { runWikiEngine } from "./wikiEngine";
+import { runWikiEngine, clearScanCache } from "./wikiEngine";
 import { wikiToViewModel } from "./wikiAdapter";
 import { matchCultivars } from "./cultivarMatcher";
 import { matchCultivarsWithVoting } from "./nameMatcher";
@@ -362,18 +362,23 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
   // 5. Confidence calculation
   
   console.log("runScanPipeline: processing wiki results");
-  // Loop through all images and process each (using filtered images)
+  // Loop through all images and process each (using filtered REAL image files)
+  // Phase AI.1 — Pass actual image files to wikiEngine for real AI analysis
   const wikiResults = await Promise.all(
-    filteredInput.imageSeeds.map(async (seed) => {
-      const syntheticFile = new File([], seed.name, {
+    filteredInput.imageSeeds.map(async (seed, idx) => {
+      // Use actual image file if available, fall back to synthetic for compat
+      const actualFile = filteredImageFiles?.[idx];
+      const fileToAnalyze = actualFile || new File([], seed.name, {
         lastModified: Date.now(),
       });
-      Object.defineProperty(syntheticFile, 'size', { 
-        value: seed.size,
-        writable: false,
-        configurable: false,
-      });
-      const wiki = await runWikiEngine(syntheticFile, filteredInput.imageCount);
+      if (!actualFile) {
+        Object.defineProperty(fileToAnalyze, 'size', { 
+          value: seed.size,
+          writable: false,
+          configurable: false,
+        });
+      }
+      const wiki = await runWikiEngine(fileToAnalyze, filteredInput.imageCount);
       console.log("runScanPipeline: wiki result for", seed.name, wiki.identity.strainName);
       return wiki;
     })
@@ -5788,6 +5793,9 @@ async function runScanPipeline(input: ScanPipelineInput, imageFiles?: File[]): P
  */
 export async function scanImages(images: File[]): Promise<ScanResult> {
   console.log("scanImages called with", images.length, "images");
+  
+  // Phase AI.1 — Clear scan cache at start of each new scan session
+  clearScanCache();
   
   // PHASE A FINALIZATION — Return safe fallback with soft messages (never throw)
   if (!images || images.length === 0) {
