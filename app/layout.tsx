@@ -1,5 +1,6 @@
 import './globals.css'
 import { DatabaseInitializer } from '@/lib/scanner/dbInitializer'
+import AgeGate from '@/components/AgeGate'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
@@ -55,7 +56,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <DatabaseInitializer />
-        {children}
+        <AgeGate>
+          {children}
+        </AgeGate>
       </body>
     </html>
   )
