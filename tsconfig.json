@@ -32,6 +32,8 @@
   "include": [
     "next-env.d.ts",
     "src",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
     "app/**/*.ts",
     "app/**/*.tsx",
     "components/**/*.ts",
