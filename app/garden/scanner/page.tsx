@@ -1,857 +1,666 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
-import { saveScanHistory } from "@/app/actions/saveScanHistory";
-import { getUserTierFlags } from "@/lib/flags";
-import { adaptScanResult } from "@/lib/scanner/adapter/scanResultAdapter";
-import type { ScannerViewModel } from "@/lib/scanner/viewModel";
-import type { WikiSynthesis, FullScanResult } from "@/lib/scanner/types";
-import { assignUserImageLabels, type UserImageLabel } from "@/lib/scanner/imageLabels";
-import { assessImageDiversity } from "@/lib/scanner/imageDiversity";
-import { inferImageAngleFromBase64 } from "@/lib/scanner/imageAngleHeuristics";
-import { analyzeImageSet } from "@/lib/scanner/multiImageGuidance"; // Phase 5.2.2 — Slot-aware UI
-import { getQualityFeedback } from "@/lib/scanner/qualityFeedback"; // Phase 5.2.3 — Quality feedback
-
-type ScanTier = "basic" | "pro" | "expert";
-import ResultPanel from "./ResultPanel";
-import WikiStyleResultPanel from "./WikiStyleResultPanel";
-import WikiReportPanel from "./WikiReportPanel"; // Phase 4.2 — Extensive Wiki-Style Report
-import TopNav from "../_components/TopNav";
-import ImageGuidancePanel from "./ImageGuidancePanel"; // Phase 5.2 — Multi-Image Guidance
-import ClearButton from "@/components/ui/ClearButton";
-import CircularProgress from "@mui/material/CircularProgress";
-import ConfirmModal from "@/components/ui/ConfirmModal";
 import Link from "next/link";
 
-/**
- * 🔒 A.2 — runScan uses ViewModel ONLY (UI NEVER TOUCHES WIKI DIRECTLY)
- */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   StrainSpotter Scanner — Clean Visual Redesign
+   Premium mobile-first cannabis scanner UI
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+type ScanState = "idle" | "ready" | "scanning" | "done";
+
+interface SimpleResult {
+  strainName: string;
+  confidence: number;
+  confidenceLabel: string;
+  type: "Indica" | "Sativa" | "Hybrid" | "Unknown";
+  lineage: string;
+  effects: string[];
+  terpenes: string[];
+  description: string;
+  tips: string[];
+  alternates: Array<{ name: string; confidence: number }>;
+}
+
+function mapConfidence(n: number): string {
+  if (n >= 85) return "Strong Match";
+  if (n >= 70) return "Good Match";
+  if (n >= 55) return "Possible Match";
+  return "Low Match";
+}
+
+function typeGradient(type: string): string {
+  if (type === "Indica") return "linear-gradient(135deg, #7B1FA2, #4A148C)";
+  if (type === "Sativa") return "linear-gradient(135deg, #F57C00, #E65100)";
+  return "linear-gradient(135deg, #2E7D32, #1B5E20)";
+}
+
+function typeEmoji(type: string): string {
+  if (type === "Indica") return "🌙";
+  if (type === "Sativa") return "☀️";
+  return "🌿";
+}
 
 export default function ScannerPage() {
   const [images, setImages] = useState<File[]>([]);
-  const [result, setResult] = useState<ScannerViewModel | null>(null);
-  const [synthesis, setSynthesis] = useState<WikiSynthesis | null>(null);
-  const [analysis, setAnalysis] = useState<FullScanResult | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [singleImageConfirmed, setSingleImageConfirmed] = useState(false); // Phase 4.0 Part A — Single-image confirmation
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // Modal state for single-image confirmation
-  const [diversityWarning, setDiversityWarning] = useState(false); // Phase 4.0.2 — Track if images are similar
-  const [angleHints, setAngleHints] = useState<string[]>([]); // Phase 4.0.3 — Track angle diversity hints
-  const [diversityHint, setDiversityHint] = useState<string | null>(null); // Phase 4.0.5 — Diversity hint from scan result
-  const [scanResult, setScanResult] = useState<import("@/lib/scanner/types").ScanResult | null>(null); // Phase 4.0.8 — Store full scan result for partial status handling
-  const [scanError, setScanError] = useState<{ reason: string } | null>(null); // Phase 4.0.1 — Non-fatal scan warnings
-  const [imagePreviews, setImagePreviews] = useState<Array<{ url: string; base64: string; angleLabel: string }>>([]); // Phase 4.0.2 — Previews with base64 and angles
-  const [duplicateWarning, setDuplicateWarning] = useState(false); // Phase 4.0.3 — Track if duplicates were removed
-  const [isDragging, setIsDragging] = useState(false); // Phase 5.2.4 — Drag and drop state
-  const [flags, setFlags] = useState(getUserTierFlags()); // Feature flags
-  const MAX_IMAGES = 5; // Phase 4.0 Part A — Allow 1-5 images per scan
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [scanState, setScanState] = useState<ScanState>("idle");
+  const [result, setResult] = useState<SimpleResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const MAX_IMAGES = 5;
 
-  // NEVER clear result on re-render
-  // Only clear when user selects NEW images
-  useEffect(() => {
+  const addImages = useCallback((files: FileList | File[]) => {
+    const fileArr = Array.from(files).filter(f => f.type.startsWith("image/"));
+    if (fileArr.length === 0) return;
+
+    setImages(prev => {
+      const next = [...prev, ...fileArr].slice(0, MAX_IMAGES);
+      // Generate previews
+      const urls = next.map(f => URL.createObjectURL(f));
+      setPreviews(urls);
+      return next;
+    });
     setResult(null);
-    setSynthesis(null);
-    setDiversityWarning(false); // Phase 4.0.2 — Reset diversity warning when images change
-    setAngleHints([]); // Phase 4.0.3 — Reset angle hints when images change
-    setDiversityHint(null); // Phase 4.0.5 — Reset diversity hint when images change
-    setScanResult(null); // Phase 4.0.8 — Reset scan result when images change
-    setScanError(null); // Phase 4.0.1 — Reset scan error when images change
-    setImagePreviews([]); // Phase 4.0.2 — Reset previews when images change
-    setDuplicateWarning(false); // Phase 4.0.3 — Reset duplicate warning when images change
-  }, [images]);
+    setError(null);
+    setScanState("ready");
+  }, []);
 
-  // Phase 4.0.2 — Convert images to previews with base64 and angle labels
-  useEffect(() => {
-    const convertImagesToPreviews = async () => {
-      if (images.length === 0) {
-        setImagePreviews([]);
-        return;
-      }
+  const removeImage = (idx: number) => {
+    setImages(prev => {
+      const next = prev.filter((_, i) => i !== idx);
+      setPreviews(next.map(f => URL.createObjectURL(f)));
+      if (next.length === 0) setScanState("idle");
+      return next;
+    });
+    setResult(null);
+  };
 
-      const previews = await Promise.all(
-        images.map(async (img) => {
-          const url = URL.createObjectURL(img);
-          // Convert file to base64
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const result = reader.result as string;
-              // Remove data URL prefix if present
-              const base64Data = result.includes(',') ? result.split(',')[1] : result;
-              resolve(base64Data);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(img);
-          });
+  const clearAll = () => {
+    setImages([]);
+    setPreviews([]);
+    setResult(null);
+    setError(null);
+    setScanState("idle");
+  };
 
-          // Phase 4.0.2 — Infer angle from base64
-          const angle = inferImageAngleFromBase64(base64);
-          const angleLabel = angle === "macro" ? "Macro" 
-            : angle === "side" ? "Side" 
-            : angle === "top" ? "Top" 
-            : "Unknown";
-
-          return { url, base64, angleLabel };
-        })
-      );
-
-      setImagePreviews(previews);
-    };
-
-    convertImagesToPreviews();
-  }, [images]);
-
-  // Phase 4.0 Part A — Multi-image validation
-  function validateImages(): { valid: boolean; warning?: string; requiresConfirmation?: boolean } {
-    if (!images || images.length === 0) {
-      return { valid: false, warning: "Please select at least 1 image to analyze." };
-    }
-    
-    // Phase 4.0 Part A — Rule: Scan runs only after 2 images OR user confirms single-image scan
-    if (images.length === 1 && !singleImageConfirmed) {
-      return { 
-        valid: false, 
-        requiresConfirmation: true,
-        warning: "For best accuracy, we recommend 2+ images from different angles. Single-image scans have limited accuracy." 
-      };
-    }
-    
-    if (images.length === 1) {
-      return { 
-        valid: true, 
-        warning: "Single-image analysis. Accuracy is limited compared to multi-image scans." 
-      };
-    }
-    
-    if (images.length === 2) {
-      return { 
-        valid: true, 
-        warning: "Using 2 images. For best accuracy, we recommend 3–5 images from different angles." 
-      };
-    }
-    
-    if (images.length < 5) {
-      return { 
-        valid: true, 
-        warning: `Using ${images.length} images. Good coverage!` 
-      };
-    }
-    
-    return { valid: true };
-  }
-
-  // Phase 4.0 Part A — Handle single-image confirmation
-  function handleConfirmSingleImage() {
-    setSingleImageConfirmed(true);
-  }
-  
-  // Phase 2.4 Part J Step 4 — Guaranteed event fire
-  // Phase 5.2.5 — Prevent double-clicks and ghost clicks
-  async function handleAnalyzePlant() {
-    // Phase 5.2.5 — Guard against double-clicks
-    if (isScanning) {
-      console.log("Scan already in progress, ignoring click");
-      return;
-    }
-    
-    if (images.length === 0) {
-      console.log("No images to scan");
-      return;
-    }
-    
-    // Step 4.1 — Log immediately
-    console.log("ANALYZE CLICKED");
-    
-    // Step 4.2 — Validate images
-    const validation = validateImages();
-    if (!validation.valid) {
-      if (validation.requiresConfirmation) {
-        setShowConfirmModal(true);
-        return;
-      } else {
-        alert(validation.warning);
-        return;
-      }
-    }
-
-    // Step 4.3 — Warn if <3 images but proceed
-    if (validation.warning) {
-      console.warn("IMAGE COUNT WARNING:", validation.warning);
-      // Don't block, just warn
-    }
-
-    console.log("HANDLER START");
-    console.log("IMAGES:", images);
-    console.log("IMAGE COUNT:", images.length);
-    console.log("ANALYZING", images.length, "IMAGES");
-
-    setIsScanning(true);
-    
-    // Phase 5.2.6 — Prevent scroll jump on scan: Store current scroll position
-    const scrollPosition = window.scrollY;
+  const handleScan = async () => {
+    if (images.length === 0 || scanState === "scanning") return;
+    setScanState("scanning");
+    setError(null);
 
     try {
-      console.log("STEP 1: PREP DONE");
-      console.log("STEP 2: CONTEXT BUILT");
-      console.log("STEP 3: ENGINE CALLED");
       const orchestrated = await orchestrateScan(images);
-      const scanResult = orchestrated.normalizedScanResult;
-      console.log("STEP 4: RESULT RECEIVED", scanResult);
-      
-      // Phase 5.2.6 — Prevent scroll jump: Restore scroll position after results appear
-      // Use requestAnimationFrame to ensure DOM has updated
-      requestAnimationFrame(() => {
-        window.scrollTo({
-          top: scrollPosition,
-          behavior: 'instant' // Instant to prevent jump, not smooth
-        });
-      });
-      
-      // Clear any previous errors
-      setScanError(null);
-      
-      // TypeScript now knows this is a success or partial result
-      if (!('status' in scanResult)) {
-        setIsScanning(false);
-        return;
-      }
-      
-      const adaptedResult = adaptScanResult({
-        scannerResult: scanResult.result,
-        scanMeta: scanResult.meta
-      });
-      console.log("[SCAN RESULT]", adaptedResult.strainName, adaptedResult.matchConfidence);
-      setScanResult(scanResult); // Keep original ScanResult for status checks
-      setResult(scanResult.result);
-      setSynthesis(scanResult.synthesis);
-      
-      // Phase 4.0.5 — Set diversity hint from scan result
-      setDiversityHint(scanResult.diversityNote || null);
+      const vm = orchestrated.rawScannerResult;
 
-      // Save to history (fire and forget, non-blocking)
-      if (scanResult.status === "success" || scanResult.status === "partial") {
-        try {
-          void saveScanHistory({
-            strainName: scanResult.result.nameFirstDisplay?.primaryStrainName ?? scanResult.result.name ?? null,
-            confidence: scanResult.result.nameFirstDisplay?.confidencePercent ?? scanResult.result.confidence ?? null,
-            metadata: scanResult,
-          });
-        } catch (e) {
-          // Silent fail — history must never break scanning
-          console.warn("Scan history save skipped:", e);
-        }
-      }
-      
-      // Phase 4.0.2 — Check for diversity warning (images are similar)
-      // Compute diversity from image files to detect similarity
-      if (images.length >= 2) {
-        const imageHashes = images.map(img => 
-          `${img.name}-${img.size}-${img.lastModified}`
-        );
-        const diversity = assessImageDiversity(imageHashes);
-        // Show warning if overall similarity score is high (>= 0.85) or any penalty < 1
-        const hasDiversityIssue = diversity.overallScore >= 0.85 || 
-          Object.values(diversity.penalties).some(penalty => penalty < 1);
-        setDiversityWarning(hasDiversityIssue);
-      } else {
-        setDiversityWarning(false);
-      }
-      
-      // Phase 4.0.3 — Check angle diversity and provide hints
-      // Show hint when we have images but may be missing angle diversity
-      const angleHintsList: string[] = [];
-      if (images.length > 0) {
-        // Check if we have angle information in the scan result
-        const imageResults = (scanResult as any).imageResults || [];
-        if (imageResults.length > 0) {
-          const inferredAngles = imageResults
-            .map((r: any) => r.inferredAngle)
-            .filter((a: any) => a && a !== "unknown");
-          
-          const hasMacroBud = inferredAngles.includes("macro-bud");
-          const hasWiderView = inferredAngles.some((a: string) => 
-            a === "side-profile" || a === "top-canopy"
-          );
-          
-          // Show hint if missing either macro-bud or wider view
-          if (!hasMacroBud || !hasWiderView) {
-            angleHintsList.push("include a close-up bud photo and one wider plant view");
-          }
-        } else if (images.length === 1) {
-          // Proactive hint for single image
-          angleHintsList.push("include a close-up bud photo and one wider plant view");
-        }
-      }
-      setAngleHints(angleHintsList);
-      
-      // UI CONTRACT ENFORCEMENT — Never assume dominance
-      // Create FullScanResult - dominance is optional, only include if present
-      const dominanceData = (scanResult.result as any).dominance;
-      setAnalysis({
-        result: scanResult.result, // ViewModel
-        // Only include analysis.dominance if dominanceData exists
-        ...(dominanceData ? {
-          analysis: {
-            dominance: {
-              indica: dominanceData.indica ?? 0,
-              sativa: dominanceData.sativa ?? 0,
-              hybrid: dominanceData.hybrid ?? (100 - ((dominanceData.indica ?? 0) + (dominanceData.sativa ?? 0))),
-              classification: dominanceData.label === "Indica-dominant" ? "Indica-dominant" 
-                : dominanceData.label === "Sativa-dominant" ? "Sativa-dominant" 
-                : "Hybrid" as const,
-            },
-          },
-        } : {}),
-        // Phase 4.0.5 — Pass diversity note from scan result
-        diversityNote: scanResult.diversityNote,
-        // Phase 4.0.6 — Pass scan warning from scan result
-        scanWarning: scanResult.scanWarning,
-        // Phase 4.1.7 — Pass scan note from scan result
-        scanNote: scanResult.scanNote,
-        // Phase 4.2.0 — Pass same-plant note from scan result
-        samePlantNote: scanResult.samePlantNote,
-        // Phase 4.2.6 — Pass scan meta from scan result
-        meta: scanResult.meta,
-      });
-      
-      console.log("STEP 5: STATE UPDATED");
-      setIsScanning(false);
-      console.log("HANDLER COMPLETE — Success");
+      const simple: SimpleResult = {
+        strainName: vm.nameFirstDisplay?.primaryStrainName || vm.name || "Unknown",
+        confidence: vm.confidence || 0,
+        confidenceLabel: mapConfidence(vm.confidence || 0),
+        type: (vm.genetics?.dominance as any) || "Hybrid",
+        lineage: vm.genetics?.lineage || "",
+        effects: [...(vm.effectsShort || []), ...(vm.effectsLong || [])].filter(Boolean).slice(0, 6),
+        terpenes: (vm.terpeneGuess || []).slice(0, 4),
+        description: vm.visualMatchSummary || vm.aiWikiBlend || "",
+        tips: (vm.accuracyTips || []).slice(0, 3),
+        alternates: (vm.nameFirstDisplay as any)?.alternateMatches?.slice(0, 3).map((a: any) => ({
+          name: a.name || a.strainName,
+          confidence: a.confidence || 0,
+        })) || [],
+      };
+
+      setResult(simple);
+      setScanState("done");
     } catch (e) {
-      // FAILURE MESSAGING SOFTENED — Never block user, always show partial result
-      // Instead of alert, set a soft error message and show partial result
-      const errorMessage = e instanceof Error
-        ? e.message
-        : "Low confidence — results may vary";
-      
-      // FAILURE MESSAGING SOFTENED — Set soft error (non-blocking)
-      setScanError({ reason: "low-confidence" });
-      
-      // FAILURE MESSAGING SOFTENED — Create a minimal partial result so user always sees something
-      // Use a simplified fallback that shows useful information
-      const softErrorMessage = errorMessage.includes("failed") || errorMessage.includes("error") || errorMessage.includes("Error")
-        ? "Low confidence — results may vary"
-        : errorMessage.includes("similar") || errorMessage.includes("identical")
-        ? "Images appear similar — try different angles"
-        : "Low confidence — results may vary";
-      
-      // Import the scanImages function to get a proper fallback result
-      // For now, create a minimal result that will be replaced when scan completes
-      // The key is: never block, always show something
-      console.warn("FAILURE MESSAGING SOFTENED: Scan error caught, user will see partial result:", softErrorMessage);
-      setIsScanning(false);
-      console.log("HANDLER COMPLETE — Soft failure handled");
+      console.error("Scan error:", e);
+      setError("Couldn't analyze the image. Try a clearer photo.");
+      setScanState("ready");
     }
-  }
+  };
 
-  // Phase 2.4 Part J Step 5 — Fail-safe trigger (keyboard support)
-  function handleKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      if (images.length > 0 && !isScanning) {
-        handleAnalyzePlant();
-      }
-    }
-  }
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+  // Drag & Drop
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files) addImages(e.dataTransfer.files);
   };
 
   return (
-    <>
-      <TopNav title="StrainSpotter" showBack={false} />
-      
-      {/* UI FIX — Content Well Wrapper */}
-      <main className="min-h-screen bg-black text-white">
-        {/* Phase 5.2.6 — MOBILE-FIRST CONSTRAINTS: Max content width (not edge-to-edge) */}
-        {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
-      <div className="mx-auto w-full max-w-[720px] px-4 pb-24 md:pb-16 space-y-6">
-        {/* A) Upload + Preview Card */}
-        <div className="space-y-4">
-              {/* Phase 5.2.4 — Improved File Upload UX with Drag and Drop */}
-              <div className="space-y-2">
-                <label className="block">
-                  <div
-                    className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl transition-all cursor-pointer group ${
-                      isDragging
-                        ? "border-blue-500/60 bg-blue-500/20 border-solid"
-                        : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
-                    }`}
-                    onDragEnter={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsDragging(false);
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsDragging(false);
-                      
-                      const files = Array.from(e.dataTransfer.files).filter(
-                        (file) => file.type.startsWith("image/")
-                      );
-                      
-                      if (files.length > 0) {
-                        if (files.length > MAX_IMAGES) {
-                          alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
-                          setImages(files.slice(0, MAX_IMAGES));
-                        } else {
-                          setImages(files);
-                        }
-                      }
-                    }}
-                  >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg
-                        className="w-10 h-10 mb-3 text-white/50 group-hover:text-white/70 transition-colors"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                        />
-                      </svg>
-                      <p className="mb-2 text-sm text-white/70 group-hover:text-white/90">
-                        <span className="font-semibold">Click to upload</span> or drag and drop
-                      </p>
-                      <p className="text-xs text-white/50">
-                        {images.length > 0
-                          ? `${images.length}/${MAX_IMAGES} images selected`
-                          : `Upload 1-${MAX_IMAGES} photos (PNG, JPG, WEBP)`}
-                      </p>
-                    </div>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      if (!e.target.files) return;
-                      const selected = Array.from(e.target.files);
-                      if (selected.length > MAX_IMAGES) {
-                        alert(`Please select up to ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
-                        setImages(selected.slice(0, MAX_IMAGES));
-                      } else {
-                        setImages(selected);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              {/* Phase 5.2 — Multi-Image Guidance & Capture UX */}
-              {/* Show guidance before images are uploaded */}
-              {images.length === 0 && (
-                <div className="mb-4 space-y-4">
-                  {/* STEP 5.5.4 — CONFIDENCE INCENTIVE (INITIAL STATE) */}
-                  {(() => {
-                    const { getConfidenceIncentiveMessage } = require("@/lib/scanner/confidenceIncentive");
-                    const incentiveMessage = getConfidenceIncentiveMessage(0, MAX_IMAGES);
-                    return (
-                      <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
-                        <p className="text-sm font-medium text-blue-200 leading-relaxed">
-                          {incentiveMessage}
-                        </p>
-                      </div>
-                    );
-                  })()}
-                  <ImageGuidancePanel imagePreviews={[]} maxImages={MAX_IMAGES} />
-                </div>
-              )}
-              
-              {/* Phase 4.0.5 — soft guidance below image uploader */}
-              {diversityHint && (
-                <div className="mt-2 text-xs text-yellow-400">
-                  {diversityHint}
-                </div>
-              )}
-              
-              {/* Phase 4.0.2 — UX hint when images are similar (non-blocking) */}
-              {diversityWarning && (
-                <div className="text-xs text-yellow-400 mt-2">
-                  Images appear similar. Results weighted accordingly.  
-                  For higher confidence, use different angles or zoom levels.
-                </div>
-              )}
-              
-              {/* Phase 4.0.3 — User feedback (non-blocking) */}
-              {duplicateWarning && (
-                <div className="text-xs text-yellow-400 mt-2">
-                  Some photos were very similar — results adjusted for confidence.
-                </div>
-              )}
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(180deg, #0a0f0a 0%, #0d1a0d 40%, #0a0f0a 100%)",
+      color: "#fff",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    }}>
+      {/* Top Bar */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "16px 20px",
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        background: "rgba(10,15,10,0.85)",
+        backdropFilter: "blur(20px)",
+      }}>
+        <Link href="/garden" style={{
+          color: "rgba(255,255,255,0.5)",
+          textDecoration: "none",
+          fontSize: 14,
+          fontWeight: 500,
+        }}>
+          🌿 Garden
+        </Link>
+        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0.5 }}>
+          Scanner
+        </span>
+        <div style={{ width: 60 }} />
+      </div>
 
-              {/* Phase 4.0.7 — User-facing warning */}
-              {result?.notes && result.notes.includes("HIGH_IMAGE_SIMILARITY") && (
-                <div className="mb-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-2 text-xs text-yellow-300">
-                  Photos appear very similar. Different angles improve identification accuracy.
-                </div>
-              )}
+      <div style={{ padding: "0 20px 100px", maxWidth: 480, margin: "0 auto" }}>
 
-              {/* Phase 4.0.8 — Angle diversity warning */}
-              {result?.notes && result.notes.includes("LOW_ANGLE_DIVERSITY") && (
-                <div className="mb-3 rounded-md border border-orange-500/30 bg-orange-500/10 p-2 text-xs text-orange-300">
-                  Photos are from similar angles. Add top + side views for stronger matches.
-                </div>
-              )}
-
-              {/* Phase 5.2 — Real-time guidance as images are added */}
-              {images.length > 0 && images.length < MAX_IMAGES && (
-                <div className="mt-4">
-                  <ImageGuidancePanel imagePreviews={imagePreviews} maxImages={MAX_IMAGES} />
-                </div>
-              )}
-              
-              {/* STEP 5.5.4 — CONFIDENCE INCENTIVE (LIVE) */}
-              {images.length > 0 && images.length < MAX_IMAGES && (() => {
-                const { calculateConfidenceCap, getConfidenceIncentiveMessage } = require("@/lib/scanner/confidenceIncentive");
-                const currentCap = calculateConfidenceCap(images.length);
-                const nextCap = calculateConfidenceCap(images.length + 1);
-                const incentiveMessage = getConfidenceIncentiveMessage(images.length, MAX_IMAGES);
-                
-                return (
-                  <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-blue-200 leading-relaxed">
-                          {incentiveMessage || "More angles = higher certainty"}
-                        </p>
-                      </div>
-                      {nextCap > currentCap && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-blue-300/80">Current:</span>
-                          <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-200 text-sm font-semibold">
-                            Up to {currentCap}%
-                          </span>
-                          <span className="text-blue-300/60">→</span>
-                          <span className="px-2 py-1 rounded bg-green-500/20 text-green-200 text-sm font-semibold">
-                            Up to {nextCap}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
-              
-              {/* Phase 5.2.3 — QUALITY FEEDBACK (PASSIVE) */}
-              {images.length > 0 && (() => {
-                const guidance = analyzeImageSet(imagePreviews, MAX_IMAGES);
-                const qualityFeedback = getQualityFeedback(imagePreviews, images.length, guidance.filledSlots);
-                
-                return (
-                  <div className="mt-4 space-y-2">
-                    {qualityFeedback.messages.map((message, idx) => (
-                      <div
-                        key={idx}
-                        className={`rounded-lg border p-3 text-sm ${
-                          qualityFeedback.overallTone === "positive"
-                            ? "border-green-500/30 bg-green-500/10 text-green-200"
-                            : qualityFeedback.overallTone === "suggestive"
-                            ? "border-blue-500/30 bg-blue-500/10 text-blue-200"
-                            : "border-white/10 bg-white/5 text-white/70"
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <span className="mt-0.5">
-                            {qualityFeedback.overallTone === "positive" ? "✓" : "ℹ️"}
-                          </span>
-                          <span>{message}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-              
-              {/* Phase 5.2.2 — SLOT-AWARE UI (FREE TIER) */}
-              {/* Phase 4.0 Part A — IMAGE PREVIEWS with Slot Labels */}
-              {images.length > 0 && (() => {
-                // Phase 5.2.2 — Get slot information from guidance system
-                const guidance = analyzeImageSet(imagePreviews, MAX_IMAGES);
-                const imageLabels = assignUserImageLabels(images.length);
-                
-                // Create a map from image index to slot
-                const imageToSlot = new Map<number, typeof guidance.slots[0]>();
-                guidance.slots.forEach(slot => {
-                  if (slot.filled && slot.imageIndex !== undefined) {
-                    imageToSlot.set(slot.imageIndex, slot);
-                  }
-                });
-                
-                return (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-                      {imagePreviews.map((preview, idx) => {
-                        const slot = imageToSlot.get(idx);
-                        const label = imageLabels.get(idx) || "Optional";
-                        
-                        return (
-                          <div
-                            key={idx}
-                            className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group"
-                          >
-                            {/* Phase 2.6 Part M Step 5 — Image Size Lock */}
-                            {/* Phase 4.4.5 — Image scale lock: max 260px, object-contain, rounded, never full-screen */}
-                            {/* Phase 5.2.6 — Image previews capped in height (mobile-first) */}
-                            <img
-                              src={preview.url}
-                              alt={`scan-${idx + 1}`}
-                              className="w-full h-full object-contain max-h-[200px] sm:max-h-[260px] rounded-xl"
-                            />
-                            
-                            {/* Phase 5.2.2 — Slot label and checkmark when filled */}
-                            {slot && (
-                              <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-md">
-                                <span className="text-green-400 text-xs">✓</span>
-                                <span className="text-xs text-white font-medium">
-                                  {slot.label}
-                                </span>
-                              </div>
-                            )}
-                            
-                            {/* Phase 4.0.2 — Angle badges on previews */}
-                            <span className="absolute bottom-1 right-1 text-xs px-2 py-0.5 rounded bg-black/70">
-                              {preview.angleLabel}
-                            </span>
-                            
-                            {/* Phase 5.2.2 — Image label and controls */}
-                            <div className="mt-2 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded">
-                                  {idx + 1}
-                                </span>
-                                {slot ? (
-                                  <span className="text-xs text-white/70 font-medium">
-                                    Slot {slot.slotNumber}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-white/50 font-medium">
-                                    {label}
-                                  </span>
-                                )}
-                              </div>
-                              {/* STEP 5.4.7 — Minimum 44px tap target */}
-                              <button
-                                onClick={() => removeImage(idx)}
-                                className="bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold min-w-[44px] min-h-[44px] px-3 py-2 rounded transition-opacity flex items-center justify-center"
-                                aria-label={`Remove image ${idx + 1}`}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Phase 5.2.2 — Empty slot hints (subtle, non-blocking) */}
-                    {guidance.slots.some(s => !s.filled && s.requirement !== "optional") && (
-                      <div className="mt-4 space-y-2">
-                        <p className="text-xs text-white/50 font-medium">
-                          Recommended slots:
-                        </p>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {guidance.slots
-                            .filter(s => !s.filled && s.requirement !== "optional")
-                            .map((slot) => (
-                              <div
-                                key={slot.slotNumber}
-                                className="rounded-lg border border-white/10 bg-white/5 p-2 text-center"
-                              >
-                                <div className="text-sm mb-1">{slot.icon}</div>
-                                <div className="text-xs text-white/60 font-medium mb-0.5">
-                                  Slot {slot.slotNumber}
-                                </div>
-                                <div className="text-xs text-white/70 font-semibold mb-1">
-                                  {slot.label}
-                                </div>
-                                <div className="text-[10px] text-white/50 leading-tight">
-                                  {slot.description}
-                                </div>
-                                {slot.requirement === "required" && (
-                                  <div className="text-[10px] text-orange-400 mt-1">
-                                    Required
-                                  </div>
-                                )}
-                                {slot.requirement === "recommended" && (
-                                  <div className="text-[10px] text-yellow-400 mt-1">
-                                    Recommended
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                    {/* Phase 4.0 Part A — Single Image Warning */}
-                    {images.length === 1 && !singleImageConfirmed && (
-                      <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-                        <p className="text-sm text-yellow-200 leading-relaxed">
-                          <strong>Recommendation:</strong> Add at least one more image from a different angle for better accuracy. Single-image scans have limited confidence.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-        </div>
-
-        {/* Phase 5.2.5 — SCAN CTA BEHAVIOR (FIX) */}
-        {/* Phase 5.2.6 — Sticky scan button on mobile only */}
-        {/* B) Big Scan Button Card */}
-        <div className="sticky bottom-0 md:static z-10 py-4 bg-black/90 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none">
-          {/* Phase 4.0 Part A — Multi-image validation warning */}
-          {images.length > 0 && images.length < 2 && !singleImageConfirmed && (
-            <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md mx-auto">
-              💡 For best accuracy, add at least one more image from a different angle
-            </div>
-          )}
-          {images.length === 2 && (
-            <div className="mb-4 p-3 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-200 text-sm text-center max-w-md mx-auto">
-              ✓ 2 images selected. For best accuracy, 3–5 images are recommended.
-            </div>
-          )}
-          
-          {/* Phase 5.2.5 — Run Scan Button: Full-width capped (max-w-md), height ≥ 52px, single click, disabled only while scanning */}
-          {/* STEP 5.4.7 — Mobile-first: Buttons centered, not stretched, minimum 44px tap target */}
-          <div className="w-full flex justify-center">
-            <ClearButton
-              onClick={handleAnalyzePlant}
-              disabled={isScanning || images.length === 0}
-              startIcon={
-                isScanning ? <CircularProgress size={18} color="inherit" /> : undefined
-              }
-              aria-label="Run scan"
-              aria-busy={isScanning}
-              sx={{
-                minWidth: 200,
-                maxWidth: '28rem',
-                height: 52,
-              }}
-            >
-              {isScanning ? 'Analyzing plant…' : 'Run Scan'}
-            </ClearButton>
-          </div>
-        </div>
-
-        {/* Phase 5.2.6 — MOBILE-FIRST CONSTRAINTS: Max content width (not edge-to-edge) */}
-        {/* UI FIX — Results Card(s) — Wrapped in container, cards not lines */}
-        {/* Phase 4.2 — Extensive Wiki-Style Report (Priority) */}
-        {/* Phase 3.6 — Wiki-Style Result Expansion (Fallback) */}
-        {/* Phase 4.4.1 — Center the result column with intentional containment */}
-        <section className="space-y-6 w-full max-w-[720px] mx-auto px-4">
-          {/* FAILURE MESSAGING SOFTENED — User-facing warnings (non-fatal, non-blocking) */}
-          {scanError?.reason === "images-too-similar" && (
-            <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
-              <strong>Images appear similar</strong>
-              <p className="mt-1 opacity-80">
-                Try different angles for better accuracy. Results shown with reduced confidence.
-              </p>
-            </div>
-          )}
-          
-          {scanError?.reason === "low-confidence" && (
-            <div className="mt-4 max-w-md mx-auto rounded-lg bg-yellow-900/30 border border-yellow-700 p-4 text-sm">
-              <strong>Low confidence — results may vary</strong>
-              <p className="mt-1 opacity-80">
-                Try photos from different angles, zoom levels, or lighting for more accurate results.
-              </p>
-            </div>
-          )}
-
-          {/* Phase 4.3.3 — Partial status reframing (neutral, authoritative) */}
-          {scanResult && 'status' in scanResult && scanResult.status === "partial" && (
-            <div className="mt-4 rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-white/80">
-              <p className="leading-relaxed">
-                This identification is based on limited visual agreement.
-                Additional images may improve confidence.
-              </p>
-            </div>
-          )}
-          
-          {/* Phase 4.0.3.1 — Soft "same plant" informational note (if present) */}
-          {analysis?.samePlantNote && (
-            <div className="mt-2 text-xs text-muted-foreground">
-              ℹ️ These images may be of the same plant. Results improve when photos show
-              different angles or perspectives.
-            </div>
-          )}
-          
-          {/* STEP 5.5.6 — FAIL-SAFE UX: Always show results, never empty screen */}
-          {result && <ResultPanel result={result} flags={flags} />}
-          {analysis && <WikiReportPanel analysis={analysis.analysis} result={result} imageCount={images.length} flags={flags} />}
-          {analysis && <WikiStyleResultPanel result={analysis} flags={flags} />}
-          
-          {/* STEP 5.5.6 — FAIL-SAFE UX: Show fallback if no results at all */}
-          {!result && !analysis && scanError && (
-            <div className="mt-8 rounded-lg border border-white/10 bg-white/5 p-6 text-center">
-              <h2 className="text-xl font-semibold text-white/90 mb-2">Closest Known Cultivar</h2>
-              <p className="text-sm text-white/70 leading-relaxed">
-                Unable to identify this cultivar with high confidence. Try adding photos from different angles or improving lighting.
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* ── Go to Garden ─────────────────── */}
-        <div style={{ display: "flex", justifyContent: "center", paddingTop: 24, paddingBottom: 32 }}>
-          <Link
-            href="/garden"
+        {/* ── UPLOAD AREA ── */}
+        {scanState !== "done" && (
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            onClick={() => fileRef.current?.click()}
             style={{
+              margin: "24px auto 0",
+              width: "100%",
+              maxWidth: 340,
+              aspectRatio: "1",
+              borderRadius: "50%",
+              background: scanState === "scanning"
+                ? "radial-gradient(circle, rgba(46,125,50,0.15) 0%, rgba(10,15,10,0) 70%)"
+                : images.length > 0
+                ? "radial-gradient(circle, rgba(46,125,50,0.1) 0%, rgba(10,15,10,0) 70%)"
+                : "radial-gradient(circle, rgba(255,255,255,0.03) 0%, rgba(10,15,10,0) 70%)",
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
-              gap: 8,
-              padding: "12px 24px",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 30,
-              textDecoration: "none",
-              color: "rgba(255,255,255,0.6)",
-              fontSize: 14,
-              fontWeight: 600,
+              justifyContent: "center",
+              cursor: scanState === "scanning" ? "default" : "pointer",
+              position: "relative",
+              transition: "all 0.3s ease",
             }}
           >
-            <span style={{ fontSize: 16 }}>🌿</span>
-            The Garden
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>→</span>
-          </Link>
-        </div>
-        </div>
-      </main>
+            {/* Outer ring */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              border: scanState === "scanning"
+                ? "2px solid rgba(76,175,80,0.6)"
+                : images.length > 0
+                ? "2px solid rgba(76,175,80,0.3)"
+                : "2px solid rgba(255,255,255,0.08)",
+              animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite" : "none",
+            }} />
 
-      {/* Single-image confirmation modal */}
-      <ConfirmModal
-        open={showConfirmModal}
-        title="Single Image Analysis"
-        message="For best accuracy, we recommend 2+ images from different angles. Single-image scans have limited accuracy. Would you like to proceed?"
-        confirmText="Proceed"
-        cancelText="Cancel"
-        onConfirm={() => {
-          setSingleImageConfirmed(true);
-          setShowConfirmModal(false);
-          // Trigger scan after confirmation
-          setTimeout(() => handleAnalyzePlant(), 0);
-        }}
-        onCancel={() => {
-          setShowConfirmModal(false);
-        }}
-      />
-    </>
+            {/* Inner ring */}
+            <div style={{
+              position: "absolute",
+              inset: 20,
+              borderRadius: "50%",
+              border: scanState === "scanning"
+                ? "1px solid rgba(76,175,80,0.3)"
+                : "1px solid rgba(255,255,255,0.04)",
+              animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite 0.5s" : "none",
+            }} />
+
+            {/* Content */}
+            {scanState === "scanning" ? (
+              <div style={{ textAlign: "center", zIndex: 1 }}>
+                <div style={{
+                  fontSize: 56,
+                  animation: "leafSpin 3s ease-in-out infinite",
+                  marginBottom: 16,
+                }}>🍃</div>
+                <p style={{ color: "rgba(76,175,80,0.9)", fontSize: 16, fontWeight: 600 }}>
+                  Analyzing...
+                </p>
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 6 }}>
+                  AI is identifying your strain
+                </p>
+              </div>
+            ) : images.length > 0 ? (
+              <div style={{ textAlign: "center", zIndex: 1 }}>
+                <div style={{
+                  fontSize: 48,
+                  marginBottom: 12,
+                  opacity: 0.9,
+                }}>📸</div>
+                <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: 600 }}>
+                  {images.length} photo{images.length > 1 ? "s" : ""} ready
+                </p>
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 4 }}>
+                  Tap to add more (up to {MAX_IMAGES})
+                </p>
+              </div>
+            ) : (
+              <div style={{ textAlign: "center", zIndex: 1 }}>
+                <div style={{
+                  fontSize: 56,
+                  marginBottom: 16,
+                  opacity: 0.6,
+                }}>🔍</div>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: 600 }}>
+                  Upload Photos
+                </p>
+                <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, marginTop: 6 }}>
+                  2–5 photos from different angles work best
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          style={{ display: "none" }}
+          onChange={(e) => { if (e.target.files) addImages(e.target.files); e.target.value = ""; }}
+        />
+
+        {/* ── THUMBNAIL STRIP ── */}
+        {images.length > 0 && scanState !== "done" && (
+          <div style={{
+            display: "flex",
+            gap: 10,
+            justifyContent: "center",
+            marginTop: 20,
+            flexWrap: "wrap",
+          }}>
+            {previews.map((url, i) => (
+              <div key={i} style={{ position: "relative" }}>
+                <img
+                  src={url}
+                  alt={`Photo ${i + 1}`}
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 14,
+                    objectFit: "cover",
+                    opacity: scanState === "scanning" ? 0.5 : 1,
+                    transition: "opacity 0.3s",
+                  }}
+                />
+                {scanState !== "scanning" && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeImage(i); }}
+                    style={{
+                      position: "absolute",
+                      top: -6,
+                      right: -6,
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: "rgba(0,0,0,0.8)",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "#fff",
+                      fontSize: 11,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >×</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── SCAN BUTTON ── */}
+        {(scanState === "ready") && (
+          <div style={{ marginTop: 28, textAlign: "center" }}>
+            <button
+              onClick={handleScan}
+              style={{
+                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                border: "none",
+                borderRadius: 50,
+                padding: "16px 48px",
+                color: "#fff",
+                fontSize: 17,
+                fontWeight: 700,
+                cursor: "pointer",
+                letterSpacing: 0.5,
+                boxShadow: "0 4px 24px rgba(46,125,50,0.4)",
+                transition: "all 0.2s",
+              }}
+            >
+              Identify Strain
+            </button>
+          </div>
+        )}
+
+        {/* ── ERROR ── */}
+        {error && (
+          <div style={{
+            marginTop: 20,
+            textAlign: "center",
+            color: "#FFB74D",
+            fontSize: 14,
+            padding: "12px 16px",
+            borderRadius: 12,
+            background: "rgba(255,183,77,0.08)",
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* ── RESULT CARD ── */}
+        {result && scanState === "done" && (
+          <div style={{ marginTop: 12 }}>
+            {/* Strain Name Hero */}
+            <div style={{
+              textAlign: "center",
+              padding: "32px 0 20px",
+            }}>
+              <span style={{ fontSize: 40 }}>{typeEmoji(result.type)}</span>
+              <h1 style={{
+                fontSize: 32,
+                fontWeight: 800,
+                margin: "12px 0 0",
+                letterSpacing: -0.5,
+                lineHeight: 1.1,
+              }}>
+                {result.strainName}
+              </h1>
+
+              {/* Type + Confidence */}
+              <div style={{
+                display: "flex",
+                gap: 8,
+                justifyContent: "center",
+                marginTop: 14,
+                flexWrap: "wrap",
+              }}>
+                <span style={{
+                  background: typeGradient(result.type),
+                  padding: "5px 14px",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase",
+                }}>
+                  {result.type}
+                </span>
+                <span style={{
+                  background: "rgba(255,255,255,0.08)",
+                  padding: "5px 14px",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "rgba(255,255,255,0.7)",
+                }}>
+                  {result.confidenceLabel}
+                </span>
+              </div>
+
+              {result.lineage && (
+                <p style={{
+                  color: "rgba(255,255,255,0.35)",
+                  fontSize: 13,
+                  marginTop: 12,
+                  fontStyle: "italic",
+                }}>
+                  {result.lineage}
+                </p>
+              )}
+            </div>
+
+            {/* AI Summary */}
+            {result.description && (
+              <div style={{
+                padding: "16px 18px",
+                borderRadius: 16,
+                background: "rgba(255,255,255,0.04)",
+                marginBottom: 16,
+              }}>
+                <p style={{
+                  fontSize: 14,
+                  lineHeight: 1.7,
+                  color: "rgba(255,255,255,0.65)",
+                  margin: 0,
+                }}>
+                  {result.description}
+                </p>
+              </div>
+            )}
+
+            {/* Effects */}
+            {result.effects.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <h3 style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.3)",
+                  marginBottom: 10,
+                }}>
+                  Effects
+                </h3>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {result.effects.map((e, i) => (
+                    <span key={i} style={{
+                      padding: "8px 16px",
+                      borderRadius: 24,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      background: "rgba(76,175,80,0.12)",
+                      color: "rgba(129,199,132,0.9)",
+                    }}>
+                      {e}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Terpenes */}
+            {result.terpenes.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <h3 style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.3)",
+                  marginBottom: 10,
+                }}>
+                  Terpenes
+                </h3>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {result.terpenes.map((t, i) => {
+                    const colors = [
+                      { bg: "rgba(171,71,188,0.12)", text: "rgba(206,147,216,0.9)" },
+                      { bg: "rgba(255,183,77,0.12)", text: "rgba(255,213,79,0.9)" },
+                      { bg: "rgba(79,195,247,0.12)", text: "rgba(129,212,250,0.9)" },
+                      { bg: "rgba(255,138,101,0.12)", text: "rgba(255,171,145,0.9)" },
+                    ];
+                    const c = colors[i % colors.length];
+                    return (
+                      <span key={i} style={{
+                        padding: "8px 16px",
+                        borderRadius: 24,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        background: c.bg,
+                        color: c.text,
+                      }}>
+                        {t}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Alternate Matches */}
+            {result.alternates.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <h3 style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.3)",
+                  marginBottom: 10,
+                }}>
+                  Could Also Be
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {result.alternates.map((a, i) => (
+                    <div key={i} style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 14px",
+                      borderRadius: 12,
+                      background: "rgba(255,255,255,0.03)",
+                    }}>
+                      <span style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>{a.name}</span>
+                      <span style={{
+                        fontSize: 12,
+                        color: "rgba(255,255,255,0.35)",
+                        fontWeight: 600,
+                      }}>
+                        {mapConfidence(a.confidence)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tips */}
+            {result.tips.length > 0 && (
+              <div style={{
+                padding: "14px 16px",
+                borderRadius: 12,
+                background: "rgba(255,255,255,0.03)",
+                marginBottom: 16,
+              }}>
+                <h3 style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.25)",
+                  marginBottom: 8,
+                }}>
+                  Better Results
+                </h3>
+                {result.tips.map((tip, i) => (
+                  <p key={i} style={{
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    color: "rgba(255,255,255,0.4)",
+                    margin: "4px 0",
+                  }}>
+                    💡 {tip}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {/* Scan Again */}
+            <div style={{
+              textAlign: "center",
+              paddingTop: 12,
+              paddingBottom: 40,
+            }}>
+              <button
+                onClick={clearAll}
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "none",
+                  borderRadius: 50,
+                  padding: "14px 40px",
+                  color: "rgba(255,255,255,0.7)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Scan Another
+              </button>
+            </div>
+
+            {/* Disclaimer */}
+            <p style={{
+              textAlign: "center",
+              fontSize: 11,
+              color: "rgba(255,255,255,0.2)",
+              lineHeight: 1.5,
+              paddingBottom: 20,
+            }}>
+              AI-assisted visual analysis. Not a substitute for lab testing.
+              Results are for educational purposes only.
+            </p>
+          </div>
+        )}
+
+        {/* ── EMPTY STATE TIPS ── */}
+        {scanState === "idle" && (
+          <div style={{
+            textAlign: "center",
+            marginTop: 32,
+            padding: "0 12px",
+          }}>
+            <div style={{
+              display: "flex",
+              gap: 12,
+              justifyContent: "center",
+              marginBottom: 20,
+            }}>
+              {[
+                { icon: "📐", label: "Multiple angles" },
+                { icon: "💡", label: "Good lighting" },
+                { icon: "🔬", label: "Close-up detail" },
+              ].map((tip, i) => (
+                <div key={i} style={{
+                  textAlign: "center",
+                  flex: "0 1 90px",
+                }}>
+                  <div style={{ fontSize: 24, marginBottom: 4 }}>{tip.icon}</div>
+                  <div style={{
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.3)",
+                    lineHeight: 1.3,
+                  }}>
+                    {tip.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes scanPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.03); opacity: 0.6; }
+        }
+        @keyframes leafSpin {
+          0% { transform: rotate(0deg) scale(1); }
+          25% { transform: rotate(-15deg) scale(1.05); }
+          50% { transform: rotate(0deg) scale(1); }
+          75% { transform: rotate(15deg) scale(1.05); }
+          100% { transform: rotate(0deg) scale(1); }
+        }
+      `}</style>
+    </div>
   );
 }
