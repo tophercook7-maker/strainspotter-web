@@ -17,6 +17,7 @@ import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import BugReportIcon from "@mui/icons-material/BugReport";
 import ScanPaywall from "@/components/ScanPaywall";
+import FeedbackForm from "@/components/FeedbackForm";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface UserSettings {
@@ -474,6 +475,11 @@ export default function SettingsPage() {
                 Pre-Launch
               </Typography>
             </SettingRow>
+          </Box>
+
+          {/* ─── Feedback ─── */}
+          <Box sx={{ mt: 3, mb: 2 }}>
+            <FeedbackForm />
           </Box>
 
           {/* Footer */}
