@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { getSupabase } from "@/lib/supabase/client";
+import { getSupabase } from "../supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface Profile {
