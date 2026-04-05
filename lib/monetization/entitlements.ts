@@ -21,9 +21,9 @@ export const ENTITLEMENTS: Record<
   member: {
     features: [
       "scanner",
-      "strain_browser",
-      "dispensary_finder",
-      "grow_coach",
+      "strains",
+      "dispensaries",
+      "growCoach",
       "history",
       "favorites",
       "ecosystem",
@@ -37,14 +37,14 @@ export const ENTITLEMENTS: Record<
   pro: {
     features: [
       "scanner",
-      "strain_browser",
-      "dispensary_finder",
-      "grow_coach",
+      "strains",
+      "dispensaries",
+      "growCoach",
       "history",
       "favorites",
       "ecosystem",
       "analytics",
-      "lab_data",
+      "labData",
     ],
     limits: {
       scans: 1000,
