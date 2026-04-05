@@ -3,6 +3,22 @@
 import { useState, useRef, useCallback } from "react";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import Link from "next/link";
+import AuthScreen from "@/components/AuthScreen";
+
+/* ─── try to use real auth, fall back gracefully ─── */
+let useOptionalAuth: () => any;
+try {
+  useOptionalAuth = require("@/lib/auth/AuthProvider").useOptionalAuth;
+} catch {
+  useOptionalAuth = () => null;
+}
+
+function getLocalTier(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem("ss_tier"); } catch { return null; }
+}
+function tierLabel(t: string) { return t === "pro" ? "Pro" : t === "member" ? "Member" : "Free"; }
+function tierColor(t: string) { return t === "pro" ? "#FFD700" : t === "member" ? "#4CAF50" : "rgba(255,255,255,0.35)"; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    StrainSpotter Scanner — Clean Visual Redesign
@@ -49,8 +65,14 @@ export default function ScannerPage() {
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [result, setResult] = useState<SimpleResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const MAX_IMAGES = 5;
+
+  const auth = useOptionalAuth();
+  const isLoggedIn = !!auth?.user;
+  const displayName = auth?.profile?.display_name || auth?.user?.email?.split("@")[0] || null;
+  const tier = auth?.tier || getLocalTier() || "free";
 
   const addImages = useCallback((files: FileList | File[]) => {
     const fileArr = Array.from(files).filter(f => f.type.startsWith("image/"));
@@ -156,7 +178,62 @@ export default function ScannerPage() {
         <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0.5 }}>
           Scanner
         </span>
-        <div style={{ width: 60 }} />
+        {isLoggedIn ? (
+          <button
+            onClick={() => window.location.href = "/garden/settings"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            <span style={{
+              fontSize: 9,
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+              color: tierColor(tier),
+              background: `${tierColor(tier)}18`,
+              border: `1px solid ${tierColor(tier)}44`,
+              borderRadius: 5,
+              padding: "2px 6px",
+            }}>{tierLabel(tier)}</span>
+            <div style={{
+              width: 26,
+              height: 26,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #43A047, #2E7D32)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              fontWeight: 800,
+              color: "#fff",
+            }}>
+              {(displayName || "?")[0].toUpperCase()}
+            </div>
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowAuth(true)}
+            style={{
+              background: "linear-gradient(135deg, #43A047, #2E7D32)",
+              border: "none",
+              borderRadius: 8,
+              padding: "5px 12px",
+              color: "#fff",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Sign In
+          </button>
+        )}
       </div>
 
       <div style={{ padding: "0 20px 100px", maxWidth: 480, margin: "0 auto" }}>
@@ -661,6 +738,18 @@ export default function ScannerPage() {
           100% { transform: rotate(0deg) scale(1); }
         }
       `}</style>
+
+      {/* Auth overlay */}
+      {showAuth && (
+        <AuthScreen
+          defaultMode="signin"
+          onClose={() => setShowAuth(false)}
+          onSuccess={() => {
+            setShowAuth(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
