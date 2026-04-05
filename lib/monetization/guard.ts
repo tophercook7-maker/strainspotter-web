@@ -1,14 +1,13 @@
 import { incrementUsage, loadUsage, type FeatureKey } from "./usage";
-
-export type TierKey = "app_buyer" | "member_1" | "pro";
+import type { TierKey } from "./tiers";
 
 /**
  * SAFEST DEFAULT (until auth/billing is wired):
- * - Everyone is treated as app_buyer
+ * - Everyone is treated as app (free tier)
  * - You can later swap getTier() to read Supabase user + subscription
  */
 export function getTier(): TierKey {
-  return "app_buyer";
+  return "app";
 }
 
 export type Entitlements = {
@@ -18,12 +17,12 @@ export type Entitlements = {
 export function getEntitlements(tier: TierKey): Entitlements {
   // Monthly, no rollover (handled in usage.ts)
   switch (tier) {
-    case "member_1":
+    case "member":
       return { monthlyLimits: { id_scan: 250, doctor_scan: 50 } };
     case "pro":
       // "everything" tier for now; adjust later as you define
       return { monthlyLimits: { id_scan: 2000, doctor_scan: 500 } };
-    case "app_buyer":
+    case "app":
     default:
       // App buyer gets scanner only, but limited usage (safe starting point)
       return { monthlyLimits: { id_scan: 25, doctor_scan: 0 } };
