@@ -2,7 +2,28 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import AuthScreen from "@/components/AuthScreen";
 
+/* ─── try to use real auth, fall back to localStorage tier ─── */
+let useOptionalAuth: () => any;
+try {
+  useOptionalAuth = require("@/lib/auth/AuthProvider").useOptionalAuth;
+} catch {
+  useOptionalAuth = () => null;
+}
+
+function getLocalTier(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem("ss_tier");
+  } catch {
+    return null;
+  }
+}
+
+/* ─── Feature data ─── */
 const FEATURES = [
   { href: "/garden/strains", icon: "🔬", label: "Strains", desc: "Browse strain database" },
   { href: "/garden/ecosystem", icon: "🧬", label: "Ecosystem", desc: "Explore genetics & lineage" },
@@ -17,36 +38,117 @@ const QUICK_LINKS = [
   { href: "/garden/settings", icon: "⚙️", label: "Settings" },
 ];
 
+/* ─── Tier display helpers ─── */
+function tierLabel(t: string): string {
+  if (t === "pro") return "Pro";
+  if (t === "member") return "Member";
+  return "Free";
+}
+function tierColor(t: string): string {
+  if (t === "pro") return "#FFD700";
+  if (t === "member") return "#4CAF50";
+  return "rgba(255,255,255,0.35)";
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Garden Hub
+   ═══════════════════════════════════════════════════════════ */
 export default function GardenPage() {
   const router = useRouter();
+  const auth = useOptionalAuth();
+  const [showAuth, setShowAuth] = useState(false);
+
+  const isLoggedIn = !!auth?.user;
+  const displayName = auth?.profile?.display_name || auth?.user?.email?.split("@")[0] || null;
+  const tier = auth?.tier || getLocalTier() || "free";
 
   return (
     <>
       <div className="min-h-screen text-white">
-        <div className="mx-auto w-full max-w-[720px] px-4 py-8 space-y-8">
-          {/* Header */}
-          <div style={{ textAlign: "center" }}>
-            <h1
-              style={{
-                fontSize: 28,
-                fontWeight: 800,
-                letterSpacing: "-0.02em",
-                margin: 0,
-              }}
-            >
-              🌿 The Garden
-            </h1>
-            <p
-              style={{
-                color: "rgba(255,255,255,0.45)",
-                fontSize: 14,
-                marginTop: 6,
-              }}
-            >
-              Everything StrainSpotter
-            </p>
-          </div>
+        {/* ── Top Bar ── */}
+        <div
+          className="sticky top-0 z-50 w-full flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/50 backdrop-blur-md"
+        >
+          {/* Back → Scanner */}
+          <button
+            onClick={() => router.push("/garden/scanner")}
+            className="flex items-center gap-1.5 text-white/70 hover:text-white transition"
+            aria-label="Back to Scanner"
+          >
+            <ArrowBackIosNewIcon sx={{ fontSize: 14 }} />
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Scanner</span>
+          </button>
 
+          <h1 className="text-white text-lg font-semibold tracking-tight">
+            🌿 The Garden
+          </h1>
+
+          {/* Login / Profile */}
+          {isLoggedIn ? (
+            <button
+              onClick={() => router.push("/garden/settings")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px 0",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                  color: tierColor(tier),
+                  background: `${tierColor(tier)}18`,
+                  border: `1px solid ${tierColor(tier)}44`,
+                  borderRadius: 6,
+                  padding: "3px 8px",
+                }}
+              >
+                {tierLabel(tier)}
+              </span>
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: "#fff",
+                }}
+              >
+                {(displayName || "?")[0].toUpperCase()}
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowAuth(true)}
+              style={{
+                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                border: "none",
+                borderRadius: 10,
+                padding: "7px 14px",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Sign In
+            </button>
+          )}
+        </div>
+
+        <div className="mx-auto w-full max-w-[720px] px-4 py-6 space-y-8">
           {/* Scanner Shortcut — prominent */}
           <button
             onClick={() => router.push("/garden/scanner")}
@@ -172,6 +274,18 @@ export default function GardenPage() {
           </div>
         </div>
       </div>
+
+      {/* Auth overlay */}
+      {showAuth && (
+        <AuthScreen
+          defaultMode="signin"
+          onClose={() => setShowAuth(false)}
+          onSuccess={() => {
+            setShowAuth(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </>
   );
 }
