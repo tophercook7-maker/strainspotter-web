@@ -1,596 +1,485 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import TopNav from "../_components/TopNav";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import ButtonBase from "@mui/material/ButtonBase";
 import SearchIcon from "@mui/icons-material/Search";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
 import SpaIcon from "@mui/icons-material/Spa";
-import GrassIcon from "@mui/icons-material/Grass";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
+import CloseIcon from "@mui/icons-material/Close";
+import CircularProgress from "@mui/material/CircularProgress";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import { useRouter } from "next/navigation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-interface StrainEntry {
+type StrainType = "Sativa" | "Indica" | "Hybrid";
+
+interface Strain {
+  id: string;
   name: string;
-  aliases: string[];
-  genetics: string;
-  type: "Indica" | "Sativa" | "Hybrid";
-  visualProfile: {
-    trichomeDensity: string;
-    pistilColor: string[];
-    budStructure: string;
-    leafShape: string;
-    colorProfile: string;
-  };
-  terpeneProfile: string[];
+  slug: string;
+  type: StrainType;
+  description: string | null;
   effects: string[];
-  sources: string[];
-  indicaSativaRatio?: { indica: number; sativa: number };
+  flavors: string[];
+  thc: number | null;
+  cbd: number | null;
+  indica_percentage: number;
+  sativa_percentage: number;
+  popularity: number;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+interface APIResponse {
+  strains: Strain[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+// ─── Colors & Helpers ────────────────────────────────────────────────────────
+const TYPE_COLORS: Record<StrainType, { bg: string; border: string; text: string; gradient: string }> = {
+  Sativa: { bg: "rgba(255,213,79,0.12)", border: "#FFD54F", text: "#FFD54F", gradient: "linear-gradient(135deg, rgba(255,213,79,0.18), rgba(255,179,0,0.06))" },
+  Indica: { bg: "rgba(149,117,205,0.12)", border: "#9575CD", text: "#9575CD", gradient: "linear-gradient(135deg, rgba(149,117,205,0.18), rgba(106,27,154,0.06))" },
+  Hybrid: { bg: "rgba(102,187,106,0.12)", border: "#66BB6A", text: "#66BB6A", gradient: "linear-gradient(135deg, rgba(102,187,106,0.18), rgba(46,125,50,0.06))" },
+};
+
+const EFFECT_ICONS: Record<string, string> = {
+  euphoric: "✨", relaxed: "😌", happy: "😊", creative: "🎨", energetic: "⚡",
+  uplifted: "🚀", sleepy: "😴", hungry: "🍕", focused: "🎯", talkative: "💬",
+  tingly: "🌟", giggly: "😂", aroused: "💗",
+};
+
 function glassCard(extra: Record<string, any> = {}) {
   return {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.15)",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: "16px",
     backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
     ...extra,
   };
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  Indica: "#9b59b6",
-  Sativa: "#e67e22",
-  Hybrid: "#2ecc71",
-};
+function capFirst(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
 
-const TYPE_ICONS: Record<string, React.ReactNode> = {
-  Indica: <SpaIcon fontSize="small" />,
-  Sativa: <GrassIcon fontSize="small" />,
-  Hybrid: <LocalFloristIcon fontSize="small" />,
-};
-
-const TERPENE_COLORS: Record<string, string> = {
-  myrcene: "#a8e6cf",
-  limonene: "#ffd93d",
-  caryophyllene: "#ff8b94",
-  pinene: "#6bcb77",
-  linalool: "#c9b1ff",
-  terpinolene: "#ffc09f",
-  humulene: "#d4a574",
-  ocimene: "#89CFF0",
-};
-
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Main Component ──────────────────────────────────────────────────────────
 export default function StrainsPage() {
-  const [strains, setStrains] = useState<StrainEntry[]>([]);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("All");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  // Load strains from JSON
-  useEffect(() => {
-    async function load() {
+  const [strains, setStrains] = useState<Strain[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<StrainType | "">("");
+  const [sort, setSort] = useState<"popular" | "name">("popular");
+  const [selected, setSelected] = useState<Strain | null>(null);
+
+  const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // ── Fetch strains from API ──
+  const fetchStrains = useCallback(
+    async (p: number, append = false) => {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
       try {
-        // Try loading from data endpoint
-        const res = await fetch("/data/strains.json");
-        if (res.ok) {
-          const data = await res.json();
-          setStrains(data);
-        }
+        const params = new URLSearchParams({
+          page: String(p),
+          limit: "50",
+          sort,
+          ...(search ? { q: search } : {}),
+          ...(typeFilter ? { type: typeFilter } : {}),
+        });
+        const res = await fetch(`/api/strains?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data: APIResponse = await res.json();
+        setStrains((prev) => (append ? [...prev, ...data.strains] : data.strains));
+        setTotal(data.total);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
       } catch (err) {
-        console.error("Failed to load strains:", err);
+        console.error("Strains fetch:", err);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
-    }
-    load();
-  }, []);
+    },
+    [search, typeFilter, sort],
+  );
 
-  const filtered = useMemo(() => {
-    let result = strains;
-    if (typeFilter !== "All") {
-      result = result.filter((s) => s.type === typeFilter);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.name.toLowerCase().includes(q) ||
-          s.aliases.some((a) => a.toLowerCase().includes(q)) ||
-          s.genetics.toLowerCase().includes(q) ||
-          s.terpeneProfile.some((t) => t.toLowerCase().includes(q)) ||
-          s.effects.some((e) => e.toLowerCase().includes(q))
-      );
-    }
-    return result;
-  }, [strains, search, typeFilter]);
+  // Reload on filter change
+  useEffect(() => {
+    setPage(1);
+    fetchStrains(1);
+  }, [search, typeFilter, sort, fetchStrains]);
 
-  const counts = useMemo(() => {
-    const c = { All: strains.length, Indica: 0, Sativa: 0, Hybrid: 0 };
-    strains.forEach((s) => {
-      if (s.type in c) c[s.type as keyof typeof c]++;
-    });
-    return c;
-  }, [strains]);
+  // Debounced search
+  const handleSearchChange = (val: string) => {
+    setSearchInput(val);
+    clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => setSearch(val), 350);
+  };
 
+  // Infinite scroll
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || loadingMore || page >= totalPages) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) {
+      fetchStrains(page + 1, true);
+    }
+  }, [page, totalPages, loadingMore, fetchStrains]);
+
+  // ── Strain Card ──
+  const StrainCard = ({ strain: s }: { strain: Strain }) => {
+    const tc = TYPE_COLORS[s.type] || TYPE_COLORS.Hybrid;
+    const hasEffects = s.effects && s.effects.length > 0;
+    const hasDesc = s.description && s.description.length > 0;
+
+    return (
+      <ButtonBase
+        onClick={() => setSelected(s)}
+        sx={{
+          display: "block", width: "100%", textAlign: "left",
+          borderRadius: "16px", overflow: "hidden",
+          transition: "transform 0.12s ease",
+          "&:active": { transform: "scale(0.97)" },
+        }}
+      >
+        <Box sx={{ ...glassCard({ p: 2, position: "relative", overflow: "hidden" }) }}>
+          {/* Accent bar */}
+          <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: tc.border, opacity: 0.8 }} />
+
+          {/* Row 1: Name + Type badge */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 0.8 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#fff", lineHeight: 1.25, pr: 1, flex: 1 }}>
+              {s.name}
+            </Typography>
+            <Box sx={{
+              px: 1, py: 0.25, borderRadius: "8px", fontSize: "0.65rem", fontWeight: 700,
+              background: tc.bg, color: tc.text, border: `1px solid ${tc.border}33`,
+              whiteSpace: "nowrap", letterSpacing: "0.04em", flexShrink: 0,
+            }}>
+              {s.type}
+            </Box>
+          </Box>
+
+          {/* Ratio bar */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.7, mb: hasDesc || hasEffects ? 1 : 0 }}>
+            <Typography sx={{ fontSize: "0.6rem", color: "#9575CD", fontWeight: 600, minWidth: 28 }}>I {s.indica_percentage}%</Typography>
+            <Box sx={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+              <Box sx={{
+                width: `${s.indica_percentage}%`, height: "100%", borderRadius: 2,
+                background: "linear-gradient(90deg, #9575CD 0%, #66BB6A 60%, #FFD54F 100%)",
+              }} />
+            </Box>
+            <Typography sx={{ fontSize: "0.6rem", color: "#FFD54F", fontWeight: 600, minWidth: 28, textAlign: "right" }}>S {s.sativa_percentage}%</Typography>
+          </Box>
+
+          {/* Description */}
+          {hasDesc && (
+            <Typography sx={{
+              fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.4, mb: hasEffects ? 0.8 : 0,
+              display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+            }}>
+              {s.description}
+            </Typography>
+          )}
+
+          {/* Effect pills */}
+          {hasEffects && (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.4 }}>
+              {s.effects.slice(0, 4).map((e) => (
+                <Box key={e} sx={{
+                  px: 0.7, py: 0.15, borderRadius: "6px", fontSize: "0.6rem",
+                  background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)",
+                }}>
+                  {EFFECT_ICONS[e.toLowerCase()] || "🌿"} {capFirst(e)}
+                </Box>
+              ))}
+              {s.effects.length > 4 && (
+                <Box sx={{
+                  px: 0.7, py: 0.15, borderRadius: "6px", fontSize: "0.6rem",
+                  color: "rgba(255,255,255,0.3)",
+                }}>
+                  +{s.effects.length - 4}
+                </Box>
+              )}
+            </Box>
+          )}
+        </Box>
+      </ButtonBase>
+    );
+  };
+
+  // ── Detail Modal ──
+  const DetailModal = () => {
+    if (!selected) return null;
+    const s = selected;
+    const tc = TYPE_COLORS[s.type] || TYPE_COLORS.Hybrid;
+
+    return (
+      <Box
+        onClick={() => setSelected(null)}
+        sx={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)",
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+        }}
+      >
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{
+            width: "100%", maxWidth: 500, maxHeight: "88vh", overflow: "auto",
+            borderRadius: "24px 24px 0 0",
+            background: "linear-gradient(180deg, #1a2420, #111816)",
+            border: "1px solid rgba(255,255,255,0.1)", p: 3,
+          }}
+        >
+          {/* Close button */}
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+            <ButtonBase
+              onClick={() => setSelected(null)}
+              sx={{ p: 0.5, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }}
+            >
+              <CloseIcon sx={{ fontSize: 20, color: "rgba(255,255,255,0.5)" }} />
+            </ButtonBase>
+          </Box>
+
+          {/* Name + Type */}
+          <Typography sx={{ fontWeight: 800, fontSize: "1.5rem", color: "#fff", mb: 0.5, lineHeight: 1.2 }}>
+            {s.name}
+          </Typography>
+          <Box sx={{
+            display: "inline-flex", px: 1.5, py: 0.4, borderRadius: "10px",
+            background: tc.gradient, border: `1px solid ${tc.border}44`, mb: 2,
+          }}>
+            <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, color: tc.text }}>{s.type}</Typography>
+          </Box>
+
+          {/* Ratio bar */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, my: 2 }}>
+            <Typography sx={{ fontSize: "0.75rem", color: "#9575CD", fontWeight: 600 }}>Indica {s.indica_percentage}%</Typography>
+            <Box sx={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+              <Box sx={{
+                width: `${s.indica_percentage}%`, height: "100%", borderRadius: 3,
+                background: "linear-gradient(90deg, #9575CD 0%, #66BB6A 60%, #FFD54F 100%)",
+              }} />
+            </Box>
+            <Typography sx={{ fontSize: "0.75rem", color: "#FFD54F", fontWeight: 600 }}>Sativa {s.sativa_percentage}%</Typography>
+          </Box>
+
+          {/* THC / CBD */}
+          {((s.thc && s.thc > 0) || (s.cbd && s.cbd > 0)) && (
+            <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+              {s.thc && s.thc > 0 && (
+                <Box sx={{ ...glassCard({ px: 2, py: 1 }) }}>
+                  <Typography sx={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.4)", mb: 0.2, textTransform: "uppercase", letterSpacing: "0.08em" }}>THC</Typography>
+                  <Typography sx={{ fontSize: "1.1rem", fontWeight: 700, color: "#66BB6A" }}>{s.thc}%</Typography>
+                </Box>
+              )}
+              {s.cbd && s.cbd > 0 && (
+                <Box sx={{ ...glassCard({ px: 2, py: 1 }) }}>
+                  <Typography sx={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.4)", mb: 0.2, textTransform: "uppercase", letterSpacing: "0.08em" }}>CBD</Typography>
+                  <Typography sx={{ fontSize: "1.1rem", fontWeight: 700, color: "#9575CD" }}>{s.cbd}%</Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {/* Description */}
+          {s.description && (
+            <Typography sx={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.65, mb: 2 }}>
+              {s.description}
+            </Typography>
+          )}
+
+          {/* Effects */}
+          {s.effects && s.effects.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.35)", mb: 1, letterSpacing: "0.1em", textTransform: "uppercase" }}>Effects</Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.8 }}>
+                {s.effects.map((e) => (
+                  <Box key={e} sx={{
+                    px: 1.2, py: 0.5, borderRadius: "10px",
+                    background: "rgba(102,187,106,0.1)", border: "1px solid rgba(102,187,106,0.18)",
+                    fontSize: "0.75rem", color: "#66BB6A",
+                  }}>
+                    {EFFECT_ICONS[e.toLowerCase()] || "🌿"} {capFirst(e)}
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {/* Terpenes/Flavors */}
+          {s.flavors && s.flavors.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.35)", mb: 1, letterSpacing: "0.1em", textTransform: "uppercase" }}>Terpenes</Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.8 }}>
+                {s.flavors.map((t) => (
+                  <Box key={t} sx={{
+                    px: 1.2, py: 0.5, borderRadius: "10px",
+                    background: "rgba(255,213,79,0.08)", border: "1px solid rgba(255,213,79,0.18)",
+                    fontSize: "0.75rem", color: "#FFD54F",
+                  }}>
+                    🧪 {capFirst(t)}
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  // ─── Render ──────────────────────────────────────────────────────────────
   return (
-    <>
-      <TopNav title="Strain Database" showBack />
-      <main className="min-h-screen bg-black text-white">
-        <div className="mx-auto w-full max-w-[720px] px-4 py-6">
-          {/* Stats Bar */}
-          <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
-            {(["All", "Indica", "Sativa", "Hybrid"] as const).map((t) => (
+    <Box sx={{ minHeight: "100vh", background: "linear-gradient(180deg, #111816, #0d120f)", color: "#fff" }}>
+      <TopNav />
+
+      <Box sx={{ p: 2, maxWidth: 600, mx: "auto", pb: 12 }}>
+        {/* Back + Header */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, mt: 0.5 }}>
+          <ButtonBase
+            onClick={() => router.push("/garden")}
+            sx={{ p: 0.5, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }}
+          >
+            <ArrowBackIosNewIcon sx={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }} />
+          </ButtonBase>
+          <Box sx={{ flex: 1, textAlign: "center" }}>
+            <Typography sx={{
+              fontSize: "1.4rem", fontWeight: 800,
+              background: "linear-gradient(135deg, #66BB6A, #FFD54F)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>
+              🔬 Strain Database
+            </Typography>
+            <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", mt: 0.2 }}>
+              {loading ? "Loading…" : `${total.toLocaleString()} strains`}
+            </Typography>
+          </Box>
+          <Box sx={{ width: 30 }} /> {/* spacer */}
+        </Box>
+
+        {/* Search bar */}
+        <Box sx={{ ...glassCard({ display: "flex", alignItems: "center", px: 2, py: 1.2, mb: 2 }) }}>
+          <SearchIcon sx={{ color: "rgba(255,255,255,0.3)", mr: 1, fontSize: 20 }} />
+          <input
+            type="text"
+            placeholder="Search strains…"
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            style={{
+              flex: 1, background: "transparent", border: "none", outline: "none",
+              color: "#fff", fontSize: "0.9rem", fontFamily: "inherit",
+            }}
+          />
+          {searchInput && (
+            <ButtonBase onClick={() => { setSearchInput(""); setSearch(""); }} sx={{ p: 0.3 }}>
+              <CloseIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.3)" }} />
+            </ButtonBase>
+          )}
+        </Box>
+
+        {/* Filter row */}
+        <Box sx={{ display: "flex", gap: 0.8, mb: 2, flexWrap: "wrap" }}>
+          {[
+            { label: "All", value: "" as const, icon: <AutoAwesomeIcon sx={{ fontSize: 13 }} /> },
+            { label: "Indica", value: "Indica" as const, icon: <SpaIcon sx={{ fontSize: 13 }} /> },
+            { label: "Sativa", value: "Sativa" as const, icon: <LocalFireDepartmentIcon sx={{ fontSize: 13 }} /> },
+            { label: "Hybrid", value: "Hybrid" as const, icon: <SpaIcon sx={{ fontSize: 13 }} /> },
+          ].map(({ label, value, icon }) => {
+            const active = typeFilter === value;
+            const tc = value ? TYPE_COLORS[value as StrainType] : { bg: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.2)", text: "#fff" };
+            return (
               <ButtonBase
-                key={t}
-                onClick={() => setTypeFilter(t)}
+                key={label}
+                onClick={() => setTypeFilter(value)}
                 sx={{
-                  ...glassCard({
-                    padding: "8px 16px",
-                    borderRadius: "12px",
-                    transition: "all 0.2s",
-                    border:
-                      typeFilter === t
-                        ? `1px solid ${t === "All" ? "#fff" : TYPE_COLORS[t]}`
-                        : "1px solid rgba(255,255,255,0.15)",
-                    background:
-                      typeFilter === t
-                        ? `${t === "All" ? "rgba(255,255,255,0.15)" : TYPE_COLORS[t]}22`
-                        : "rgba(255,255,255,0.06)",
-                  }),
+                  px: 1.3, py: 0.6, borderRadius: "10px",
+                  background: active ? tc.bg : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${active ? tc.border : "rgba(255,255,255,0.08)"}`,
+                  display: "flex", alignItems: "center", gap: 0.4,
+                  transition: "all 0.15s ease",
                 }}
               >
-                <Typography sx={{ color: "white", fontSize: 13, fontWeight: 600 }}>
-                  {t === "All" ? "🌿" : ""} {t}{" "}
-                  <span style={{ opacity: 0.5 }}>
-                    ({counts[t as keyof typeof counts]})
-                  </span>
+                <Box sx={{ color: active ? tc.text : "rgba(255,255,255,0.35)", display: "flex" }}>{icon}</Box>
+                <Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: active ? tc.text : "rgba(255,255,255,0.45)" }}>
+                  {label}
                 </Typography>
               </ButtonBase>
-            ))}
-          </Box>
+            );
+          })}
 
-          {/* Search */}
-          <Box sx={{ position: "relative", mb: 3 }}>
-            <SearchIcon
-              sx={{
-                position: "absolute",
-                left: 14,
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "rgba(255,255,255,0.4)",
-                fontSize: 20,
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Search strains, genetics, terpenes, effects..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 16px 12px 44px",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: "12px",
-                color: "white",
-                fontSize: 14,
-                outline: "none",
-                backdropFilter: "blur(12px)",
-              }}
-            />
-          </Box>
+          <ButtonBase
+            onClick={() => setSort(sort === "popular" ? "name" : "popular")}
+            sx={{
+              ml: "auto", px: 1.3, py: 0.6, borderRadius: "10px",
+              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <Typography sx={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>
+              {sort === "popular" ? "🔥 Popular" : "🔤 A–Z"}
+            </Typography>
+          </ButtonBase>
+        </Box>
 
-          {/* Results count */}
-          <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 13, mb: 2 }}>
-            {loading
-              ? "Loading strain database..."
-              : `${filtered.length} strain${filtered.length !== 1 ? "s" : ""}`}
-          </Typography>
-
-          {/* Strain Cards */}
+        {/* Strain list with scroll */}
+        <Box
+          ref={scrollRef}
+          onScroll={handleScroll}
+          sx={{
+            display: "flex", flexDirection: "column", gap: 1.2,
+            maxHeight: "calc(100vh - 300px)", overflowY: "auto",
+            pr: 0.5,
+            /* thin scrollbar */
+            "&::-webkit-scrollbar": { width: 4 },
+            "&::-webkit-scrollbar-thumb": { background: "rgba(255,255,255,0.1)", borderRadius: 2 },
+          }}
+        >
           {loading ? (
-            <Box sx={{ textAlign: "center", py: 8 }}>
-              <Typography sx={{ color: "rgba(255,255,255,0.5)" }}>
-                Loading strains...
-              </Typography>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+              <CircularProgress size={32} sx={{ color: "#66BB6A" }} />
             </Box>
-          ) : filtered.length === 0 ? (
+          ) : strains.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
-              <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 16 }}>
+              <Typography sx={{ fontSize: "2rem", mb: 1 }}>🔍</Typography>
+              <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>
                 No strains found
               </Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: 13, mt: 1 }}>
+              <Typography sx={{ color: "rgba(255,255,255,0.25)", fontSize: "0.72rem", mt: 0.5 }}>
                 Try a different search or filter
               </Typography>
             </Box>
           ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-              {filtered.map((strain) => {
-                const isExpanded = expandedId === strain.name;
-                return (
-                  <ButtonBase
-                    key={strain.name}
-                    onClick={() =>
-                      setExpandedId(isExpanded ? null : strain.name)
-                    }
-                    sx={{
-                      ...glassCard({
-                        padding: "16px",
-                        textAlign: "left",
-                        width: "100%",
-                        display: "block",
-                        transition: "all 0.2s",
-                        "&:hover": {
-                          background: "rgba(255,255,255,0.1)",
-                          borderColor: "rgba(255,255,255,0.25)",
-                        },
-                      }),
-                    }}
-                  >
-                    {/* Header Row */}
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 2,
-                      }}
-                    >
-                      <Box sx={{ flex: 1 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                          <Box
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: "8px",
-                              background: `${TYPE_COLORS[strain.type]}33`,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: TYPE_COLORS[strain.type],
-                            }}
-                          >
-                            {TYPE_ICONS[strain.type]}
-                          </Box>
-                          <Box>
-                            <Typography
-                              sx={{
-                                color: "white",
-                                fontWeight: 700,
-                                fontSize: 16,
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {strain.name}
-                            </Typography>
-                            <Typography
-                              sx={{
-                                color: "rgba(255,255,255,0.5)",
-                                fontSize: 12,
-                                mt: 0.25,
-                              }}
-                            >
-                              {strain.genetics}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                      <Box
-                        sx={{
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: "8px",
-                          background: `${TYPE_COLORS[strain.type]}22`,
-                          border: `1px solid ${TYPE_COLORS[strain.type]}44`,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            color: TYPE_COLORS[strain.type],
-                            fontSize: 11,
-                            fontWeight: 700,
-                            textTransform: "uppercase",
-                            letterSpacing: 0.5,
-                          }}
-                        >
-                          {strain.type}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Terpene chips (always visible) */}
-                    <Box sx={{ display: "flex", gap: 0.75, mt: 1.5, flexWrap: "wrap" }}>
-                      {strain.terpeneProfile.slice(0, 3).map((t) => (
-                        <Box
-                          key={t}
-                          sx={{
-                            px: 1,
-                            py: 0.25,
-                            borderRadius: "6px",
-                            background: `${TERPENE_COLORS[t] || "#888"}22`,
-                            border: `1px solid ${TERPENE_COLORS[t] || "#888"}44`,
-                          }}
-                        >
-                          <Typography
-                            sx={{
-                              fontSize: 10,
-                              color: TERPENE_COLORS[t] || "#888",
-                              fontWeight: 600,
-                              textTransform: "capitalize",
-                            }}
-                          >
-                            {t}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-
-                    {/* Expanded Details */}
-                    {isExpanded && (
-                      <Box
-                        sx={{
-                          mt: 2,
-                          pt: 2,
-                          borderTop: "1px solid rgba(255,255,255,0.1)",
-                        }}
-                      >
-                        {/* Indica / Sativa Ratio Bar */}
-                        {strain.indicaSativaRatio && (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography
-                              sx={{
-                                color: "rgba(255,255,255,0.4)",
-                                fontSize: 10,
-                                fontWeight: 700,
-                                textTransform: "uppercase",
-                                letterSpacing: 1,
-                                mb: 0.75,
-                              }}
-                            >
-                              Indica / Sativa Ratio
-                            </Typography>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Typography sx={{ color: "#9b59b6", fontSize: 12, fontWeight: 700, minWidth: 28, textAlign: "right" }}>
-                                {strain.indicaSativaRatio.indica}%
-                              </Typography>
-                              <Box
-                                sx={{
-                                  flex: 1,
-                                  height: 8,
-                                  borderRadius: "4px",
-                                  overflow: "hidden",
-                                  background: "rgba(255,255,255,0.08)",
-                                  display: "flex",
-                                }}
-                              >
-                                <Box
-                                  sx={{
-                                    width: `${strain.indicaSativaRatio.indica}%`,
-                                    height: "100%",
-                                    background: "linear-gradient(90deg, #9b59b6, #8e44ad)",
-                                    borderRadius: strain.indicaSativaRatio.indica === 100 ? "4px" : "4px 0 0 4px",
-                                    transition: "width 0.3s ease",
-                                  }}
-                                />
-                                <Box
-                                  sx={{
-                                    width: `${strain.indicaSativaRatio.sativa}%`,
-                                    height: "100%",
-                                    background: "linear-gradient(90deg, #e67e22, #d35400)",
-                                    borderRadius: strain.indicaSativaRatio.sativa === 100 ? "4px" : "0 4px 4px 0",
-                                    transition: "width 0.3s ease",
-                                  }}
-                                />
-                              </Box>
-                              <Typography sx={{ color: "#e67e22", fontSize: 12, fontWeight: 700, minWidth: 28 }}>
-                                {strain.indicaSativaRatio.sativa}%
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.25 }}>
-                              <Typography sx={{ color: "rgba(155,89,182,0.6)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                                Indica
-                              </Typography>
-                              <Typography sx={{ color: "rgba(230,126,34,0.6)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                                Sativa
-                              </Typography>
-                            </Box>
-                          </Box>
-                        )}
-
-                        {/* Aliases */}
-                        {strain.aliases.length > 0 && (
-                          <Box sx={{ mb: 1.5 }}>
-                            <Typography
-                              sx={{
-                                color: "rgba(255,255,255,0.4)",
-                                fontSize: 10,
-                                fontWeight: 700,
-                                textTransform: "uppercase",
-                                letterSpacing: 1,
-                                mb: 0.5,
-                              }}
-                            >
-                              Also Known As
-                            </Typography>
-                            <Typography
-                              sx={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}
-                            >
-                              {strain.aliases.join(", ")}
-                            </Typography>
-                          </Box>
-                        )}
-
-                        {/* Visual Profile */}
-                        <Box sx={{ mb: 1.5 }}>
-                          <Typography
-                            sx={{
-                              color: "rgba(255,255,255,0.4)",
-                              fontSize: 10,
-                              fontWeight: 700,
-                              textTransform: "uppercase",
-                              letterSpacing: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            Visual Profile
-                          </Typography>
-                          <Typography
-                            sx={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}
-                          >
-                            {strain.visualProfile.colorProfile}
-                          </Typography>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 2,
-                              mt: 1,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <Box>
-                              <Typography
-                                sx={{
-                                  color: "rgba(255,255,255,0.35)",
-                                  fontSize: 10,
-                                }}
-                              >
-                                Trichomes
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  color: "white",
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  textTransform: "capitalize",
-                                }}
-                              >
-                                {strain.visualProfile.trichomeDensity}
-                              </Typography>
-                            </Box>
-                            <Box>
-                              <Typography
-                                sx={{
-                                  color: "rgba(255,255,255,0.35)",
-                                  fontSize: 10,
-                                }}
-                              >
-                                Bud Density
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  color: "white",
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  textTransform: "capitalize",
-                                }}
-                              >
-                                {strain.visualProfile.budStructure}
-                              </Typography>
-                            </Box>
-                            <Box>
-                              <Typography
-                                sx={{
-                                  color: "rgba(255,255,255,0.35)",
-                                  fontSize: 10,
-                                }}
-                              >
-                                Leaf Shape
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  color: "white",
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  textTransform: "capitalize",
-                                }}
-                              >
-                                {strain.visualProfile.leafShape}
-                              </Typography>
-                            </Box>
-                            <Box>
-                              <Typography
-                                sx={{
-                                  color: "rgba(255,255,255,0.35)",
-                                  fontSize: 10,
-                                }}
-                              >
-                                Pistil Colors
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  color: "white",
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  textTransform: "capitalize",
-                                }}
-                              >
-                                {strain.visualProfile.pistilColor.join(", ")}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-
-                        {/* Effects */}
-                        <Box sx={{ mb: 1 }}>
-                          <Typography
-                            sx={{
-                              color: "rgba(255,255,255,0.4)",
-                              fontSize: 10,
-                              fontWeight: 700,
-                              textTransform: "uppercase",
-                              letterSpacing: 1,
-                              mb: 0.5,
-                            }}
-                          >
-                            Effects
-                          </Typography>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 0.75,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            {strain.effects.map((e) => (
-                              <Box
-                                key={e}
-                                sx={{
-                                  px: 1,
-                                  py: 0.25,
-                                  borderRadius: "6px",
-                                  background: "rgba(255,255,255,0.08)",
-                                  border: "1px solid rgba(255,255,255,0.15)",
-                                }}
-                              >
-                                <Typography
-                                  sx={{
-                                    fontSize: 11,
-                                    color: "rgba(255,255,255,0.7)",
-                                    textTransform: "capitalize",
-                                  }}
-                                >
-                                  {e}
-                                </Typography>
-                              </Box>
-                            ))}
-                          </Box>
-                        </Box>
-                      </Box>
-                    )}
-                  </ButtonBase>
-                );
-              })}
-            </Box>
+            <>
+              {strains.map((s) => <StrainCard key={s.id} strain={s} />)}
+              {loadingMore && (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                  <CircularProgress size={24} sx={{ color: "#66BB6A" }} />
+                </Box>
+              )}
+              {page >= totalPages && strains.length > 0 && (
+                <Typography sx={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: "0.7rem", py: 2 }}>
+                  That's all {total.toLocaleString()} strains
+                </Typography>
+              )}
+            </>
           )}
-        </div>
-      </main>
-    </>
+        </Box>
+      </Box>
+
+      {/* Detail modal */}
+      <DetailModal />
+    </Box>
   );
 }
