@@ -27,6 +27,7 @@ interface StrainEntry {
   terpeneProfile: string[];
   effects: string[];
   sources: string[];
+  indicaSativaRatio?: { indica: number; sativa: number };
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -340,6 +341,69 @@ export default function StrainsPage() {
                           borderTop: "1px solid rgba(255,255,255,0.1)",
                         }}
                       >
+                        {/* Indica / Sativa Ratio Bar */}
+                        {strain.indicaSativaRatio && (
+                          <Box sx={{ mb: 2 }}>
+                            <Typography
+                              sx={{
+                                color: "rgba(255,255,255,0.4)",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                letterSpacing: 1,
+                                mb: 0.75,
+                              }}
+                            >
+                              Indica / Sativa Ratio
+                            </Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography sx={{ color: "#9b59b6", fontSize: 12, fontWeight: 700, minWidth: 28, textAlign: "right" }}>
+                                {strain.indicaSativaRatio.indica}%
+                              </Typography>
+                              <Box
+                                sx={{
+                                  flex: 1,
+                                  height: 8,
+                                  borderRadius: "4px",
+                                  overflow: "hidden",
+                                  background: "rgba(255,255,255,0.08)",
+                                  display: "flex",
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    width: `${strain.indicaSativaRatio.indica}%`,
+                                    height: "100%",
+                                    background: "linear-gradient(90deg, #9b59b6, #8e44ad)",
+                                    borderRadius: strain.indicaSativaRatio.indica === 100 ? "4px" : "4px 0 0 4px",
+                                    transition: "width 0.3s ease",
+                                  }}
+                                />
+                                <Box
+                                  sx={{
+                                    width: `${strain.indicaSativaRatio.sativa}%`,
+                                    height: "100%",
+                                    background: "linear-gradient(90deg, #e67e22, #d35400)",
+                                    borderRadius: strain.indicaSativaRatio.sativa === 100 ? "4px" : "0 4px 4px 0",
+                                    transition: "width 0.3s ease",
+                                  }}
+                                />
+                              </Box>
+                              <Typography sx={{ color: "#e67e22", fontSize: 12, fontWeight: 700, minWidth: 28 }}>
+                                {strain.indicaSativaRatio.sativa}%
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.25 }}>
+                              <Typography sx={{ color: "rgba(155,89,182,0.6)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                                Indica
+                              </Typography>
+                              <Typography sx={{ color: "rgba(230,126,34,0.6)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                                Sativa
+                              </Typography>
+                            </Box>
+                          </Box>
+                        )}
+
                         {/* Aliases */}
                         {strain.aliases.length > 0 && (
                           <Box sx={{ mb: 1.5 }}>
