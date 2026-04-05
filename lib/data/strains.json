@@ -46,7 +46,11 @@
       "myrcene",
       "limonene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 55,
+      "sativa": 45
+    }
   },
   {
     "name": "Blue Dream",
@@ -95,7 +99,11 @@
       "myrcene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "Northern Lights",
@@ -143,7 +151,11 @@
       "myrcene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 95,
+      "sativa": 5
+    }
   },
   {
     "name": "White Widow",
@@ -191,7 +203,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "Sour Diesel",
@@ -240,7 +256,11 @@
       "caryophyllene",
       "limonene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 10,
+      "sativa": 90
+    }
   },
   {
     "name": "Jack Herer",
@@ -288,7 +308,11 @@
       "terpinolene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 20,
+      "sativa": 80
+    }
   },
   {
     "name": "Purple Haze",
@@ -336,7 +360,11 @@
       "myrcene",
       "caryophyllene",
       "ocimene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 15,
+      "sativa": 85
+    }
   },
   {
     "name": "Granddaddy Purple",
@@ -384,7 +412,11 @@
       "myrcene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 80,
+      "sativa": 20
+    }
   },
   {
     "name": "Girl Scout Cookies",
@@ -433,7 +465,11 @@
       "caryophyllene",
       "limonene",
       "humulene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 60,
+      "sativa": 40
+    }
   },
   {
     "name": "AK-47",
@@ -481,7 +517,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 35,
+      "sativa": 65
+    }
   },
   {
     "name": "Gelato",
@@ -530,7 +570,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 55,
+      "sativa": 45
+    }
   },
   {
     "name": "Wedding Cake",
@@ -579,7 +623,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 60,
+      "sativa": 40
+    }
   },
   {
     "name": "Runtz",
@@ -627,7 +675,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Zkittlez",
@@ -676,7 +728,11 @@
       "caryophyllene",
       "linalool",
       "humulene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "Gorilla Glue #4",
@@ -726,7 +782,11 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Mimosa",
@@ -772,7 +832,11 @@
       "limonene",
       "myrcene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 30,
+      "sativa": 70
+    }
   },
   {
     "name": "Ice Cream Cake",
@@ -820,7 +884,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 75,
+      "sativa": 25
+    }
   },
   {
     "name": "Mac 1",
@@ -869,7 +937,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Gary Payton",
@@ -917,7 +989,11 @@
       "caryophyllene",
       "limonene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Biscotti",
@@ -965,7 +1041,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 80,
+      "sativa": 20
+    }
   },
   {
     "name": "Bubba Kush",
@@ -1014,7 +1094,11 @@
       "caryophyllene",
       "limonene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 85,
+      "sativa": 15
+    }
   },
   {
     "name": "Master Kush",
@@ -1061,7 +1145,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 90,
+      "sativa": 10
+    }
   },
   {
     "name": "Skywalker OG",
@@ -1109,7 +1197,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 85,
+      "sativa": 15
+    }
   },
   {
     "name": "Hindu Kush",
@@ -1155,7 +1247,11 @@
       "myrcene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 100,
+      "sativa": 0
+    }
   },
   {
     "name": "Purple Kush",
@@ -1203,7 +1299,11 @@
       "myrcene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 100,
+      "sativa": 0
+    }
   },
   {
     "name": "Afghan Kush",
@@ -1250,7 +1350,11 @@
       "myrcene",
       "pinene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 100,
+      "sativa": 0
+    }
   },
   {
     "name": "Chemdawg",
@@ -1300,7 +1404,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 45,
+      "sativa": 55
+    }
   },
   {
     "name": "NYC Diesel",
@@ -1348,7 +1456,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "East Coast Sour Diesel",
@@ -1394,7 +1506,11 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 10,
+      "sativa": 90
+    }
   },
   {
     "name": "Super Silver Haze",
@@ -1442,7 +1558,11 @@
       "terpinolene",
       "myrcene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 10,
+      "sativa": 90
+    }
   },
   {
     "name": "Amnesia Haze",
@@ -1488,7 +1608,11 @@
       "terpinolene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 20,
+      "sativa": 80
+    }
   },
   {
     "name": "Lemon Haze",
@@ -1536,7 +1660,11 @@
       "limonene",
       "terpinolene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 20,
+      "sativa": 80
+    }
   },
   {
     "name": "Thin Mint GSC",
@@ -1585,7 +1713,11 @@
       "caryophyllene",
       "limonene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 60,
+      "sativa": 40
+    }
   },
   {
     "name": "Platinum Cookies",
@@ -1632,7 +1764,11 @@
       "caryophyllene",
       "limonene",
       "humulene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Animal Cookies",
@@ -1680,7 +1816,11 @@
       "caryophyllene",
       "limonene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 75,
+      "sativa": 25
+    }
   },
   {
     "name": "Sunset Sherbet",
@@ -1729,7 +1869,11 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 85,
+      "sativa": 15
+    }
   },
   {
     "name": "Gelato #41",
@@ -1777,7 +1921,11 @@
       "limonene",
       "caryophyllene",
       "humulene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 55,
+      "sativa": 45
+    }
   },
   {
     "name": "Gelato #45",
@@ -1826,7 +1974,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 55,
+      "sativa": 45
+    }
   },
   {
     "name": "Purple Punch",
@@ -1874,7 +2026,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 90,
+      "sativa": 10
+    }
   },
   {
     "name": "Grape Ape",
@@ -1922,7 +2078,11 @@
       "myrcene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 90,
+      "sativa": 10
+    }
   },
   {
     "name": "Tangie",
@@ -1968,7 +2128,11 @@
       "limonene",
       "myrcene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 20,
+      "sativa": 80
+    }
   },
   {
     "name": "Strawberry Cough",
@@ -2016,7 +2180,11 @@
       "myrcene",
       "pinene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 20,
+      "sativa": 80
+    }
   },
   {
     "name": "Pineapple Express",
@@ -2064,7 +2232,11 @@
       "limonene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "Mango Kush",
@@ -2112,7 +2284,11 @@
       "myrcene",
       "limonene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 65,
+      "sativa": 35
+    }
   },
   {
     "name": "Blueberry",
@@ -2160,7 +2336,11 @@
       "myrcene",
       "pinene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 80,
+      "sativa": 20
+    }
   },
   {
     "name": "Lemon Skunk",
@@ -2208,7 +2388,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "Trainwreck",
@@ -2254,7 +2438,11 @@
       "myrcene",
       "limonene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 35,
+      "sativa": 65
+    }
   },
   {
     "name": "Green Crack",
@@ -2301,7 +2489,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 35,
+      "sativa": 65
+    }
   },
   {
     "name": "Headband",
@@ -2349,7 +2541,11 @@
       "myrcene",
       "limonene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "Durban Poison",
@@ -2397,7 +2593,11 @@
       "terpinolene",
       "myrcene",
       "ocimene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 0,
+      "sativa": 100
+    }
   },
   {
     "name": "Skunk #1",
@@ -2444,7 +2644,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 35,
+      "sativa": 65
+    }
   },
   {
     "name": "Banana Kush",
@@ -2492,7 +2696,11 @@
       "limonene",
       "myrcene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 60,
+      "sativa": 40
+    }
   },
   {
     "name": "Cereal Milk",
@@ -2540,7 +2748,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Cake Crasher",
@@ -2588,7 +2800,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 60,
+      "sativa": 40
+    }
   },
   {
     "name": "Birthday Cake Kush",
@@ -2636,7 +2852,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "White Widow Auto",
@@ -2684,7 +2904,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "Northern Lights Auto",
@@ -2730,7 +2954,11 @@
       "myrcene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 95,
+      "sativa": 5
+    }
   },
   {
     "name": "Gorilla Glue Auto",
@@ -2778,7 +3006,11 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "London Pound Cake",
@@ -2827,7 +3059,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "Jealousy",
@@ -2873,7 +3109,11 @@
       "caryophyllene",
       "limonene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Permanent Marker",
@@ -2919,7 +3159,11 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 60,
+      "sativa": 40
+    }
   },
   {
     "name": "Pink Runtz",
@@ -2967,7 +3211,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "White Runtz",
@@ -3015,7 +3263,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Dosidos",
@@ -3064,7 +3316,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "Tropicana Cookies",
@@ -3113,7 +3369,11 @@
       "limonene",
       "myrcene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 20,
+      "sativa": 80
+    }
   },
   {
     "name": "Georgia Pie",
@@ -3161,7 +3421,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 55,
+      "sativa": 45
+    }
   },
   {
     "name": "Sherbert",
@@ -3210,7 +3474,11 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 85,
+      "sativa": 15
+    }
   },
   {
     "name": "Zookies",
@@ -3256,7 +3524,11 @@
       "caryophyllene",
       "limonene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Cherry Pie",
@@ -3304,7 +3576,11 @@
       "myrcene",
       "caryophyllene",
       "pinene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 80,
+      "sativa": 20
+    }
   },
   {
     "name": "WiFi OG",
@@ -3353,7 +3629,11 @@
       "caryophyllene",
       "limonene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Blue Cheese",
@@ -3401,7 +3681,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 80,
+      "sativa": 20
+    }
   },
   {
     "name": "Lava Cake",
@@ -3449,7 +3733,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "Obama Runtz",
@@ -3495,7 +3783,11 @@
       "caryophyllene",
       "limonene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Sundae Driver",
@@ -3543,7 +3835,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Apple Fritter",
@@ -3589,7 +3885,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Slurricane",
@@ -3637,7 +3937,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 80,
+      "sativa": 20
+    }
   },
   {
     "name": "Kush Mints",
@@ -3685,7 +3989,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Grease Monkey",
@@ -3733,7 +4041,11 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "Mai Tai",
@@ -3779,7 +4091,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "Black Cherry Punch",
@@ -3827,7 +4143,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 80,
+      "sativa": 20
+    }
   },
   {
     "name": "Oreoz",
@@ -3875,7 +4195,11 @@
       "caryophyllene",
       "limonene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 60,
+      "sativa": 40
+    }
   },
   {
     "name": "Watermelon Zkittlez",
@@ -3923,7 +4247,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "Motor Breath",
@@ -3972,7 +4300,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "Triangle Kush",
@@ -4021,7 +4353,11 @@
       "myrcene",
       "limonene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 85,
+      "sativa": 15
+    }
   },
   {
     "name": "Crescendo",
@@ -4067,7 +4403,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 40,
+      "sativa": 60
+    }
   },
   {
     "name": "Gelonade",
@@ -4113,7 +4453,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 30,
+      "sativa": 70
+    }
   },
   {
     "name": "Rainbow Belts",
@@ -4163,7 +4507,11 @@
       "limonene",
       "caryophyllene",
       "linalool"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   },
   {
     "name": "Gushers",
@@ -4212,7 +4560,11 @@
       "limonene",
       "caryophyllene",
       "myrcene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 60,
+      "sativa": 40
+    }
   },
   {
     "name": "Papaya",
@@ -4260,7 +4612,11 @@
       "myrcene",
       "limonene",
       "caryophyllene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 80,
+      "sativa": 20
+    }
   },
   {
     "name": "GMO Cookies",
@@ -4310,7 +4666,11 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 90,
+      "sativa": 10
+    }
   },
   {
     "name": "Platinum OG",
@@ -4358,7 +4718,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 75,
+      "sativa": 25
+    }
   },
   {
     "name": "Fire OG",
@@ -4406,7 +4770,11 @@
       "myrcene",
       "caryophyllene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 70,
+      "sativa": 30
+    }
   },
   {
     "name": "GG4",
@@ -4455,6 +4823,10 @@
       "caryophyllene",
       "myrcene",
       "limonene"
-    ]
+    ],
+    "indicaSativaRatio": {
+      "indica": 50,
+      "sativa": 50
+    }
   }
 ]
