@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import ScanPaywall from "@/components/ScanPaywall";
+import MembershipSignup from "@/components/MembershipSignup";
 import LockIcon from "@mui/icons-material/Lock";
 
 const MEMBER_KEY = "ss_membership_tier";
@@ -25,13 +25,17 @@ interface MemberGateProps {
 }
 
 /**
- * Wraps a feature page. If the user is not a member, shows a beautiful
- * lock screen with the membership paywall instead of the page content.
+ * Wraps a feature page. If the user is not a member, shows a lock screen
+ * with a "Become a Member" button that opens the MembershipSignup form.
  */
-export default function MemberGate({ children, featureName, featureIcon = "🔒" }: MemberGateProps) {
+export default function MemberGate({
+  children,
+  featureName,
+  featureIcon = "🔒",
+}: MemberGateProps) {
   const router = useRouter();
   const [tier, setTier] = useState<"free" | "member" | "pro" | null>(null);
-  const [showPaywall, setShowPaywall] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   useEffect(() => {
     setTier(getMembershipTier());
@@ -40,8 +44,17 @@ export default function MemberGate({ children, featureName, featureIcon = "🔒"
   // Loading state
   if (tier === null) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>Loading...</div>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
+          Loading...
+        </div>
       </div>
     );
   }
@@ -51,7 +64,7 @@ export default function MemberGate({ children, featureName, featureIcon = "🔒"
     return <>{children}</>;
   }
 
-  // Free user — show lock screen
+  // Free user — show lock screen with signup form
   return (
     <>
       <div
@@ -100,15 +113,31 @@ export default function MemberGate({ children, featureName, featureIcon = "🔒"
           </div>
         </div>
 
-        <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 8px" }}>
+        <h2
+          style={{
+            color: "#fff",
+            fontSize: 22,
+            fontWeight: 800,
+            margin: "0 0 8px",
+          }}
+        >
           {featureName}
         </h2>
-        <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 14, lineHeight: 1.6, maxWidth: 300, margin: "0 0 24px" }}>
-          This feature is available to StrainSpotter members. Join to unlock {featureName.toLowerCase()} and everything in The Garden.
+        <p
+          style={{
+            color: "rgba(255,255,255,0.45)",
+            fontSize: 14,
+            lineHeight: 1.6,
+            maxWidth: 300,
+            margin: "0 0 24px",
+          }}
+        >
+          This feature is available to StrainSpotter members. Join to unlock{" "}
+          {featureName.toLowerCase()} and everything in The Garden.
         </p>
 
         <button
-          onClick={() => setShowPaywall(true)}
+          onClick={() => setShowSignup(true)}
           style={{
             background: "linear-gradient(135deg, #43A047, #2E7D32)",
             border: "none",
@@ -121,7 +150,7 @@ export default function MemberGate({ children, featureName, featureIcon = "🔒"
             marginBottom: 12,
           }}
         >
-          View Membership Plans
+          Become a Member
         </button>
 
         <button
@@ -139,8 +168,8 @@ export default function MemberGate({ children, featureName, featureIcon = "🔒"
         </button>
       </div>
 
-      {showPaywall && (
-        <ScanPaywall mode="warning" onClose={() => setShowPaywall(false)} />
+      {showSignup && (
+        <MembershipSignup onClose={() => setShowSignup(false)} />
       )}
     </>
   );
