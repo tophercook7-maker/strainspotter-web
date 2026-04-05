@@ -9,15 +9,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { priceKey, email, userId } = body as {
+    const { priceKey, email, userId, name, moderatorInterest } = body as {
       priceKey: keyof typeof STRIPE_PRICES;
       email?: string;
       userId?: string;
+      name?: string;
+      moderatorInterest?: boolean;
     };
 
     const priceId = STRIPE_PRICES[priceKey];
     if (!priceId) {
-      return NextResponse.json({ error: "Invalid price key" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid price key" },
+        { status: 400 }
+      );
     }
 
     const isSubscription = priceKey === "member" || priceKey === "pro";
@@ -26,11 +31,13 @@ export async function POST(req: NextRequest) {
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: isSubscription ? "subscription" : "payment",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/garden?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/garden?checkout=cancelled`,
+      success_url: `${origin}/garden/scanner?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/garden/scanner?checkout=cancelled`,
       metadata: {
         priceKey,
         userId: userId || "",
+        customerName: name || "",
+        moderatorInterest: moderatorInterest ? "yes" : "no",
       },
     };
 
