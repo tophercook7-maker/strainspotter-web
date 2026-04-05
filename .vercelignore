@@ -3,8 +3,8 @@ pipeline-control/
 src-tauri/
 *.rs
 
-# Supabase edge / functions
-supabase/
+# Supabase edge / functions (root only — not lib/supabase/)
+/supabase/
 scripts/
 ml-training/
 
