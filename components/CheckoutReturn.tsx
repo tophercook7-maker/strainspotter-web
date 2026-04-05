@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSupabase } from "@/lib/supabase/client";
 
 /**
  * After Stripe redirects back with ?checkout=success&session_id=...
- * 1. Sends credentials to verify-session POST (creates Supabase account server-side)
- * 2. Signs the user in
- * 3. Shows celebration, then reloads
+ * Just verify payment via GET, set localStorage tier, celebrate, reload.
+ * No Supabase calls — those hang in this environment.
  */
 export default function CheckoutReturn() {
   const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">("idle");
@@ -20,87 +18,62 @@ export default function CheckoutReturn() {
     const sessionId = params.get("session_id");
 
     if (checkout === "success" && sessionId) {
-      activateAccount(sessionId);
+      activate(sessionId);
     } else if (checkout === "cancelled") {
       window.history.replaceState({}, "", window.location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function activateAccount(sessionId: string) {
+  async function activate(sessionId: string) {
     setStatus("verifying");
 
     try {
-      // 1. Get saved signup info
-      const raw = localStorage.getItem("ss_signup_info");
-      const signup = raw ? JSON.parse(raw) : null;
-
-      if (!signup?.email || !signup?.password) {
-        // No saved credentials — just verify payment and set tier from GET
-        const res = await fetch(`/api/stripe/verify-session?session_id=${sessionId}`);
-        const data = await res.json();
-        if (data.tier) {
-          localStorage.setItem("ss_membership_tier", data.tier);
-          setTierName(data.tier === "pro" ? "Pro" : "Member");
-          setStatus("success");
-        } else {
-          setStatus("error");
-        }
-        cleanup(3000);
-        return;
-      }
-
-      // 2. Create account server-side via POST (uses admin API, skips email confirm)
-      const res = await fetch("/api/stripe/verify-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          email: signup.email,
-          password: signup.password,
-          name: signup.name || "",
-        }),
-      });
-
+      // 1. Verify the Stripe session (GET — lightweight, no Supabase)
+      const res = await fetch(`/api/stripe/verify-session?session_id=${sessionId}`);
       const data = await res.json();
 
-      // 3. Sign in the user client-side
-      if (signup.email && signup.password) {
-        const supabase = getSupabase();
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: signup.email,
-          password: signup.password,
-        });
-        if (signInError) {
-          console.warn("Auto sign-in failed:", signInError.message);
-          // Not critical — user can sign in manually
+      let tier = data.tier || null;
+
+      // 2. Fallback: check saved signup info
+      if (!tier) {
+        const raw = localStorage.getItem("ss_signup_info");
+        if (raw) {
+          try {
+            const signup = JSON.parse(raw);
+            tier = signup.plan || null;
+          } catch { /* ignore */ }
         }
       }
 
-      // 4. Save tier to localStorage
-      const tier = data.tier || signup.plan || null;
-      if (tier) {
+      // 3. Save tier to localStorage
+      if (tier === "member" || tier === "pro") {
         localStorage.setItem("ss_membership_tier", tier);
         localStorage.setItem("ss_member_info", JSON.stringify({
           tier,
-          email: signup.email,
-          name: signup.name || "",
-          userId: data.userId || "",
+          email: data.email || "",
+          name: data.name || "",
           activatedAt: Date.now(),
         }));
+        localStorage.removeItem("ss_signup_info");
+
         setTierName(tier === "pro" ? "Pro" : "Member");
         setStatus("success");
       } else {
+        // Payment might still have worked — set from signup info
         setStatus("error");
       }
 
-      // Clean up saved credentials
-      localStorage.removeItem("ss_signup_info");
-      cleanup(3000);
+      // Clean URL and reload after celebration
+      setTimeout(() => {
+        window.history.replaceState({}, "", window.location.pathname);
+        window.location.reload();
+      }, 2500);
 
     } catch (e) {
-      console.error("Activation error:", e);
-      // Try localStorage fallback
+      console.error("Checkout verify error:", e);
+
+      // Fallback: try localStorage
       const raw = localStorage.getItem("ss_signup_info");
       if (raw) {
         try {
@@ -110,21 +83,16 @@ export default function CheckoutReturn() {
             setTierName(signup.plan === "pro" ? "Pro" : "Member");
             setStatus("success");
             localStorage.removeItem("ss_signup_info");
-            cleanup(3000);
+            setTimeout(() => {
+              window.history.replaceState({}, "", window.location.pathname);
+              window.location.reload();
+            }, 2500);
             return;
           }
         } catch { /* ignore */ }
       }
       setStatus("error");
-      cleanup(5000);
     }
-  }
-
-  function cleanup(delayMs: number) {
-    setTimeout(() => {
-      window.history.replaceState({}, "", window.location.pathname);
-      window.location.reload();
-    }, delayMs);
   }
 
   if (status === "idle") return null;
@@ -169,7 +137,7 @@ export default function CheckoutReturn() {
             Something went wrong
           </h2>
           <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, marginBottom: 20 }}>
-            Your payment went through. Try refreshing the page.
+            Your payment went through. Try refreshing.
           </p>
           <button
             onClick={() => {
