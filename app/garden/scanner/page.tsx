@@ -316,6 +316,8 @@ export default function ScannerPage() {
       });
       
       console.log("STEP 5: STATE UPDATED");
+      setIsScanning(false);
+      console.log("HANDLER COMPLETE — Success");
     } catch (e) {
       // FAILURE MESSAGING SOFTENED — Never block user, always show partial result
       // Instead of alert, set a soft error message and show partial result
@@ -367,7 +369,7 @@ export default function ScannerPage() {
         {/* UI FIX — Constrain width: max-w-[680px], mx-auto, px-4 */}
       <div className="mx-auto w-full max-w-[720px] px-4 pb-24 md:pb-16 space-y-6">
         {/* A) Upload + Preview Card */}
-        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 space-y-4">
+        <div className="space-y-4">
               {/* Phase 5.2.4 — Improved File Upload UX with Drag and Drop */}
               <div className="space-y-2">
                 <label className="block">
@@ -713,7 +715,7 @@ export default function ScannerPage() {
         {/* Phase 5.2.5 — SCAN CTA BEHAVIOR (FIX) */}
         {/* Phase 5.2.6 — Sticky scan button on mobile only */}
         {/* B) Big Scan Button Card */}
-        <div className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl p-5 sm:p-6 sticky bottom-0 md:static z-10 bg-black/95 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none">
+        <div className="sticky bottom-0 md:static z-10 py-4 bg-black/90 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none">
           {/* Phase 4.0 Part A — Multi-image validation warning */}
           {images.length > 0 && images.length < 2 && !singleImageConfirmed && (
             <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-sm text-center max-w-md mx-auto">
