@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getSupabase } from "@/lib/supabase/client";
 
 interface MembershipSignupProps {
   onClose: () => void;
@@ -13,39 +14,69 @@ export default function MembershipSignup({
 }: MembershipSignupProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [plan, setPlan] = useState<"member" | "pro">(defaultPlan);
-  const [moderatorInterest, setModeratorInterest] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [step, setStep] = useState<"form" | "creating">("form");
 
   const handleSubmit = async () => {
-    if (!name.trim()) {
-      setError("Please enter your name");
-      return;
-    }
-    if (!email.trim() || !email.includes("@")) {
-      setError("Please enter a valid email");
-      return;
-    }
+    if (!name.trim()) { setError("Please enter your name"); return; }
+    if (!email.trim() || !email.includes("@")) { setError("Please enter a valid email"); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
 
     setError("");
     setLoading(true);
+    setStep("creating");
 
-    // Save signup info for after checkout return
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "ss_signup_info",
-        JSON.stringify({
+    try {
+      // 1. Create Supabase account
+      const supabase = getSupabase();
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { display_name: name.trim() },
+        },
+      });
+
+      if (signUpError) {
+        // If user already exists, try sign in
+        if (signUpError.message.includes("already registered")) {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          });
+          if (signInError) {
+            setError("Account exists. Check your password.");
+            setLoading(false);
+            setStep("form");
+            return;
+          }
+        } else {
+          setError(signUpError.message);
+          setLoading(false);
+          setStep("form");
+          return;
+        }
+      }
+
+      // 2. Get user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id || authData?.user?.id || "";
+
+      // 3. Save signup info for checkout return
+      if (typeof window !== "undefined") {
+        localStorage.setItem("ss_signup_info", JSON.stringify({
           name: name.trim(),
           email: email.trim(),
           plan,
-          moderatorInterest,
+          userId,
           ts: Date.now(),
-        })
-      );
-    }
+        }));
+      }
 
-    try {
+      // 4. Create Stripe checkout session
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,24 +84,28 @@ export default function MembershipSignup({
           priceKey: plan,
           email: email.trim(),
           name: name.trim(),
-          moderatorInterest,
+          userId,
         }),
       });
       const data = await res.json();
+
       if (data.url) {
         window.location.href = data.url;
       } else {
         setError("Something went wrong. Please try again.");
         setLoading(false);
+        setStep("form");
       }
     } catch {
       setError("Connection error. Please try again.");
       setLoading(false);
+      setStep("form");
     }
   };
 
   return (
     <div
+      onClick={onClose}
       style={{
         position: "fixed",
         inset: 0,
@@ -80,14 +115,14 @@ export default function MembershipSignup({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "20px",
+        padding: 20,
         overflow: "auto",
       }}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           background: "linear-gradient(160deg, #151a16, #1a2120)",
-          border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 24,
           padding: "32px 24px",
           maxWidth: 420,
@@ -95,463 +130,167 @@ export default function MembershipSignup({
           maxHeight: "90vh",
           overflow: "auto",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>🌿</div>
-          <h2
-            style={{
-              color: "#fff",
-              fontSize: 22,
-              fontWeight: 800,
-              margin: "0 0 6px",
-            }}
-          >
+          <div style={{ fontSize: 36, marginBottom: 8 }}>🌿</div>
+          <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>
             Join StrainSpotter
           </h2>
-          <p
-            style={{
-              color: "rgba(255,255,255,0.45)",
-              fontSize: 13,
-              margin: 0,
-              lineHeight: 1.5,
-            }}
-          >
-            Create your account to unlock everything in The Garden
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, margin: 0 }}>
+            Unlock The Garden and all features
           </p>
         </div>
 
-        {/* Name field */}
-        <div style={{ marginBottom: 14 }}>
-          <label
-            style={{
-              color: "rgba(255,255,255,0.5)",
-              fontSize: 11,
-              textTransform: "uppercase",
-              letterSpacing: "1.5px",
-              display: "block",
-              marginBottom: 6,
-            }}
-          >
-            Your Name
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Full name"
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 12,
-              padding: "14px 16px",
-              color: "#fff",
-              fontSize: 15,
-              outline: "none",
-            }}
-          />
-        </div>
-
-        {/* Email field */}
-        <div style={{ marginBottom: 20 }}>
-          <label
-            style={{
-              color: "rgba(255,255,255,0.5)",
-              fontSize: 11,
-              textTransform: "uppercase",
-              letterSpacing: "1.5px",
-              display: "block",
-              marginBottom: 6,
-            }}
-          >
-            Email
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 12,
-              padding: "14px 16px",
-              color: "#fff",
-              fontSize: 15,
-              outline: "none",
-            }}
-          />
-        </div>
-
-        {/* Plan selection */}
-        <div style={{ marginBottom: 20 }}>
-          <label
-            style={{
-              color: "rgba(255,255,255,0.5)",
-              fontSize: 11,
-              textTransform: "uppercase",
-              letterSpacing: "1.5px",
-              display: "block",
-              marginBottom: 10,
-            }}
-          >
-            Choose Your Plan
-          </label>
-
-          {/* Member card */}
-          <div
-            onClick={() => setPlan("member")}
-            style={{
-              background:
-                plan === "member"
-                  ? "rgba(76,175,80,0.12)"
-                  : "rgba(255,255,255,0.03)",
-              border: `2px solid ${
-                plan === "member"
-                  ? "rgba(76,175,80,0.5)"
-                  : "rgba(255,255,255,0.08)"
-              }`,
-              borderRadius: 14,
-              padding: "14px 16px",
-              marginBottom: 10,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: 10 }}
-              >
-                <div
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    border: `2px solid ${
-                      plan === "member" ? "#66BB6A" : "rgba(255,255,255,0.2)"
-                    }`,
-                    background:
-                      plan === "member" ? "#66BB6A" : "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {plan === "member" && (
-                    <span
-                      style={{
-                        color: "#000",
-                        fontSize: 12,
-                        fontWeight: 900,
-                      }}
-                    >
-                      ✓
-                    </span>
-                  )}
-                </div>
-                <span
-                  style={{
-                    color:
-                      plan === "member"
-                        ? "#66BB6A"
-                        : "rgba(255,255,255,0.6)",
-                    fontSize: 15,
-                    fontWeight: 700,
-                  }}
-                >
-                  🌿 Member
-                </span>
-              </div>
-              <span
-                style={{
-                  color:
-                    plan === "member"
-                      ? "#66BB6A"
-                      : "rgba(255,255,255,0.4)",
-                  fontSize: 17,
-                  fontWeight: 800,
-                }}
-              >
-                $4.99/mo
-              </span>
-            </div>
-            <p
-              style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: 12,
-                margin: "8px 0 0 30px",
-                lineHeight: 1.4,
-              }}
-            >
-              100 scans/mo · All features · Grow Coach · Dispensary Finder
+        {step === "creating" && loading ? (
+          <div style={{ textAlign: "center", padding: "32px 0" }}>
+            <div style={{ fontSize: 32, animation: "ssPulse 1.5s ease-in-out infinite" }}>🌱</div>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, marginTop: 12 }}>
+              Setting up your account...
             </p>
+            <style>{`@keyframes ssPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.6; transform:scale(1.1); } }`}</style>
           </div>
-
-          {/* Pro card */}
-          <div
-            onClick={() => setPlan("pro")}
-            style={{
-              background:
-                plan === "pro"
-                  ? "rgba(255,215,0,0.08)"
-                  : "rgba(255,255,255,0.03)",
-              border: `2px solid ${
-                plan === "pro"
-                  ? "rgba(255,215,0,0.4)"
-                  : "rgba(255,255,255,0.08)"
-              }`,
-              borderRadius: 14,
-              padding: "14px 16px",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: -8,
-                right: 14,
-                background: "linear-gradient(135deg, #FFD54F, #FF8F00)",
-                color: "#000",
-                fontSize: 9,
-                fontWeight: 800,
-                padding: "2px 8px",
-                borderRadius: 99,
-                textTransform: "uppercase",
-                letterSpacing: "1px",
-              }}
-            >
-              Best Value
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: 10 }}
-              >
-                <div
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    border: `2px solid ${
-                      plan === "pro" ? "#FFD54F" : "rgba(255,255,255,0.2)"
-                    }`,
-                    background: plan === "pro" ? "#FFD54F" : "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {plan === "pro" && (
-                    <span
-                      style={{
-                        color: "#000",
-                        fontSize: 12,
-                        fontWeight: 900,
-                      }}
-                    >
-                      ✓
-                    </span>
-                  )}
-                </div>
-                <span
-                  style={{
-                    color:
-                      plan === "pro"
-                        ? "#FFD54F"
-                        : "rgba(255,255,255,0.6)",
-                    fontSize: 15,
-                    fontWeight: 700,
-                  }}
-                >
-                  ⭐ Pro
-                </span>
-              </div>
-              <span
-                style={{
-                  color:
-                    plan === "pro" ? "#FFD54F" : "rgba(255,255,255,0.4)",
-                  fontSize: 17,
-                  fontWeight: 800,
-                }}
-              >
-                $9.99/mo
-              </span>
-            </div>
-            <p
-              style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: 12,
-                margin: "8px 0 0 30px",
-                lineHeight: 1.4,
-              }}
-            >
-              500 scans/mo · Everything in Member · Analytics · Lab Data ·
-              Priority
-            </p>
-          </div>
-        </div>
-
-        {/* Moderator checkbox */}
-        <div style={{ marginBottom: 24 }}>
-          <div
-            onClick={() => setModeratorInterest(!moderatorInterest)}
-            style={{
+        ) : (
+          <>
+            {/* Plan Toggle */}
+            <div style={{
               display: "flex",
-              alignItems: "flex-start",
-              gap: 12,
-              cursor: "pointer",
-              background: moderatorInterest
-                ? "rgba(79,195,247,0.06)"
-                : "rgba(255,255,255,0.02)",
-              border: `1px solid ${
-                moderatorInterest
-                  ? "rgba(79,195,247,0.2)"
-                  : "rgba(255,255,255,0.06)"
-              }`,
-              borderRadius: 12,
-              padding: 14,
-              transition: "all 0.2s",
-            }}
-          >
-            <div
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 6,
-                flexShrink: 0,
-                marginTop: 1,
-                border: `2px solid ${
-                  moderatorInterest
-                    ? "#4FC3F7"
-                    : "rgba(255,255,255,0.2)"
-                }`,
-                background: moderatorInterest ? "#4FC3F7" : "transparent",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.2s",
-              }}
-            >
-              {moderatorInterest && (
-                <span
-                  style={{ color: "#000", fontSize: 12, fontWeight: 900 }}
+              gap: 8,
+              marginBottom: 20,
+              padding: 4,
+              borderRadius: 14,
+              background: "rgba(255,255,255,0.04)",
+            }}>
+              {(["member", "pro"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPlan(p)}
+                  style={{
+                    flex: 1,
+                    padding: "12px 8px",
+                    borderRadius: 12,
+                    border: "none",
+                    background: plan === p ? "linear-gradient(135deg, #43A047, #2E7D32)" : "transparent",
+                    color: plan === p ? "#fff" : "rgba(255,255,255,0.5)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
                 >
-                  ✓
-                </span>
+                  <div>{p === "member" ? "Member" : "Pro"}</div>
+                  <div style={{ fontSize: 11, fontWeight: 500, marginTop: 2, opacity: 0.8 }}>
+                    {p === "member" ? "$4.99/mo" : "$9.99/mo"}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Plan Details */}
+            <div style={{
+              padding: "12px 14px",
+              borderRadius: 12,
+              background: "rgba(76,175,80,0.06)",
+              marginBottom: 20,
+              fontSize: 12,
+              color: "rgba(255,255,255,0.5)",
+              lineHeight: 1.8,
+            }}>
+              {plan === "member" ? (
+                <>✅ 100 scans/mo &nbsp; ✅ All features &nbsp; ✅ Strain browser &nbsp; ✅ Grow coach</>
+              ) : (
+                <>✅ 500 scans/mo &nbsp; ✅ Everything in Member &nbsp; ✅ Analytics &nbsp; ✅ Lab data</>
               )}
             </div>
-            <div>
-              <p
-                style={{
-                  color: moderatorInterest
-                    ? "#4FC3F7"
-                    : "rgba(255,255,255,0.6)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  margin: "0 0 4px",
-                }}
-              >
-                I&apos;m interested in being a community moderator
-              </p>
-              <p
-                style={{
-                  color: "rgba(255,255,255,0.35)",
-                  fontSize: 11,
-                  lineHeight: 1.5,
-                  margin: 0,
-                }}
-              >
-                We&apos;re building community features where growers and
-                dispensaries can connect, share, and advertise on their own
-                channels. Help shape the experience — no obligation, just
-                letting us know you&apos;re interested.
-              </p>
+
+            {/* Fields */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+              <input
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={inputStyle}
+              />
+              <input
+                placeholder="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={inputStyle}
+              />
+              <input
+                placeholder="Create password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={inputStyle}
+              />
             </div>
-          </div>
-        </div>
 
-        {/* Error message */}
-        {error && (
-          <div
-            style={{
-              background: "rgba(244,67,54,0.1)",
-              border: "1px solid rgba(244,67,54,0.3)",
-              borderRadius: 10,
-              padding: "10px 14px",
-              marginBottom: 14,
-              color: "#EF5350",
-              fontSize: 13,
-              textAlign: "center",
-            }}
-          >
-            {error}
-          </div>
+            {error && (
+              <div style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "rgba(239,83,80,0.1)",
+                color: "#EF5350",
+                fontSize: 13,
+                marginBottom: 16,
+                textAlign: "center",
+              }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "16px",
+                borderRadius: 14,
+                border: "none",
+                background: loading
+                  ? "rgba(255,255,255,0.1)"
+                  : "linear-gradient(135deg, #43A047, #2E7D32)",
+                color: "#fff",
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: loading ? "default" : "pointer",
+                marginBottom: 12,
+              }}
+            >
+              {loading ? "Processing..." : `Continue to Payment`}
+            </button>
+
+            <button
+              onClick={onClose}
+              style={{
+                width: "100%",
+                padding: 12,
+                border: "none",
+                background: "none",
+                color: "rgba(255,255,255,0.3)",
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+          </>
         )}
-
-        {/* Submit button */}
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: 16,
-            borderRadius: 14,
-            border: "none",
-            background: loading
-              ? "#555"
-              : plan === "pro"
-              ? "linear-gradient(135deg, #FFD54F, #FF8F00)"
-              : "linear-gradient(135deg, #43A047, #2E7D32)",
-            color: plan === "pro" && !loading ? "#000" : "#fff",
-            fontSize: 16,
-            fontWeight: 800,
-            cursor: loading ? "wait" : "pointer",
-            marginBottom: 12,
-          }}
-        >
-          {loading
-            ? "Redirecting to checkout..."
-            : `Continue to Payment — ${
-                plan === "pro" ? "$9.99/mo" : "$4.99/mo"
-              }`}
-        </button>
-
-        {/* Back button */}
-        <button
-          onClick={onClose}
-          style={{
-            width: "100%",
-            background: "none",
-            border: "none",
-            color: "rgba(255,255,255,0.3)",
-            fontSize: 13,
-            cursor: "pointer",
-            padding: 8,
-          }}
-        >
-          ← Go back
-        </button>
       </div>
     </div>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "14px 16px",
+  borderRadius: 12,
+  border: "none",
+  background: "rgba(255,255,255,0.06)",
+  color: "#fff",
+  fontSize: 15,
+  outline: "none",
+  boxSizing: "border-box",
+};
