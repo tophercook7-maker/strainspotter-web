@@ -7,7 +7,9 @@ export type FeatureKey =
   | "history"
   | "favorites"
   | "ecosystem"
-  | "settings";
+  | "settings"
+  | "analytics"
+  | "labData";
 
 export const FEATURE_MAP: Record<
   FeatureKey,
@@ -71,5 +73,17 @@ export const FEATURE_MAP: Record<
     route: "/garden/settings",
     icon: "⚙️",
     tier: "app",
+  },
+  analytics: {
+    label: "Analytics",
+    route: "/garden/analytics",
+    icon: "📊",
+    tier: "pro",
+  },
+  labData: {
+    label: "Lab Data",
+    route: "/garden/lab-data",
+    icon: "🔬",
+    tier: "pro",
   },
 };
