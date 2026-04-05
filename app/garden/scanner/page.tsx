@@ -807,78 +807,28 @@ export default function ScannerPage() {
           )}
         </section>
 
-        {/* ── The Garden — Feature Access ─────────────────── */}
-        <div
-          style={{
-            marginTop: 32,
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 18,
-            padding: "20px 18px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            <span style={{ fontSize: 20 }}>🌿</span>
-            <h3 style={{ color: "#fff", fontSize: 16, fontWeight: 700, margin: 0 }}>
-              The Garden
-            </h3>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginLeft: "auto", textTransform: "uppercase", letterSpacing: 1 }}>
-              Members
-            </span>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {[
-              { href: "/garden/grow-coach", icon: "🌱", label: "Grow Coach" },
-              { href: "/garden/dispensaries", icon: "📍", label: "Dispensaries" },
-              { href: "/garden/strains", icon: "🔬", label: "Strains" },
-              { href: "/garden/ecosystem", icon: "🧬", label: "Ecosystem" },
-              { href: "/garden/seed-vendors", icon: "🌰", label: "Seeds" },
-              { href: "/garden/favorites", icon: "❤️", label: "Favorites" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "12px 14px",
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  borderRadius: 12,
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
-              >
-                <span style={{ fontSize: 18 }}>{item.icon}</span>
-                <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600 }}>
-                  {item.label}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Bottom Links ─────────────────── */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 24, paddingTop: 16, paddingBottom: 24 }}>
-          {[
-            { href: "/garden/history", label: "📋 History" },
-            { href: "/garden/settings", label: "⚙️ Settings" },
-          ].map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              style={{
-                color: "rgba(255,255,255,0.35)",
-                fontSize: 13,
-                textDecoration: "none",
-                fontWeight: 500,
-              }}
-            >
-              {link.label}
-            </Link>
-          ))}
+        {/* ── Go to Garden ─────────────────── */}
+        <div style={{ display: "flex", justifyContent: "center", paddingTop: 24, paddingBottom: 32 }}>
+          <Link
+            href="/garden"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "12px 24px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 30,
+              textDecoration: "none",
+              color: "rgba(255,255,255,0.6)",
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>🌿</span>
+            The Garden
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.3)" }}>→</span>
+          </Link>
         </div>
         </div>
       </main>
