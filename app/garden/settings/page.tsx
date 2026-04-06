@@ -2,20 +2,6 @@
 
 import { useState, useEffect } from "react";
 import TopNav from "../_components/TopNav";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import ButtonBase from "@mui/material/ButtonBase";
-import Switch from "@mui/material/Switch";
-import SettingsIcon from "@mui/icons-material/Settings";
-import PersonIcon from "@mui/icons-material/Person";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import PaletteIcon from "@mui/icons-material/Palette";
-import StorageIcon from "@mui/icons-material/Storage";
-import InfoIcon from "@mui/icons-material/Info";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
-import BugReportIcon from "@mui/icons-material/BugReport";
 import ScanPaywall from "@/components/ScanPaywall";
 import FeedbackForm from "@/components/FeedbackForm";
 
@@ -37,16 +23,11 @@ const DEFAULT_SETTINGS: UserSettings = {
   displayName: "",
   email: "",
   units: "imperial",
-  notifications: {
-    growReminders: true,
-    scanComplete: true,
-    weeklyDigest: false,
-  },
+  notifications: { growReminders: true, scanComplete: true, weeklyDigest: false },
   theme: "dark",
   scanQuality: "standard",
 };
 
-// ─── localStorage ────────────────────────────────────────────────────────────
 const SETTINGS_KEY = "strainspotter_settings";
 
 function loadSettings(): UserSettings {
@@ -65,60 +46,54 @@ function saveSettings(settings: UserSettings) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function glassCard(extra: Record<string, any> = {}) {
-  return {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: "16px",
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    ...extra,
-  };
-}
+const glass: React.CSSProperties = {
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.15)",
+  borderRadius: 16,
+};
 
-function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+function SectionHeader({ icon, title }: { icon: string; title: string }) {
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-      {icon}
-      <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+      <span style={{ fontSize: 16 }}>{icon}</span>
+      <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>
         {title}
-      </Typography>
-    </Box>
+      </span>
+    </div>
   );
 }
 
-function SettingRow({
-  label,
-  description,
-  children,
-}: {
-  label: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
+function SettingRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
   return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        py: 1.5,
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        "&:last-child": { borderBottom: "none" },
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.06)",
+    }}>
+      <div>
+        <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: 600 }}>{label}</div>
+        {description && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 }}>{description}</div>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      style={{
+        width: 44, height: 24, borderRadius: 12, padding: 2, cursor: "pointer",
+        background: checked ? "rgba(102,187,106,0.6)" : "rgba(255,255,255,0.15)",
+        border: "none", position: "relative", transition: "background 0.2s",
       }}
     >
-      <Box>
-        <Typography sx={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: 600 }}>
-          {label}
-        </Typography>
-        {description && (
-          <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: 12, mt: 0.25 }}>
-            {description}
-          </Typography>
-        )}
-      </Box>
-      {children}
-    </Box>
+      <div style={{
+        width: 20, height: 20, borderRadius: "50%", background: "white",
+        transform: checked ? "translateX(20px)" : "translateX(0)",
+        transition: "transform 0.2s",
+      }} />
+    </button>
   );
 }
 
@@ -146,11 +121,7 @@ export default function SettingsPage() {
   };
 
   const handleClearData = () => {
-    if (
-      confirm(
-        "⚠️ This will clear ALL local data including grows, favorites, and settings. This cannot be undone. Continue?"
-      )
-    ) {
+    if (confirm("⚠️ This will clear ALL local data including grows, favorites, and settings. This cannot be undone. Continue?")) {
       localStorage.removeItem("strainspotter_grows");
       localStorage.removeItem("strainspotter_favorites");
       localStorage.removeItem(SETTINGS_KEY);
@@ -158,13 +129,12 @@ export default function SettingsPage() {
     }
   };
 
-  // Calculate local storage usage
   const getStorageSize = () => {
     try {
       let total = 0;
       for (const key in localStorage) {
         if (key.startsWith("strainspotter")) {
-          total += (localStorage.getItem(key) || "").length * 2; // UTF-16 chars = 2 bytes
+          total += (localStorage.getItem(key) || "").length * 2;
         }
       }
       if (total < 1024) return `${total} B`;
@@ -183,311 +153,215 @@ export default function SettingsPage() {
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
           {/* Hero */}
-          <Box sx={{ ...glassCard({ p: 3, mb: 3 }) }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-              <SettingsIcon sx={{ fontSize: 28, color: "rgba(255,255,255,0.7)" }} />
-              <Typography sx={{ color: "white", fontWeight: 800, fontSize: 24 }}>
-                Settings
-              </Typography>
-            </Box>
-            <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
+          <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <span style={{ fontSize: 28 }}>⚙️</span>
+              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Settings</span>
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
               Customize your StrainSpotter experience. Manage your profile, notification preferences,
               and app settings.
-            </Typography>
-          </Box>
+            </div>
+          </div>
 
           {/* Save indicator */}
           {saved && (
-            <Box
-              sx={{
-                position: "fixed",
-                top: 80,
-                right: 20,
-                px: 2,
-                py: 1,
-                borderRadius: 2,
-                background: "rgba(76,175,80,0.9)",
-                color: "white",
-                fontSize: 13,
-                fontWeight: 600,
-                zIndex: 999,
-                animation: "fadeIn 0.2s ease",
-              }}
-            >
+            <div style={{
+              position: "fixed", top: 80, right: 20, padding: "8px 16px", borderRadius: 8,
+              background: "rgba(76,175,80,0.9)", color: "white", fontSize: 13, fontWeight: 600, zIndex: 999,
+            }}>
               ✓ Saved
-            </Box>
+            </div>
           )}
 
           {/* Profile */}
-          <Box sx={{ ...glassCard({ p: 2.5, mb: 2 }) }}>
-            <SectionHeader
-              icon={<PersonIcon sx={{ fontSize: 16, color: "#64B5F6" }} />}
-              title="Profile"
-            />
-            <Box sx={{ mb: 2 }}>
-              <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, mb: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>
+          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="👤" title="Profile" />
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
                 Display Name
-              </Typography>
+              </div>
               <input
                 type="text"
                 value={settings.displayName}
                 onChange={(e) => update({ displayName: e.target.value })}
                 placeholder="Your name"
                 style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  background: "rgba(0,0,0,0.3)",
-                  color: "white",
-                  fontSize: 14,
-                  outline: "none",
+                  width: "100%", padding: "10px 14px", borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.3)",
+                  color: "white", fontSize: 14, outline: "none",
                 }}
               />
-            </Box>
-            <Box>
-              <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, mb: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>
+            </div>
+            <div>
+              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
                 Email
-              </Typography>
+              </div>
               <input
                 type="email"
                 value={settings.email}
                 onChange={(e) => update({ email: e.target.value })}
                 placeholder="you@example.com"
                 style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  background: "rgba(0,0,0,0.3)",
-                  color: "white",
-                  fontSize: 14,
-                  outline: "none",
+                  width: "100%", padding: "10px 14px", borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.3)",
+                  color: "white", fontSize: 14, outline: "none",
                 }}
               />
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {/* Membership */}
-          <Box sx={{ ...glassCard({ p: 2.5, mb: 2 }) }}>
-            <SectionHeader
-              icon={<WorkspacePremiumIcon sx={{ fontSize: 16, color: "#FFD54F" }} />}
-              title="Membership"
-            />
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                p: 2,
-                borderRadius: 2,
-                background: "rgba(255,213,79,0.08)",
-                border: "1px solid rgba(255,213,79,0.2)",
-              }}
-            >
-              <Box>
-                <Typography sx={{ color: "#FFD54F", fontSize: 14, fontWeight: 700 }}>
-                  Free Tier
-                </Typography>
-                <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
-                  Scanner + basic features
-                </Typography>
-              </Box>
-              <ButtonBase
+          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="🏅" title="Membership" />
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: 16, borderRadius: 8,
+              background: "rgba(255,213,79,0.08)", border: "1px solid rgba(255,213,79,0.2)",
+            }}>
+              <div>
+                <div style={{ color: "#FFD54F", fontSize: 14, fontWeight: 700 }}>Free Tier</div>
+                <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Scanner + basic features</div>
+              </div>
+              <button
                 onClick={() => setShowPaywall(true)}
-                sx={{
-                  px: 2,
-                  py: 0.75,
-                  borderRadius: 99,
-                  background: "rgba(255,213,79,0.15)",
-                  color: "#FFD54F",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  border: "1px solid rgba(255,213,79,0.3)",
+                style={{
+                  padding: "6px 16px", borderRadius: 99,
+                  background: "rgba(255,213,79,0.15)", color: "#FFD54F",
+                  fontSize: 12, fontWeight: 700, border: "1px solid rgba(255,213,79,0.3)", cursor: "pointer",
                 }}
               >
                 Upgrade
-              </ButtonBase>
-            </Box>
-          </Box>
+              </button>
+            </div>
+          </div>
 
           {/* Scanner */}
-          <Box sx={{ ...glassCard({ p: 2.5, mb: 2 }) }}>
-            <SectionHeader
-              icon={<CameraAltIcon sx={{ fontSize: 16, color: "#CE93D8" }} />}
-              title="Scanner"
-            />
+          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="📷" title="Scanner" />
             <SettingRow label="Scan Quality" description="Higher quality uses more data">
-              <Box sx={{ display: "flex", gap: 0.5 }}>
+              <div style={{ display: "flex", gap: 4 }}>
                 {(["standard", "high"] as const).map((q) => (
-                  <ButtonBase
+                  <button
                     key={q}
                     onClick={() => update({ scanQuality: q })}
-                    sx={{
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: 99,
-                      fontSize: 12,
-                      fontWeight: 600,
+                    style={{
+                      padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      textTransform: "capitalize",
                       background: settings.scanQuality === q ? "rgba(206,147,216,0.2)" : "rgba(255,255,255,0.05)",
                       color: settings.scanQuality === q ? "#CE93D8" : "rgba(255,255,255,0.5)",
                       border: `1px solid ${settings.scanQuality === q ? "rgba(206,147,216,0.4)" : "rgba(255,255,255,0.1)"}`,
-                      textTransform: "capitalize",
                     }}
                   >
                     {q}
-                  </ButtonBase>
+                  </button>
                 ))}
-              </Box>
+              </div>
             </SettingRow>
-          </Box>
+          </div>
 
           {/* Notifications */}
-          <Box sx={{ ...glassCard({ p: 2.5, mb: 2 }) }}>
-            <SectionHeader
-              icon={<NotificationsIcon sx={{ fontSize: 16, color: "#FFB74D" }} />}
-              title="Notifications"
-            />
+          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="🔔" title="Notifications" />
             <SettingRow label="Grow Reminders" description="Daily reminders to log your grow">
-              <Switch
-                checked={settings.notifications.growReminders}
-                onChange={(e) => updateNotification("growReminders", e.target.checked)}
-                sx={{ "& .MuiSwitch-switchBase.Mui-checked": { color: "#66BB6A" }, "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#66BB6A" } }}
-              />
+              <Toggle checked={settings.notifications.growReminders} onChange={(v) => updateNotification("growReminders", v)} />
             </SettingRow>
             <SettingRow label="Scan Complete" description="Notify when scan results are ready">
-              <Switch
-                checked={settings.notifications.scanComplete}
-                onChange={(e) => updateNotification("scanComplete", e.target.checked)}
-                sx={{ "& .MuiSwitch-switchBase.Mui-checked": { color: "#66BB6A" }, "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#66BB6A" } }}
-              />
+              <Toggle checked={settings.notifications.scanComplete} onChange={(v) => updateNotification("scanComplete", v)} />
             </SettingRow>
             <SettingRow label="Weekly Digest" description="Weekly summary of your grow progress">
-              <Switch
-                checked={settings.notifications.weeklyDigest}
-                onChange={(e) => updateNotification("weeklyDigest", e.target.checked)}
-                sx={{ "& .MuiSwitch-switchBase.Mui-checked": { color: "#66BB6A" }, "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#66BB6A" } }}
-              />
+              <Toggle checked={settings.notifications.weeklyDigest} onChange={(v) => updateNotification("weeklyDigest", v)} />
             </SettingRow>
-          </Box>
+          </div>
 
           {/* Preferences */}
-          <Box sx={{ ...glassCard({ p: 2.5, mb: 2 }) }}>
-            <SectionHeader
-              icon={<PaletteIcon sx={{ fontSize: 16, color: "#64B5F6" }} />}
-              title="Preferences"
-            />
+          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="🎨" title="Preferences" />
             <SettingRow label="Units">
-              <Box sx={{ display: "flex", gap: 0.5 }}>
+              <div style={{ display: "flex", gap: 4 }}>
                 {(["imperial", "metric"] as const).map((u) => (
-                  <ButtonBase
+                  <button
                     key={u}
                     onClick={() => update({ units: u })}
-                    sx={{
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: 99,
-                      fontSize: 12,
-                      fontWeight: 600,
+                    style={{
+                      padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
                       background: settings.units === u ? "rgba(100,181,246,0.2)" : "rgba(255,255,255,0.05)",
                       color: settings.units === u ? "#64B5F6" : "rgba(255,255,255,0.5)",
                       border: `1px solid ${settings.units === u ? "rgba(100,181,246,0.4)" : "rgba(255,255,255,0.1)"}`,
-                      textTransform: "capitalize",
                     }}
                   >
                     {u === "imperial" ? "°F / in" : "°C / cm"}
-                  </ButtonBase>
+                  </button>
                 ))}
-              </Box>
+              </div>
             </SettingRow>
             <SettingRow label="Theme">
-              <Box sx={{ display: "flex", gap: 0.5 }}>
+              <div style={{ display: "flex", gap: 4 }}>
                 {(["dark", "auto"] as const).map((t) => (
-                  <ButtonBase
+                  <button
                     key={t}
                     onClick={() => update({ theme: t })}
-                    sx={{
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: 99,
-                      fontSize: 12,
-                      fontWeight: 600,
+                    style={{
+                      padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      textTransform: "capitalize",
                       background: settings.theme === t ? "rgba(100,181,246,0.2)" : "rgba(255,255,255,0.05)",
                       color: settings.theme === t ? "#64B5F6" : "rgba(255,255,255,0.5)",
                       border: `1px solid ${settings.theme === t ? "rgba(100,181,246,0.4)" : "rgba(255,255,255,0.1)"}`,
-                      textTransform: "capitalize",
                     }}
                   >
                     {t}
-                  </ButtonBase>
+                  </button>
                 ))}
-              </Box>
+              </div>
             </SettingRow>
-          </Box>
+          </div>
 
           {/* Data & Storage */}
-          <Box sx={{ ...glassCard({ p: 2.5, mb: 2 }) }}>
-            <SectionHeader
-              icon={<StorageIcon sx={{ fontSize: 16, color: "#90A4AE" }} />}
-              title="Data & Storage"
-            />
+          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="💾" title="Data & Storage" />
             <SettingRow label="Local Storage Used">
-              <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600 }}>
+              <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600 }}>
                 {loaded ? getStorageSize() : "..."}
-              </Typography>
+              </span>
             </SettingRow>
-            <Box sx={{ mt: 1.5 }}>
-              <ButtonBase
+            <div style={{ marginTop: 12 }}>
+              <button
                 onClick={handleClearData}
-                sx={{
-                  px: 2,
-                  py: 1,
-                  borderRadius: 2,
-                  background: "rgba(244,67,54,0.1)",
-                  color: "#EF5350",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  border: "1px solid rgba(244,67,54,0.2)",
-                  "&:hover": { background: "rgba(244,67,54,0.2)" },
+                style={{
+                  padding: "8px 16px", borderRadius: 8,
+                  background: "rgba(244,67,54,0.1)", color: "#EF5350",
+                  fontSize: 13, fontWeight: 600,
+                  display: "flex", alignItems: "center", gap: 4,
+                  border: "1px solid rgba(244,67,54,0.2)", cursor: "pointer",
                 }}
               >
-                <DeleteForeverIcon sx={{ fontSize: 16 }} /> Clear All Local Data
-              </ButtonBase>
-            </Box>
-          </Box>
+                🗑️ Clear All Local Data
+              </button>
+            </div>
+          </div>
 
           {/* About */}
-          <Box sx={{ ...glassCard({ p: 2.5, mb: 2 }) }}>
-            <SectionHeader
-              icon={<InfoIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.5)" }} />}
-              title="About"
-            />
+          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="ℹ️" title="About" />
             <SettingRow label="Version">
-              <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
-                1.0.0-beta
-              </Typography>
+              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>1.0.0-beta</span>
             </SettingRow>
             <SettingRow label="Build">
-              <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
-                Pre-Launch
-              </Typography>
+              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>Pre-Launch</span>
             </SettingRow>
-          </Box>
+          </div>
 
-          {/* ─── Feedback ─── */}
-          <Box sx={{ mt: 3, mb: 2 }}>
+          {/* Feedback */}
+          <div style={{ marginTop: 24, marginBottom: 16 }}>
             <FeedbackForm />
-          </Box>
+          </div>
 
           {/* Footer */}
-          <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography sx={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>
+          <div style={{ textAlign: "center", padding: "32px 0" }}>
+            <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>
               StrainSpotter • AI-Powered Cannabis Identification
-            </Typography>
-          </Box>
+            </span>
+          </div>
         </div>
       </main>
       {showPaywall && (
