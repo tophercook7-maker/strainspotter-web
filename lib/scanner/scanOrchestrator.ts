@@ -54,9 +54,39 @@ async function compressImage(file: File): Promise<string> {
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      // Fallback: read raw if canvas fails (shouldn't happen in modern browsers)
+      // Fallback: re-encode via smaller canvas (handles HEIC / unsupported formats)
+      // We still need canvas to produce JPEG — raw readAsDataURL could send HEIC which OpenAI rejects
+      const fallbackCanvas = document.createElement("canvas");
+      fallbackCanvas.width = 512;
+      fallbackCanvas.height = 512;
+      const fbCtx = fallbackCanvas.getContext("2d");
+      if (fbCtx) {
+        fbCtx.fillStyle = "#000";
+        fbCtx.fillRect(0, 0, 512, 512);
+      }
+      // Last resort: read raw — but prefix as jpeg so OpenAI at least tries
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => {
+        const raw = reader.result as string;
+        // Force JPEG mime type if it's something OpenAI won't accept
+        if (raw.startsWith("data:image/jpeg") || raw.startsWith("data:image/png") ||
+            raw.startsWith("data:image/gif") || raw.startsWith("data:image/webp")) {
+          resolve(raw);
+        } else {
+          // Unsupported format (HEIC etc) — try to convert via canvas with blob
+          const img2 = new Image();
+          img2.onload = () => {
+            const c = document.createElement("canvas");
+            c.width = Math.min(img2.width, MAX_DIMENSION);
+            c.height = Math.min(img2.height, MAX_DIMENSION);
+            const ctx2 = c.getContext("2d");
+            if (ctx2) { ctx2.drawImage(img2, 0, 0, c.width, c.height); }
+            resolve(c.toDataURL("image/jpeg", JPEG_QUALITY));
+          };
+          img2.onerror = () => resolve(raw); // absolute last resort
+          img2.src = raw;
+        }
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     };
@@ -345,8 +375,11 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
           reason = "OpenAI API credits exhausted — contact support";
         } else if (errBody?.detail?.includes?.("rate_limit")) {
           reason = "Too many requests — wait a moment and try again";
+        } else if (errBody?.detail?.includes?.("image_parse_error") || errBody?.detail?.includes?.("unsupported image")) {
+          reason = "Image format not supported — try taking a new photo instead of selecting from gallery";
         } else if (errBody?.error) {
           reason = errBody.error;
+          if (errBody?.detail) reason += ` (${String(errBody.detail).slice(0, 120)})`;
         }
       } catch { /* couldn't parse error body */ }
       console.error("Scan API error:", response.status, reason);

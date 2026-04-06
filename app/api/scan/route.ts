@@ -178,11 +178,19 @@ export async function POST(req: NextRequest) {
       | { type: "image_url"; image_url: { url: string; detail: string } }
     > = [];
 
+    const SUPPORTED_MIMES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
     // Add each image (max 5)
     for (const img of images.slice(0, 5)) {
-      const dataUrl = img.startsWith("data:")
+      let dataUrl = img.startsWith("data:")
         ? img
         : `data:image/jpeg;base64,${img}`;
+
+      // Force unsupported formats (HEIC etc) to jpeg mime so OpenAI at least attempts decode
+      const mimeMatch = dataUrl.match(/^data:([^;]+);/);
+      if (mimeMatch && !SUPPORTED_MIMES.includes(mimeMatch[1])) {
+        dataUrl = dataUrl.replace(/^data:[^;]+;/, "data:image/jpeg;");
+      }
 
       content.push({
         type: "image_url",
