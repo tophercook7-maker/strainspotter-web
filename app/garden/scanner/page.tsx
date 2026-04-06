@@ -746,7 +746,6 @@ export default function ScannerPage() {
           onClose={() => setShowAuth(false)}
           onSuccess={() => {
             setShowAuth(false);
-            window.location.reload();
           }}
         />
       )}
