@@ -15,15 +15,53 @@ export interface OrchestratedScanResult {
   normalizedScanResult: ScanResult;
 }
 
+/* ─── Image compression ─── */
+const MAX_DIMENSION = 1536;  // GPT-4o "high" detail tiles at 512px — 1536 = 3×3 tiles max
+const JPEG_QUALITY  = 0.82;  // Good balance: sharp enough for trichomes, small enough to send
+
 /**
- * Convert File → base64 data URL
+ * Resize + compress an image file using an offscreen canvas.
+ * Returns a base64 data-URL (image/jpeg).
  */
-async function fileToBase64(file: File): Promise<string> {
+async function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      let { width, height } = img;
+
+      // Scale down if either dimension exceeds the cap
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const scale = MAX_DIMENSION / Math.max(width, height);
+        width  = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width  = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas context failed")); return; }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+      resolve(dataUrl);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      // Fallback: read raw if canvas fails (shouldn't happen in modern browsers)
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    };
+
+    img.src = url;
   });
 }
 
@@ -275,8 +313,8 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
   }
 
   try {
-    // 1. Convert all images to base64
-    const base64Images = await Promise.all(images.map(fileToBase64));
+    // 1. Compress & convert all images (resize to 1536px max, JPEG @ 82%)
+    const base64Images = await Promise.all(images.map(compressImage));
 
     // 2. Call /api/scan directly
     const response = await fetch("/api/scan", {
