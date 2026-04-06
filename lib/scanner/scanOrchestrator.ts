@@ -316,23 +316,48 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
     // 1. Compress & convert all images (resize to 1536px max, JPEG @ 82%)
     const base64Images = await Promise.all(images.map(compressImage));
 
-    // 2. Call /api/scan directly
-    const response = await fetch("/api/scan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ images: base64Images }),
-    });
+    // 2. Call /api/scan directly (45s timeout for GPT-4o Vision)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45_000);
+
+    let response: Response;
+    try {
+      response = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images: base64Images }),
+        signal: controller.signal,
+      });
+    } catch (fetchErr: any) {
+      clearTimeout(timeout);
+      if (fetchErr?.name === "AbortError") {
+        return buildFallback("Scan timed out — try with fewer photos or better lighting", images.length);
+      }
+      return buildFallback("Network error — check your connection and try again", images.length);
+    }
+    clearTimeout(timeout);
 
     if (!response.ok) {
-      console.error("Scan API error:", response.status);
-      return buildFallback(`Scanner returned ${response.status}`, images.length);
+      let reason = `status ${response.status}`;
+      try {
+        const errBody = await response.json();
+        if (errBody?.detail?.includes?.("insufficient_quota")) {
+          reason = "OpenAI API credits exhausted — contact support";
+        } else if (errBody?.detail?.includes?.("rate_limit")) {
+          reason = "Too many requests — wait a moment and try again";
+        } else if (errBody?.error) {
+          reason = errBody.error;
+        }
+      } catch { /* couldn't parse error body */ }
+      console.error("Scan API error:", response.status, reason);
+      return buildFallback(`Scan failed: ${reason}`, images.length);
     }
 
     const data = await response.json();
 
     if (!data.ok || !data.result) {
       console.error("Scan API returned unexpected response:", data);
-      return buildFallback("Scanner returned no result", images.length);
+      return buildFallback("Scanner returned no result — try again", images.length);
     }
 
     // 3. Map to ViewModel
