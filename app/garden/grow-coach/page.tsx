@@ -2,21 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import TopNav from "../_components/TopNav";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import ButtonBase from "@mui/material/ButtonBase";
-import CircularProgress from "@mui/material/CircularProgress";
-import AddIcon from "@mui/icons-material/Add";
-import SpaIcon from "@mui/icons-material/Spa";
-import WaterDropIcon from "@mui/icons-material/WaterDrop";
-import LightModeIcon from "@mui/icons-material/LightMode";
-import ThermostatIcon from "@mui/icons-material/Thermostat";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import EditNoteIcon from "@mui/icons-material/EditNote";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Stage = "seed" | "seedling" | "veg" | "flower" | "dry" | "cure" | "harvested";
@@ -92,16 +77,11 @@ const STAGE_TIPS: Record<Stage, CoachTip[]> = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function glassCard(extra: Record<string, any> = {}) {
-  return {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: "16px",
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    ...extra,
-  };
-}
+const glass: React.CSSProperties = {
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.15)",
+  borderRadius: 16,
+};
 
 function daysSince(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -134,52 +114,33 @@ function saveGrows(grows: Grow[]) {
 
 function StageChip({ stage, size = "md" }: { stage: Stage; size?: "sm" | "md" }) {
   const s = STAGES.find((st) => st.key === stage) ?? STAGES[0];
-  const px = size === "sm" ? "8px" : "12px";
-  const py = size === "sm" ? "2px" : "4px";
+  const px = size === "sm" ? 8 : 12;
+  const py = size === "sm" ? 2 : 4;
   const fontSize = size === "sm" ? 11 : 13;
   return (
-    <Box
-      component="span"
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 0.5,
-        px,
-        py,
-        borderRadius: 99,
-        fontSize,
-        fontWeight: 600,
-        background: `${s.color}33`,
-        color: s.color,
-        border: `1px solid ${s.color}55`,
-      }}
-    >
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: `${py}px ${px}px`, borderRadius: 99, fontSize, fontWeight: 600,
+      background: `${s.color}33`, color: s.color, border: `1px solid ${s.color}55`,
+    }}>
       {s.emoji} {s.label}
-    </Box>
+    </span>
   );
 }
 
-function CoachTipCard({ tip }: { tip: CoachTip }) {
-  const iconMap: Record<string, React.ReactNode> = {
-    water: <WaterDropIcon sx={{ fontSize: 20, color: "#4FC3F7" }} />,
-    light: <LightModeIcon sx={{ fontSize: 20, color: "#FFD54F" }} />,
-    temp: <ThermostatIcon sx={{ fontSize: 20, color: "#FF8A65" }} />,
-    nutrient: <SpaIcon sx={{ fontSize: 20, color: "#81C784" }} />,
-    general: <AutoAwesomeIcon sx={{ fontSize: 20, color: "#CE93D8" }} />,
-  };
+const TIP_ICONS: Record<string, string> = {
+  water: "💧", light: "☀️", temp: "🌡️", nutrient: "🌿", general: "✨",
+};
 
+function CoachTipCard({ tip }: { tip: CoachTip }) {
   return (
-    <Box sx={{ ...glassCard({ p: 2.5, mb: 1.5 }) }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-        {iconMap[tip.icon] || iconMap.general}
-        <Typography sx={{ color: "white", fontWeight: 700, fontSize: 14 }}>
-          {tip.title}
-        </Typography>
-      </Box>
-      <Typography sx={{ color: "rgba(255,255,255,0.75)", fontSize: 13, lineHeight: 1.6 }}>
-        {tip.body}
-      </Typography>
-    </Box>
+    <div style={{ ...glass, padding: 20, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 20 }}>{TIP_ICONS[tip.icon] || "✨"}</span>
+        <span style={{ color: "white", fontWeight: 700, fontSize: 14 }}>{tip.title}</span>
+      </div>
+      <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, lineHeight: 1.6 }}>{tip.body}</div>
+    </div>
   );
 }
 
@@ -190,97 +151,62 @@ function NewGrowForm({ onAdd, onCancel }: { onAdd: (g: Grow) => void; onCancel: 
   const handleSubmit = () => {
     if (!name.trim()) return;
     const grow: Grow = {
-      id: generateId(),
-      name: name.trim(),
-      strain_name: strain.trim() || "Unknown",
-      stage: "seed",
-      started_at: new Date().toISOString().split("T")[0],
-      created_at: new Date().toISOString(),
-      logs: [],
+      id: generateId(), name: name.trim(), strain_name: strain.trim() || "Unknown",
+      stage: "seed", started_at: new Date().toISOString().split("T")[0],
+      created_at: new Date().toISOString(), logs: [],
     };
     onAdd(grow);
   };
 
   return (
-    <Box sx={{ ...glassCard({ p: 3, mb: 3 }) }}>
-      <Typography sx={{ color: "white", fontWeight: 700, fontSize: 18, mb: 2 }}>
-        🌱 New Grow
-      </Typography>
+    <div style={{ ...glass, padding: 24, marginBottom: 24 }}>
+      <div style={{ color: "white", fontWeight: 700, fontSize: 18, marginBottom: 16 }}>🌱 New Grow</div>
 
-      <Box sx={{ mb: 2 }}>
-        <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, mb: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
           Grow Name
-        </Typography>
+        </div>
         <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          type="text" value={name} onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Spring 2026 Indoor Run"
           style={{
-            width: "100%",
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.2)",
-            background: "rgba(255,255,255,0.06)",
-            color: "white",
-            fontSize: 14,
-            outline: "none",
+            width: "100%", padding: "10px 14px", borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.06)",
+            color: "white", fontSize: 14, outline: "none",
           }}
         />
-      </Box>
+      </div>
 
-      <Box sx={{ mb: 3 }}>
-        <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, mb: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
           Strain
-        </Typography>
+        </div>
         <input
-          type="text"
-          value={strain}
-          onChange={(e) => setStrain(e.target.value)}
+          type="text" value={strain} onChange={(e) => setStrain(e.target.value)}
           placeholder="e.g. Blue Dream, Gorilla Glue"
           style={{
-            width: "100%",
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.2)",
-            background: "rgba(255,255,255,0.06)",
-            color: "white",
-            fontSize: 14,
-            outline: "none",
+            width: "100%", padding: "10px 14px", borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.06)",
+            color: "white", fontSize: 14, outline: "none",
           }}
         />
-      </Box>
+      </div>
 
-      <Box sx={{ display: "flex", gap: 1.5 }}>
-        <ButtonBase
-          onClick={handleSubmit}
-          sx={{
-            px: 3, py: 1.2,
-            borderRadius: 2,
-            background: "#4CAF50",
-            color: "white",
-            fontWeight: 700,
-            fontSize: 14,
-            "&:hover": { background: "#43A047" },
-          }}
-        >
+      <div style={{ display: "flex", gap: 12 }}>
+        <button onClick={handleSubmit} style={{
+          padding: "10px 24px", borderRadius: 8, background: "#4CAF50", color: "white",
+          fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer",
+        }}>
           Start Grow
-        </ButtonBase>
-        <ButtonBase
-          onClick={onCancel}
-          sx={{
-            px: 3, py: 1.2,
-            borderRadius: 2,
-            background: "rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.7)",
-            fontWeight: 600,
-            fontSize: 14,
-          }}
-        >
+        </button>
+        <button onClick={onCancel} style={{
+          padding: "10px 24px", borderRadius: 8, background: "rgba(255,255,255,0.1)",
+          color: "rgba(255,255,255,0.7)", fontWeight: 600, fontSize: 14, border: "none", cursor: "pointer",
+        }}>
           Cancel
-        </ButtonBase>
-      </Box>
-    </Box>
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -290,104 +216,56 @@ function AddLogForm({ grow, onAdd, onCancel }: { grow: Grow; onAdd: (log: GrowLo
 
   const handleSubmit = () => {
     if (!note.trim()) return;
-    const log: GrowLog = {
-      id: generateId(),
-      note: note.trim(),
-      stage,
-      photo_url: null,
+    onAdd({
+      id: generateId(), note: note.trim(), stage, photo_url: null,
       created_at: new Date().toISOString(),
-    };
-    onAdd(log);
+    });
   };
 
   return (
-    <Box sx={{ ...glassCard({ p: 2.5, mt: 2 }) }}>
-      <Typography sx={{ color: "white", fontWeight: 700, fontSize: 14, mb: 1.5 }}>
-        📝 New Log Entry
-      </Typography>
+    <div style={{ ...glass, padding: 20, marginTop: 16 }}>
+      <div style={{ color: "white", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>📝 New Log Entry</div>
 
-      <Box sx={{ mb: 1.5 }}>
-        <select
-          value={stage}
-          onChange={(e) => setStage(e.target.value as Stage)}
-          style={{
-            width: "100%",
-            padding: "8px 12px",
-            borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.2)",
-            background: "rgba(0,0,0,0.4)",
-            color: "white",
-            fontSize: 13,
-          }}
-        >
-          {STAGES.map((s) => (
-            <option key={s.key} value={s.key}>
-              {s.emoji} {s.label}
-            </option>
-          ))}
+      <div style={{ marginBottom: 12 }}>
+        <select value={stage} onChange={(e) => setStage(e.target.value as Stage)} style={{
+          width: "100%", padding: "8px 12px", borderRadius: 8,
+          border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.4)",
+          color: "white", fontSize: 13,
+        }}>
+          {STAGES.map((s) => <option key={s.key} value={s.key}>{s.emoji} {s.label}</option>)}
         </select>
-      </Box>
+      </div>
 
       <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
+        value={note} onChange={(e) => setNote(e.target.value)}
         placeholder="What's happening with your plant today? Watering, feeding, training, observations..."
         rows={3}
         style={{
-          width: "100%",
-          padding: "10px 14px",
-          borderRadius: 10,
-          border: "1px solid rgba(255,255,255,0.2)",
-          background: "rgba(255,255,255,0.06)",
-          color: "white",
-          fontSize: 13,
-          lineHeight: 1.5,
-          resize: "vertical",
-          outline: "none",
+          width: "100%", padding: "10px 14px", borderRadius: 10,
+          border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.06)",
+          color: "white", fontSize: 13, lineHeight: 1.5, resize: "vertical", outline: "none",
         }}
       />
 
-      <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
-        <ButtonBase
-          onClick={handleSubmit}
-          sx={{
-            px: 2.5, py: 1,
-            borderRadius: 2,
-            background: "#4CAF50",
-            color: "white",
-            fontWeight: 700,
-            fontSize: 13,
-          }}
-        >
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <button onClick={handleSubmit} style={{
+          padding: "8px 20px", borderRadius: 8, background: "#4CAF50",
+          color: "white", fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer",
+        }}>
           Save Entry
-        </ButtonBase>
-        <ButtonBase
-          onClick={onCancel}
-          sx={{
-            px: 2.5, py: 1,
-            borderRadius: 2,
-            background: "rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.7)",
-            fontWeight: 600,
-            fontSize: 13,
-          }}
-        >
+        </button>
+        <button onClick={onCancel} style={{
+          padding: "8px 20px", borderRadius: 8, background: "rgba(255,255,255,0.1)",
+          color: "rgba(255,255,255,0.7)", fontWeight: 600, fontSize: 13, border: "none", cursor: "pointer",
+        }}>
           Cancel
-        </ButtonBase>
-      </Box>
-    </Box>
+        </button>
+      </div>
+    </div>
   );
 }
 
-function GrowCard({
-  grow,
-  onUpdate,
-  onDelete,
-}: {
-  grow: Grow;
-  onUpdate: (g: Grow) => void;
-  onDelete: (id: string) => void;
-}) {
+function GrowCard({ grow, onUpdate, onDelete }: { grow: Grow; onUpdate: (g: Grow) => void; onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [showLogForm, setShowLogForm] = useState(false);
   const [showStageSelect, setShowStageSelect] = useState(false);
@@ -396,8 +274,7 @@ function GrowCard({
   const tips = STAGE_TIPS[grow.stage] || [];
 
   const handleAddLog = (log: GrowLog) => {
-    const updated = { ...grow, logs: [log, ...grow.logs], stage: log.stage };
-    onUpdate(updated);
+    onUpdate({ ...grow, logs: [log, ...grow.logs], stage: log.stage });
     setShowLogForm(false);
   };
 
@@ -407,197 +284,127 @@ function GrowCard({
   };
 
   return (
-    <Box sx={{ ...glassCard({ mb: 2, overflow: "hidden" }) }}>
+    <div style={{ ...glass, marginBottom: 16, overflow: "hidden" }}>
       {/* Header */}
-      <Box
+      <div
         onClick={() => setExpanded(!expanded)}
-        sx={{
-          p: 2.5,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          "&:hover": { background: "rgba(255,255,255,0.03)" },
-        }}
+        style={{ padding: 20, cursor: "pointer", display: "flex", alignItems: "center", gap: 16 }}
       >
-        <Box
-          sx={{
-            width: 48,
-            height: 48,
-            borderRadius: 2,
-            background: `${stageInfo.color}22`,
-            border: `1px solid ${stageInfo.color}44`,
-            display: "grid",
-            placeItems: "center",
-            fontSize: 24,
-            flexShrink: 0,
-          }}
-        >
+        <div style={{
+          width: 48, height: 48, borderRadius: 8,
+          background: `${stageInfo.color}22`, border: `1px solid ${stageInfo.color}44`,
+          display: "grid", placeItems: "center", fontSize: 24, flexShrink: 0,
+        }}>
           {stageInfo.emoji}
-        </Box>
+        </div>
 
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ color: "white", fontWeight: 700, fontSize: 16, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: "white", fontWeight: 700, fontSize: 16, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {grow.name}
-          </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-            <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
-              {grow.strain_name}
-            </Typography>
-            <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>•</Typography>
-            <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
-              Day {days}
-            </Typography>
-            <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>•</Typography>
-            <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
-              {grow.logs.length} log{grow.logs.length !== 1 ? "s" : ""}
-            </Typography>
-          </Box>
-        </Box>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{grow.strain_name}</span>
+            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>•</span>
+            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Day {days}</span>
+            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>•</span>
+            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{grow.logs.length} log{grow.logs.length !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
 
         <StageChip stage={grow.stage} size="sm" />
-        {expanded ? (
-          <ExpandLessIcon sx={{ color: "rgba(255,255,255,0.5)" }} />
-        ) : (
-          <ExpandMoreIcon sx={{ color: "rgba(255,255,255,0.5)" }} />
-        )}
-      </Box>
+        <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 20 }}>{expanded ? "▲" : "▼"}</span>
+      </div>
 
-      {/* Expanded content */}
+      {/* Expanded */}
       {expanded && (
-        <Box sx={{ px: 2.5, pb: 2.5 }}>
-          {/* Stage selector */}
-          <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
-            <ButtonBase
-              onClick={() => setShowStageSelect(!showStageSelect)}
-              sx={{
-                px: 1.5, py: 0.75,
-                borderRadius: 1.5,
-                background: "rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.7)",
-                fontSize: 12,
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-              }}
-            >
-              <SpaIcon sx={{ fontSize: 14 }} /> Update Stage
-            </ButtonBase>
-            <ButtonBase
-              onClick={() => setShowLogForm(true)}
-              sx={{
-                px: 1.5, py: 0.75,
-                borderRadius: 1.5,
-                background: "rgba(76,175,80,0.2)",
-                color: "#81C784",
-                fontSize: 12,
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-              }}
-            >
-              <EditNoteIcon sx={{ fontSize: 14 }} /> Add Log
-            </ButtonBase>
-            <ButtonBase
-              onClick={() => {
-                if (confirm("Delete this grow and all its logs?")) onDelete(grow.id);
-              }}
-              sx={{
-                px: 1.5, py: 0.75,
-                borderRadius: 1.5,
-                background: "rgba(244,67,54,0.15)",
-                color: "#EF5350",
-                fontSize: 12,
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-              }}
-            >
-              <DeleteOutlineIcon sx={{ fontSize: 14 }} /> Delete
-            </ButtonBase>
-          </Box>
+        <div style={{ padding: "0 20px 20px" }}>
+          {/* Action buttons */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+            <button onClick={() => setShowStageSelect(!showStageSelect)} style={{
+              padding: "6px 12px", borderRadius: 6, background: "rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 600,
+              display: "flex", alignItems: "center", gap: 4, border: "none", cursor: "pointer",
+            }}>
+              🌿 Update Stage
+            </button>
+            <button onClick={() => setShowLogForm(true)} style={{
+              padding: "6px 12px", borderRadius: 6, background: "rgba(76,175,80,0.2)",
+              color: "#81C784", fontSize: 12, fontWeight: 600,
+              display: "flex", alignItems: "center", gap: 4, border: "none", cursor: "pointer",
+            }}>
+              📝 Add Log
+            </button>
+            <button onClick={() => { if (confirm("Delete this grow and all its logs?")) onDelete(grow.id); }} style={{
+              padding: "6px 12px", borderRadius: 6, background: "rgba(244,67,54,0.15)",
+              color: "#EF5350", fontSize: 12, fontWeight: 600,
+              display: "flex", alignItems: "center", gap: 4, border: "none", cursor: "pointer",
+            }}>
+              🗑️ Delete
+            </button>
+          </div>
 
-          {/* Stage selector dropdown */}
+          {/* Stage selector */}
           {showStageSelect && (
-            <Box sx={{ ...glassCard({ p: 1.5, mb: 2 }), display: "flex", flexWrap: "wrap", gap: 1 }}>
+            <div style={{ ...glass, padding: 12, marginBottom: 16, display: "flex", flexWrap: "wrap", gap: 8 }}>
               {STAGES.map((s) => (
-                <ButtonBase
-                  key={s.key}
-                  onClick={() => handleStageChange(s.key)}
-                  sx={{
-                    px: 1.5,
-                    py: 0.5,
-                    borderRadius: 99,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    background: grow.stage === s.key ? `${s.color}33` : "rgba(255,255,255,0.05)",
-                    color: grow.stage === s.key ? s.color : "rgba(255,255,255,0.6)",
-                    border: `1px solid ${grow.stage === s.key ? `${s.color}55` : "rgba(255,255,255,0.1)"}`,
-                  }}
-                >
+                <button key={s.key} onClick={() => handleStageChange(s.key)} style={{
+                  padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  background: grow.stage === s.key ? `${s.color}33` : "rgba(255,255,255,0.05)",
+                  color: grow.stage === s.key ? s.color : "rgba(255,255,255,0.6)",
+                  border: `1px solid ${grow.stage === s.key ? `${s.color}55` : "rgba(255,255,255,0.1)"}`,
+                }}>
                   {s.emoji} {s.label}
-                </ButtonBase>
+                </button>
               ))}
-            </Box>
+            </div>
           )}
 
-          {/* AI Coaching Tips */}
+          {/* Coach tips */}
           {tips.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                <AutoAwesomeIcon sx={{ fontSize: 16, color: "#CE93D8" }} />
-                <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: 16 }}>✨</span>
+                <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
                   Grow Coach Tips — {stageInfo.label} Stage
-                </Typography>
-              </Box>
-              {tips.map((tip, i) => (
-                <CoachTipCard key={i} tip={tip} />
-              ))}
-            </Box>
+                </span>
+              </div>
+              {tips.map((tip, i) => <CoachTipCard key={i} tip={tip} />)}
+            </div>
           )}
 
           {/* Log form */}
-          {showLogForm && (
-            <AddLogForm
-              grow={grow}
-              onAdd={handleAddLog}
-              onCancel={() => setShowLogForm(false)}
-            />
-          )}
+          {showLogForm && <AddLogForm grow={grow} onAdd={handleAddLog} onCancel={() => setShowLogForm(false)} />}
 
           {/* Log entries */}
           {grow.logs.length > 0 && (
-            <Box>
-              <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, mb: 1.5 }}>
+            <div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
                 Grow Log ({grow.logs.length})
-              </Typography>
-              {grow.logs.map((log) => (
-                <Box
-                  key={log.id}
-                  sx={{
-                    ...glassCard({ p: 2, mb: 1 }),
-                    borderLeft: `3px solid ${STAGES.find((s) => s.key === log.stage)?.color || "#666"}`,
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <StageChip stage={log.stage} size="sm" />
-                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
-                      {new Date(log.created_at).toLocaleDateString()} {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ color: "rgba(255,255,255,0.85)", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                    {log.note}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
+              </div>
+              {grow.logs.map((log) => {
+                const logStage = STAGES.find((s) => s.key === log.stage);
+                return (
+                  <div key={log.id} style={{
+                    ...glass, padding: 16, marginBottom: 8,
+                    borderLeft: `3px solid ${logStage?.color || "#666"}`,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <StageChip stage={log.stage} size="sm" />
+                      <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
+                        {new Date(log.created_at).toLocaleDateString()} {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      {log.note}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }
 
@@ -635,7 +442,12 @@ export default function GrowCoachPage() {
       <>
         <TopNav title="Grow Coach" showBack />
         <main className="min-h-screen text-white flex items-center justify-center">
-          <CircularProgress sx={{ color: "rgba(255,255,255,0.5)" }} />
+          <div style={{
+            width: 32, height: 32, border: "3px solid rgba(255,255,255,0.15)",
+            borderTopColor: "rgba(255,255,255,0.5)", borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </main>
       </>
     );
@@ -646,72 +458,50 @@ export default function GrowCoachPage() {
       <TopNav title="Grow Coach" showBack />
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
-          {/* Hero section */}
-          <Box sx={{ ...glassCard({ p: 3, mb: 3 }) }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-              <AutoAwesomeIcon sx={{ fontSize: 28, color: "#CE93D8" }} />
-              <Typography sx={{ color: "white", fontWeight: 800, fontSize: 24 }}>
-                Grow Coach
-              </Typography>
-            </Box>
-            <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
+          {/* Hero */}
+          <div style={{ ...glass, padding: 24, marginBottom: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <span style={{ fontSize: 28 }}>✨</span>
+              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Grow Coach</span>
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
               Track your grows from seed to harvest. Get stage-specific coaching tips,
               log daily progress, and build a complete grow history for every plant.
-            </Typography>
-          </Box>
+            </div>
+          </div>
 
           {/* New grow button */}
           {!showNewForm && (
-            <ButtonBase
+            <button
               onClick={() => setShowNewForm(true)}
-              sx={{
-                width: "100%",
-                py: 2,
-                mb: 3,
-                borderRadius: 3,
-                border: "2px dashed rgba(76,175,80,0.4)",
-                background: "rgba(76,175,80,0.08)",
-                color: "#81C784",
-                fontWeight: 700,
-                fontSize: 15,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1,
-                "&:hover": { background: "rgba(76,175,80,0.15)", border: "2px dashed rgba(76,175,80,0.6)" },
+              style={{
+                width: "100%", padding: "16px 0", marginBottom: 24, borderRadius: 12,
+                border: "2px dashed rgba(76,175,80,0.4)", background: "rgba(76,175,80,0.08)",
+                color: "#81C784", fontWeight: 700, fontSize: 15,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                cursor: "pointer",
               }}
             >
-              <AddIcon sx={{ fontSize: 22 }} />
-              Start New Grow
-            </ButtonBase>
+              ➕ Start New Grow
+            </button>
           )}
 
-          {/* New grow form */}
           {showNewForm && <NewGrowForm onAdd={handleAdd} onCancel={() => setShowNewForm(false)} />}
 
-          {/* Active grows */}
+          {/* Grows list */}
           {grows.length === 0 && !showNewForm ? (
-            <Box sx={{ textAlign: "center", py: 8 }}>
-              <Typography sx={{ fontSize: 48, mb: 2 }}>🌱</Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, mb: 1 }}>
-                No grows yet
-              </Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
-                Start tracking your first grow to get personalized coaching tips
-              </Typography>
-            </Box>
+            <div style={{ textAlign: "center", padding: "64px 0" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🌱</div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No grows yet</div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Start tracking your first grow to get personalized coaching tips</div>
+            </div>
           ) : (
             <>
-              <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, mb: 1.5 }}>
+              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
                 Your Grows ({grows.length})
-              </Typography>
+              </div>
               {grows.map((grow) => (
-                <GrowCard
-                  key={grow.id}
-                  grow={grow}
-                  onUpdate={handleUpdate}
-                  onDelete={handleDelete}
-                />
+                <GrowCard key={grow.id} grow={grow} onUpdate={handleUpdate} onDelete={handleDelete} />
               ))}
             </>
           )}
