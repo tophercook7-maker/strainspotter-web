@@ -53,10 +53,10 @@ function savePrefs(prefs: LocalPrefs) {
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
 }
 
-// ─── Style helpers ───────────────────────────────────────────────────────────
-const glass: React.CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.15)",
+// ─── Style helpers — HIGH CONTRAST ──────────────────────────────────────────
+const card: React.CSSProperties = {
+  background: "rgba(255,255,255,0.10)",
+  border: "1px solid rgba(255,255,255,0.20)",
   borderRadius: 16,
 };
 
@@ -67,14 +67,14 @@ function SectionHeader({ icon, title }: { icon: string; title: string }) {
         display: "flex",
         alignItems: "center",
         gap: 8,
-        marginBottom: 12,
+        marginBottom: 14,
       }}
     >
-      <span style={{ fontSize: 16 }}>{icon}</span>
+      <span style={{ fontSize: 18 }}>{icon}</span>
       <span
         style={{
-          color: "rgba(255,255,255,0.6)",
-          fontSize: 12,
+          color: "#fff",
+          fontSize: 13,
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: 1.5,
@@ -101,15 +101,15 @@ function SettingRow({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "12px 0",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        padding: "14px 0",
+        borderBottom: "1px solid rgba(255,255,255,0.12)",
       }}
     >
-      <div>
+      <div style={{ flex: 1 }}>
         <div
           style={{
-            color: "rgba(255,255,255,0.9)",
-            fontSize: 14,
+            color: "#fff",
+            fontSize: 15,
             fontWeight: 600,
           }}
         >
@@ -118,9 +118,9 @@ function SettingRow({
         {description && (
           <div
             style={{
-              color: "rgba(255,255,255,0.4)",
-              fontSize: 12,
-              marginTop: 2,
+              color: "rgba(255,255,255,0.6)",
+              fontSize: 13,
+              marginTop: 3,
             }}
           >
             {description}
@@ -143,17 +143,16 @@ function Toggle({
     <button
       onClick={() => onChange(!checked)}
       style={{
-        width: 44,
-        height: 24,
-        borderRadius: 12,
-        padding: 2,
+        width: 48,
+        height: 26,
+        borderRadius: 13,
+        padding: 3,
         cursor: "pointer",
-        background: checked
-          ? "rgba(102,187,106,0.6)"
-          : "rgba(255,255,255,0.15)",
+        background: checked ? "#43A047" : "rgba(255,255,255,0.20)",
         border: "none",
         position: "relative",
         transition: "background 0.2s",
+        flexShrink: 0,
       }}
     >
       <div
@@ -162,8 +161,9 @@ function Toggle({
           height: 20,
           borderRadius: "50%",
           background: "white",
-          transform: checked ? "translateX(20px)" : "translateX(0)",
+          transform: checked ? "translateX(22px)" : "translateX(0)",
           transition: "transform 0.2s",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
         }}
       />
     </button>
@@ -181,7 +181,7 @@ function tierBadgeColor(t: string): string {
   if (t === "pro") return "#FFD54F";
   if (t === "member" || t === "garden" || t === "standard" || t === "elite")
     return "#66BB6A";
-  return "rgba(255,255,255,0.35)";
+  return "rgba(255,255,255,0.6)";
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -203,17 +203,14 @@ export default function SettingsPage() {
   const isLoggedIn = !!auth?.user;
   const profile = auth?.profile;
   const email = auth?.user?.email || "";
-  const membership = profile?.membership || "free";
   const scansRemaining = profile?.scans_remaining ?? null;
   const tier = auth?.tier || "free";
 
-  // Load preferences + profile data
   useEffect(() => {
     setPrefs(loadPrefs());
     setLoaded(true);
   }, []);
 
-  // Sync profile data when auth loads
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || "");
@@ -221,7 +218,6 @@ export default function SettingsPage() {
     }
   }, [profile]);
 
-  // Save local prefs
   const updatePrefs = (partial: Partial<LocalPrefs>) => {
     const updated = { ...prefs, ...partial };
     setPrefs(updated);
@@ -239,7 +235,6 @@ export default function SettingsPage() {
     });
   };
 
-  // Save profile to Supabase
   const saveProfile = useCallback(async () => {
     if (!isLoggedIn || !auth?.session?.access_token) return;
     setSavingProfile(true);
@@ -277,7 +272,7 @@ export default function SettingsPage() {
   const handleClearData = () => {
     if (
       confirm(
-        "⚠️ This will clear ALL local data including grows, favorites, and settings. This cannot be undone. Continue?"
+        "This will clear ALL local data including grows, favorites, and settings. Continue?"
       )
     ) {
       localStorage.removeItem("strainspotter_grows");
@@ -305,9 +300,38 @@ export default function SettingsPage() {
 
   if (!loaded) return null;
 
+  // Shared input style
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "12px 14px",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,0.20)",
+    background: "rgba(255,255,255,0.08)",
+    color: "#fff",
+    fontSize: 15,
+    outline: "none",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 12,
+    fontWeight: 700,
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    display: "block",
+  };
+
   return (
     <>
-      <div style={{ minHeight: "100vh", color: "#fff" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          color: "#fff",
+          background: "linear-gradient(180deg, #0d120e 0%, #111a14 100%)",
+        }}
+      >
         {/* ── Top Bar ── */}
         <div
           style={{
@@ -316,11 +340,9 @@ export default function SettingsPage() {
             zIndex: 50,
             display: "flex",
             alignItems: "center",
-            padding: "12px 16px",
-            borderBottom: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(0,0,0,0.5)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
+            padding: "14px 16px",
+            borderBottom: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(13,18,14,0.95)",
           }}
         >
           <button
@@ -328,8 +350,8 @@ export default function SettingsPage() {
             style={{
               background: "none",
               border: "none",
-              color: "rgba(255,255,255,0.5)",
-              fontSize: 18,
+              color: "#fff",
+              fontSize: 20,
               cursor: "pointer",
               padding: "4px 8px",
               marginRight: 8,
@@ -337,7 +359,9 @@ export default function SettingsPage() {
           >
             ←
           </button>
-          <span style={{ fontWeight: 800, fontSize: 18 }}>⚙️ Settings</span>
+          <span style={{ fontWeight: 800, fontSize: 18, color: "#fff" }}>
+            ⚙️ Settings
+          </span>
         </div>
 
         <div
@@ -354,12 +378,12 @@ export default function SettingsPage() {
                 position: "fixed",
                 top: 80,
                 right: 20,
-                padding: "8px 16px",
-                borderRadius: 8,
-                background: "rgba(76,175,80,0.9)",
+                padding: "10px 18px",
+                borderRadius: 10,
+                background: "#43A047",
                 color: "white",
-                fontSize: 13,
-                fontWeight: 600,
+                fontSize: 14,
+                fontWeight: 700,
                 zIndex: 999,
               }}
             >
@@ -368,110 +392,54 @@ export default function SettingsPage() {
           )}
 
           {/* ═══ Account / Profile ═══ */}
-          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="👤" title="Account" />
 
             {isLoggedIn ? (
               <>
-                {/* Logged-in profile fields */}
                 <div style={{ marginBottom: 16 }}>
-                  <div
-                    style={{
-                      color: "rgba(255,255,255,0.5)",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      marginBottom: 4,
-                      textTransform: "uppercase",
-                      letterSpacing: 1,
-                    }}
-                  >
-                    Display Name
-                  </div>
+                  <label style={labelStyle}>Display Name</label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     onBlur={saveProfile}
                     placeholder="Your name"
-                    style={{
-                      width: "100%",
-                      boxSizing: "border-box",
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      border: "1px solid rgba(255,255,255,0.15)",
-                      background: "rgba(0,0,0,0.3)",
-                      color: "white",
-                      fontSize: 14,
-                      outline: "none",
-                    }}
+                    style={inputStyle}
                   />
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
+                  <label style={labelStyle}>Email</label>
                   <div
                     style={{
-                      color: "rgba(255,255,255,0.5)",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      marginBottom: 4,
-                      textTransform: "uppercase",
-                      letterSpacing: 1,
-                    }}
-                  >
-                    Email
-                  </div>
-                  <div
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      background: "rgba(0,0,0,0.2)",
-                      color: "rgba(255,255,255,0.5)",
-                      fontSize: 14,
+                      ...inputStyle,
+                      color: "rgba(255,255,255,0.7)",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.10)",
                     }}
                   >
                     {email}
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 0 }}>
-                  <div
-                    style={{
-                      color: "rgba(255,255,255,0.5)",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      marginBottom: 4,
-                      textTransform: "uppercase",
-                      letterSpacing: 1,
-                    }}
-                  >
-                    Location
-                  </div>
+                <div>
+                  <label style={labelStyle}>Location</label>
                   <input
                     type="text"
                     value={locationText}
                     onChange={(e) => setLocationText(e.target.value)}
                     onBlur={saveProfile}
                     placeholder="City, State"
-                    style={{
-                      width: "100%",
-                      boxSizing: "border-box",
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      border: "1px solid rgba(255,255,255,0.15)",
-                      background: "rgba(0,0,0,0.3)",
-                      color: "white",
-                      fontSize: 14,
-                      outline: "none",
-                    }}
+                    style={inputStyle}
                   />
                 </div>
 
                 {savingProfile && (
                   <div
                     style={{
-                      color: "rgba(255,255,255,0.3)",
-                      fontSize: 11,
+                      color: "rgba(255,255,255,0.5)",
+                      fontSize: 12,
                       marginTop: 8,
                     }}
                   >
@@ -480,18 +448,12 @@ export default function SettingsPage() {
                 )}
               </>
             ) : (
-              /* Not logged in */
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "20px 0",
-                }}
-              >
+              <div style={{ textAlign: "center", padding: "24px 0" }}>
                 <div
                   style={{
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: 14,
-                    marginBottom: 16,
+                    color: "rgba(255,255,255,0.7)",
+                    fontSize: 15,
+                    marginBottom: 18,
                     lineHeight: 1.6,
                   }}
                 >
@@ -504,9 +466,9 @@ export default function SettingsPage() {
                     background: "linear-gradient(135deg, #43A047, #2E7D32)",
                     border: "none",
                     borderRadius: 12,
-                    padding: "12px 28px",
+                    padding: "14px 32px",
                     color: "#fff",
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: 700,
                     cursor: "pointer",
                   }}
@@ -518,7 +480,7 @@ export default function SettingsPage() {
           </div>
 
           {/* ═══ Membership ═══ */}
-          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="🏅" title="Membership" />
             <div
               style={{
@@ -529,12 +491,12 @@ export default function SettingsPage() {
                 borderRadius: 12,
                 background:
                   tier === "free"
-                    ? "rgba(255,213,79,0.08)"
-                    : "rgba(76,175,80,0.08)",
+                    ? "rgba(255,213,79,0.12)"
+                    : "rgba(76,175,80,0.12)",
                 border: `1px solid ${
                   tier === "free"
-                    ? "rgba(255,213,79,0.2)"
-                    : "rgba(76,175,80,0.2)"
+                    ? "rgba(255,213,79,0.30)"
+                    : "rgba(76,175,80,0.30)"
                 }`,
               }}
             >
@@ -542,8 +504,8 @@ export default function SettingsPage() {
                 <div
                   style={{
                     color: tierBadgeColor(tier),
-                    fontSize: 16,
-                    fontWeight: 700,
+                    fontSize: 17,
+                    fontWeight: 800,
                   }}
                 >
                   {tierLabel(tier)}
@@ -551,9 +513,9 @@ export default function SettingsPage() {
                 </div>
                 <div
                   style={{
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: 12,
-                    marginTop: 2,
+                    color: "rgba(255,255,255,0.7)",
+                    fontSize: 13,
+                    marginTop: 3,
                   }}
                 >
                   {tier === "free"
@@ -567,13 +529,13 @@ export default function SettingsPage() {
                 <button
                   onClick={() => setShowPaywall(true)}
                   style={{
-                    padding: "6px 16px",
+                    padding: "8px 18px",
                     borderRadius: 99,
-                    background: "rgba(255,213,79,0.15)",
+                    background: "rgba(255,213,79,0.20)",
                     color: "#FFD54F",
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
-                    border: "1px solid rgba(255,213,79,0.3)",
+                    border: "1px solid rgba(255,213,79,0.40)",
                     cursor: "pointer",
                   }}
                 >
@@ -582,25 +544,20 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* Scans remaining — only show if logged in and available */}
             {isLoggedIn && scansRemaining !== null && (
               <div
                 style={{
                   marginTop: 12,
-                  padding: "12px 16px",
+                  padding: "14px 16px",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.04)",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.10)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                 }}
               >
-                <span
-                  style={{
-                    color: "rgba(255,255,255,0.6)",
-                    fontSize: 13,
-                  }}
-                >
+                <span style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>
                   Scans Remaining
                 </span>
                 <span
@@ -611,7 +568,7 @@ export default function SettingsPage() {
                         : scansRemaining > 0
                         ? "#FFB74D"
                         : "#EF5350",
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: 800,
                   }}
                 >
@@ -622,36 +579,36 @@ export default function SettingsPage() {
           </div>
 
           {/* ═══ Scanner ═══ */}
-          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="📷" title="Scanner" />
             <SettingRow
               label="Scan Quality"
               description="Higher quality uses more data"
             >
-              <div style={{ display: "flex", gap: 4 }}>
+              <div style={{ display: "flex", gap: 6 }}>
                 {(["standard", "high"] as const).map((q) => (
                   <button
                     key={q}
                     onClick={() => updatePrefs({ scanQuality: q })}
                     style={{
-                      padding: "4px 12px",
+                      padding: "6px 14px",
                       borderRadius: 99,
-                      fontSize: 12,
-                      fontWeight: 600,
+                      fontSize: 13,
+                      fontWeight: 700,
                       cursor: "pointer",
                       textTransform: "capitalize",
                       background:
                         prefs.scanQuality === q
-                          ? "rgba(206,147,216,0.2)"
-                          : "rgba(255,255,255,0.05)",
+                          ? "rgba(206,147,216,0.25)"
+                          : "rgba(255,255,255,0.08)",
                       color:
                         prefs.scanQuality === q
                           ? "#CE93D8"
-                          : "rgba(255,255,255,0.5)",
+                          : "rgba(255,255,255,0.7)",
                       border: `1px solid ${
                         prefs.scanQuality === q
-                          ? "rgba(206,147,216,0.4)"
-                          : "rgba(255,255,255,0.1)"
+                          ? "rgba(206,147,216,0.5)"
+                          : "rgba(255,255,255,0.15)"
                       }`,
                     }}
                   >
@@ -663,7 +620,7 @@ export default function SettingsPage() {
           </div>
 
           {/* ═══ Notifications ═══ */}
-          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="🔔" title="Notifications" />
             <SettingRow
               label="Grow Reminders"
@@ -695,32 +652,32 @@ export default function SettingsPage() {
           </div>
 
           {/* ═══ Preferences ═══ */}
-          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="🎨" title="Preferences" />
             <SettingRow label="Units">
-              <div style={{ display: "flex", gap: 4 }}>
+              <div style={{ display: "flex", gap: 6 }}>
                 {(["imperial", "metric"] as const).map((u) => (
                   <button
                     key={u}
                     onClick={() => updatePrefs({ units: u })}
                     style={{
-                      padding: "4px 12px",
+                      padding: "6px 14px",
                       borderRadius: 99,
-                      fontSize: 12,
-                      fontWeight: 600,
+                      fontSize: 13,
+                      fontWeight: 700,
                       cursor: "pointer",
                       background:
                         prefs.units === u
-                          ? "rgba(100,181,246,0.2)"
-                          : "rgba(255,255,255,0.05)",
+                          ? "rgba(100,181,246,0.25)"
+                          : "rgba(255,255,255,0.08)",
                       color:
                         prefs.units === u
                           ? "#64B5F6"
-                          : "rgba(255,255,255,0.5)",
+                          : "rgba(255,255,255,0.7)",
                       border: `1px solid ${
                         prefs.units === u
-                          ? "rgba(100,181,246,0.4)"
-                          : "rgba(255,255,255,0.1)"
+                          ? "rgba(100,181,246,0.5)"
+                          : "rgba(255,255,255,0.15)"
                       }`,
                     }}
                   >
@@ -730,30 +687,30 @@ export default function SettingsPage() {
               </div>
             </SettingRow>
             <SettingRow label="Theme">
-              <div style={{ display: "flex", gap: 4 }}>
+              <div style={{ display: "flex", gap: 6 }}>
                 {(["dark", "auto"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => updatePrefs({ theme: t })}
                     style={{
-                      padding: "4px 12px",
+                      padding: "6px 14px",
                       borderRadius: 99,
-                      fontSize: 12,
-                      fontWeight: 600,
+                      fontSize: 13,
+                      fontWeight: 700,
                       cursor: "pointer",
                       textTransform: "capitalize",
                       background:
                         prefs.theme === t
-                          ? "rgba(100,181,246,0.2)"
-                          : "rgba(255,255,255,0.05)",
+                          ? "rgba(100,181,246,0.25)"
+                          : "rgba(255,255,255,0.08)",
                       color:
                         prefs.theme === t
                           ? "#64B5F6"
-                          : "rgba(255,255,255,0.5)",
+                          : "rgba(255,255,255,0.7)",
                       border: `1px solid ${
                         prefs.theme === t
-                          ? "rgba(100,181,246,0.4)"
-                          : "rgba(255,255,255,0.1)"
+                          ? "rgba(100,181,246,0.5)"
+                          : "rgba(255,255,255,0.15)"
                       }`,
                     }}
                   >
@@ -765,33 +722,33 @@ export default function SettingsPage() {
           </div>
 
           {/* ═══ Data & Storage ═══ */}
-          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="💾" title="Data & Storage" />
             <SettingRow label="Local Storage Used">
               <span
                 style={{
-                  color: "rgba(255,255,255,0.7)",
-                  fontSize: 13,
-                  fontWeight: 600,
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 700,
                 }}
               >
                 {loaded ? getStorageSize() : "..."}
               </span>
             </SettingRow>
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 14 }}>
               <button
                 onClick={handleClearData}
                 style={{
-                  padding: "8px 16px",
-                  borderRadius: 8,
-                  background: "rgba(244,67,54,0.1)",
+                  padding: "10px 18px",
+                  borderRadius: 10,
+                  background: "rgba(244,67,54,0.15)",
                   color: "#EF5350",
-                  fontSize: 13,
-                  fontWeight: 600,
+                  fontSize: 14,
+                  fontWeight: 700,
                   display: "flex",
                   alignItems: "center",
-                  gap: 4,
-                  border: "1px solid rgba(244,67,54,0.2)",
+                  gap: 6,
+                  border: "1px solid rgba(244,67,54,0.30)",
                   cursor: "pointer",
                 }}
               >
@@ -802,17 +759,17 @@ export default function SettingsPage() {
 
           {/* ═══ Sign Out (only if logged in) ═══ */}
           {isLoggedIn && (
-            <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+            <div style={{ ...card, padding: 20, marginBottom: 16 }}>
               <button
                 onClick={handleSignOut}
                 style={{
                   width: "100%",
-                  padding: "14px 0",
+                  padding: "16px 0",
                   borderRadius: 12,
-                  background: "rgba(244,67,54,0.08)",
-                  border: "1px solid rgba(244,67,54,0.2)",
+                  background: "rgba(244,67,54,0.12)",
+                  border: "1px solid rgba(244,67,54,0.30)",
                   color: "#EF5350",
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: 700,
                   cursor: "pointer",
                 }}
@@ -823,19 +780,15 @@ export default function SettingsPage() {
           )}
 
           {/* ═══ About ═══ */}
-          <div style={{ ...glass, padding: 20, marginBottom: 16 }}>
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="ℹ️" title="About" />
             <SettingRow label="Version">
-              <span
-                style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}
-              >
+              <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 600 }}>
                 1.0.0-beta
               </span>
             </SettingRow>
             <SettingRow label="Build">
-              <span
-                style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}
-              >
+              <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 600 }}>
                 Pre-Launch
               </span>
             </SettingRow>
@@ -848,9 +801,7 @@ export default function SettingsPage() {
 
           {/* Footer */}
           <div style={{ textAlign: "center", padding: "32px 0" }}>
-            <span
-              style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}
-            >
+            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
               StrainSpotter • AI-Powered Cannabis Identification
             </span>
           </div>
