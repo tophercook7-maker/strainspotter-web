@@ -746,6 +746,8 @@ export default function ScannerPage() {
           onClose={() => setShowAuth(false)}
           onSuccess={() => {
             setShowAuth(false);
+            // Delay reload to let Supabase persist the session first
+            setTimeout(() => window.location.reload(), 800);
           }}
         />
       )}
