@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import AuthScreen from "@/components/AuthScreen";
 
 /* ─── try to use real auth, fall back to localStorage tier ─── */
@@ -67,19 +66,28 @@ export default function GardenPage() {
       <div className="min-h-screen text-white">
         {/* ── Top Bar ── */}
         <div
-          className="sticky top-0 z-50 w-full flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/50 backdrop-blur-md"
+          style={{
+            position: "sticky", top: 0, zIndex: 50, width: "100%",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 16px",
+            borderBottom: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+          }}
         >
           {/* Back → Scanner */}
           <button
             onClick={() => router.push("/garden/scanner")}
-            className="flex items-center gap-1.5 text-white/70 hover:text-white transition"
-            aria-label="Back to Scanner"
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              color: "rgba(255,255,255,0.7)", background: "none", border: "none",
+              cursor: "pointer", fontSize: 13, fontWeight: 600,
+            }}
           >
-            <ArrowBackIosNewIcon sx={{ fontSize: 14 }} />
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Scanner</span>
+            ‹ Scanner
           </button>
 
-          <h1 className="text-white text-lg font-semibold tracking-tight">
+          <h1 style={{ color: "white", fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em", margin: 0 }}>
             🌿 The Garden
           </h1>
 
@@ -88,44 +96,23 @@ export default function GardenPage() {
             <button
               onClick={() => router.push("/garden/settings")}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px 0",
+                display: "flex", alignItems: "center", gap: 8,
+                background: "none", border: "none", cursor: "pointer", padding: "4px 0",
               }}
             >
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                  color: tierColor(tier),
-                  background: `${tierColor(tier)}18`,
-                  border: `1px solid ${tierColor(tier)}44`,
-                  borderRadius: 6,
-                  padding: "3px 8px",
-                }}
-              >
+              <span style={{
+                fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5,
+                color: tierColor(tier), background: `${tierColor(tier)}18`,
+                border: `1px solid ${tierColor(tier)}44`, borderRadius: 6, padding: "3px 8px",
+              }}>
                 {tierLabel(tier)}
               </span>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg, #43A047, #2E7D32)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: "#fff",
-                }}
-              >
+              <div style={{
+                width: 30, height: 30, borderRadius: "50%",
+                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13, fontWeight: 800, color: "#fff",
+              }}>
                 {(displayName || "?")[0].toUpperCase()}
               </div>
             </button>
@@ -134,13 +121,8 @@ export default function GardenPage() {
               onClick={() => setShowAuth(true)}
               style={{
                 background: "linear-gradient(135deg, #43A047, #2E7D32)",
-                border: "none",
-                borderRadius: 10,
-                padding: "7px 14px",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
+                border: "none", borderRadius: 10, padding: "7px 14px",
+                color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
               }}
             >
               Sign In
@@ -149,124 +131,61 @@ export default function GardenPage() {
         </div>
 
         <div className="mx-auto w-full max-w-[720px] px-4 py-6 space-y-8">
-          {/* Scanner Shortcut — prominent */}
+          {/* Scanner Shortcut */}
           <button
             onClick={() => router.push("/garden/scanner")}
             style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
+              width: "100%", display: "flex", alignItems: "center", gap: 14,
               padding: "18px 20px",
               background: "linear-gradient(135deg, rgba(76,175,80,0.15), rgba(56,142,60,0.08))",
-              border: "1px solid rgba(76,175,80,0.3)",
-              borderRadius: 16,
-              cursor: "pointer",
-              color: "inherit",
-              textAlign: "left",
+              border: "1px solid rgba(76,175,80,0.3)", borderRadius: 16,
+              cursor: "pointer", color: "inherit", textAlign: "left",
             }}
           >
-            <span
-              style={{
-                fontSize: 32,
-                width: 52,
-                height: 52,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(76,175,80,0.2)",
-                borderRadius: 14,
-              }}
-            >
+            <span style={{
+              fontSize: 32, width: 52, height: 52,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(76,175,80,0.2)", borderRadius: 14,
+            }}>
               📸
             </span>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>
-                Scanner
-              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Scanner</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
                 AI strain identification — snap &amp; analyze
               </div>
             </div>
-            <span
-              style={{
-                marginLeft: "auto",
-                fontSize: 18,
-                color: "rgba(255,255,255,0.3)",
-              }}
-            >
-              →
-            </span>
+            <span style={{ marginLeft: "auto", fontSize: 18, color: "rgba(255,255,255,0.3)" }}>→</span>
           </button>
 
           {/* Feature Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {FEATURES.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
+                  display: "flex", flexDirection: "column", gap: 6,
                   padding: "16px 14px",
                   background: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 14,
-                  textDecoration: "none",
-                  color: "inherit",
-                  transition: "background 0.15s",
+                  borderRadius: 14, textDecoration: "none", color: "inherit",
                 }}
               >
                 <span style={{ fontSize: 24 }}>{item.icon}</span>
-                <span
-                  style={{
-                    color: "#fff",
-                    fontSize: 14,
-                    fontWeight: 700,
-                  }}
-                >
-                  {item.label}
-                </span>
-                <span
-                  style={{
-                    color: "rgba(255,255,255,0.4)",
-                    fontSize: 11,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {item.desc}
-                </span>
+                <span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{item.label}</span>
+                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, lineHeight: 1.3 }}>{item.desc}</span>
               </Link>
             ))}
           </div>
 
           {/* Quick Links */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 24,
-              paddingTop: 8,
-              paddingBottom: 24,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "center", gap: 24, paddingTop: 8, paddingBottom: 24 }}>
             {QUICK_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: 13,
-                  textDecoration: "none",
-                  fontWeight: 500,
-                }}
+                style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, textDecoration: "none", fontWeight: 500 }}
               >
                 {link.icon} {link.label}
               </Link>
