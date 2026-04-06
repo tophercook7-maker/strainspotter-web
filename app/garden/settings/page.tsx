@@ -329,7 +329,6 @@ export default function SettingsPage() {
         style={{
           minHeight: "100vh",
           color: "#fff",
-          background: "linear-gradient(180deg, #0d120e 0%, #111a14 100%)",
         }}
       >
         {/* ── Top Bar ── */}
@@ -342,7 +341,9 @@ export default function SettingsPage() {
             alignItems: "center",
             padding: "14px 16px",
             borderBottom: "1px solid rgba(255,255,255,0.15)",
-            background: "rgba(13,18,14,0.95)",
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
           }}
         >
           <button
