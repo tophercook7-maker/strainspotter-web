@@ -2,14 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import TopNav from "../_components/TopNav";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import ButtonBase from "@mui/material/ButtonBase";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import SpaIcon from "@mui/icons-material/Spa";
-import HistoryIcon from "@mui/icons-material/History";
-import SearchIcon from "@mui/icons-material/Search";
 import Link from "next/link";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -40,16 +32,11 @@ function saveFavorites(favs: FavoriteScan[]) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function glassCard(extra: Record<string, any> = {}) {
-  return {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: "16px",
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    ...extra,
-  };
-}
+const glass: React.CSSProperties = {
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.15)",
+  borderRadius: 16,
+};
 
 function confidenceColor(c: number | null): string {
   if (c === null) return "rgba(255,255,255,0.5)";
@@ -78,17 +65,13 @@ export default function FavoritesPage() {
   };
 
   const handleClearAll = () => {
-    if (confirm("Remove all favorites?")) {
-      persist([]);
-    }
+    if (confirm("Remove all favorites?")) persist([]);
   };
 
   const filtered = favorites.filter(
-    (f) =>
-      !search || f.strainName.toLowerCase().includes(search.toLowerCase())
+    (f) => !search || f.strainName.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Group by strain name
   const grouped = filtered.reduce<Record<string, FavoriteScan[]>>((acc, fav) => {
     const key = fav.strainName;
     if (!acc[key]) acc[key] = [];
@@ -96,9 +79,7 @@ export default function FavoritesPage() {
     return acc;
   }, {});
 
-  const sortedGroups = Object.entries(grouped).sort(
-    (a, b) => b[1].length - a[1].length
-  );
+  const sortedGroups = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
 
   if (!loaded) return null;
 
@@ -108,170 +89,129 @@ export default function FavoritesPage() {
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
           {/* Hero */}
-          <Box sx={{ ...glassCard({ p: 3, mb: 3 }) }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-              <FavoriteIcon sx={{ fontSize: 28, color: "#EF5350" }} />
-              <Typography sx={{ color: "white", fontWeight: 800, fontSize: 24 }}>
-                Favorites
-              </Typography>
-            </Box>
-            <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
+          <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <span style={{ fontSize: 28 }}>❤️</span>
+              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Favorites</span>
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
               Your saved strains and scans. Bookmark cultivars you love to build a personal
               collection and quickly reference them later.
-            </Typography>
-          </Box>
+            </div>
+          </div>
 
           {/* Empty state */}
           {favorites.length === 0 ? (
-            <Box sx={{ textAlign: "center", py: 8 }}>
-              <Typography sx={{ fontSize: 48, mb: 2 }}>⭐</Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, mb: 1 }}>
+            <div style={{ textAlign: "center", padding: "64px 0" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>⭐</div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
                 No favorites yet
-              </Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: 14, mb: 3 }}>
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>
                 After scanning a plant, tap the heart icon to save it here
-              </Typography>
+              </div>
               <Link href="/garden/scanner">
-                <ButtonBase
-                  sx={{
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: 2,
-                    background: "rgba(239,83,80,0.2)",
-                    color: "#EF5350",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    border: "1px solid rgba(239,83,80,0.3)",
-                  }}
-                >
+                <button style={{
+                  padding: "10px 24px", borderRadius: 8,
+                  background: "rgba(239,83,80,0.2)", color: "#EF5350",
+                  fontWeight: 700, fontSize: 14, border: "1px solid rgba(239,83,80,0.3)", cursor: "pointer",
+                }}>
                   Go to Scanner
-                </ButtonBase>
+                </button>
               </Link>
-            </Box>
+            </div>
           ) : (
             <>
               {/* Search + Clear */}
-              <Box sx={{ display: "flex", gap: 1.5, mb: 2 }}>
-                <Box sx={{ position: "relative", flex: 1 }}>
-                  <SearchIcon sx={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 20 }} />
+              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                <div style={{ position: "relative", flex: 1 }}>
+                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 20 }}>🔍</span>
                   <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search favorites..."
                     style={{
-                      width: "100%",
-                      padding: "10px 14px 10px 42px",
-                      borderRadius: 12,
-                      border: "1px solid rgba(255,255,255,0.15)",
-                      background: "rgba(255,255,255,0.06)",
-                      color: "white",
-                      fontSize: 14,
-                      outline: "none",
+                      width: "100%", padding: "10px 14px 10px 42px", borderRadius: 12,
+                      border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)",
+                      color: "white", fontSize: 14, outline: "none",
                     }}
                   />
-                </Box>
-                <ButtonBase
+                </div>
+                <button
                   onClick={handleClearAll}
-                  sx={{
-                    px: 2,
-                    py: 1,
-                    borderRadius: 2,
-                    background: "rgba(255,255,255,0.06)",
-                    color: "rgba(255,255,255,0.5)",
-                    fontSize: 12,
-                    fontWeight: 600,
+                  style={{
+                    padding: "8px 16px", borderRadius: 8,
+                    background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)",
+                    fontSize: 12, fontWeight: 600, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer",
                   }}
                 >
                   Clear All
-                </ButtonBase>
-              </Box>
+                </button>
+              </div>
 
               {/* Stats */}
-              <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-                <Box sx={{ ...glassCard({ p: 2, flex: 1, textAlign: "center" }) }}>
-                  <Typography sx={{ color: "#EF5350", fontSize: 28, fontWeight: 800 }}>
-                    {favorites.length}
-                  </Typography>
-                  <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600 }}>
-                    Saved
-                  </Typography>
-                </Box>
-                <Box sx={{ ...glassCard({ p: 2, flex: 1, textAlign: "center" }) }}>
-                  <Typography sx={{ color: "#66BB6A", fontSize: 28, fontWeight: 800 }}>
-                    {Object.keys(grouped).length}
-                  </Typography>
-                  <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600 }}>
-                    Strains
-                  </Typography>
-                </Box>
-              </Box>
+              <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+                <div style={{ ...glass, padding: 16, flex: 1, textAlign: "center" }}>
+                  <div style={{ color: "#EF5350", fontSize: 28, fontWeight: 800 }}>{favorites.length}</div>
+                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600 }}>Saved</div>
+                </div>
+                <div style={{ ...glass, padding: 16, flex: 1, textAlign: "center" }}>
+                  <div style={{ color: "#66BB6A", fontSize: 28, fontWeight: 800 }}>{Object.keys(grouped).length}</div>
+                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600 }}>Strains</div>
+                </div>
+              </div>
 
               {/* Grouped favorites */}
               {sortedGroups.map(([strain, items]) => (
-                <Box key={strain} sx={{ mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                    <SpaIcon sx={{ fontSize: 16, color: "#66BB6A" }} />
-                    <Typography sx={{ color: "white", fontWeight: 700, fontSize: 15 }}>
-                      {strain}
-                    </Typography>
-                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                      ({items.length})
-                    </Typography>
-                  </Box>
+                <div key={strain} style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 16 }}>🌿</span>
+                    <span style={{ color: "white", fontWeight: 700, fontSize: 15 }}>{strain}</span>
+                    <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>({items.length})</span>
+                  </div>
 
                   {items.map((fav) => (
-                    <Box
+                    <div
                       key={fav.id}
-                      sx={{
-                        ...glassCard({ mb: 1, px: 2.5, py: 2 }),
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                      }}
+                      style={{ ...glass, marginBottom: 8, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16 }}
                     >
-                      <FavoriteIcon sx={{ fontSize: 20, color: "#EF5350", flexShrink: 0 }} />
+                      <span style={{ fontSize: 20, flexShrink: 0 }}>❤️</span>
 
-                      <Box sx={{ flex: 1 }}>
+                      <div style={{ flex: 1 }}>
                         {fav.confidence !== null && (
-                          <Typography sx={{ color: confidenceColor(fav.confidence), fontSize: 13, fontWeight: 700 }}>
+                          <div style={{ color: confidenceColor(fav.confidence), fontSize: 13, fontWeight: 700 }}>
                             {Math.round(fav.confidence)}% confidence
-                          </Typography>
+                          </div>
                         )}
-                        <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
+                        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
                           Saved {new Date(fav.savedAt).toLocaleDateString()}
-                        </Typography>
-                      </Box>
+                        </div>
+                      </div>
 
                       {fav.scanId && (
                         <Link href={`/garden/history/${fav.scanId}`}>
-                          <ButtonBase
-                            sx={{
-                              p: 1,
-                              borderRadius: 1,
-                              color: "rgba(255,255,255,0.5)",
-                              "&:hover": { color: "white" },
-                            }}
-                          >
-                            <HistoryIcon sx={{ fontSize: 18 }} />
-                          </ButtonBase>
+                          <button style={{
+                            padding: 8, borderRadius: 4, background: "none",
+                            color: "rgba(255,255,255,0.5)", border: "none", cursor: "pointer", fontSize: 18,
+                          }}>
+                            📋
+                          </button>
                         </Link>
                       )}
 
-                      <ButtonBase
+                      <button
                         onClick={() => handleRemove(fav.id)}
-                        sx={{
-                          p: 1,
-                          borderRadius: 1,
-                          color: "rgba(255,255,255,0.3)",
-                          "&:hover": { color: "#EF5350" },
+                        style={{
+                          padding: 8, borderRadius: 4, background: "none",
+                          color: "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", fontSize: 18,
                         }}
                       >
-                        <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                      </ButtonBase>
-                    </Box>
+                        🗑️
+                      </button>
+                    </div>
                   ))}
-                </Box>
+                </div>
               ))}
             </>
           )}
