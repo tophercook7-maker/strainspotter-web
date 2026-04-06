@@ -1,2 +1,0 @@
-If you can read this file in the deployed Vercel build output, this repo is wired correctly.
-
