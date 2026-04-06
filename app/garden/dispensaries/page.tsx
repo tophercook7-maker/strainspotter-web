@@ -2,17 +2,6 @@
 
 import { useState, useEffect } from "react";
 import TopNav from "../_components/TopNav";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import ButtonBase from "@mui/material/ButtonBase";
-import CircularProgress from "@mui/material/CircularProgress";
-import StorefrontIcon from "@mui/icons-material/Storefront";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import MyLocationIcon from "@mui/icons-material/MyLocation";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import SearchIcon from "@mui/icons-material/Search";
-import NearMeIcon from "@mui/icons-material/NearMe";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Dispensary {
@@ -26,16 +15,11 @@ interface Dispensary {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function glassCard(extra: Record<string, any> = {}) {
-  return {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: "16px",
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    ...extra,
-  };
-}
+const glass: React.CSSProperties = {
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.15)",
+  borderRadius: 16,
+};
 
 function milesBetween(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 3958.8;
@@ -56,7 +40,6 @@ const AR_DISPENSARIES = [
   { id: "ar-004", name: "Harvest Cannabis", city: "Conway", lat: 35.0887, lng: -92.4421 },
 ];
 
-// ─── Radius Options ──────────────────────────────────────────────────────────
 const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100];
 
 export default function DispensariesPage() {
@@ -68,24 +51,21 @@ export default function DispensariesPage() {
   const [search, setSearch] = useState("");
   const [source, setSource] = useState<"overpass" | "local" | null>(null);
 
-  // Get user location
   const getLocation = () => {
     setLoading(true);
     setLocationError(null);
-
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser");
       loadFallback();
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(loc);
         fetchDispensaries(loc.lat, loc.lng, radius);
       },
-      (err) => {
+      () => {
         setLocationError("Location access denied. Showing Arkansas dispensaries.");
         loadFallback();
       },
@@ -93,13 +73,11 @@ export default function DispensariesPage() {
     );
   };
 
-  // Fetch from Overpass API
   const fetchDispensaries = async (lat: number, lng: number, r: number) => {
     setLoading(true);
     try {
       const res = await fetch(`/api/dispensaries?lat=${lat}&lng=${lng}&radius=${r}`);
       const data = await res.json();
-
       if (data.dispensaries && data.dispensaries.length > 0) {
         const withDist = data.dispensaries.map((d: any) => ({
           ...d,
@@ -109,10 +87,9 @@ export default function DispensariesPage() {
         setDispensaries(withDist);
         setSource("overpass");
       } else {
-        // No results from Overpass, fall back to local data
         loadFallbackWithDistance(lat, lng);
       }
-    } catch (err) {
+    } catch {
       loadFallbackWithDistance(lat, lng);
     } finally {
       setLoading(false);
@@ -121,11 +98,7 @@ export default function DispensariesPage() {
 
   const loadFallbackWithDistance = (lat: number, lng: number) => {
     const withDist = AR_DISPENSARIES.map((d) => ({
-      id: d.id,
-      name: d.name,
-      address: `${d.city}, AR`,
-      lat: d.lat,
-      lng: d.lng,
+      id: d.id, name: d.name, address: `${d.city}, AR`, lat: d.lat, lng: d.lng,
       distance: milesBetween(lat, lng, d.lat, d.lng),
     })).sort((a, b) => a.distance - b.distance);
     setDispensaries(withDist);
@@ -135,32 +108,19 @@ export default function DispensariesPage() {
 
   const loadFallback = () => {
     setDispensaries(
-      AR_DISPENSARIES.map((d) => ({
-        id: d.id,
-        name: d.name,
-        address: `${d.city}, AR`,
-        lat: d.lat,
-        lng: d.lng,
-      }))
+      AR_DISPENSARIES.map((d) => ({ id: d.id, name: d.name, address: `${d.city}, AR`, lat: d.lat, lng: d.lng }))
     );
     setSource("local");
     setLoading(false);
   };
 
-  // Auto-locate on mount
-  useEffect(() => {
-    getLocation();
-  }, []);
+  useEffect(() => { getLocation(); }, []);
 
-  // Re-fetch when radius changes
   const handleRadiusChange = (r: number) => {
     setRadius(r);
-    if (userLocation) {
-      fetchDispensaries(userLocation.lat, userLocation.lng, r);
-    }
+    if (userLocation) fetchDispensaries(userLocation.lat, userLocation.lng, r);
   };
 
-  // Filter by search
   const filtered = dispensaries.filter((d) =>
     !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.address?.toLowerCase().includes(search.toLowerCase())
   );
@@ -179,221 +139,156 @@ export default function DispensariesPage() {
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
           {/* Hero */}
-          <Box sx={{ ...glassCard({ p: 3, mb: 3 }) }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-              <StorefrontIcon sx={{ fontSize: 28, color: "#81C784" }} />
-              <Typography sx={{ color: "white", fontWeight: 800, fontSize: 24 }}>
-                Dispensaries
-              </Typography>
-            </Box>
-            <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
+          <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <span style={{ fontSize: 28 }}>🏪</span>
+              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Dispensaries</span>
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
               Find cannabis dispensaries near you. We search OpenStreetMap data to locate
               licensed dispensaries within your selected radius.
-            </Typography>
-          </Box>
+            </div>
+          </div>
 
-          {/* Search bar */}
-          <Box sx={{ position: "relative", mb: 2 }}>
-            <SearchIcon sx={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 20 }} />
+          {/* Search */}
+          <div style={{ position: "relative", marginBottom: 16 }}>
+            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 20 }}>🔍</span>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search dispensaries..."
               style={{
-                width: "100%",
-                padding: "12px 14px 12px 42px",
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.15)",
-                background: "rgba(255,255,255,0.06)",
-                backdropFilter: "blur(12px)",
-                color: "white",
-                fontSize: 14,
-                outline: "none",
+                width: "100%", padding: "12px 14px 12px 42px", borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)",
+                color: "white", fontSize: 14, outline: "none",
               }}
             />
-          </Box>
+          </div>
 
           {/* Radius selector */}
-          <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap", alignItems: "center" }}>
-            <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, mr: 0.5 }}>
-              RADIUS:
-            </Typography>
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, marginRight: 4 }}>RADIUS:</span>
             {RADIUS_OPTIONS.map((r) => (
-              <ButtonBase
+              <button
                 key={r}
                 onClick={() => handleRadiusChange(r)}
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 99,
-                  fontSize: 12,
-                  fontWeight: 600,
+                style={{
+                  padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
                   background: radius === r ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
                   color: radius === r ? "#81C784" : "rgba(255,255,255,0.6)",
                   border: `1px solid ${radius === r ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
                 }}
               >
                 {r} mi
-              </ButtonBase>
+              </button>
             ))}
-            <ButtonBase
+            <button
               onClick={getLocation}
-              sx={{
-                ml: "auto",
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 99,
-                fontSize: 12,
-                fontWeight: 600,
-                background: "rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.7)",
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
+              style={{
+                marginLeft: "auto", padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+                background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)",
+                display: "flex", alignItems: "center", gap: 4, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer",
               }}
             >
-              <MyLocationIcon sx={{ fontSize: 14 }} /> Refresh
-            </ButtonBase>
-          </Box>
+              📍 Refresh
+            </button>
+          </div>
 
-          {/* Location status */}
+          {/* Location error */}
           {locationError && (
-            <Box sx={{ ...glassCard({ p: 2, mb: 2, borderColor: "rgba(255,152,0,0.3)" }) }}>
-              <Typography sx={{ color: "#FFB74D", fontSize: 13 }}>
-                ⚠️ {locationError}
-              </Typography>
-            </Box>
+            <div style={{ ...glass, padding: 16, marginBottom: 16, borderColor: "rgba(255,152,0,0.3)" }}>
+              <span style={{ color: "#FFB74D", fontSize: 13 }}>⚠️ {locationError}</span>
+            </div>
           )}
 
           {/* Loading */}
           {loading && (
-            <Box sx={{ textAlign: "center", py: 8 }}>
-              <CircularProgress sx={{ color: "rgba(255,255,255,0.5)", mb: 2 }} />
-              <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>
-                Finding dispensaries near you...
-              </Typography>
-            </Box>
+            <div style={{ textAlign: "center", padding: "64px 0" }}>
+              <div style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.15)", borderTopColor: "rgba(255,255,255,0.5)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Finding dispensaries near you...</span>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+
+          {/* No results */}
+          {!loading && filtered.length === 0 && (
+            <div style={{ textAlign: "center", padding: "64px 0" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🏪</div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No dispensaries found</div>
+              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Try increasing the search radius or check a different area</div>
+            </div>
           )}
 
           {/* Results */}
-          {!loading && filtered.length === 0 && (
-            <Box sx={{ textAlign: "center", py: 8 }}>
-              <Typography sx={{ fontSize: 48, mb: 2 }}>🏪</Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, mb: 1 }}>
-                No dispensaries found
-              </Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
-                Try increasing the search radius or check a different area
-              </Typography>
-            </Box>
-          )}
-
           {!loading && filtered.length > 0 && (
             <>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>
                   {filtered.length} Dispensar{filtered.length === 1 ? "y" : "ies"} Found
-                </Typography>
+                </span>
                 {source === "local" && (
-                  <Typography sx={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>
-                    Arkansas data
-                  </Typography>
+                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Arkansas data</span>
                 )}
-              </Box>
+              </div>
 
               {filtered.map((d, i) => (
-                <Box
-                  key={d.id || i}
-                  sx={{
-                    ...glassCard({ mb: 1.5, overflow: "hidden" }),
-                    "&:hover": { background: "rgba(255,255,255,0.08)" },
-                    transition: "background 0.2s",
-                  }}
-                >
-                  <Box sx={{ p: 2.5, display: "flex", gap: 2 }}>
+                <div key={String(d.id) || i} style={{ ...glass, marginBottom: 12, overflow: "hidden", transition: "background 0.2s" }}>
+                  <div style={{ padding: 20, display: "flex", gap: 16 }}>
                     {/* Icon */}
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 2,
-                        background: "rgba(76,175,80,0.15)",
-                        border: "1px solid rgba(76,175,80,0.3)",
-                        display: "grid",
-                        placeItems: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <StorefrontIcon sx={{ fontSize: 24, color: "#81C784" }} />
-                    </Box>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 8,
+                      background: "rgba(76,175,80,0.15)", border: "1px solid rgba(76,175,80,0.3)",
+                      display: "grid", placeItems: "center", flexShrink: 0, fontSize: 24,
+                    }}>
+                      🏪
+                    </div>
 
                     {/* Info */}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography sx={{ color: "white", fontWeight: 700, fontSize: 15, mb: 0.5 }}>
-                        {d.name}
-                      </Typography>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{d.name}</div>
 
                       {d.address && (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                          <LocationOnIcon sx={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }} />
-                          <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>
-                            {d.address}
-                          </Typography>
-                        </Box>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+                          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>📍</span>
+                          <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{d.address}</span>
+                        </div>
                       )}
 
                       {d.openingHours && (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                          <AccessTimeIcon sx={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }} />
-                          <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
-                            {d.openingHours}
-                          </Typography>
-                        </Box>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+                          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>🕐</span>
+                          <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{d.openingHours}</span>
+                        </div>
                       )}
 
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
                         {d.distance !== undefined && (
-                          <Box
-                            sx={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                              px: 1,
-                              py: 0.25,
-                              borderRadius: 99,
-                              background: "rgba(33,150,243,0.15)",
-                              border: "1px solid rgba(33,150,243,0.3)",
-                            }}
-                          >
-                            <NearMeIcon sx={{ fontSize: 12, color: "#64B5F6" }} />
-                            <Typography sx={{ color: "#64B5F6", fontSize: 12, fontWeight: 600 }}>
-                              {d.distance < 1 ? `${(d.distance * 5280).toFixed(0)} ft` : `${d.distance.toFixed(1)} mi`}
-                            </Typography>
-                          </Box>
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", gap: 4,
+                            padding: "2px 8px", borderRadius: 99,
+                            background: "rgba(33,150,243,0.15)", border: "1px solid rgba(33,150,243,0.3)",
+                            color: "#64B5F6", fontSize: 12, fontWeight: 600,
+                          }}>
+                            📐 {d.distance < 1 ? `${(d.distance * 5280).toFixed(0)} ft` : `${d.distance.toFixed(1)} mi`}
+                          </span>
                         )}
 
-                        <ButtonBase
+                        <button
                           onClick={() => openDirections(d)}
-                          sx={{
-                            px: 1.5,
-                            py: 0.5,
-                            borderRadius: 99,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            background: "rgba(255,255,255,0.08)",
-                            color: "rgba(255,255,255,0.7)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
+                          style={{
+                            padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+                            background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)",
+                            display: "flex", alignItems: "center", gap: 4,
+                            border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer",
                           }}
                         >
-                          Directions <OpenInNewIcon sx={{ fontSize: 12 }} />
-                        </ButtonBase>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
+                          Directions ↗
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))}
             </>
           )}
