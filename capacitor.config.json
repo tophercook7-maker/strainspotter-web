@@ -1,6 +1,0 @@
-{
-  "appId": "app.strainspotter",
-  "appName": "StrainSpotter",
-  "webDir": "dist",
-  "bundledWebRuntime": false
-}
