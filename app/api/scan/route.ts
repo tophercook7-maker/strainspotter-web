@@ -1,12 +1,61 @@
 // app/api/scan/route.ts
-// StrainSpotter AI Scanner — Real GPT-4o Vision Analysis
-// Replaces mock wikiEngine with actual image analysis
+// StrainSpotter AI Scanner — GPT-4o Vision + 314-Strain Database Context
+// Phase 1: Clean pipeline that matches against our actual strain catalog
 
 import { NextRequest, NextResponse } from "next/server";
+import strainDb from "@/lib/data/strains.json";
 
-const SYSTEM_PROMPT = `You are StrainSpotter's cannabis visual analysis AI — the most detailed plant identification system in the world.
+/* ─── Build a compact strain reference for the system prompt ─── */
+interface StrainEntry {
+  name: string;
+  type?: string;
+  visualProfile?: {
+    trichomeDensity?: string;
+    pistilColor?: string[];
+    budStructure?: string;
+    leafShape?: string;
+    colorProfile?: string;
+  };
+  terpeneProfile?: string[];
+  effects?: string[];
+  indicaSativaRatio?: { indica?: number; sativa?: number };
+}
+
+function buildStrainCatalog(): string {
+  const strains = strainDb as StrainEntry[];
+  const lines = strains.map((s) => {
+    const parts: string[] = [s.name];
+    if (s.type) parts.push(s.type);
+    const vp = s.visualProfile;
+    if (vp) {
+      const vis: string[] = [];
+      if (vp.budStructure) vis.push(`bud:${vp.budStructure}`);
+      if (vp.trichomeDensity) vis.push(`trich:${vp.trichomeDensity}`);
+      if (vp.pistilColor?.length) vis.push(`pistil:${vp.pistilColor.join("/")}`);
+      if (vp.leafShape) vis.push(`leaf:${vp.leafShape}`);
+      if (vp.colorProfile) vis.push(vp.colorProfile);
+      if (vis.length) parts.push(vis.join(", "));
+    }
+    if (s.terpeneProfile?.length) parts.push(`[${s.terpeneProfile.slice(0, 3).join(",")}]`);
+    return parts.join(" | ");
+  });
+  return lines.join("\n");
+}
+
+const STRAIN_CATALOG = buildStrainCatalog();
+const STRAIN_COUNT = (strainDb as StrainEntry[]).length;
+
+const SYSTEM_PROMPT = `You are StrainSpotter's cannabis visual analysis AI — the most advanced plant identification system available.
 
 You analyze cannabis plant photographs and return structured identification data based on observable visual characteristics.
+
+═══ STRAINSPOTTER DATABASE (${STRAIN_COUNT} verified cultivars) ═══
+When identifying a strain, ALWAYS check against this catalog first.
+Prefer matches from this list when visual traits align. Only suggest strains outside this list if nothing matches well.
+
+${STRAIN_CATALOG}
+
+═══ END DATABASE ═══
 
 ANALYSIS PROTOCOL:
 1. MORPHOLOGY FIRST: Examine bud structure, density, shape, calyx-to-leaf ratio
@@ -17,23 +66,24 @@ ANALYSIS PROTOCOL:
 6. OVERALL MORPHOTYPE: Growth pattern indicators (indica-dominant structure vs sativa stretch)
 
 STRAIN IDENTIFICATION:
-- Cross-reference ALL observable traits against known cultivar phenotype databases
-- Consider popular commercial strains AND legacy/landrace genetics
-- Account for phenotype variation within strains
+- FIRST cross-reference all visual traits against the StrainSpotter database above
+- Match bud structure, trichome density, pistil color, leaf shape, and coloration against known entries
+- Consider phenotype variation within strains
 - Factor in grow conditions that affect appearance (indoor vs outdoor, maturity stage)
-- If visual features strongly align with a known cultivar, name it with appropriate confidence
-- If ambiguous, identify the most likely strain family/lineage
+- If visual features strongly align with a database cultivar, name it with appropriate confidence
+- If ambiguous between database strains, list top 2-3 as alternates
 
 CONFIDENCE RULES:
-- 85-95%: Multiple strong visual markers align with a specific cultivar
-- 70-84%: Good morphological match but some traits could fit related cultivars  
+- 85-95%: Multiple strong visual markers align with a specific cultivar in the database
+- 70-84%: Good morphological match but some traits could fit related cultivars
 - 55-69%: General family/lineage identification, specific cultivar uncertain
 - Below 55%: Not enough visual data for meaningful identification
 - NEVER output exactly 81% (avoid the uncanny valley of fake confidence)
 - Be genuinely calibrated — if you're unsure, say so
 
 TERPENE PREDICTION:
-- Predict likely terpene profile from visual cues:
+- When the matched strain has known terpenes in the database, use those with high confidence
+- Also predict from visual cues:
   - Dense, resinous buds → higher myrcene likelihood
   - Purple coloration → anthocyanin presence, often correlates with linalool
   - Strong citrus-colored trichomes → limonene indicators
@@ -42,12 +92,19 @@ TERPENE PREDICTION:
 
 You MUST return valid JSON matching the exact schema below. No markdown, no commentary — pure JSON only.`;
 
-const USER_PROMPT_TEMPLATE = (imageCount: number) => `Analyze ${imageCount > 1 ? `these ${imageCount} cannabis plant images` : "this cannabis plant image"} and return a detailed identification.
+const USER_PROMPT_TEMPLATE = (imageCount: number) =>
+  `Analyze ${
+    imageCount > 1
+      ? `these ${imageCount} cannabis plant images`
+      : "this cannabis plant image"
+  } and return a detailed identification.
+
+IMPORTANT: Match against the StrainSpotter database strains first. Use the visual profiles from the database to guide your identification.
 
 Return ONLY valid JSON with this exact structure:
 {
   "identity": {
-    "strainName": "string — most likely cultivar name",
+    "strainName": "string — most likely cultivar name (prefer database matches)",
     "confidence": "number 55-95",
     "alternateMatches": [{"strainName": "string", "confidence": "number"}]
   },
@@ -84,15 +141,16 @@ Return ONLY valid JSON with this exact structure:
     "notes": "string — growing tips"
   },
   "reasoning": {
-    "whyThisMatch": "string — detailed explanation of why this strain was identified",
-    "conflictingSignals": ["signal1"] or null
+    "whyThisMatch": "string — detailed explanation of why this strain was identified, reference database traits that matched",
+    "conflictingSignals": ["signal1"] or null,
+    "databaseMatch": true or false
   }
 }`;
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { images } = body as { images: string[] }; // base64 encoded images
+    const { images } = body as { images: string[] };
 
     if (!images || images.length === 0) {
       return NextResponse.json(
@@ -115,9 +173,8 @@ export async function POST(req: NextRequest) {
       | { type: "image_url"; image_url: { url: string; detail: string } }
     > = [];
 
-    // Add each image
+    // Add each image (max 5)
     for (const img of images.slice(0, 5)) {
-      // Ensure proper data URL format
       const dataUrl = img.startsWith("data:")
         ? img
         : `data:image/jpeg;base64,${img}`;
@@ -148,7 +205,7 @@ export async function POST(req: NextRequest) {
           { role: "user", content },
         ],
         max_tokens: 4096,
-        temperature: 0.3, // Low temperature for consistent, factual analysis
+        temperature: 0.3,
         response_format: { type: "json_object" },
       }),
     });
@@ -172,11 +229,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Parse the JSON response
     let analysis;
     try {
       analysis = JSON.parse(analysisText);
-    } catch (parseError) {
+    } catch {
       console.error("Failed to parse AI response:", analysisText);
       return NextResponse.json(
         { error: "Failed to parse AI analysis" },
@@ -184,7 +240,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate and ensure required fields exist
     const result = normalizeAnalysis(analysis);
 
     return NextResponse.json({
@@ -205,7 +260,9 @@ export async function POST(req: NextRequest) {
 /**
  * Ensure the AI response has all required fields with safe defaults
  */
-function normalizeAnalysis(raw: Record<string, unknown>): Record<string, unknown> {
+function normalizeAnalysis(
+  raw: Record<string, unknown>
+): Record<string, unknown> {
   const identity = (raw.identity as Record<string, unknown>) || {};
   const genetics = (raw.genetics as Record<string, unknown>) || {};
   const morphology = (raw.morphology as Record<string, unknown>) || {};
@@ -217,7 +274,10 @@ function normalizeAnalysis(raw: Record<string, unknown>): Record<string, unknown
   return {
     identity: {
       strainName: identity.strainName || "Unknown Cultivar",
-      confidence: Math.max(55, Math.min(95, Number(identity.confidence) || 60)),
+      confidence: Math.max(
+        55,
+        Math.min(95, Number(identity.confidence) || 60)
+      ),
       alternateMatches: Array.isArray(identity.alternateMatches)
         ? identity.alternateMatches
         : [],
@@ -245,7 +305,9 @@ function normalizeAnalysis(raw: Record<string, unknown>): Record<string, unknown
         : [],
     },
     chemistry: {
-      terpenes: Array.isArray((chemistry as Record<string, unknown>).terpenes)
+      terpenes: Array.isArray(
+        (chemistry as Record<string, unknown>).terpenes
+      )
         ? (chemistry as Record<string, unknown>).terpenes
         : [{ name: "Myrcene", confidence: 0.5 }],
       cannabinoids: (chemistry as Record<string, unknown>).cannabinoids || {
@@ -258,7 +320,9 @@ function normalizeAnalysis(raw: Record<string, unknown>): Record<string, unknown
       likelyTerpenes: Array.isArray(
         (chemistry as Record<string, unknown>).terpenes
       )
-        ? ((chemistry as Record<string, unknown>).terpenes as Array<unknown>).slice(0, 3)
+        ? (
+            (chemistry as Record<string, unknown>).terpenes as Array<unknown>
+          ).slice(0, 3)
         : [{ name: "Myrcene", confidence: 0.5 }],
     },
     experience: {
@@ -287,8 +351,9 @@ function normalizeAnalysis(raw: Record<string, unknown>): Record<string, unknown
       conflictingSignals: Array.isArray(reasoning.conflictingSignals)
         ? reasoning.conflictingSignals
         : null,
+      databaseMatch: reasoning.databaseMatch ?? false,
     },
     disclaimer:
-      "AI-assisted visual analysis. Not a substitute for laboratory testing. Results are based on observable morphological characteristics.",
+      "AI-assisted visual analysis powered by StrainSpotter's 314-strain database. Not a substitute for laboratory testing.",
   };
 }
