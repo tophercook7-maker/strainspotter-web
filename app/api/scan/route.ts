@@ -1,9 +1,14 @@
 // app/api/scan/route.ts
 // StrainSpotter AI Scanner — GPT-4o Vision + 314-Strain Database Context
 // Phase 1: Clean pipeline that matches against our actual strain catalog
+// Edge Runtime for 30s timeout (Hobby plan serverless caps at 10s)
 
 import { NextRequest, NextResponse } from "next/server";
 import strainDb from "@/lib/data/strains.json";
+
+// Edge Runtime — needed because GPT-4o Vision takes 15-30s and
+// Vercel Hobby serverless functions time out at 10s.
+export const runtime = "edge";
 
 /* ─── Build a compact strain reference for the system prompt ─── */
 interface StrainEntry {
@@ -214,7 +219,10 @@ export async function POST(req: NextRequest) {
       const errorText = await response.text();
       console.error("OpenAI API error:", response.status, errorText);
       return NextResponse.json(
-        { error: `AI analysis failed: ${response.status}` },
+        {
+          error: `AI analysis failed (upstream ${response.status})`,
+          detail: errorText.slice(0, 500),
+        },
         { status: 502 }
       );
     }
@@ -251,7 +259,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Scan API error:", error);
     return NextResponse.json(
-      { error: "Internal scanner error" },
+      { error: "Internal scanner error", detail: String(error).slice(0, 500) },
       { status: 500 }
     );
   }
