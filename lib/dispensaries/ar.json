@@ -1,0 +1,30 @@
+[
+  {
+    "id": "ar-001",
+    "name": "Good Day Farm – Little Rock",
+    "city": "Little Rock",
+    "lat": 34.7465,
+    "lng": -92.2896
+  },
+  {
+    "id": "ar-002",
+    "name": "Natural Relief Dispensary",
+    "city": "Sherwood",
+    "lat": 34.8151,
+    "lng": -92.2243
+  },
+  {
+    "id": "ar-003",
+    "name": "Suite 443",
+    "city": "Hot Springs",
+    "lat": 34.5037,
+    "lng": -93.0552
+  },
+  {
+    "id": "ar-004",
+    "name": "Harvest Cannabis",
+    "city": "Conway",
+    "lat": 35.0887,
+    "lng": -92.4421
+  }
+]
