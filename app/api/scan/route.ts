@@ -1,16 +1,14 @@
 // app/api/scan/route.ts
-// StrainSpotter AI Scanner — GPT-4o Vision + 314-Strain Database Context
-// Phase 1: Clean pipeline that matches against our actual strain catalog
+// StrainSpotter AI Scanner v2 — Quality Grading + Dual Mode + Problem Detection
+// GPT-4o Vision + 314-Strain Database Context
 // Edge Runtime for 30s timeout (Hobby plan serverless caps at 10s)
 
 import { NextRequest, NextResponse } from "next/server";
 import strainDb from "@/lib/data/strains.json";
 
-// Edge Runtime — needed because GPT-4o Vision takes 15-30s and
-// Vercel Hobby serverless functions time out at 10s.
 export const runtime = "edge";
 
-/* ─── Build a compact strain reference for the system prompt ─── */
+/* ─── Build compact strain reference for the system prompt ─── */
 interface StrainEntry {
   name: string;
   type?: string;
@@ -50,9 +48,9 @@ function buildStrainCatalog(): string {
 const STRAIN_CATALOG = buildStrainCatalog();
 const STRAIN_COUNT = (strainDb as StrainEntry[]).length;
 
-const SYSTEM_PROMPT = `You are StrainSpotter's cannabis visual analysis AI — the most advanced plant identification system available.
+/* ─── System Prompts ─── */
 
-You analyze cannabis plant photographs and return structured identification data based on observable visual characteristics.
+const BASE_CONTEXT = `You are StrainSpotter's cannabis visual analysis AI — the most advanced plant analysis system available.
 
 ═══ STRAINSPOTTER DATABASE (${STRAIN_COUNT} verified cultivars) ═══
 When identifying a strain, ALWAYS check against this catalog first.
@@ -60,102 +58,242 @@ Prefer matches from this list when visual traits align. Only suggest strains out
 
 ${STRAIN_CATALOG}
 
-═══ END DATABASE ═══
+═══ END DATABASE ═══`;
+
+const CONSUMER_SYSTEM_PROMPT = `${BASE_CONTEXT}
+
+You analyze cannabis photographs and return comprehensive identification + quality analysis.
 
 ANALYSIS PROTOCOL:
-1. MORPHOLOGY FIRST: Examine bud structure, density, shape, calyx-to-leaf ratio
-2. TRICHOME ASSESSMENT: Density, color (clear/cloudy/amber), coverage pattern, maturity indicators
-3. PISTIL ANALYSIS: Color spectrum (white→orange→amber→brown), density, curl pattern
-4. COLORATION: Base green shade, purple/anthocyanin presence, sugar leaf coloring, fade patterns
-5. LEAF STRUCTURE: Broad vs narrow leaflets, serration pattern, internode spacing clues
-6. OVERALL MORPHOTYPE: Growth pattern indicators (indica-dominant structure vs sativa stretch)
+1. STRAIN IDENTIFICATION
+   - Cross-reference visual traits against the StrainSpotter database
+   - Match bud structure, trichome density, pistil color, leaf shape, coloration
+   - Consider phenotype variation and grow conditions
+   - If ambiguous, list top 2-3 alternates
 
-STRAIN IDENTIFICATION:
-- FIRST cross-reference all visual traits against the StrainSpotter database above
-- Match bud structure, trichome density, pistil color, leaf shape, and coloration against known entries
-- Consider phenotype variation within strains
-- Factor in grow conditions that affect appearance (indoor vs outdoor, maturity stage)
-- If visual features strongly align with a database cultivar, name it with appropriate confidence
-- If ambiguous between database strains, list top 2-3 as alternates
+2. QUALITY GRADING (A+ through F)
+   Grade on these criteria, each scored 1-10:
+   - Trichome Coverage: Density, distribution, and maturity (clear/cloudy/amber)
+   - Bud Structure: Density, calyx-to-leaf ratio, shape consistency
+   - Trim Quality: How well manicured, sugar leaf presence
+   - Color & Appeal: Vibrancy, fade patterns, anthocyanin presence
+   - Cure Quality: Dryness indicators, color preservation, stem snap indicators
+   - Overall Bag Appeal: First impression, photogenic quality
+   
+   Grading scale:
+   A+ (95-100): Exceptional top-shelf, competition quality
+   A  (90-94): Premium dispensary top-shelf
+   A- (85-89): High quality, minor imperfections
+   B+ (80-84): Above average, good dispensary mid-shelf
+   B  (75-79): Solid quality, typical mid-shelf
+   B- (70-74): Acceptable, some visible issues
+   C+ (65-69): Below average, budget shelf
+   C  (60-64): Mediocre, noticeable flaws
+   D  (50-59): Poor quality, significant issues
+   F  (below 50): Very poor, possible problems
+
+3. PROBLEM DETECTION
+   Scan for any visible issues:
+   - Mold/bud rot (gray/white fuzzy patches, dark spots)
+   - Pest damage (webs, spots, bite marks)
+   - Nutrient issues (yellowing, browning, spots)
+   - Premature harvest (all-clear trichomes, white pistils)
+   - Over-dried / poorly cured indicators
+   - PGR (Plant Growth Regulator) suspicion (unnaturally dense, no trichomes, orange hairs)
+   Report "none" if the sample looks clean.
+
+4. TRICHOME MATURITY ASSESSMENT
+   - Clear → not ready / early harvest
+   - Cloudy → peak THC / ideal harvest
+   - Amber → degrading to CBN / late harvest / more sedative
+   - Mixed ratio estimation
+
+5. TERPENE PREDICTION
+   - Use database terpenes when matched strain has known profiles
+   - Predict from visual cues with confidence scores
+   - Dense resinous → myrcene; Purple → linalool; Citrus trichomes → limonene
 
 CONFIDENCE RULES:
-- 85-95%: Multiple strong visual markers align with a specific cultivar in the database
-- 70-84%: Good morphological match but some traits could fit related cultivars
-- 55-69%: General family/lineage identification, specific cultivar uncertain
-- Below 55%: Not enough visual data for meaningful identification
-- NEVER output exactly 81% (avoid the uncanny valley of fake confidence)
-- Be genuinely calibrated — if you're unsure, say so
+- 85-95%: Multiple strong visual markers align with database cultivar
+- 70-84%: Good match but some traits could fit related cultivars
+- 55-69%: General family/lineage, specific cultivar uncertain
+- Below 55%: Not enough visual data
+- NEVER output exactly 81%
+- Be genuinely calibrated
 
-TERPENE PREDICTION:
-- When the matched strain has known terpenes in the database, use those with high confidence
-- Also predict from visual cues:
-  - Dense, resinous buds → higher myrcene likelihood
-  - Purple coloration → anthocyanin presence, often correlates with linalool
-  - Strong citrus-colored trichomes → limonene indicators
-  - Piney/earthy visual structure → pinene/caryophyllene correlation
-- Assign confidence to each terpene prediction (0.0-1.0)
+Return ONLY valid JSON. No markdown, no commentary.`;
 
-You MUST return valid JSON matching the exact schema below. No markdown, no commentary — pure JSON only.`;
+const GROWER_SYSTEM_PROMPT = `${BASE_CONTEXT}
 
-const USER_PROMPT_TEMPLATE = (imageCount: number) =>
-  `Analyze ${
-    imageCount > 1
-      ? `these ${imageCount} cannabis plant images`
-      : "this cannabis plant image"
-  } and return a detailed identification.
+You analyze cannabis GROW photographs and return cultivation-focused analysis. The user is a grower checking on their plants — they care about plant health, harvest timing, and growing advice, not just strain identification.
 
-IMPORTANT: Match against the StrainSpotter database strains first. Use the visual profiles from the database to guide your identification.
+ANALYSIS PROTOCOL:
+1. PLANT HEALTH ASSESSMENT
+   Score overall health 1-100 and identify:
+   - Nutrient status: deficiencies (N, P, K, Ca, Mg, Fe), toxicities, lockout signs
+   - Pest detection: spider mites, thrips, aphids, fungus gnats, broad mites
+   - Disease detection: powdery mildew, bud rot, root rot, leaf septoria
+   - Environmental stress: light burn, heat stress, wind damage, overwatering
+   
+2. GROWTH STAGE IDENTIFICATION
+   - Seedling / Vegetative / Pre-flower / Early flower / Mid flower / Late flower / Harvest ready
+   - Estimated days/weeks in current stage
+   - Estimated days to harvest (if flowering)
+
+3. TRICHOME MATURITY (if visible)
+   - Clear/cloudy/amber ratio estimate
+   - Harvest window recommendation:
+     "Not ready" / "Harvest window opening" / "Peak harvest" / "Late harvest — more sedative"
+   
+4. STRAIN IDENTIFICATION (secondary)
+   - Still cross-reference the database but focus on grow characteristics
+   - Indica vs sativa structure assessment from plant morphology
+
+5. ACTIONABLE GROW ADVICE
+   - Top 3 things the grower should do right now
+   - Any warnings or urgent issues
+   - Feeding recommendations based on visible health
+   - Environmental adjustments needed
+
+6. PROBLEM DETECTION (CRITICAL)
+   - Flag ANY mold, pests, or disease with severity (low/medium/high/critical)
+   - Provide immediate action steps for each problem found
+   - "Clean" if no issues detected
+
+Return ONLY valid JSON. No markdown, no commentary.`;
+
+/* ─── User Prompts ─── */
+
+const CONSUMER_USER_PROMPT = (imageCount: number) =>
+  `Analyze ${imageCount > 1 ? `these ${imageCount} cannabis images` : "this cannabis image"} and return a complete identification + quality assessment.
 
 Return ONLY valid JSON with this exact structure:
 {
   "identity": {
-    "strainName": "string — most likely cultivar name (prefer database matches)",
+    "strainName": "string — most likely cultivar name",
     "confidence": "number 55-95",
-    "alternateMatches": [{"strainName": "string", "confidence": "number"}]
+    "alternateMatches": [{"strainName": "string", "confidence": "number"}],
+    "databaseMatch": "boolean — true if matched from StrainSpotter catalog"
+  },
+  "quality": {
+    "grade": "string — A+, A, A-, B+, B, B-, C+, C, D, or F",
+    "score": "number 0-100",
+    "breakdown": {
+      "trichomeCoverage": "number 1-10",
+      "budStructure": "number 1-10",
+      "trimQuality": "number 1-10",
+      "colorAppeal": "number 1-10",
+      "cureQuality": "number 1-10",
+      "bagAppeal": "number 1-10"
+    },
+    "summary": "string — one-sentence quality verdict"
   },
   "genetics": {
     "dominance": "Indica | Sativa | Hybrid",
+    "ratio": {"indica": "number 0-100", "sativa": "number 0-100"},
     "lineage": ["parent1", "parent2"],
-    "breederNotes": "string — origin/breeding history",
-    "confidenceNotes": "string | null — any uncertainty explanation"
+    "breederNotes": "string"
   },
   "morphology": {
     "budStructure": "string — detailed bud structure analysis",
     "coloration": "string — color analysis with specific shades",
     "trichomes": "string — trichome density, type, maturity assessment",
-    "visualTraits": ["trait1", "trait2", "trait3"],
-    "growthIndicators": ["indicator1", "indicator2"]
+    "trichomeMaturity": {"clear": "number %", "cloudy": "number %", "amber": "number %"},
+    "pistils": "string — pistil color and state",
+    "visualTraits": ["trait1", "trait2", "trait3"]
   },
   "chemistry": {
-    "terpenes": [{"name": "string", "confidence": 0.0}],
-    "cannabinoids": {"THC": "range%", "CBD": "range%"},
-    "cannabinoidRange": "string summary"
+    "terpenes": [{"name": "string", "confidence": "number 0-1.0", "aroma": "string"}],
+    "cannabinoids": {"THC": "string range%", "CBD": "string range%"},
+    "predictedExperience": "string — what to expect from this specific sample"
+  },
+  "problems": {
+    "detected": "boolean",
+    "issues": [{"type": "string", "severity": "low|medium|high|critical", "description": "string", "action": "string"}],
+    "safetyVerdict": "string — Clean / Caution / Warning / Do Not Consume"
   },
   "experience": {
     "effects": ["effect1", "effect2", "effect3"],
-    "primaryEffects": ["primary1", "primary2"],
-    "secondaryEffects": ["secondary1", "secondary2"],
     "onset": "Quick | Gradual | Moderate",
     "duration": "string range",
-    "bestUse": ["use1", "use2"]
+    "bestFor": ["use1", "use2"],
+    "avoidIf": "string or null — warnings for certain users"
   },
   "cultivation": {
     "difficulty": "string",
     "floweringTime": "string range",
     "yield": "string",
-    "notes": "string — growing tips"
+    "growTips": ["tip1", "tip2"]
   },
   "reasoning": {
-    "whyThisMatch": "string — detailed explanation of why this strain was identified, reference database traits that matched",
+    "whyThisMatch": "string — detailed explanation referencing visual cues and database traits",
     "conflictingSignals": ["signal1"] or null,
-    "databaseMatch": true or false
+    "analysisNotes": "string — anything interesting about this sample"
   }
 }`;
+
+const GROWER_USER_PROMPT = (imageCount: number) =>
+  `Analyze ${imageCount > 1 ? `these ${imageCount} cannabis grow images` : "this cannabis grow image"} and return a cultivation-focused assessment.
+
+Return ONLY valid JSON with this exact structure:
+{
+  "identity": {
+    "strainName": "string — best guess cultivar name",
+    "confidence": "number 55-95",
+    "databaseMatch": "boolean"
+  },
+  "health": {
+    "score": "number 0-100",
+    "status": "Thriving | Healthy | Fair | Stressed | Critical",
+    "summary": "string — one-sentence health verdict"
+  },
+  "growthStage": {
+    "stage": "Seedling | Vegetative | Pre-flower | Early Flower | Mid Flower | Late Flower | Harvest Ready",
+    "estimatedAge": "string — estimated days/weeks in current stage",
+    "daysToHarvest": "number or null — estimated days until harvest",
+    "harvestWindow": "string — Not Ready | Window Opening | Peak Harvest | Late Harvest"
+  },
+  "trichomes": {
+    "visible": "boolean — whether trichomes are clearly visible in photos",
+    "maturity": {"clear": "number %", "cloudy": "number %", "amber": "number %"},
+    "assessment": "string — maturity analysis and harvest timing recommendation"
+  },
+  "problems": {
+    "detected": "boolean",
+    "issues": [{"type": "string", "severity": "low|medium|high|critical", "description": "string", "immediateAction": "string"}],
+    "overallRisk": "None | Low | Medium | High | Critical"
+  },
+  "nutrients": {
+    "status": "Optimal | Slight Deficiency | Deficiency | Toxicity | Lockout",
+    "deficiencies": [{"nutrient": "string", "severity": "string", "signs": "string"}],
+    "feedingAdvice": "string"
+  },
+  "environment": {
+    "growType": "Indoor | Outdoor | Greenhouse | Unknown",
+    "lightAssessment": "string",
+    "stressIndicators": ["indicator1"] or null
+  },
+  "actionItems": {
+    "urgent": ["string — critical things to do now"] or null,
+    "recommended": ["string — suggested improvements"],
+    "watchFor": ["string — things to monitor"]
+  },
+  "genetics": {
+    "dominance": "Indica | Sativa | Hybrid",
+    "morphotype": "string — growth structure assessment",
+    "lineage": ["parent1", "parent2"] or null
+  }
+}`;
+
+/* ─── API Handler ─── */
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { images } = body as { images: string[] };
+    const { images, mode = "consumer" } = body as {
+      images: string[];
+      mode?: "consumer" | "grower";
+    };
 
     if (!images || images.length === 0) {
       return NextResponse.json(
@@ -172,21 +310,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Select prompt based on mode
+    const systemPrompt =
+      mode === "grower" ? GROWER_SYSTEM_PROMPT : CONSUMER_SYSTEM_PROMPT;
+    const userPrompt =
+      mode === "grower"
+        ? GROWER_USER_PROMPT(images.length)
+        : CONSUMER_USER_PROMPT(images.length);
+
     // Build message content with images
     const content: Array<
       | { type: "text"; text: string }
       | { type: "image_url"; image_url: { url: string; detail: string } }
     > = [];
 
-    const SUPPORTED_MIMES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    const SUPPORTED_MIMES = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
 
-    // Add each image (max 5)
     for (const img of images.slice(0, 5)) {
       let dataUrl = img.startsWith("data:")
         ? img
         : `data:image/jpeg;base64,${img}`;
 
-      // Force unsupported formats (HEIC etc) to jpeg mime so OpenAI at least attempts decode
       const mimeMatch = dataUrl.match(/^data:([^;]+);/);
       if (mimeMatch && !SUPPORTED_MIMES.includes(mimeMatch[1])) {
         dataUrl = dataUrl.replace(/^data:[^;]+;/, "data:image/jpeg;");
@@ -198,13 +347,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Add text prompt after images
-    content.push({
-      type: "text",
-      text: USER_PROMPT_TEMPLATE(images.length),
-    });
+    content.push({ type: "text", text: userPrompt });
 
-    // Call GPT-4o with vision
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -214,7 +358,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           { role: "user", content },
         ],
         max_tokens: 4096,
@@ -256,10 +400,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = normalizeAnalysis(analysis);
+    const result =
+      mode === "grower"
+        ? normalizeGrowerAnalysis(analysis)
+        : normalizeConsumerAnalysis(analysis);
 
     return NextResponse.json({
       ok: true,
+      mode,
       result,
       model: data.model,
       usage: data.usage,
@@ -273,93 +421,91 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/**
- * Ensure the AI response has all required fields with safe defaults
- */
-function normalizeAnalysis(
-  raw: Record<string, unknown>
-): Record<string, unknown> {
-  const identity = (raw.identity as Record<string, unknown>) || {};
-  const genetics = (raw.genetics as Record<string, unknown>) || {};
-  const morphology = (raw.morphology as Record<string, unknown>) || {};
-  const chemistry = (raw.chemistry as Record<string, unknown>) || {};
-  const experience = (raw.experience as Record<string, unknown>) || {};
-  const cultivation = (raw.cultivation as Record<string, unknown>) || {};
-  const reasoning = (raw.reasoning as Record<string, unknown>) || {};
+/* ─── Normalize Consumer Response ─── */
+function normalizeConsumerAnalysis(
+  raw: Record<string, any>
+): Record<string, any> {
+  const identity = raw.identity || {};
+  const quality = raw.quality || {};
+  const genetics = raw.genetics || {};
+  const morphology = raw.morphology || {};
+  const chemistry = raw.chemistry || {};
+  const problems = raw.problems || {};
+  const experience = raw.experience || {};
+  const cultivation = raw.cultivation || {};
+  const reasoning = raw.reasoning || {};
 
   return {
     identity: {
       strainName: identity.strainName || "Unknown Cultivar",
-      confidence: Math.max(
-        55,
-        Math.min(95, Number(identity.confidence) || 60)
-      ),
+      confidence: Math.max(55, Math.min(95, Number(identity.confidence) || 60)),
       alternateMatches: Array.isArray(identity.alternateMatches)
         ? identity.alternateMatches
         : [],
+      databaseMatch: identity.databaseMatch ?? false,
+    },
+    quality: {
+      grade: quality.grade || "B",
+      score: Math.max(0, Math.min(100, Number(quality.score) || 70)),
+      breakdown: {
+        trichomeCoverage: Number(quality.breakdown?.trichomeCoverage) || 5,
+        budStructure: Number(quality.breakdown?.budStructure) || 5,
+        trimQuality: Number(quality.breakdown?.trimQuality) || 5,
+        colorAppeal: Number(quality.breakdown?.colorAppeal) || 5,
+        cureQuality: Number(quality.breakdown?.cureQuality) || 5,
+        bagAppeal: Number(quality.breakdown?.bagAppeal) || 5,
+      },
+      summary: quality.summary || "Quality assessment based on visual analysis",
     },
     genetics: {
-      dominance: ["Indica", "Sativa", "Hybrid"].includes(
-        genetics.dominance as string
-      )
+      dominance: ["Indica", "Sativa", "Hybrid"].includes(genetics.dominance)
         ? genetics.dominance
         : "Hybrid",
+      ratio: genetics.ratio || { indica: 50, sativa: 50 },
       lineage: Array.isArray(genetics.lineage) ? genetics.lineage : [],
-      breederNotes:
-        genetics.breederNotes || "Lineage analysis based on visual traits",
-      confidenceNotes: genetics.confidenceNotes || null,
+      breederNotes: genetics.breederNotes || "Lineage based on visual traits",
     },
     morphology: {
       budStructure: morphology.budStructure || "Analysis pending",
       coloration: morphology.coloration || "Standard green coloration",
       trichomes: morphology.trichomes || "Trichome assessment pending",
+      trichomeMaturity: morphology.trichomeMaturity || {
+        clear: 20,
+        cloudy: 60,
+        amber: 20,
+      },
+      pistils: morphology.pistils || "Pistil analysis pending",
       visualTraits: Array.isArray(morphology.visualTraits)
         ? morphology.visualTraits
         : [],
-      growthIndicators: Array.isArray(morphology.growthIndicators)
-        ? morphology.growthIndicators
-        : [],
     },
     chemistry: {
-      terpenes: Array.isArray(
-        (chemistry as Record<string, unknown>).terpenes
-      )
-        ? (chemistry as Record<string, unknown>).terpenes
-        : [{ name: "Myrcene", confidence: 0.5 }],
-      cannabinoids: (chemistry as Record<string, unknown>).cannabinoids || {
-        THC: "15-25%",
-        CBD: "<1%",
-      },
-      cannabinoidRange:
-        (chemistry as Record<string, unknown>).cannabinoidRange ||
-        "15-25% THC, <1% CBD",
-      likelyTerpenes: Array.isArray(
-        (chemistry as Record<string, unknown>).terpenes
-      )
-        ? (
-            (chemistry as Record<string, unknown>).terpenes as Array<unknown>
-          ).slice(0, 3)
-        : [{ name: "Myrcene", confidence: 0.5 }],
+      terpenes: Array.isArray(chemistry.terpenes)
+        ? chemistry.terpenes
+        : [{ name: "Myrcene", confidence: 0.5, aroma: "earthy" }],
+      cannabinoids: chemistry.cannabinoids || { THC: "15-25%", CBD: "<1%" },
+      predictedExperience:
+        chemistry.predictedExperience || "Typical cannabis experience",
+    },
+    problems: {
+      detected: problems.detected ?? false,
+      issues: Array.isArray(problems.issues) ? problems.issues : [],
+      safetyVerdict: problems.safetyVerdict || "Clean",
     },
     experience: {
       effects: Array.isArray(experience.effects)
         ? experience.effects
         : ["Relaxed"],
-      primaryEffects: Array.isArray(experience.primaryEffects)
-        ? experience.primaryEffects
-        : [],
-      secondaryEffects: Array.isArray(experience.secondaryEffects)
-        ? experience.secondaryEffects
-        : [],
       onset: experience.onset || "Moderate",
       duration: experience.duration || "2-4 hours",
-      bestUse: Array.isArray(experience.bestUse) ? experience.bestUse : [],
+      bestFor: Array.isArray(experience.bestFor) ? experience.bestFor : [],
+      avoidIf: experience.avoidIf || null,
     },
     cultivation: {
       difficulty: cultivation.difficulty || "Moderate",
       floweringTime: cultivation.floweringTime || "8-10 weeks",
       yield: cultivation.yield || "Medium",
-      notes: cultivation.notes || "Standard cultivation requirements",
+      growTips: Array.isArray(cultivation.growTips) ? cultivation.growTips : [],
     },
     reasoning: {
       whyThisMatch:
@@ -367,9 +513,89 @@ function normalizeAnalysis(
       conflictingSignals: Array.isArray(reasoning.conflictingSignals)
         ? reasoning.conflictingSignals
         : null,
-      databaseMatch: reasoning.databaseMatch ?? false,
+      analysisNotes: reasoning.analysisNotes || null,
     },
     disclaimer:
-      "AI-assisted visual analysis powered by StrainSpotter's 314-strain database. Not a substitute for laboratory testing.",
+      "AI-assisted visual analysis. Not a substitute for laboratory testing.",
+  };
+}
+
+/* ─── Normalize Grower Response ─── */
+function normalizeGrowerAnalysis(
+  raw: Record<string, any>
+): Record<string, any> {
+  const identity = raw.identity || {};
+  const health = raw.health || {};
+  const growthStage = raw.growthStage || {};
+  const trichomes = raw.trichomes || {};
+  const problems = raw.problems || {};
+  const nutrients = raw.nutrients || {};
+  const environment = raw.environment || {};
+  const actionItems = raw.actionItems || {};
+  const genetics = raw.genetics || {};
+
+  return {
+    identity: {
+      strainName: identity.strainName || "Unknown Cultivar",
+      confidence: Math.max(55, Math.min(95, Number(identity.confidence) || 60)),
+      databaseMatch: identity.databaseMatch ?? false,
+    },
+    health: {
+      score: Math.max(0, Math.min(100, Number(health.score) || 70)),
+      status: ["Thriving", "Healthy", "Fair", "Stressed", "Critical"].includes(
+        health.status
+      )
+        ? health.status
+        : "Fair",
+      summary: health.summary || "Health assessment based on visual analysis",
+    },
+    growthStage: {
+      stage: growthStage.stage || "Unknown",
+      estimatedAge: growthStage.estimatedAge || "Unknown",
+      daysToHarvest: growthStage.daysToHarvest ?? null,
+      harvestWindow: growthStage.harvestWindow || "Not Ready",
+    },
+    trichomes: {
+      visible: trichomes.visible ?? false,
+      maturity: trichomes.maturity || { clear: 33, cloudy: 34, amber: 33 },
+      assessment: trichomes.assessment || "Unable to assess trichome maturity from photos",
+    },
+    problems: {
+      detected: problems.detected ?? false,
+      issues: Array.isArray(problems.issues) ? problems.issues : [],
+      overallRisk: problems.overallRisk || "None",
+    },
+    nutrients: {
+      status: nutrients.status || "Unknown",
+      deficiencies: Array.isArray(nutrients.deficiencies)
+        ? nutrients.deficiencies
+        : [],
+      feedingAdvice: nutrients.feedingAdvice || "Monitor plant response",
+    },
+    environment: {
+      growType: environment.growType || "Unknown",
+      lightAssessment: environment.lightAssessment || "Unable to assess",
+      stressIndicators: Array.isArray(environment.stressIndicators)
+        ? environment.stressIndicators
+        : null,
+    },
+    actionItems: {
+      urgent: Array.isArray(actionItems.urgent) ? actionItems.urgent : null,
+      recommended: Array.isArray(actionItems.recommended)
+        ? actionItems.recommended
+        : ["Continue current care routine"],
+      watchFor: Array.isArray(actionItems.watchFor)
+        ? actionItems.watchFor
+        : ["Monitor overall plant health"],
+    },
+    genetics: {
+      dominance: ["Indica", "Sativa", "Hybrid"].includes(genetics.dominance)
+        ? genetics.dominance
+        : "Hybrid",
+      morphotype: genetics.morphotype || "Visual morphotype assessment",
+      lineage: Array.isArray(genetics.lineage) ? genetics.lineage : null,
+    },
+    disclaimer:
+      "AI-assisted grow analysis. Not a substitute for professional cultivation advice.",
   };
 }

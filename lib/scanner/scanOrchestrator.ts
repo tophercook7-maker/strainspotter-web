@@ -1,9 +1,11 @@
 // lib/scanner/scanOrchestrator.ts
-// REWRITE: Call /api/scan directly, bypass bloated pipeline
-// Maps GPT-4o Vision response → ScannerViewModel → ScanResult
+// v2: Dual-mode (Consumer + Grower), Quality Grading, Problem Detection
+// Call /api/scan directly — maps response → ScannerViewModel → ScanResult
 
 import type { ScannerViewModel } from "./viewModel";
 import type { ScanResult, WikiSynthesis } from "./types";
+
+export type ScanMode = "consumer" | "grower";
 
 export interface OrchestratedScanResult {
   displayName: string;
@@ -13,16 +15,15 @@ export interface OrchestratedScanResult {
   warnings?: string[];
   rawScannerResult: ScannerViewModel;
   normalizedScanResult: ScanResult;
+  mode: ScanMode;
+  /** Full API response (consumer or grower) for the new UI */
+  fullResult: Record<string, any>;
 }
 
 /* ─── Image compression ─── */
-const MAX_DIMENSION = 1536;  // GPT-4o "high" detail tiles at 512px — 1536 = 3×3 tiles max
-const JPEG_QUALITY  = 0.82;  // Good balance: sharp enough for trichomes, small enough to send
+const MAX_DIMENSION = 1536;
+const JPEG_QUALITY = 0.82;
 
-/**
- * Resize + compress an image file using an offscreen canvas.
- * Returns a base64 data-URL (image/jpeg).
- */
 async function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -30,60 +31,44 @@ async function compressImage(file: File): Promise<string> {
 
     img.onload = () => {
       URL.revokeObjectURL(url);
-
       let { width, height } = img;
-
-      // Scale down if either dimension exceeds the cap
       if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
         const scale = MAX_DIMENSION / Math.max(width, height);
-        width  = Math.round(width * scale);
+        width = Math.round(width * scale);
         height = Math.round(height * scale);
       }
-
       const canvas = document.createElement("canvas");
-      canvas.width  = width;
+      canvas.width = width;
       canvas.height = height;
-
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("Canvas context failed")); return; }
-
       ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-      resolve(dataUrl);
+      resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
     };
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      // Fallback: re-encode via smaller canvas (handles HEIC / unsupported formats)
-      // We still need canvas to produce JPEG — raw readAsDataURL could send HEIC which OpenAI rejects
-      const fallbackCanvas = document.createElement("canvas");
-      fallbackCanvas.width = 512;
-      fallbackCanvas.height = 512;
-      const fbCtx = fallbackCanvas.getContext("2d");
-      if (fbCtx) {
-        fbCtx.fillStyle = "#000";
-        fbCtx.fillRect(0, 0, 512, 512);
-      }
-      // Last resort: read raw — but prefix as jpeg so OpenAI at least tries
       const reader = new FileReader();
       reader.onload = () => {
         const raw = reader.result as string;
-        // Force JPEG mime type if it's something OpenAI won't accept
-        if (raw.startsWith("data:image/jpeg") || raw.startsWith("data:image/png") ||
-            raw.startsWith("data:image/gif") || raw.startsWith("data:image/webp")) {
+        if (
+          raw.startsWith("data:image/jpeg") ||
+          raw.startsWith("data:image/png") ||
+          raw.startsWith("data:image/gif") ||
+          raw.startsWith("data:image/webp")
+        ) {
           resolve(raw);
         } else {
-          // Unsupported format (HEIC etc) — try to convert via canvas with blob
           const img2 = new Image();
           img2.onload = () => {
             const c = document.createElement("canvas");
             c.width = Math.min(img2.width, MAX_DIMENSION);
             c.height = Math.min(img2.height, MAX_DIMENSION);
             const ctx2 = c.getContext("2d");
-            if (ctx2) { ctx2.drawImage(img2, 0, 0, c.width, c.height); }
+            if (ctx2) ctx2.drawImage(img2, 0, 0, c.width, c.height);
             resolve(c.toDataURL("image/jpeg", JPEG_QUALITY));
           };
-          img2.onerror = () => resolve(raw); // absolute last resort
+          img2.onerror = () => resolve(raw);
           img2.src = raw;
         }
       };
@@ -95,10 +80,11 @@ async function compressImage(file: File): Promise<string> {
   });
 }
 
-/**
- * Build a ScannerViewModel from GPT-4o API response
- */
-function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerViewModel {
+/* ─── Map consumer API response → ScannerViewModel ─── */
+function apiToViewModel(
+  data: Record<string, any>,
+  imageCount: number
+): ScannerViewModel {
   const identity = data.identity || {};
   const genetics = data.genetics || {};
   const morphology = data.morphology || {};
@@ -108,52 +94,64 @@ function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerV
   const reasoning = data.reasoning || {};
 
   const strainName = identity.strainName || "Unknown Cultivar";
-  const confidence = Math.max(55, Math.min(95, Number(identity.confidence) || 60));
+  const confidence = Math.max(
+    55,
+    Math.min(95, Number(identity.confidence) || 60)
+  );
   const dominance = genetics.dominance || "Hybrid";
-  const lineageArr: string[] = Array.isArray(genetics.lineage) ? genetics.lineage : [];
-  const lineageStr = lineageArr.length > 0 ? lineageArr.join(" × ") : "Unknown lineage";
+  const lineageArr: string[] = Array.isArray(genetics.lineage)
+    ? genetics.lineage
+    : [];
+  const lineageStr =
+    lineageArr.length > 0 ? lineageArr.join(" × ") : "Unknown lineage";
 
-  // Terpene names
-  const terpenes: Array<{ name: string; confidence: number }> = Array.isArray(chemistry.terpenes)
+  const terpenes: Array<{ name: string; confidence: number }> = Array.isArray(
+    chemistry.terpenes
+  )
     ? chemistry.terpenes
     : [];
   const terpeneNames = terpenes.map((t: any) => t.name || "Unknown");
 
-  // Effects
-  const effects: string[] = Array.isArray(experience.effects) ? experience.effects : ["Relaxed"];
-  const primaryEffects: string[] = Array.isArray(experience.primaryEffects) ? experience.primaryEffects : effects.slice(0, 2);
-  const secondaryEffects: string[] = Array.isArray(experience.secondaryEffects) ? experience.secondaryEffects : effects.slice(2);
+  const effects: string[] = Array.isArray(experience.effects)
+    ? experience.effects
+    : ["Relaxed"];
+  const primaryEffects: string[] = Array.isArray(experience.primaryEffects)
+    ? experience.primaryEffects
+    : effects.slice(0, 2);
+  const secondaryEffects: string[] = Array.isArray(experience.secondaryEffects)
+    ? experience.secondaryEffects
+    : effects.slice(2);
 
-  // Visual traits
-  const visualTraits: string[] = Array.isArray(morphology.visualTraits) ? morphology.visualTraits : [];
+  const visualTraits: string[] = Array.isArray(morphology.visualTraits)
+    ? morphology.visualTraits
+    : [];
 
-  // Confidence tier
   let tierLabel = "Moderate Confidence";
   if (confidence >= 90) tierLabel = "Very High Confidence";
   else if (confidence >= 80) tierLabel = "High Confidence";
   else if (confidence >= 65) tierLabel = "Moderate Confidence";
   else tierLabel = "Low Confidence";
 
-  // Alternate matches
-  const altMatches: Array<{ strainName: string; confidence: number }> = Array.isArray(identity.alternateMatches)
-    ? identity.alternateMatches
-    : [];
+  const altMatches: Array<{ strainName: string; confidence: number }> =
+    Array.isArray(identity.alternateMatches) ? identity.alternateMatches : [];
 
   const vm: any = {
-    // Primary identification
     name: strainName,
     title: strainName,
     confidence,
 
-    // Name-first display (what the UI reads first)
     nameFirstDisplay: {
       primaryStrainName: strainName,
       confidencePercent: confidence,
       nameConfidenceTier: tierLabel,
       nameStabilityScore: confidence,
-      stabilityExplanation: reasoning.whyThisMatch ? [reasoning.whyThisMatch] : ["Visual analysis match"],
+      stabilityExplanation: reasoning.whyThisMatch
+        ? [reasoning.whyThisMatch]
+        : ["Visual analysis match"],
       explanation: {
-        whyThisNameWon: reasoning.whyThisMatch ? [reasoning.whyThisMatch] : ["Strong visual feature alignment"],
+        whyThisNameWon: reasoning.whyThisMatch
+          ? [reasoning.whyThisMatch]
+          : ["Strong visual feature alignment"],
       },
       alternateMatches: altMatches.map((a: any) => ({
         name: a.strainName,
@@ -161,132 +159,130 @@ function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerV
         whyNotPrimary: `Lower visual similarity (${a.confidence}%)`,
       })),
     },
-
-    // Confidence tier
-    confidenceTier: {
-      label: tierLabel,
-      numeric: confidence,
-    },
-
-    // Confidence range
+    confidenceTier: { label: tierLabel, numeric: confidence },
     confidenceRange: {
       min: Math.max(50, confidence - 10),
       max: Math.min(98, confidence + 5),
-      explanation: "Range reflects phenotype variation and image quality factors",
+      explanation:
+        "Range reflects phenotype variation and image quality factors",
     },
-
     matchBasis: `Visual morphology analysis across ${imageCount} image${imageCount > 1 ? "s" : ""}`,
-
-    // Deep analysis sections
-    visualMatchSummary: reasoning.whyThisMatch || "AI visual analysis completed",
-    flowerStructureAnalysis: morphology.budStructure || "Bud structure analysis complete",
-    trichomeDensityMaturity: morphology.trichomes || "Trichome assessment complete",
+    visualMatchSummary:
+      reasoning.whyThisMatch || "AI visual analysis completed",
+    flowerStructureAnalysis:
+      morphology.budStructure || "Bud structure analysis complete",
+    trichomeDensityMaturity:
+      morphology.trichomes || "Trichome assessment complete",
     leafShapeInternode: "Leaf morphology assessed from uploaded images",
     colorPistilIndicators: morphology.coloration || "Color analysis complete",
     growthPatternClues: cultivation.notes || "Growth pattern assessed",
 
-    // Primary match
     primaryMatch: {
       name: strainName,
-      confidenceRange: { min: Math.max(50, confidence - 10), max: Math.min(98, confidence + 5) },
+      confidenceRange: {
+        min: Math.max(50, confidence - 10),
+        max: Math.min(98, confidence + 5),
+      },
       whyThisMatch: reasoning.whyThisMatch || "Visual feature alignment",
     },
-
-    // Secondary matches
     secondaryMatches: altMatches.map((a: any) => ({
       name: a.strainName,
       whyNotPrimary: `Lower confidence match at ${a.confidence}%`,
     })),
-
-    // Trust layer
     trustLayer: {
       confidenceBreakdown: {
         visualSimilarity: confidence,
         traitOverlap: Math.max(50, confidence - 5),
-        consensusStrength: imageCount > 1 ? confidence : Math.max(50, confidence - 10),
+        consensusStrength: imageCount > 1
+          ? confidence
+          : Math.max(50, confidence - 10),
       },
       whyThisMatch: reasoning.whyThisMatch
         ? [reasoning.whyThisMatch]
         : ["Visual similarity to known cultivar phenotype"],
       sourcesUsed: ["GPT-4o Vision Analysis", "Cannabis Cultivar Database"],
-      confidenceLanguage: confidence >= 80 ? "Strong visual match" : "Visual similarity match",
+      confidenceLanguage:
+        confidence >= 80 ? "Strong visual match" : "Visual similarity match",
     },
 
-    aiWikiBlend: `AI analysis identified ${strainName} based on observable morphological characteristics including bud structure, trichome patterns, and coloration.`,
-    uncertaintyExplanation: genetics.confidenceNotes || "Visual identification has inherent limitations without lab testing.",
+    aiWikiBlend: `AI analysis identified ${strainName} based on observable morphological characteristics.`,
+    uncertaintyExplanation:
+      genetics.confidenceNotes ||
+      "Visual identification has inherent limitations without lab testing.",
     accuracyTips: [
       "Use 3-5 images from different angles",
       "Ensure good lighting",
       "Include close-ups of trichomes",
       "Photograph in natural light when possible",
     ],
-
-    // Genetics
-    genetics: {
-      dominance,
-      lineage: lineageStr,
-      breederNotes: genetics.breederNotes || "",
-    },
-
-    // Legacy fields
+    genetics: { dominance, lineage: lineageStr, breederNotes: genetics.breederNotes || "" },
     morphology: morphology.budStructure || "",
     trichomes: morphology.trichomes || "",
     pistils: morphology.coloration || "",
     structure: morphology.budStructure || "",
-    growthTraits: Array.isArray(morphology.growthIndicators) ? morphology.growthIndicators : visualTraits,
+    growthTraits: Array.isArray(morphology.growthIndicators)
+      ? morphology.growthIndicators
+      : visualTraits,
     terpeneGuess: terpeneNames,
     effectsShort: effects.slice(0, 3),
     effectsLong: effects,
     referenceStrains: altMatches.map((a: any) => a.strainName),
     sources: ["GPT-4o Vision Analysis"],
-
-    // Chemistry
     chemistry: {
       terpenes,
       cannabinoids: chemistry.cannabinoids || { THC: "15-25%", CBD: "<1%" },
       cannabinoidRange: chemistry.cannabinoidRange || "",
       likelyTerpenes: terpenes.slice(0, 3),
     },
-
-    // Experience
     experience: {
       effects,
       primaryEffects,
       secondaryEffects,
       onset: experience.onset || "Moderate",
       duration: experience.duration || "2-4 hours",
-      bestUse: Array.isArray(experience.bestUse) ? experience.bestUse : [],
+      bestUse: Array.isArray(experience.bestFor)
+        ? experience.bestFor
+        : Array.isArray(experience.bestUse)
+          ? experience.bestUse
+          : [],
     },
-
-    // Cultivation
     cultivation: {
       difficulty: cultivation.difficulty || "Moderate",
       floweringTime: cultivation.floweringTime || "8-10 weeks",
       yield: cultivation.yield || "Medium",
       notes: cultivation.notes || "",
     },
-
-    // Ratio
     ratio: {
       indica: dominance === "Indica" ? 70 : dominance === "Sativa" ? 20 : 50,
       sativa: dominance === "Sativa" ? 70 : dominance === "Indica" ? 20 : 50,
       hybrid: 0,
-      classification: dominance === "Indica" ? "Indica-dominant" as const : dominance === "Sativa" ? "Sativa-dominant" as const : "Balanced Hybrid" as const,
+      classification:
+        dominance === "Indica"
+          ? ("Indica-dominant" as const)
+          : dominance === "Sativa"
+            ? ("Sativa-dominant" as const)
+            : ("Balanced Hybrid" as const),
       confidence,
-      explanation: [`Based on ${dominance} classification from visual analysis`],
+      explanation: [
+        `Based on ${dominance} classification from visual analysis`,
+      ],
     },
-
-    // Dominance (for WikiReportPanel)
     dominance: {
       indica: dominance === "Indica" ? 70 : dominance === "Sativa" ? 20 : 50,
       sativa: dominance === "Sativa" ? 70 : dominance === "Indica" ? 20 : 50,
       hybrid: 0,
-      label: dominance === "Indica" ? "Indica-dominant" : dominance === "Sativa" ? "Sativa-dominant" : "Hybrid",
+      label:
+        dominance === "Indica"
+          ? "Indica-dominant"
+          : dominance === "Sativa"
+            ? "Sativa-dominant"
+            : "Hybrid",
     },
-
-    // Terpene experience
     terpeneExperience: {
-      flavorProfile: terpeneNames.length > 0 ? terpeneNames.join(", ") : "Complex terpene profile",
+      flavorProfile:
+        terpeneNames.length > 0
+          ? terpeneNames.join(", ")
+          : "Complex terpene profile",
       aromaDescription: "Assessed from visual trichome characteristics",
       experienceNarrative: `${strainName} presents a ${dominance.toLowerCase()}-type experience with ${effects.slice(0, 2).join(" and ").toLowerCase()} effects.`,
       terpeneBreakdown: terpenes.map((t: any) => ({
@@ -295,58 +291,58 @@ function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerV
         effect: `Contributes to the overall ${t.name.toLowerCase()} profile`,
       })),
     },
-
-    // Extended profile
     extendedProfile: {
-      originStory: genetics.breederNotes || `${strainName} is a ${dominance.toLowerCase()} cultivar.`,
-      familyTree: lineageArr.length > 0 ? `${lineageArr.join(" × ")} → ${strainName}` : null,
+      originStory:
+        genetics.breederNotes ||
+        `${strainName} is a ${dominance.toLowerCase()} cultivar.`,
+      familyTree:
+        lineageArr.length > 0
+          ? `${lineageArr.join(" × ")} → ${strainName}`
+          : null,
       entourageEffect: `The combination of ${terpeneNames.slice(0, 3).join(", ")} terpenes creates a synergistic effect profile.`,
       relatedStrains: altMatches.map((a: any) => a.strainName),
     },
-
-    // Multi-image info
     multiImageInfo: {
       imageCountText: `${imageCount} image${imageCount > 1 ? "s" : ""} analyzed`,
     },
-
-    // Notes
     notes: "",
-
-    // Disclaimer
-    disclaimer: data.disclaimer || "AI-assisted visual analysis. Not a substitute for laboratory testing.",
+    disclaimer:
+      data.disclaimer ||
+      "AI-assisted visual analysis. Not a substitute for laboratory testing.",
   };
 
   return vm as ScannerViewModel;
 }
 
-/**
- * Build a WikiSynthesis from API response
- */
 function apiToSynthesis(data: Record<string, any>): WikiSynthesis {
   const identity = data.identity || {};
   const genetics = data.genetics || {};
   const experience = data.experience || {};
-
   return {
     strain: identity.strainName || "Unknown",
     confidence: Number(identity.confidence) || 60,
-    dominance: (genetics.dominance as "Indica" | "Sativa" | "Hybrid") || "Hybrid",
+    dominance:
+      (genetics.dominance as "Indica" | "Sativa" | "Hybrid") || "Hybrid",
     effects: Array.isArray(experience.effects) ? experience.effects : [],
     terpenes: [],
-    lineage: Array.isArray(genetics.lineage) ? genetics.lineage.join(" × ") : "",
+    lineage: Array.isArray(genetics.lineage)
+      ? genetics.lineage.join(" × ")
+      : "",
   };
 }
 
-export async function orchestrateScan(images: File[]): Promise<OrchestratedScanResult> {
+/* ─── Main entry point ─── */
+export async function orchestrateScan(
+  images: File[],
+  mode: ScanMode = "consumer"
+): Promise<OrchestratedScanResult> {
   if (!images || images.length === 0) {
-    return buildFallback("No images provided", 0);
+    return buildFallback("No images provided", 0, mode);
   }
 
   try {
-    // 1. Compress & convert all images (resize to 1536px max, JPEG @ 82%)
     const base64Images = await Promise.all(images.map(compressImage));
 
-    // 2. Call /api/scan directly (45s timeout for GPT-4o Vision)
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 45_000);
 
@@ -355,15 +351,23 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
       response = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ images: base64Images }),
+        body: JSON.stringify({ images: base64Images, mode }),
         signal: controller.signal,
       });
     } catch (fetchErr: any) {
       clearTimeout(timeout);
       if (fetchErr?.name === "AbortError") {
-        return buildFallback("Scan timed out — try with fewer photos or better lighting", images.length);
+        return buildFallback(
+          "Scan timed out — try with fewer photos or better lighting",
+          images.length,
+          mode
+        );
       }
-      return buildFallback("Network error — check your connection and try again", images.length);
+      return buildFallback(
+        "Network error — check your connection and try again",
+        images.length,
+        mode
+      );
     }
     clearTimeout(timeout);
 
@@ -375,25 +379,35 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
           reason = "OpenAI API credits exhausted — contact support";
         } else if (errBody?.detail?.includes?.("rate_limit")) {
           reason = "Too many requests — wait a moment and try again";
-        } else if (errBody?.detail?.includes?.("image_parse_error") || errBody?.detail?.includes?.("unsupported image")) {
-          reason = "Image format not supported — try taking a new photo instead of selecting from gallery";
+        } else if (
+          errBody?.detail?.includes?.("image_parse_error") ||
+          errBody?.detail?.includes?.("unsupported image")
+        ) {
+          reason =
+            "Image format not supported — try taking a new photo instead of selecting from gallery";
         } else if (errBody?.error) {
           reason = errBody.error;
-          if (errBody?.detail) reason += ` (${String(errBody.detail).slice(0, 120)})`;
+          if (errBody?.detail)
+            reason += ` (${String(errBody.detail).slice(0, 120)})`;
         }
-      } catch { /* couldn't parse error body */ }
+      } catch {
+        /* couldn't parse error body */
+      }
       console.error("Scan API error:", response.status, reason);
-      return buildFallback(`Scan failed: ${reason}`, images.length);
+      return buildFallback(`Scan failed: ${reason}`, images.length, mode);
     }
 
     const data = await response.json();
 
     if (!data.ok || !data.result) {
       console.error("Scan API returned unexpected response:", data);
-      return buildFallback("Scanner returned no result — try again", images.length);
+      return buildFallback(
+        "Scanner returned no result — try again",
+        images.length,
+        mode
+      );
     }
 
-    // 3. Map to ViewModel
     const viewModel = apiToViewModel(data.result, images.length);
     const synthesis = apiToSynthesis(data.result);
 
@@ -429,14 +443,24 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
       summary: [viewModel.visualMatchSummary],
       rawScannerResult: viewModel,
       normalizedScanResult: scanResult,
+      mode,
+      fullResult: data.result,
     };
   } catch (error) {
     console.error("orchestrateScan error:", error);
-    return buildFallback("Scanner encountered an error", images.length);
+    return buildFallback(
+      "Scanner encountered an error",
+      images.length,
+      mode
+    );
   }
 }
 
-function buildFallback(message: string, imageCount: number): OrchestratedScanResult {
+function buildFallback(
+  message: string,
+  imageCount: number,
+  mode: ScanMode
+): OrchestratedScanResult {
   const fallbackVm: any = {
     name: "Analysis Failed",
     title: "Analysis Failed",
@@ -455,17 +479,28 @@ function buildFallback(message: string, imageCount: number): OrchestratedScanRes
     leafShapeInternode: "",
     colorPistilIndicators: "",
     growthPatternClues: "",
-    primaryMatch: { name: "Unknown", confidenceRange: { min: 0, max: 0 }, whyThisMatch: message },
+    primaryMatch: {
+      name: "Unknown",
+      confidenceRange: { min: 0, max: 0 },
+      whyThisMatch: message,
+    },
     secondaryMatches: [],
     trustLayer: {
-      confidenceBreakdown: { visualSimilarity: 0, traitOverlap: 0, consensusStrength: 0 },
+      confidenceBreakdown: {
+        visualSimilarity: 0,
+        traitOverlap: 0,
+        consensusStrength: 0,
+      },
       whyThisMatch: [message],
       sourcesUsed: [],
       confidenceLanguage: "Unable to analyze",
     },
     aiWikiBlend: message,
     uncertaintyExplanation: message,
-    accuracyTips: ["Try uploading clearer images", "Use 2-5 photos from different angles"],
+    accuracyTips: [
+      "Try uploading clearer images",
+      "Use 2-5 photos from different angles",
+    ],
     genetics: { dominance: "Unknown", lineage: "", breederNotes: "" },
     morphology: "",
     trichomes: "",
@@ -485,7 +520,14 @@ function buildFallback(message: string, imageCount: number): OrchestratedScanRes
     consensus: {} as any,
     confidence: 0,
     result: fallbackVm as ScannerViewModel,
-    synthesis: { strain: "Unknown", confidence: 0, dominance: "Hybrid", effects: [], terpenes: [], lineage: "" },
+    synthesis: {
+      strain: "Unknown",
+      confidence: 0,
+      dominance: "Hybrid",
+      effects: [],
+      terpenes: [],
+      lineage: "",
+    },
   };
 
   return {
@@ -495,5 +537,7 @@ function buildFallback(message: string, imageCount: number): OrchestratedScanRes
     summary: [message],
     rawScannerResult: fallbackVm as ScannerViewModel,
     normalizedScanResult: fallbackResult,
+    mode,
+    fullResult: {},
   };
 }
