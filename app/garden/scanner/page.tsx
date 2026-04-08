@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
@@ -60,6 +61,7 @@ function typeEmoji(type: string): string {
 }
 
 export default function ScannerPage() {
+  const router = useRouter();
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [scanState, setScanState] = useState<ScanState>("idle");
@@ -180,37 +182,38 @@ export default function ScannerPage() {
         </span>
         {isLoggedIn ? (
           <button
-            onClick={() => window.location.href = "/garden/settings"}
+            type="button"
+            onClick={() => router.push("/garden/settings")}
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 6,
+              gap: 8,
               background: "none",
               border: "none",
               cursor: "pointer",
-              padding: 0,
+              padding: "4px 0",
             }}
           >
             <span style={{
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: 0.5,
               color: tierColor(tier),
               background: `${tierColor(tier)}18`,
               border: `1px solid ${tierColor(tier)}44`,
-              borderRadius: 5,
-              padding: "2px 6px",
+              borderRadius: 6,
+              padding: "3px 8px",
             }}>{tierLabel(tier)}</span>
             <div style={{
-              width: 26,
-              height: 26,
+              width: 30,
+              height: 30,
               borderRadius: "50%",
               background: "linear-gradient(135deg, #43A047, #2E7D32)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 800,
               color: "#fff",
             }}>
