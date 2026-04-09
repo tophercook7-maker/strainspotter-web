@@ -101,7 +101,9 @@ export default function MembershipSignup({
       >
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>🌿</div>
+          <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}>
+            <img src="/brand/cannabis-icon.png" width={44} height={44} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} />
+          </div>
           <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>
             Join StrainSpotter
           </h2>
