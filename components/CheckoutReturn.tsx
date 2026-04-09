@@ -174,7 +174,7 @@ export default function CheckoutReturn() {
               animation: "ssPulse 1.5s ease-in-out infinite",
             }}
           >
-            🌿
+            <img src="/brand/cannabis-icon.png" width={72} height={72} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} />
           </div>
           <p
             style={{
