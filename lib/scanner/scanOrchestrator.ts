@@ -19,79 +19,87 @@ export interface OrchestratedScanResult {
 const MAX_DIMENSION = 1536;  // GPT-4o "high" detail tiles at 512px — 1536 = 3×3 tiles max
 const JPEG_QUALITY  = 0.82;  // Good balance: sharp enough for trichomes, small enough to send
 
-/**
- * Resize + compress an image file using an offscreen canvas.
- * Returns a base64 data-URL (image/jpeg).
- */
-async function compressImage(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-
-      let { width, height } = img;
-
-      // Scale down if either dimension exceeds the cap
+/** Compress a Blob/File that the browser can already decode via canvas → JPEG data-URL */
+async function blobToJpegDataUrl(blob: Blob): Promise<string> {
+  // Try createImageBitmap first (no blob URL needed, avoids iframe security issues)
+  if (typeof createImageBitmap !== "undefined") {
+    try {
+      const bitmap = await createImageBitmap(blob);
+      let { width, height } = bitmap;
       if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
         const scale = MAX_DIMENSION / Math.max(width, height);
         width  = Math.round(width * scale);
         height = Math.round(height * scale);
       }
-
       const canvas = document.createElement("canvas");
-      canvas.width  = width;
-      canvas.height = height;
-
+      canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) { reject(new Error("Canvas context failed")); return; }
+      if (!ctx) throw new Error("no-ctx");
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close();
+      return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    } catch { /* fall through */ }
+  }
 
-      ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-      resolve(dataUrl);
-    };
-
-    img.onerror = () => {
+  // Fallback: Image element + blob URL
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
       URL.revokeObjectURL(url);
-      // Fallback: re-encode via smaller canvas (handles HEIC / unsupported formats)
-      // We still need canvas to produce JPEG — raw readAsDataURL could send HEIC which OpenAI rejects
-      const fallbackCanvas = document.createElement("canvas");
-      fallbackCanvas.width = 512;
-      fallbackCanvas.height = 512;
-      const fbCtx = fallbackCanvas.getContext("2d");
-      if (fbCtx) {
-        fbCtx.fillStyle = "#000";
-        fbCtx.fillRect(0, 0, 512, 512);
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const scale = MAX_DIMENSION / Math.max(width, height);
+        width  = Math.round(width * scale);
+        height = Math.round(height * scale);
       }
-      // Last resort: read raw — but prefix as jpeg so OpenAI at least tries
-      const reader = new FileReader();
-      reader.onload = () => {
-        const raw = reader.result as string;
-        // Force JPEG mime type if it's something OpenAI won't accept
-        if (raw.startsWith("data:image/jpeg") || raw.startsWith("data:image/png") ||
-            raw.startsWith("data:image/gif") || raw.startsWith("data:image/webp")) {
-          resolve(raw);
-        } else {
-          // Unsupported format (HEIC etc) — try to convert via canvas with blob
-          const img2 = new Image();
-          img2.onload = () => {
-            const c = document.createElement("canvas");
-            c.width = Math.min(img2.width, MAX_DIMENSION);
-            c.height = Math.min(img2.height, MAX_DIMENSION);
-            const ctx2 = c.getContext("2d");
-            if (ctx2) { ctx2.drawImage(img2, 0, 0, c.width, c.height); }
-            resolve(c.toDataURL("image/jpeg", JPEG_QUALITY));
-          };
-          img2.onerror = () => resolve(raw); // absolute last resort
-          img2.src = raw;
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("no-ctx")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
     };
-
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img-load")); };
     img.src = url;
+  });
+}
+
+/**
+ * Resize + compress an image file to a JPEG data-URL.
+ *
+ * HEIC/HEIF are first converted via heic2any (pure-JS, works in all browsers).
+ * Other formats go through canvas compression.
+ * Raw data-URL is the last resort so the API's error handler can surface a helpful message.
+ */
+async function compressImage(file: File): Promise<string> {
+  const isHeic = file.type === "image/heic" || file.type === "image/heif" ||
+                 file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
+
+  // ── HEIC/HEIF: convert with heic2any (pure JS, browser-compatible) ────────
+  if (isHeic) {
+    try {
+      const heic2any = (await import("heic2any")).default;
+      const result = await heic2any({ blob: file, toType: "image/jpeg", quality: JPEG_QUALITY });
+      const jpegBlob = Array.isArray(result) ? result[0] : result;
+      return blobToJpegDataUrl(jpegBlob);
+    } catch (e) {
+      console.warn("heic2any conversion failed, falling back to raw:", e);
+      // Fall through to raw as last resort
+    }
+  }
+
+  // ── Standard formats: canvas compression ─────────────────────────────────
+  try {
+    return await blobToJpegDataUrl(file);
+  } catch { /* fall through */ }
+
+  // ── Last resort: send raw bytes; API error handler surfaces friendly message
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 
@@ -314,6 +322,13 @@ function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerV
 
     // Disclaimer
     disclaimer: data.disclaimer || "AI-assisted visual analysis. Not a substitute for laboratory testing.",
+
+    // Pass through raw professional data from GPT response
+    medicalRaw: data.medical || {},
+    growerRaw: data.grower || {},
+    breederRaw: data.breeder || {},
+    dispensaryRaw: data.dispensary || {},
+    engagementRaw: data.engagement || {},
   };
 
   return vm as ScannerViewModel;
@@ -334,10 +349,10 @@ function apiToSynthesis(data: Record<string, any>): WikiSynthesis {
     effects: Array.isArray(experience.effects) ? experience.effects : [],
     terpenes: [],
     lineage: Array.isArray(genetics.lineage) ? genetics.lineage.join(" × ") : "",
-  };
+  } as unknown as WikiSynthesis;
 }
 
-export async function orchestrateScan(images: File[]): Promise<OrchestratedScanResult> {
+export async function orchestrateScan(images: File[], authToken?: string): Promise<OrchestratedScanResult> {
   if (!images || images.length === 0) {
     return buildFallback("No images provided", 0);
   }
@@ -350,11 +365,16 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 45_000);
 
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+
     let response: Response;
     try {
       response = await fetch("/api/scan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ images: base64Images }),
         signal: controller.signal,
       });
@@ -419,7 +439,7 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
         model: data.model || "gpt-4o",
         imageCount: images.length,
         usage: data.usage,
-      },
+      } as unknown as import("./types").ScanMeta,
     };
 
     return {
@@ -430,7 +450,7 @@ export async function orchestrateScan(images: File[]): Promise<OrchestratedScanR
       rawScannerResult: viewModel,
       normalizedScanResult: scanResult,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("orchestrateScan error:", error);
     return buildFallback("Scanner encountered an error", images.length);
   }
@@ -482,10 +502,11 @@ function buildFallback(message: string, imageCount: number): OrchestratedScanRes
 
   const fallbackResult: ScanResult = {
     status: "partial",
+    guard: { status: "low-confidence", reason: "Analysis could not be completed" },
     consensus: {} as any,
     confidence: 0,
     result: fallbackVm as ScannerViewModel,
-    synthesis: { strain: "Unknown", confidence: 0, dominance: "Hybrid", effects: [], terpenes: [], lineage: "" },
+    synthesis: { strain: "Unknown", confidence: 0, dominance: "Hybrid", effects: [], terpenes: [], lineage: "" } as unknown as WikiSynthesis,
   };
 
   return {
