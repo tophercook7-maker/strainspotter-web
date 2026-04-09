@@ -28,6 +28,10 @@ export default function AuthScreen({
   const [message, setMessage] = useState("");
 
   const supabase = getSupabase();
+  const supabaseConfigured = !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://placeholder.supabase.co"
+  );
 
   const handleSignUp = async () => {
     if (!name.trim()) {
@@ -40,6 +44,11 @@ export default function AuthScreen({
     }
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (!supabaseConfigured) {
+      setError("Authentication isn't configured yet. Add your Supabase credentials in the app settings to enable sign-up.");
       return;
     }
 
@@ -65,7 +74,8 @@ export default function AuthScreen({
       setTimeout(async () => {
         await supabase
           .from("profiles")
-          .update({ display_name: name.trim() })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .update({ display_name: name.trim() } as never)
           .eq("id", data.user!.id);
       }, 1000);
     }
@@ -81,6 +91,11 @@ export default function AuthScreen({
     }
     if (!password) {
       setError("Please enter your password");
+      return;
+    }
+
+    if (!supabaseConfigured) {
+      setError("Authentication isn't configured yet. Add your Supabase credentials in the app settings to enable sign-in.");
       return;
     }
 
@@ -105,6 +120,11 @@ export default function AuthScreen({
   const handleForgotPassword = async () => {
     if (!email.trim() || !email.includes("@")) {
       setError("Please enter your email address");
+      return;
+    }
+
+    if (!supabaseConfigured) {
+      setError("Authentication isn't configured yet. Add your Supabase credentials to enable password reset.");
       return;
     }
 
@@ -142,7 +162,9 @@ export default function AuthScreen({
     >
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>🌿</div>
+        <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}>
+          <img src="/brand/cannabis-icon.png" width={48} height={48} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} />
+        </div>
         <h2
           style={{
             color: "#fff",
