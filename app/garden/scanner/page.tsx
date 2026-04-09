@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import Link from "next/link";
@@ -16,7 +16,7 @@ try {
 
 function getLocalTier(): string | null {
   if (typeof window === "undefined") return null;
-  try { return localStorage.getItem("ss_tier"); } catch { return null; }
+  try { return localStorage.getItem("ss_membership_tier"); } catch { return null; }
 }
 function tierLabel(t: string) { return t === "pro" ? "Pro" : t === "member" ? "Member" : "Free"; }
 function tierColor(t: string) { return t === "pro" ? "#FFD700" : t === "member" ? "#4CAF50" : "rgba(255,255,255,0.35)"; }
@@ -27,6 +27,188 @@ function tierColor(t: string) { return t === "pro" ? "#FFD700" : t === "member" 
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 type ScanState = "idle" | "ready" | "scanning" | "done";
+
+/* ─── Similar Strains ─────────────────────────────────────────────────────── */
+const TYPE_PILL: Record<string, { bg: string; color: string }> = {
+  Sativa:  { bg: "rgba(255,213,79,0.15)",  color: "#FFD54F" },
+  Indica:  { bg: "rgba(149,117,205,0.15)", color: "#9575CD" },
+  Hybrid:  { bg: "rgba(102,187,106,0.15)", color: "#66BB6A" },
+};
+
+interface SimilarStrain {
+  id: string; name: string; type: string;
+  effects: string[]; flavors: string[];
+  thc: number | null; popularity: number;
+}
+
+function SimilarStrains({ result }: { result: SimpleResult }) {
+  const [strains, setStrains] = useState<SimilarStrain[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!result.effects.length && !result.terpenes.length) { setLoading(false); return; }
+    const params = new URLSearchParams({
+      strain_name: result.strainName,
+      effects: result.effects.slice(0, 3).join(","),
+      terpenes: result.terpenes.slice(0, 2).join(","),
+      type: result.type,
+    });
+    fetch(`/api/similar-strains?${params}`)
+      .then((r) => r.json())
+      .then((d) => setStrains(d.similar || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [result.strainName]);
+
+  if (loading) return (
+    <div style={{ textAlign: "center", padding: "16px 0", color: "rgba(255,255,255,0.3)", fontSize: 12 }}>
+      Finding similar strains…
+    </div>
+  );
+  if (!strains.length) return null;
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
+        You Might Also Like
+      </div>
+      <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none" }}>
+        {strains.map((s) => {
+          const pill = TYPE_PILL[s.type] || TYPE_PILL.Hybrid;
+          return (
+            <div
+              key={s.id}
+              onClick={() => router.push(`/garden/strains?q=${encodeURIComponent(s.name)}`)}
+              style={{
+                flexShrink: 0, width: 160,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.09)",
+                borderTop: `3px solid ${pill.color}`,
+                borderRadius: 14, padding: "12px 12px",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 13, color: "#fff", lineHeight: 1.3, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {s.name}
+              </div>
+              <div style={{
+                display: "inline-block", padding: "2px 8px", borderRadius: 6,
+                fontSize: 10, fontWeight: 700, background: pill.bg, color: pill.color,
+                marginBottom: 8,
+              }}>
+                {s.type}
+              </div>
+              {s.thc != null && s.thc > 0 && (
+                <div style={{ fontSize: 11, color: "#66BB6A", fontWeight: 700, marginBottom: 6 }}>
+                  THC {s.thc}%
+                </div>
+              )}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {s.effects.slice(0, 3).map((e) => (
+                  <span key={e} style={{
+                    padding: "2px 6px", borderRadius: 5, fontSize: 10,
+                    background: "rgba(102,187,106,0.1)", color: "#81C784",
+                    border: "1px solid rgba(102,187,106,0.15)",
+                  }}>
+                    {e.charAt(0).toUpperCase() + e.slice(1)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <style>{`.similar-scroll::-webkit-scrollbar { display: none; }`}</style>
+    </div>
+  );
+}
+
+/* ─── PWA Install Banner ──────────────────────────────────────────────────── */
+function InstallBanner() {
+  const [prompt, setPrompt] = useState<any>(null);
+  const [showIOSTip, setShowIOSTip] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    // Already installed as standalone — don't show
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
+    // Already dismissed this session
+    if (sessionStorage.getItem("pwa_banner_dismissed")) return;
+
+    // Android Chrome: catch beforeinstallprompt
+    const handler = (e: any) => { e.preventDefault(); setPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+
+    // iOS Safari: detect and show tip
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isSafari = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent);
+    if (isIOS && isSafari) setShowIOSTip(true);
+
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const install = async () => {
+    if (!prompt) return;
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === "accepted") setDismissed(true);
+    setPrompt(null);
+  };
+
+  const dismiss = () => {
+    setDismissed(true);
+    sessionStorage.setItem("pwa_banner_dismissed", "1");
+  };
+
+  if (dismissed || (!prompt && !showIOSTip)) return null;
+
+  return (
+    <div style={{
+      margin: "0 0 12px",
+      background: "linear-gradient(135deg, rgba(76,175,80,0.12), rgba(56,142,60,0.06))",
+      border: "1px solid rgba(76,175,80,0.25)",
+      borderRadius: 14, padding: "12px 14px",
+      display: "flex", alignItems: "flex-start", gap: 12,
+    }}>
+      <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>📲</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: "#81C784", fontWeight: 700, fontSize: 13, marginBottom: 3 }}>
+          Install StrainSpotter
+        </div>
+        {showIOSTip ? (
+          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, lineHeight: 1.5 }}>
+            Tap <strong style={{ color: "rgba(255,255,255,0.8)" }}>Share</strong> then{" "}
+            <strong style={{ color: "rgba(255,255,255,0.8)" }}>Add to Home Screen</strong> for the full app experience.
+          </div>
+        ) : (
+          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, lineHeight: 1.5 }}>
+            Add to your home screen for instant access and a native app feel.
+          </div>
+        )}
+        {prompt && (
+          <button
+            onClick={install}
+            style={{
+              marginTop: 8, padding: "5px 14px", borderRadius: 8,
+              background: "rgba(76,175,80,0.3)", border: "1px solid rgba(76,175,80,0.5)",
+              color: "#81C784", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            Install
+          </button>
+        )}
+      </div>
+      <button
+        onClick={dismiss}
+        style={{
+          background: "none", border: "none", color: "rgba(255,255,255,0.3)",
+          fontSize: 18, cursor: "pointer", padding: 0, flexShrink: 0, lineHeight: 1,
+        }}
+      >✕</button>
+    </div>
+  );
+}
 
 interface SimpleResult {
   strainName: string;
@@ -39,6 +221,68 @@ interface SimpleResult {
   description: string;
   tips: string[];
   alternates: Array<{ name: string; confidence: number }>;
+  // Medical info
+  medicalConditions: string[];
+  sideEffects: string[];
+  intensity: string;
+  timeOfDay: string;
+  cbdContext: string;
+  cautions: string;
+  // Chemistry + genetics
+  thc: string;
+  cbd: string;
+  indicaPct: number;
+  sativaPct: number;
+  // Visual analysis
+  visualTraits: string[];
+  budStructure: string;
+  trichomes: string;
+  coloration: string;
+  // Extra context
+  bestUse: string[];
+  duration: string;
+  breederNotes: string;
+  // Grower data
+  growDifficulty: string;
+  floweringTime: string;
+  vegetativeTime: string;
+  yieldIndoor: string;
+  yieldOutdoor: string;
+  plantHeight: string;
+  trainingMethods: string[];
+  nutrientNeeds: string;
+  climate: string;
+  moldResistance: string;
+  pestResistance: string;
+  harvestIndicators: string;
+  cureTime: string;
+  growNotes: string;
+  // Breeder data
+  originStory: string;
+  parentStrains: string[];
+  grandparentStrains: string[];
+  breedingNotes: string;
+  phenotypeVariation: string;
+  geneticStability: string;
+  seedTypes: string;
+  terpeneInheritance: string;
+  breedingPotential: string;
+  // Dispensary data
+  salesDescription: string;
+  targetCustomer: string;
+  bestProductForms: string[];
+  activityPairing: string[];
+  experienceLevel: string;
+  flavorNotes: string;
+  aromaProfile: string;
+  pricingTier: string;
+  marketingTags: string[];
+  menuDescription: string;
+  consultingScript: string;
+  // Engagement / hook fields
+  tagline: string;
+  vibeScore: { energizing: number; creative: number; social: number; relaxing: number } | null;
+  expertTip: string;
 }
 
 function mapConfidence(n: number): string {
@@ -60,6 +304,67 @@ function typeEmoji(type: string): string {
   return "🌿";
 }
 
+function activityEmoji(activity: string): string {
+  const a = activity.toLowerCase();
+  if (a.includes("movie") || a.includes("film") || a.includes("watch") || a.includes("stream")) return "🎬";
+  if (a.includes("creat") || a.includes("art") || a.includes("paint") || a.includes("draw") || a.includes("design")) return "🎨";
+  if (a.includes("hik") || a.includes("outdoor") || a.includes("nature") || a.includes("trail") || a.includes("camp")) return "🥾";
+  if (a.includes("yoga") || a.includes("meditat") || a.includes("mindful") || a.includes("breath")) return "🧘";
+  if (a.includes("social") || a.includes("party") || a.includes("friend") || a.includes("gather") || a.includes("crowd")) return "👥";
+  if (a.includes("music") || a.includes("concert") || a.includes("listen") || a.includes("playlist") || a.includes("festival")) return "🎵";
+  if (a.includes("gaming") || a.includes("game") || a.includes("video game")) return "🎮";
+  if (a.includes("food") || a.includes("cook") || a.includes("eat") || a.includes("munch") || a.includes("snack") || a.includes("bake")) return "🍕";
+  if (a.includes("sleep") || a.includes("rest") || a.includes("bed") || a.includes("nap")) return "😴";
+  if (a.includes("workout") || a.includes("gym") || a.includes("exercise") || a.includes("run") || a.includes("sport")) return "💪";
+  if (a.includes("beach") || a.includes("pool") || a.includes("swim") || a.includes("lake")) return "🏖️";
+  if (a.includes("read") || a.includes("book")) return "📚";
+  if (a.includes("relax") || a.includes("chill") || a.includes("couch") || a.includes("lazy") || a.includes("lounge")) return "🛋️";
+  if (a.includes("focus") || a.includes("work") || a.includes("productiv") || a.includes("study")) return "💡";
+  if (a.includes("laugh") || a.includes("comedy") || a.includes("giggle")) return "😂";
+  if (a.includes("sex") || a.includes("intima") || a.includes("romance")) return "💋";
+  if (a.includes("walk") || a.includes("stroll") || a.includes("bike")) return "🚶";
+  return "✨";
+}
+
+/* ─── Scan credit helpers ─────────────────────────────────────────────────── */
+const DAILY_FREE_SCANS = 5;       // guests + free logged-in users
+const DAILY_MEMBER_SCANS = 250;   // 1st paid tier
+// Pro + Admin = unlimited (tier === "pro")
+const CREDIT_KEY = "ss_photo_credits";
+const FREE_SCANS_KEY = "ss_free_scans_used"; // permanent — never resets, only topups extend
+
+function thisMonthKey() { return `ss_monthly_${new Date().toISOString().slice(0, 7)}`; }
+
+// Free tier: permanent lifetime counter (no reset)
+function getFreeScansUsed(): number {
+  try { return parseInt(localStorage.getItem(FREE_SCANS_KEY) || "0"); } catch { return 0; }
+}
+function incrementFreeScans() {
+  try { localStorage.setItem(FREE_SCANS_KEY, String(getFreeScansUsed() + 1)); } catch {}
+}
+
+// Member tier: monthly counter
+function getScansUsedThisMonth(): number {
+  try { return parseInt(localStorage.getItem(thisMonthKey()) || "0"); } catch { return 0; }
+}
+function incrementScansThisMonth() {
+  try { localStorage.setItem(thisMonthKey(), String(getScansUsedThisMonth() + 1)); } catch {}
+}
+
+// Keep for UI state updates (reads member monthly count)
+function getScansUsedToday(): number { return getScansUsedThisMonth(); }
+function getPhotoCredits(): number {
+  try { return Math.max(0, parseInt(localStorage.getItem(CREDIT_KEY) || "0")); } catch { return 0; }
+}
+function addPhotoCredit() {
+  try { localStorage.setItem(CREDIT_KEY, String(getPhotoCredits() + 1)); } catch {}
+}
+function usePhotoCredit(): boolean {
+  const c = getPhotoCredits();
+  if (c <= 0) return false;
+  try { localStorage.setItem(CREDIT_KEY, String(c - 1)); return true; } catch { return false; }
+}
+
 export default function ScannerPage() {
   const router = useRouter();
   const [images, setImages] = useState<File[]>([]);
@@ -68,13 +373,43 @@ export default function ScannerPage() {
   const [result, setResult] = useState<SimpleResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [photoContributed, setPhotoContributed] = useState<"verified" | "saved" | null>(null);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "medical" | "grower" | "breeder" | "dispensary">("overview");
+  const [creditEarned, setCreditEarned] = useState(false);
+  const [photoCredits, setPhotoCredits] = useState(0);
+  const [scansUsedToday, setScansUsedToday] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Load credit/usage state on mount
+  useEffect(() => {
+    setPhotoCredits(getPhotoCredits());
+    setScansUsedToday(getScansUsedToday());
+  }, []);
+
+  const saveFavorite = () => {
+    if (!result) return;
+    const STORAGE_KEY = "strainspotter_favorites";
+    let favs: any[] = [];
+    try { favs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { favs = []; }
+    const entry = {
+      id: `fav-${Date.now()}`,
+      strainName: result.strainName,
+      confidence: result.confidence,
+      savedAt: new Date().toISOString(),
+    };
+    favs.unshift(entry);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(favs));
+    setIsFavorited(true);
+  };
+
   const MAX_IMAGES = 5;
 
   const auth = useOptionalAuth();
   const isLoggedIn = !!auth?.user;
   const displayName = auth?.profile?.display_name || auth?.user?.email?.split("@")[0] || null;
-  const tier = auth?.tier || getLocalTier() || "free";
+  const tier = (auth?.profile != null ? auth.tier : (getLocalTier() || auth?.tier || "free")) as "free" | "member" | "pro";
 
   const addImages = useCallback((files: FileList | File[]) => {
     const fileArr = Array.from(files).filter(f => f.type.startsWith("image/"));
@@ -82,7 +417,6 @@ export default function ScannerPage() {
 
     setImages(prev => {
       const next = [...prev, ...fileArr].slice(0, MAX_IMAGES);
-      // Generate previews
       const urls = next.map(f => URL.createObjectURL(f));
       setPreviews(urls);
       return next;
@@ -108,16 +442,58 @@ export default function ScannerPage() {
     setResult(null);
     setError(null);
     setScanState("idle");
+    setIsFavorited(false);
+    setPhotoContributed(null);
   };
 
   const handleScan = async () => {
     if (images.length === 0 || scanState === "scanning") return;
+
+    // Limit check — Pro tier and Admin bypass entirely
+    if (tier !== "pro") {
+      if (tier === "member") {
+        // Member: 250 scans per calendar month
+        const used = getScansUsedThisMonth();
+        const credits = getPhotoCredits();
+        const effectiveRemaining = (DAILY_MEMBER_SCANS - used) + credits;
+        if (effectiveRemaining <= 0) {
+          setError(`You've used all ${DAILY_MEMBER_SCANS} scans for this month. Upgrade to Pro for unlimited scans.`);
+          return;
+        }
+      } else {
+        // Free / Guest: 5 scans lifetime — never refills, only topup credits extend
+        const used = getFreeScansUsed();
+        const credits = getPhotoCredits();
+        const effectiveRemaining = (DAILY_FREE_SCANS - used) + credits;
+        if (effectiveRemaining <= 0) {
+          setError(`You've used all ${DAILY_FREE_SCANS} free scans. Become a Member for 250 scans/month, or go Pro for unlimited.`);
+          return;
+        }
+      }
+    }
+
     setScanState("scanning");
     setError(null);
 
     try {
-      const orchestrated = await orchestrateScan(images);
+      const authToken = auth?.session?.access_token || undefined;
+      const orchestrated = await orchestrateScan(images, authToken);
       const vm = orchestrated.rawScannerResult;
+
+      const vm_chem = (vm as any).chemistry || {};
+      const vm_exp = (vm as any).experience || {};
+      const vm_ratio = (vm as any).ratio || {};
+      const vm_medical = (vm as any).medicalRaw || {};
+      const vm_grower = (vm as any).growerRaw || {};
+      const vm_breeder = (vm as any).breederRaw || {};
+      const vm_dispensary = (vm as any).dispensaryRaw || {};
+      const cannabinoids = vm_chem.cannabinoids || {};
+      const thcVal = cannabinoids.THC || vm_chem.cannabinoidRange || "";
+      const cbdVal = cannabinoids.CBD || "";
+      const indicaPct = typeof vm_ratio.indica === "number" ? vm_ratio.indica : 50;
+      const sativaPct = typeof vm_ratio.sativa === "number" ? vm_ratio.sativa : 50;
+      const allEffects = [...(vm.effectsLong || []), ...(vm.effectsShort || [])].filter(Boolean);
+      const uniqueEffects = Array.from(new Set(allEffects)).slice(0, 8);
 
       const simple: SimpleResult = {
         strainName: vm.nameFirstDisplay?.primaryStrainName || vm.name || "Unknown",
@@ -125,21 +501,139 @@ export default function ScannerPage() {
         confidenceLabel: mapConfidence(vm.confidence || 0),
         type: (vm.genetics?.dominance as any) || "Hybrid",
         lineage: vm.genetics?.lineage || "",
-        effects: [...(vm.effectsShort || []), ...(vm.effectsLong || [])].filter(Boolean).slice(0, 6),
-        terpenes: (vm.terpeneGuess || []).slice(0, 4),
+        effects: uniqueEffects,
+        terpenes: (vm.terpeneGuess || []).slice(0, 6),
         description: vm.visualMatchSummary || vm.aiWikiBlend || "",
         tips: (vm.accuracyTips || []).slice(0, 3),
         alternates: (vm.nameFirstDisplay as any)?.alternateMatches?.slice(0, 3).map((a: any) => ({
           name: a.name || a.strainName,
           confidence: a.confidence || 0,
         })) || [],
+        // Medical fields
+        medicalConditions: Array.isArray(vm_medical.conditions) ? vm_medical.conditions.slice(0, 6) : [],
+        sideEffects: Array.isArray(vm_medical.sideEffects) ? vm_medical.sideEffects.slice(0, 4) : [],
+        intensity: vm_medical.intensity || "",
+        timeOfDay: vm_medical.timeOfDay || "",
+        cbdContext: vm_medical.cbdContext || "",
+        cautions: vm_medical.cautions || "",
+        // Chemistry + genetics
+        thc: thcVal,
+        cbd: cbdVal,
+        indicaPct,
+        sativaPct,
+        // Visual analysis
+        visualTraits: Array.isArray(vm.growthTraits) ? vm.growthTraits.slice(0, 6) : [],
+        budStructure: vm.flowerStructureAnalysis || "",
+        trichomes: vm.trichomeDensityMaturity || "",
+        coloration: vm.colorPistilIndicators || "",
+        // Extra context
+        bestUse: Array.isArray(vm_exp.bestUse) ? vm_exp.bestUse.slice(0, 4) : [],
+        duration: vm_exp.duration || "",
+        breederNotes: (vm.genetics as any)?.breederNotes || "",
+        // Grower data
+        growDifficulty: vm_grower.difficulty || "",
+        floweringTime: vm_grower.floweringTime || "",
+        vegetativeTime: vm_grower.vegetativeTime || "",
+        yieldIndoor: vm_grower.yieldIndoor || "",
+        yieldOutdoor: vm_grower.yieldOutdoor || "",
+        plantHeight: vm_grower.plantHeight || "",
+        trainingMethods: Array.isArray(vm_grower.trainingMethods) ? vm_grower.trainingMethods : [],
+        nutrientNeeds: vm_grower.nutrientNeeds || "",
+        climate: vm_grower.climate || "",
+        moldResistance: vm_grower.moldResistance || "",
+        pestResistance: vm_grower.pestResistance || "",
+        harvestIndicators: vm_grower.harvestIndicators || "",
+        cureTime: vm_grower.cureTime || "",
+        growNotes: vm_grower.growNotes || "",
+        // Breeder data
+        originStory: vm_breeder.originStory || "",
+        parentStrains: Array.isArray(vm_breeder.parentStrains) ? vm_breeder.parentStrains : [],
+        grandparentStrains: Array.isArray(vm_breeder.grandparentStrains) ? vm_breeder.grandparentStrains : [],
+        breedingNotes: vm_breeder.breedingNotes || "",
+        phenotypeVariation: vm_breeder.phenotypeVariation || "",
+        geneticStability: vm_breeder.geneticStability || "",
+        seedTypes: vm_breeder.seedTypes || "",
+        terpeneInheritance: vm_breeder.terpeneInheritance || "",
+        breedingPotential: vm_breeder.breedingPotential || "",
+        // Dispensary data
+        salesDescription: vm_dispensary.salesDescription || "",
+        targetCustomer: vm_dispensary.targetCustomer || "",
+        bestProductForms: Array.isArray(vm_dispensary.bestProductForms) ? vm_dispensary.bestProductForms : [],
+        activityPairing: Array.isArray(vm_dispensary.activityPairing) ? vm_dispensary.activityPairing : [],
+        experienceLevel: vm_dispensary.experienceLevel || "",
+        flavorNotes: vm_dispensary.flavorNotes || "",
+        aromaProfile: vm_dispensary.aromaProfile || "",
+        pricingTier: vm_dispensary.pricingTier || "",
+        marketingTags: Array.isArray(vm_dispensary.marketingTags) ? vm_dispensary.marketingTags : [],
+        menuDescription: vm_dispensary.menuDescription || "",
+        consultingScript: vm_dispensary.consultingScript || "",
+        // Engagement fields
+        tagline: (vm as any).engagementRaw?.tagline || "",
+        vibeScore: (vm as any).engagementRaw?.vibeScore
+          ? {
+              energizing: Number((vm as any).engagementRaw.vibeScore.energizing) || 5,
+              creative: Number((vm as any).engagementRaw.vibeScore.creative) || 5,
+              social: Number((vm as any).engagementRaw.vibeScore.social) || 5,
+              relaxing: Number((vm as any).engagementRaw.vibeScore.relaxing) || 5,
+            }
+          : null,
+        expertTip: (vm as any).engagementRaw?.expertTip || "",
       };
 
       setResult(simple);
       setScanState("done");
-    } catch (e) {
+
+      // Track scan usage for non-Pro users
+      if (tier !== "pro") {
+        if (tier === "member") {
+          // Member: monthly tracking
+          const used = getScansUsedThisMonth();
+          if (used >= DAILY_MEMBER_SCANS) usePhotoCredit();
+          incrementScansThisMonth();
+        } else {
+          // Free / Guest: permanent counter — never resets
+          const used = getFreeScansUsed();
+          if (used >= DAILY_FREE_SCANS) usePhotoCredit();
+          incrementFreeScans();
+        }
+        setScansUsedToday(getScansUsedToday());
+        setPhotoCredits(getPhotoCredits());
+      }
+
+      // Non-blocking: upload scan photo to community DB if confidence is high enough and user is logged in
+      if (simple.confidence >= 65 && authToken && images.length > 0) {
+        // Read the File as a data URL (images[] holds File objects, not strings)
+        const firstFile = images[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          fetch("/api/strain-photos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+            body: JSON.stringify({
+              strain_name: simple.strainName,
+              confidence: simple.confidence,
+              image_data_url: dataUrl,
+            }),
+          }).then((r) => r.json()).then((d) => {
+            if (d.ok) {
+              const level = simple.confidence >= 80 ? "verified" : "saved";
+              setPhotoContributed(level);
+              if (level === "verified") {
+                const alreadyConsented = localStorage.getItem(`ss_consented_${simple.strainName}`);
+                if (!alreadyConsented) {
+                  setTimeout(() => setShowConsentModal(true), 1400);
+                }
+              }
+            }
+          }).catch(() => {});
+        };
+        reader.onerror = () => {}; // non-critical, skip silently
+        reader.readAsDataURL(firstFile);
+      }
+    } catch (e: any) {
       console.error("Scan error:", e);
-      setError("Couldn't analyze the image. Try a clearer photo.");
+      setError("Couldn't analyze the image. Try a clearer photo with better lighting.");
       setScanState("ready");
     }
   };
@@ -182,38 +676,45 @@ export default function ScannerPage() {
         </span>
         {isLoggedIn ? (
           <button
-            type="button"
             onClick={() => router.push("/garden/settings")}
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
+              gap: 6,
               background: "none",
               border: "none",
               cursor: "pointer",
-              padding: "4px 0",
+              padding: 0,
             }}
           >
+            {photoCredits > 0 && (
+              <span style={{
+                fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
+                color: "#66BB6A", background: "rgba(102,187,106,0.15)",
+                border: "1px solid rgba(102,187,106,0.35)",
+                borderRadius: 5, padding: "2px 6px",
+              }}>+{photoCredits} scan{photoCredits !== 1 ? "s" : ""}</span>
+            )}
             <span style={{
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: 0.5,
               color: tierColor(tier),
               background: `${tierColor(tier)}18`,
               border: `1px solid ${tierColor(tier)}44`,
-              borderRadius: 6,
-              padding: "3px 8px",
+              borderRadius: 5,
+              padding: "2px 6px",
             }}>{tierLabel(tier)}</span>
             <div style={{
-              width: 30,
-              height: 30,
+              width: 26,
+              height: 26,
               borderRadius: "50%",
               background: "linear-gradient(135deg, #43A047, #2E7D32)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 800,
               color: "#fff",
             }}>
@@ -240,6 +741,11 @@ export default function ScannerPage() {
       </div>
 
       <div style={{ padding: "0 20px 100px", maxWidth: 480, margin: "0 auto" }}>
+
+        {/* ── PWA Install Banner ── */}
+        <div style={{ paddingTop: 16 }}>
+          <InstallBanner />
+        </div>
 
         {/* ── UPLOAD AREA ── */}
         {scanState !== "done" && (
@@ -295,10 +801,13 @@ export default function ScannerPage() {
             {scanState === "scanning" ? (
               <div style={{ textAlign: "center", zIndex: 1 }}>
                 <div style={{
-                  fontSize: 56,
                   animation: "leafSpin 3s ease-in-out infinite",
                   marginBottom: 16,
-                }}>🍃</div>
+                  display: "flex",
+                  justifyContent: "center",
+                }}>
+                  <img src="/brand/cannabis-icon.png" width={64} height={64} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} />
+                </div>
                 <p style={{ color: "rgba(76,175,80,0.9)", fontSize: 16, fontWeight: 600 }}>
                   Analyzing...
                 </p>
@@ -485,173 +994,692 @@ export default function ScannerPage() {
                 </span>
               </div>
 
+              {result.tagline && (
+                <p style={{
+                  color: "rgba(255,255,255,0.5)",
+                  fontSize: 14,
+                  marginTop: 12,
+                  fontStyle: "italic",
+                  letterSpacing: 0.2,
+                }}>
+                  &ldquo;{result.tagline}&rdquo;
+                </p>
+              )}
+
               {result.lineage && (
                 <p style={{
-                  color: "rgba(255,255,255,0.35)",
-                  fontSize: 13,
-                  marginTop: 12,
+                  color: "rgba(255,255,255,0.28)",
+                  fontSize: 12,
+                  marginTop: result.tagline ? 6 : 12,
                   fontStyle: "italic",
                 }}>
                   {result.lineage}
                 </p>
               )}
+
+              {/* Save to Favorites */}
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "center", gap: 10 }}>
+                <button
+                  onClick={saveFavorite}
+                  disabled={isFavorited}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "9px 20px", borderRadius: 20,
+                    border: isFavorited ? "1px solid rgba(239,83,80,0.4)" : "1px solid rgba(239,83,80,0.35)",
+                    background: isFavorited ? "rgba(239,83,80,0.2)" : "rgba(255,255,255,0.06)",
+                    color: isFavorited ? "#EF5350" : "rgba(255,255,255,0.55)",
+                    fontSize: 13, fontWeight: 700, cursor: isFavorited ? "default" : "pointer",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <span style={{ fontSize: 15 }}>{isFavorited ? "❤️" : "🤍"}</span>
+                  {isFavorited ? "Saved to Favorites" : "Save to Favorites"}
+                </button>
+              </div>
             </div>
 
-            {/* AI Summary */}
-            {result.description && (
-              <div style={{
-                padding: "16px 18px",
-                borderRadius: 16,
-                background: "rgba(255,255,255,0.04)",
-                marginBottom: 16,
-              }}>
-                <p style={{
-                  fontSize: 14,
-                  lineHeight: 1.7,
-                  color: "rgba(255,255,255,0.65)",
-                  margin: 0,
+            {/* ── TAB BAR ─────────────────────────────────────── */}
+            {(() => {
+              const tabs: Array<{ key: typeof activeTab; label: string; icon: string }> = [
+                { key: "overview", label: "Overview", icon: "🌿" },
+                { key: "medical", label: "Medical", icon: "🏥" },
+                { key: "grower", label: "Grower", icon: "🌱" },
+                { key: "breeder", label: "Breeder", icon: "🧬" },
+                { key: "dispensary", label: "Dispensary", icon: "🏪" },
+              ];
+              return (
+                <div style={{
+                  display: "flex",
+                  gap: 6,
+                  marginBottom: 18,
+                  overflowX: "auto",
+                  paddingBottom: 2,
+                  scrollbarWidth: "none",
                 }}>
-                  {result.description}
-                </p>
-              </div>
-            )}
-
-            {/* Effects */}
-            {result.effects.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: 1.5,
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.3)",
-                  marginBottom: 10,
-                }}>
-                  Effects
-                </h3>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {result.effects.map((e, i) => (
-                    <span key={i} style={{
-                      padding: "8px 16px",
-                      borderRadius: 24,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      background: "rgba(76,175,80,0.12)",
-                      color: "rgba(129,199,132,0.9)",
-                    }}>
-                      {e}
-                    </span>
+                  {tabs.map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      style={{
+                        flexShrink: 0,
+                        padding: "8px 14px",
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        border: activeTab === tab.key ? "1px solid rgba(76,175,80,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                        background: activeTab === tab.key ? "rgba(76,175,80,0.15)" : "rgba(255,255,255,0.04)",
+                        color: activeTab === tab.key ? "#81C784" : "rgba(255,255,255,0.45)",
+                        transition: "all 0.15s",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                      }}
+                    >
+                      <span>{tab.icon}</span>
+                      {tab.label}
+                    </button>
                   ))}
                 </div>
+              );
+            })()}
+
+            {/* ── OVERVIEW TAB ─────────────────────────────────── */}
+            {activeTab === "overview" && (
+              <div>
+
+                {/* 🔍 THE HOOK — AI Detective's Report */}
+                {result.description && (
+                  <div style={{
+                    padding: "20px",
+                    borderRadius: 18,
+                    background: "linear-gradient(135deg, rgba(255,193,7,0.07), rgba(255,152,0,0.04))",
+                    border: "1px solid rgba(255,193,7,0.22)",
+                    marginBottom: 16,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontSize: 18 }}>🔍</span>
+                      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.8, textTransform: "uppercase" as const, color: "rgba(255,193,7,0.75)" }}>AI Detective&apos;s Report</span>
+                    </div>
+                    <p style={{ fontSize: 14, lineHeight: 1.8, color: "rgba(255,255,255,0.78)", margin: 0 }}>{result.description}</p>
+                  </div>
+                )}
+
+                {/* 🎛️ Vibe Meter */}
+                {result.vibeScore && (
+                  <div style={{ padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.28)", marginBottom: 16 }}>🎛️ Vibe Meter</div>
+                    {([
+                      { label: "Energizing", key: "energizing" as const, icon: "⚡", color: "#66BB6A" },
+                      { label: "Creative",   key: "creative"   as const, icon: "🎨", color: "#AB47BC" },
+                      { label: "Social",     key: "social"     as const, icon: "👥", color: "#42A5F5" },
+                      { label: "Relaxing",   key: "relaxing"   as const, icon: "🌙", color: "#7E57C2" },
+                    ] as const).map((v, i, arr) => {
+                      const score = result.vibeScore![v.key];
+                      const pct = Math.round((score / 10) * 100);
+                      return (
+                        <div key={v.key} style={{ marginBottom: i < arr.length - 1 ? 14 : 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>{v.icon} {v.label}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: v.color }}>{score}/10</span>
+                          </div>
+                          <div style={{ height: 7, borderRadius: 7, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 7, background: v.color, opacity: 0.8 }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 🎯 Perfect For — Activity Pairings */}
+                {result.activityPairing.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>🎯 Perfect For</h3>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {result.activityPairing.map((a, i) => (
+                        <span key={i} style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          padding: "8px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600,
+                          background: "rgba(79,195,247,0.09)", color: "rgba(179,229,252,0.9)",
+                          border: "1px solid rgba(79,195,247,0.14)",
+                        }}>
+                          {activityEmoji(a)} {a}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 👅 Flavor & Aroma */}
+                {(result.flavorNotes || result.aromaProfile) && (
+                  <div style={{ padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.25)", marginBottom: 12 }}>👅 Flavor &amp; Aroma</div>
+                    {result.flavorNotes && (
+                      <div style={{ display: "flex", gap: 10, marginBottom: result.aromaProfile ? 12 : 0 }}>
+                        <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.3 }}>🍋</span>
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 3 }}>Taste</div>
+                          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", margin: 0, lineHeight: 1.6 }}>{result.flavorNotes}</p>
+                        </div>
+                      </div>
+                    )}
+                    {result.aromaProfile && (
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.3 }}>🌸</span>
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 3 }}>Aroma</div>
+                          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", margin: 0, lineHeight: 1.6 }}>{result.aromaProfile}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 💚 Expert Tip */}
+                {result.expertTip && (
+                  <div style={{
+                    padding: "16px 18px",
+                    borderRadius: 16,
+                    background: "linear-gradient(135deg, rgba(76,175,80,0.1), rgba(27,94,32,0.06))",
+                    border: "1px solid rgba(76,175,80,0.22)",
+                    marginBottom: 16,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                      <span style={{ fontSize: 16 }}>💚</span>
+                      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(129,199,132,0.75)" }}>Expert Tip</span>
+                    </div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", margin: 0, lineHeight: 1.7 }}>{result.expertTip}</p>
+                  </div>
+                )}
+
+                {/* Effects */}
+                {result.effects.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Effects</h3>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {result.effects.map((e, i) => (
+                        <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 600, background: "rgba(76,175,80,0.12)", color: "rgba(129,199,132,0.9)" }}>{e}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Terpenes */}
+                {result.terpenes.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Terpenes</h3>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {result.terpenes.map((t, i) => {
+                        const colors = [
+                          { bg: "rgba(171,71,188,0.12)", text: "rgba(206,147,216,0.9)" },
+                          { bg: "rgba(255,183,77,0.12)", text: "rgba(255,213,79,0.9)" },
+                          { bg: "rgba(79,195,247,0.12)", text: "rgba(129,212,250,0.9)" },
+                          { bg: "rgba(255,138,101,0.12)", text: "rgba(255,171,145,0.9)" },
+                        ];
+                        const c = colors[i % colors.length];
+                        return <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 600, background: c.bg, color: c.text }}>{t}</span>;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Visual Analysis */}
+                {(result.budStructure || result.trichomes || result.coloration || result.visualTraits.length > 0) && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Visual Analysis</h3>
+                    {result.budStructure && result.budStructure !== "Bud structure analysis complete" && (
+                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                        <span style={{ fontSize: 14 }}>🌿</span>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Structure: </strong>{result.budStructure}</p>
+                      </div>
+                    )}
+                    {result.trichomes && result.trichomes !== "Trichome assessment complete" && (
+                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                        <span style={{ fontSize: 14 }}>💎</span>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Trichomes: </strong>{result.trichomes}</p>
+                      </div>
+                    )}
+                    {result.coloration && result.coloration !== "Color analysis complete" && (
+                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                        <span style={{ fontSize: 14 }}>🎨</span>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Color: </strong>{result.coloration}</p>
+                      </div>
+                    )}
+                    {result.visualTraits.length > 0 && (
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, marginTop: 6 }}>
+                        {result.visualTraits.map((t, i) => (
+                          <span key={i} style={{ padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Could Also Be */}
+                {result.alternates.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Could Also Be</h3>
+                    <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+                      {result.alternates.map((a, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)" }}>
+                          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>{a.name}</span>
+                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{mapConfidence(a.confidence)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Better Results Tips */}
+                {result.tips.length > 0 && (
+                  <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", marginBottom: 8 }}>
+                    <h3 style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.2)", marginBottom: 6 }}>Better Results</h3>
+                    {result.tips.map((tip, i) => (
+                      <p key={i} style={{ fontSize: 12, lineHeight: 1.6, color: "rgba(255,255,255,0.4)", margin: "3px 0" }}>💡 {tip}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Terpenes */}
-            {result.terpenes.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: 1.5,
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.3)",
-                  marginBottom: 10,
-                }}>
-                  Terpenes
-                </h3>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {result.terpenes.map((t, i) => {
-                    const colors = [
-                      { bg: "rgba(171,71,188,0.12)", text: "rgba(206,147,216,0.9)" },
-                      { bg: "rgba(255,183,77,0.12)", text: "rgba(255,213,79,0.9)" },
-                      { bg: "rgba(79,195,247,0.12)", text: "rgba(129,212,250,0.9)" },
-                      { bg: "rgba(255,138,101,0.12)", text: "rgba(255,171,145,0.9)" },
-                    ];
-                    const c = colors[i % colors.length];
-                    return (
-                      <span key={i} style={{
-                        padding: "8px 16px",
-                        borderRadius: 24,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        background: c.bg,
-                        color: c.text,
-                      }}>
-                        {t}
-                      </span>
-                    );
-                  })}
+            {/* ── MEDICAL TAB ──────────────────────────────────── */}
+            {activeTab === "medical" && (
+              <div>
+                {result.medicalConditions.length > 0 && (
+                  <div style={{ padding: "18px", borderRadius: 16, background: "linear-gradient(135deg, rgba(56,142,60,0.12), rgba(27,94,32,0.08))", border: "1px solid rgba(76,175,80,0.2)", marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#81C784", marginBottom: 12 }}>🏥 Reported Medical Benefits</h3>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {result.medicalConditions.map((c, i) => (
+                        <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 700, background: "rgba(76,175,80,0.15)", color: "rgba(165,214,167,0.95)", border: "1px solid rgba(76,175,80,0.2)" }}>{c}</span>
+                      ))}
+                    </div>
+                    {result.cbdContext && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginTop: 12, marginBottom: 0 }}>{result.cbdContext}</p>}
+                  </div>
+                )}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 14 }}>
+                  {result.intensity && (
+                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
+                      <div style={{ fontSize: 22, marginBottom: 4 }}>{result.intensity === "Mild" ? "🟢" : result.intensity === "Moderate" ? "🟡" : result.intensity === "Strong" ? "🟠" : "🔴"}</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>Intensity</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{result.intensity}</div>
+                    </div>
+                  )}
+                  {result.timeOfDay && (
+                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
+                      <div style={{ fontSize: 22, marginBottom: 4 }}>{result.timeOfDay === "Daytime" ? "☀️" : result.timeOfDay === "Nighttime" ? "🌙" : result.timeOfDay === "Evening" ? "🌆" : "🕐"}</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>Best Time</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{result.timeOfDay}</div>
+                    </div>
+                  )}
+                  {result.thc && (
+                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
+                      <div style={{ fontSize: 22, marginBottom: 4 }}>🧪</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>THC</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#81C784", marginTop: 3 }}>{result.thc}</div>
+                    </div>
+                  )}
+                  {result.cbd && (
+                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
+                      <div style={{ fontSize: 22, marginBottom: 4 }}>💊</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>CBD</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#4FC3F7", marginTop: 3 }}>{result.cbd}</div>
+                    </div>
+                  )}
+                  {result.duration && (
+                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
+                      <div style={{ fontSize: 22, marginBottom: 4 }}>⏱️</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>Duration</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{result.duration}</div>
+                    </div>
+                  )}
                 </div>
+                {(result.cautions || result.sideEffects.length > 0) && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,152,0,0.06)", border: "1px solid rgba(255,152,0,0.18)", marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                      <span style={{ fontSize: 16 }}>⚠️</span>
+                      <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,183,77,0.8)", margin: 0 }}>Cautions</h3>
+                    </div>
+                    {result.cautions && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, margin: "0 0 10px" }}>{result.cautions}</p>}
+                    {result.sideEffects.length > 0 && (
+                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" as const }}>
+                        {result.sideEffects.map((s, i) => (
+                          <span key={i} style={{ padding: "6px 13px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(255,152,0,0.1)", color: "rgba(255,213,79,0.8)" }}>{s}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {result.bestUse.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Best For</h3>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {result.bestUse.map((u, i) => (
+                        <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 600, background: "rgba(255,183,77,0.1)", color: "rgba(255,213,79,0.85)" }}>{u}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Alternate Matches */}
-            {result.alternates.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                <h3 style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: 1.5,
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.3)",
-                  marginBottom: 10,
-                }}>
-                  Could Also Be
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {result.alternates.map((a, i) => (
-                    <div key={i} style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "10px 14px",
-                      borderRadius: 12,
-                      background: "rgba(255,255,255,0.03)",
-                    }}>
-                      <span style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>{a.name}</span>
-                      <span style={{
-                        fontSize: 12,
-                        color: "rgba(255,255,255,0.35)",
-                        fontWeight: 600,
-                      }}>
-                        {mapConfidence(a.confidence)}
-                      </span>
+            {/* ── GROWER TAB ───────────────────────────────────── */}
+            {activeTab === "grower" && (
+              <div>
+                {/* Stats grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  {[
+                    { label: "Difficulty", value: result.growDifficulty, icon: "⚡" },
+                    { label: "Flowering", value: result.floweringTime, icon: "🌸" },
+                    { label: "Veg Time", value: result.vegetativeTime, icon: "🌿" },
+                    { label: "Plant Height", value: result.plantHeight, icon: "📏" },
+                    { label: "Indoor Yield", value: result.yieldIndoor, icon: "🏠" },
+                    { label: "Outdoor Yield", value: result.yieldOutdoor, icon: "☀️" },
+                    { label: "Mold Resistance", value: result.moldResistance, icon: "🛡️" },
+                    { label: "Pest Resistance", value: result.pestResistance, icon: "🐛" },
+                    { label: "Cure Time", value: result.cureTime, icon: "⏰" },
+                  ].filter(s => s.value).map((stat, i) => (
+                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{stat.value}</div>
                     </div>
                   ))}
                 </div>
+                {result.trainingMethods.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Training Methods</h3>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {result.trainingMethods.map((m, i) => (
+                        <span key={i} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: "rgba(79,195,247,0.1)", color: "rgba(129,212,250,0.85)" }}>{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {result.nutrientNeeds && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>🌊 Nutrient Profile</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.nutrientNeeds}</p>
+                  </div>
+                )}
+                {result.climate && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>🌡️ Ideal Climate</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.climate}</p>
+                  </div>
+                )}
+                {result.harvestIndicators && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,183,77,0.06)", border: "1px solid rgba(255,183,77,0.15)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,213,79,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>🔬 Harvest Indicators</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.harvestIndicators}</p>
+                  </div>
+                )}
+                {result.growNotes && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(76,175,80,0.05)", border: "1px solid rgba(76,175,80,0.12)", marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(129,199,132,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>📝 Grow Notes</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.growNotes}</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Tips */}
-            {result.tips.length > 0 && (
-              <div style={{
-                padding: "14px 16px",
-                borderRadius: 12,
-                background: "rgba(255,255,255,0.03)",
-                marginBottom: 16,
-              }}>
-                <h3 style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: 1.5,
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.25)",
-                  marginBottom: 8,
-                }}>
-                  Better Results
-                </h3>
-                {result.tips.map((tip, i) => (
-                  <p key={i} style={{
-                    fontSize: 12,
-                    lineHeight: 1.6,
-                    color: "rgba(255,255,255,0.4)",
-                    margin: "4px 0",
-                  }}>
-                    💡 {tip}
-                  </p>
-                ))}
+            {/* ── BREEDER TAB ──────────────────────────────────── */}
+            {activeTab === "breeder" && (
+              <div>
+                {result.originStory && (
+                  <div style={{ padding: "16px", borderRadius: 14, background: "rgba(171,71,188,0.07)", border: "1px solid rgba(171,71,188,0.2)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(206,147,216,0.7)", textTransform: "uppercase" as const, marginBottom: 8 }}>🧬 Origin Story</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.7 }}>{result.originStory}</p>
+                  </div>
+                )}
+                {(result.parentStrains.length > 0 || result.grandparentStrains.length > 0) && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.04)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 10 }}>🌳 Genetic Lineage</div>
+                    {result.parentStrains.length > 0 && (
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>Parent Strains</div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                          {result.parentStrains.map((p, i) => (
+                            <span key={i} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 700, background: "rgba(171,71,188,0.15)", color: "rgba(206,147,216,0.9)" }}>{p}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {result.grandparentStrains.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginBottom: 6 }}>Grandparent Strains</div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                          {result.grandparentStrains.map((g, i) => (
+                            <span key={i} style={{ padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(171,71,188,0.08)", color: "rgba(206,147,216,0.6)" }}>{g}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  {[
+                    { label: "Genetic Stability", value: result.geneticStability, icon: "📊" },
+                    { label: "Seed Types", value: result.seedTypes, icon: "🌱" },
+                  ].filter(s => s.value).map((stat, i) => (
+                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{stat.value}</div>
+                    </div>
+                  ))}
+                </div>
+                {result.phenotypeVariation && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>🎭 Phenotype Variation</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.phenotypeVariation}</p>
+                  </div>
+                )}
+                {result.terpeneInheritance && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>🧪 Terpene Inheritance</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.terpeneInheritance}</p>
+                  </div>
+                )}
+                {result.breedingPotential && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(171,71,188,0.05)", border: "1px solid rgba(171,71,188,0.15)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(206,147,216,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>✨ Breeding Potential</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.breedingPotential}</p>
+                  </div>
+                )}
+                {result.breedingNotes && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>📝 Breeder Notes</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.breedingNotes}</p>
+                  </div>
+                )}
               </div>
             )}
+
+            {/* ── DISPENSARY TAB ───────────────────────────────── */}
+            {activeTab === "dispensary" && (
+              <div>
+                {result.salesDescription && (
+                  <div style={{ padding: "18px", borderRadius: 16, background: "linear-gradient(135deg, rgba(255,183,77,0.08), rgba(255,87,34,0.05))", border: "1px solid rgba(255,183,77,0.2)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,213,79,0.7)", marginBottom: 8 }}>🏪 Product Pitch</div>
+                    <p style={{ fontSize: 15, fontWeight: 500, color: "rgba(255,255,255,0.8)", margin: 0, lineHeight: 1.6 }}>{result.salesDescription}</p>
+                  </div>
+                )}
+                {result.menuDescription && (
+                  <div style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const, marginBottom: 4 }}>📋 Menu Copy</div>
+                    <p style={{ fontSize: 14, fontStyle: "italic", color: "rgba(255,255,255,0.7)", margin: 0 }}>"{result.menuDescription}"</p>
+                  </div>
+                )}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  {[
+                    { label: "Pricing Tier", value: result.pricingTier, icon: "💰" },
+                    { label: "Experience Level", value: result.experienceLevel, icon: "🎯" },
+                    { label: "Target Customer", value: result.targetCustomer, icon: "👤" },
+                  ].filter(s => s.value).map((stat, i) => (
+                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", gridColumn: stat.label === "Target Customer" ? "span 2" : undefined }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>{stat.value}</div>
+                    </div>
+                  ))}
+                </div>
+                {(result.flavorNotes || result.aromaProfile) && (
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
+                    {result.flavorNotes && (
+                      <div style={{ marginBottom: result.aromaProfile ? 10 : 0 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4 }}>👅 Flavor Profile</div>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.5 }}>{result.flavorNotes}</p>
+                      </div>
+                    )}
+                    {result.aromaProfile && (
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4, marginTop: result.flavorNotes ? 10 : 0 }}>👃 Aroma</div>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.5 }}>{result.aromaProfile}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {result.bestProductForms.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Best Product Forms</h3>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {result.bestProductForms.map((f, i) => (
+                        <span key={i} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, background: "rgba(255,183,77,0.1)", color: "rgba(255,213,79,0.85)" }}>{f}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {result.activityPairing.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Activity Pairings</h3>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                      {result.activityPairing.map((a, i) => (
+                        <span key={i} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, background: "rgba(79,195,247,0.1)", color: "rgba(129,212,250,0.85)" }}>{a}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {result.marketingTags.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Menu Tags</h3>
+                    <div style={{ display: "flex", gap: 7, flexWrap: "wrap" as const }}>
+                      {result.marketingTags.map((t, i) => (
+                        <span key={i} style={{ padding: "6px 12px", borderRadius: 16, fontSize: 12, fontWeight: 700, background: "rgba(239,83,80,0.1)", color: "rgba(239,154,154,0.85)", border: "1px solid rgba(239,83,80,0.15)" }}>{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {result.consultingScript && (
+                  <div style={{ padding: "16px", borderRadius: 14, background: "rgba(76,175,80,0.05)", border: "1px solid rgba(76,175,80,0.15)", marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(129,199,132,0.7)", textTransform: "uppercase" as const, marginBottom: 8 }}>💬 Budtender Script</div>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.7, fontStyle: "italic" }}>"{result.consultingScript}"</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── WHAT'S NEXT ──────────────────────────────────────── */}
+            <div style={{ marginTop: 24, marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.2)", marginBottom: 12, textAlign: "center" as const }}>Explore More</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <a href="/garden/dispensaries" style={{ textDecoration: "none" }}>
+                  <div style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" as const, cursor: "pointer" }}>
+                    <div style={{ fontSize: 24, marginBottom: 5 }}>🏪</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)" }}>Find Nearby</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Dispensaries</div>
+                  </div>
+                </a>
+                <a href="/garden/strains" style={{ textDecoration: "none" }}>
+                  <div style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" as const, cursor: "pointer" }}>
+                    <div style={{ marginBottom: 5, display: "flex", justifyContent: "center" }}><img src="/brand/cannabis-icon.png" width={24} height={24} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} /></div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)" }}>Browse Strains</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>35k+ cultivars</div>
+                  </div>
+                </a>
+                <button
+                  onClick={() => { setActiveTab("medical"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(56,142,60,0.07)", border: "1px solid rgba(76,175,80,0.13)", textAlign: "center" as const, cursor: "pointer" }}
+                >
+                  <div style={{ fontSize: 24, marginBottom: 5 }}>🏥</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(129,199,132,0.8)" }}>Medical Info</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Benefits &amp; cautions</div>
+                </button>
+                <button
+                  onClick={() => { setActiveTab("grower"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(56,142,60,0.07)", border: "1px solid rgba(76,175,80,0.13)", textAlign: "center" as const, cursor: "pointer" }}
+                >
+                  <div style={{ fontSize: 24, marginBottom: 5 }}>🌱</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(129,199,132,0.8)" }}>Grow Guide</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Tips &amp; yield data</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Community photo contribution notice */}
+            {photoContributed && (
+              <div style={{
+                display: "flex", alignItems: "flex-start", gap: 10,
+                padding: "12px 14px", borderRadius: 12, marginBottom: 4,
+                background: photoContributed === "verified"
+                  ? "rgba(102,187,106,0.08)" : "rgba(79,195,247,0.07)",
+                border: photoContributed === "verified"
+                  ? "1px solid rgba(102,187,106,0.2)" : "1px solid rgba(79,195,247,0.15)",
+              }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>
+                  {photoContributed === "verified" ? "✅" : "📸"}
+                </span>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: photoContributed === "verified" ? "#81C784" : "#4FC3F7", marginBottom: 2 }}>
+                    {photoContributed === "verified"
+                      ? "Photo added to the community database"
+                      : "Photo saved to your history"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+                    {photoContributed === "verified"
+                      ? "Your high-confidence scan is now visible on the terpene deep dive pages, helping others identify this strain."
+                      : "Reach 80%+ match confidence to have your photo contribute to the shared community gallery."}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Similar Strains */}
+            <SimilarStrains result={result} />
+
+            {/* ── Why Accuracy Varies ── */}
+            <div style={{
+              padding: "18px 20px",
+              borderRadius: 16,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              marginBottom: 16,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <span style={{ fontSize: 16 }}>🧠</span>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)" }}>
+                  Why Confidence Isn&apos;t Always 100%
+                </span>
+              </div>
+              <div style={{ display: "grid", gap: 12 }}>
+                {([
+                  { icon: "🌿", title: "Visual overlap is real", body: "Hundreds of strains share nearly identical color, bud structure, and trichome density. Purple Kush, Blackberry, and Granddaddy Purple can be almost indistinguishable in a photo." },
+                  { icon: "🌡️", title: "Grow conditions shift appearance", body: "Temperature swings, nutrients, light spectrum, and cure time all change how a strain looks — sometimes more dramatically than genetics do." },
+                  { icon: "🧬", title: "Phenotype variation", body: "Two clones from the same mother plant can look completely different. The AI sees the phenotype you grew, not necessarily the label on the jar." },
+                  { icon: "📸", title: "Photo quality matters", body: "Macro shots under white light with multiple angles give the best match rates. Blurry shots or warm grow-tent light drops confidence significantly." },
+                ] as Array<{ icon: string; title: string; body: string }>).map((item, i) => (
+                  <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <span style={{ fontSize: 18, flexShrink: 0, opacity: 0.65, marginTop: 1 }}>{item.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.58)", marginBottom: 2 }}>{item.title}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", lineHeight: 1.55 }}>{item.body}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: "rgba(102,187,106,0.05)", border: "1px solid rgba(102,187,106,0.11)" }}>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", margin: 0, lineHeight: 1.6 }}>
+                  <strong style={{ color: "rgba(102,187,106,0.65)" }}>You help us get better.</strong> Every scan you contribute trains the model to better distinguish look-alike cultivars. The more the community uses it, the sharper the AI gets.
+                </p>
+              </div>
+            </div>
 
             {/* Scan Again */}
             <div style={{
@@ -701,7 +1729,7 @@ export default function ScannerPage() {
               display: "flex",
               gap: 12,
               justifyContent: "center",
-              marginBottom: 20,
+              marginBottom: 28,
             }}>
               {[
                 { icon: "📐", label: "Multiple angles" },
@@ -723,6 +1751,74 @@ export default function ScannerPage() {
                 </div>
               ))}
             </div>
+
+            {/* ── Garden Enticement ── */}
+            <div style={{
+              padding: "22px 20px 20px",
+              borderRadius: 20,
+              background: "linear-gradient(145deg, rgba(46,125,50,0.1), rgba(27,94,32,0.05))",
+              border: "1px solid rgba(102,187,106,0.18)",
+              textAlign: "left",
+              marginBottom: 20,
+            }}>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}><img src="/brand/cannabis-icon.png" width={40} height={40} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} /></div>
+                <div style={{ fontWeight: 800, fontSize: 17, color: "#fff", marginBottom: 6 }}>
+                  {isLoggedIn ? "Explore Your Garden" : "The Scanner Is Just the Start"}
+                </div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>
+                  {isLoggedIn
+                    ? "You've got a full suite of cannabis tools waiting for you."
+                    : "Create a free account and unlock a full cannabis companion app — built for growers, consumers, and dispensary pros."}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
+                {([
+                  { icon: "🔬", title: "Strain Library", body: "35K+ strains with full genetics & effects" },
+                  { icon: "🧬", title: "Discovery", body: "Filter by effect, terpene, and experience" },
+                  { icon: "🧪", title: "Terpenes", body: "Deep dives + community photos" },
+                  { icon: "⚖️", title: "Compare", body: "Side-by-side strain comparison" },
+                  { icon: "🌱", title: "Grow Coach", body: "AI analysis on every journal entry" },
+                  { icon: "📍", title: "Directory", body: "Dispensaries & licensed growers nearby" },
+                  { icon: "🌰", title: "Seed Vendors", body: "Trusted seed sources worldwide" },
+                  { icon: "❤️", title: "Favorites", body: "Your personal strain collection" },
+                  { icon: "📓", title: "Journal", body: "Log sessions & track mood over time" },
+                  { icon: "👤", title: "Profile", body: "Your stats, personality type & history" },
+                  { icon: "🕑", title: "Scan History", body: "Every ID saved and searchable forever" },
+                  { icon: "💬", title: "Community", body: "Connect with growers & dispensaries" },
+                ] as Array<{ icon: string; title: string; body: string }>).map((f, i) => (
+                  <div key={i} style={{
+                    padding: "10px 10px",
+                    borderRadius: 10,
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                  }}>
+                    <div style={{ fontSize: 15, marginBottom: 3 }}>{f.icon}</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>{f.title}</div>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", lineHeight: 1.35 }}>{f.body}</div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => isLoggedIn ? router.push("/garden") : setShowAuth(true)}
+                style={{
+                  width: "100%", padding: "14px 0", borderRadius: 14,
+                  background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                  border: "none", color: "#fff", fontSize: 15, fontWeight: 800,
+                  cursor: "pointer", letterSpacing: 0.3,
+                  boxShadow: "0 4px 18px rgba(67,160,71,0.3)",
+                }}
+              >
+                {isLoggedIn ? "Open My Garden →" : "Join the Garden — Free"}
+              </button>
+              {!isLoggedIn && (
+                <p style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.18)", marginBottom: 0 }}>
+                  Free to join. Upgrade anytime for unlimited scans.
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -742,6 +1838,106 @@ export default function ScannerPage() {
         }
       `}</style>
 
+      {/* Photo Consent Modal */}
+      {showConsentModal && result && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+          padding: "0 16px 32px",
+        }}
+          onClick={() => setShowConsentModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: 440,
+              background: "linear-gradient(180deg, #111a11 0%, #0d150d 100%)",
+              border: "1px solid rgba(102,187,106,0.25)",
+              borderRadius: 24, padding: "24px 22px 28px",
+            }}
+          >
+            <div style={{ textAlign: "center", marginBottom: 18 }}>
+              <div style={{ fontSize: 38, marginBottom: 10 }}>📸</div>
+              <div style={{ fontWeight: 800, fontSize: 18, color: "#fff", marginBottom: 8 }}>
+                Help us build better AI
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.65 }}>
+                Your scan of <strong style={{ color: "#81C784" }}>{result.strainName}</strong> matched at {Math.round(result.confidence)}% confidence. Allow StrainSpotter to use this photo to improve strain identification for everyone?
+              </div>
+            </div>
+
+            <div style={{
+              background: "rgba(102,187,106,0.08)", border: "1px solid rgba(102,187,106,0.2)",
+              borderRadius: 12, padding: "12px 14px", marginBottom: 20,
+              display: "flex", alignItems: "flex-start", gap: 10,
+            }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>🎁</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "#81C784", marginBottom: 3 }}>
+                  Help improve StrainSpotter
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                  Your photo helps train our AI to better identify this cultivar for everyone. Contribute anonymously — no personal data attached.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 18, lineHeight: 1.5 }}>
+              Your photo may appear on terpene and strain pages to help other users identify this cultivar. You can opt out any time from Settings. We never sell your data.
+            </div>
+
+            <button
+              onClick={() => {
+                // Award credit + mark consent
+                addPhotoCredit();
+                setPhotoCredits(getPhotoCredits());
+                setCreditEarned(true);
+                localStorage.setItem(`ss_consented_${result.strainName}`, "1");
+                setShowConsentModal(false);
+              }}
+              style={{
+                width: "100%", padding: "14px 0", borderRadius: 14, marginBottom: 10,
+                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
+              }}
+            >
+              Yes — Contribute &amp; Earn +1 Scan
+            </button>
+            <button
+              onClick={() => {
+                localStorage.setItem(`ss_consented_${result.strainName}`, "declined");
+                setShowConsentModal(false);
+              }}
+              style={{
+                width: "100%", padding: "12px 0", borderRadius: 14,
+                background: "transparent", border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.45)", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              No thanks, skip
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Credit earned toast */}
+      {creditEarned && (
+        <div
+          style={{
+            position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)",
+            zIndex: 300, background: "linear-gradient(135deg, #43A047, #2E7D32)",
+            borderRadius: 50, padding: "10px 20px",
+            display: "flex", alignItems: "center", gap: 8,
+            boxShadow: "0 4px 24px rgba(67,160,71,0.4)",
+          }}
+          onAnimationEnd={() => setTimeout(() => setCreditEarned(false), 2000)}
+        >
+          <span style={{ fontSize: 16 }}>🎁</span>
+          <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>+1 bonus scan earned!</span>
+        </div>
+      )}
+
       {/* Auth overlay */}
       {showAuth && (
         <AuthScreen
@@ -749,8 +1945,6 @@ export default function ScannerPage() {
           onClose={() => setShowAuth(false)}
           onSuccess={() => {
             setShowAuth(false);
-            // Delay reload to let Supabase persist the session first
-            setTimeout(() => window.location.reload(), 800);
           }}
         />
       )}
