@@ -123,7 +123,10 @@ export function normalizeScanAnalysis(
       conflictingSignals: Array.isArray(reasoning.conflictingSignals)
         ? reasoning.conflictingSignals
         : null,
-      databaseMatch: reasoning.databaseMatch ?? false,
+      databaseMatch:
+        typeof reasoning.databaseMatch === "boolean"
+          ? reasoning.databaseMatch
+          : false,
     },
     disclaimer:
       "AI-assisted visual analysis powered by StrainSpotter's 314-strain database. Not a substitute for laboratory testing.",
