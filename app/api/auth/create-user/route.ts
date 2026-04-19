@@ -3,6 +3,7 @@
 // Bypasses client-side signUp() which hangs in this environment
 
 import { NextRequest, NextResponse } from "next/server";
+import { findAuthUserByEmail } from "@/lib/supabase/findAuthUserByEmail";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
@@ -20,9 +21,7 @@ export async function POST(req: NextRequest) {
 
     // Check if user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const existing = existingUsers?.users?.find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
+    const existing = findAuthUserByEmail(existingUsers, email);
 
     if (existing) {
       // User exists — just update their profile with membership

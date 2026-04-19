@@ -1,6 +1,9 @@
+// lib/scanner/scanRouteOrchestrator.ts
+
 import {
   assessImageQualityInputs,
   type ImageQualitySignal,
+  SCAN_SUPPORTED_IMAGE_MIMES,
 } from "@/lib/scanner/imageQuality";
 import type { RetrievalCandidate } from "@/lib/scanner/retrievalTypes";
 
@@ -10,7 +13,7 @@ export interface ScanOrchestratorInput {
 
 export interface ScanOrchestratorPreparation {
   quality: ImageQualitySignal;
-  preparedImages: string[]; // max 5
+  preparedImages: string[];
   supportedMimes: string[];
 }
 
@@ -19,13 +22,6 @@ export interface ScanFusionContext {
   retrievalCandidates: RetrievalCandidate[];
 }
 
-const SUPPORTED_MIMES = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-];
-
 export function prepareScanInputs(images: string[]): ScanOrchestratorPreparation {
   const safeImages = Array.isArray(images) ? images : [];
   const quality = assessImageQualityInputs(safeImages);
@@ -33,7 +29,7 @@ export function prepareScanInputs(images: string[]): ScanOrchestratorPreparation
   return {
     quality,
     preparedImages: safeImages.slice(0, 5),
-    supportedMimes: SUPPORTED_MIMES,
+    supportedMimes: SCAN_SUPPORTED_IMAGE_MIMES,
   };
 }
 
@@ -42,11 +38,7 @@ export function buildFusionContext(
 ): ScanFusionContext {
   return {
     quality,
-    retrievalCandidates: [
-      // TODO(scanner-brain): inject embedding retrieval candidates here.
-      // TODO(scanner-brain): inject metadata reranking candidates here.
-      // TODO(scanner-brain): inject OCR-backed candidates here.
-    ],
+    retrievalCandidates: [],
   };
 }
 
@@ -58,9 +50,6 @@ export function applyConfidenceAdjustments(
   const penaltyAdjusted = Math.round(
     numericBase - context.quality.qualityPenalty * 20
   );
-
-  // TODO(scanner-brain): add synthetic-image / stock-photo penalties here.
-  // TODO(scanner-brain): add retrieval agreement boosts here.
 
   return Math.max(0, Math.min(100, penaltyAdjusted));
 }

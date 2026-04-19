@@ -1,3 +1,5 @@
+// lib/scanner/embeddingDataset.ts
+
 export interface EmbeddedImageRecord {
   path: string;
   embedding: number[];

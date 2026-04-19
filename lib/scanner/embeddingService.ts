@@ -1,16 +1,35 @@
-import { Buffer } from "node:buffer";
+// lib/scanner/embeddingService.ts
+
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { pipeline, RawImage } from "@xenova/transformers";
 import type { RetrievalCandidate } from "@/lib/scanner/retrievalTypes";
 import {
   findNearestEmbeddedStrains,
   type StrainEmbeddingDataset,
 } from "@/lib/scanner/embeddingDataset";
 import { displayStrainNameForSlug } from "@/lib/scanner/strainSlug";
-import { pipeline, RawImage } from "@xenova/transformers";
 
 const MODEL_ID = "Xenova/clip-vit-base-patch32";
+const DEFAULT_DATASET_PATH = "data/embeddings/strain-embeddings.json";
 
+/** Drop very weak cosine neighbors so fusion is not dominated by noise. */
+const MIN_EMBEDDING_SIMILARITY = 0.2;
+
+/** Matches `reasons` text when `findNearestStrainsFromDataset` uses the mock path. */
+export const EMBEDDING_DATASET_MOCK_REASON = "Mock fallback: embedding dataset missing or empty";
+
+/** True when candidates came from CLIP + on-disk dataset (not the empty-dataset mock). */
+export function embeddingCandidatesFromDataset(
+  candidates: RetrievalCandidate[]
+): boolean {
+  if (candidates.length === 0) return false;
+  return !(candidates[0]?.reasons ?? []).some((r) =>
+    String(r).includes(EMBEDDING_DATASET_MOCK_REASON)
+  );
+}
+
+/** `pipeline()` return type is too wide for strict calls; runtime is CLIP image-feature-extraction. */
 let extractor: any = null;
 
 async function getExtractor() {
@@ -20,114 +39,83 @@ async function getExtractor() {
   return extractor;
 }
 
-/** Decode scan payload image string (data URL or raw base64) to a CLIP-ready `RawImage`. */
-export async function imagePayloadToRawImage(image: string): Promise<
-  InstanceType<typeof RawImage>
-> {
-  const trimmed = image.trim();
-  if (trimmed.startsWith("data:")) {
-    const comma = trimmed.indexOf(",");
-    if (comma === -1) {
-      throw new Error("Invalid data URL: missing payload");
-    }
-    const b64 = trimmed.slice(comma + 1).replace(/\s/g, "");
-    const buf = Buffer.from(b64, "base64");
-    return RawImage.fromBlob(new Blob([buf]));
-  }
-  const buf = Buffer.from(trimmed.replace(/\s/g, ""), "base64");
-  return RawImage.fromBlob(new Blob([buf]));
+function decodeDataUrl(image: string): Buffer {
+  const base64 = image.replace(/^data:[^;]+;base64,/, "");
+  return Buffer.from(base64, "base64");
 }
 
-/** CLIP embedding (L2-normalized 512-D) for the first image in the scan pipeline. */
+async function imagePayloadToRawImage(image: string): Promise<RawImage> {
+  const bytes = image.startsWith("data:")
+    ? decodeDataUrl(image)
+    : Buffer.from(image.replace(/\s/g, ""), "base64");
+
+  const blob = new Blob([new Uint8Array(bytes)]);
+  return await RawImage.fromBlob(blob);
+}
+
 export async function getImageEmbedding(image: string): Promise<number[]> {
   const model = await getExtractor();
-  const raw = await imagePayloadToRawImage(image);
-  const result = await model(raw, {
+  const rawImage = await imagePayloadToRawImage(image);
+
+  const result = await model(rawImage, {
     pooling: "mean",
     normalize: true,
   });
-  return Array.from(result.data);
+
+  return Array.from(result.data as Float32Array);
 }
 
-function cosineSimilarity(a: number[], b: number[]) {
-  let dot = 0;
-  let magA = 0;
-  let magB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
+async function loadStrainEmbeddingDataset(
+  datasetPath = DEFAULT_DATASET_PATH
+): Promise<StrainEmbeddingDataset | null> {
+  try {
+    const fullPath = join(process.cwd(), datasetPath);
+    const raw = await readFile(fullPath, "utf8");
+    return JSON.parse(raw) as StrainEmbeddingDataset;
+  } catch {
+    return null;
   }
-  return dot / (Math.sqrt(magA) * Math.sqrt(magB));
 }
 
-const mockEmbeddings = [
-  { strainName: "Blue Dream", embedding: new Array(512).fill(0.2) },
-  { strainName: "Sour Diesel", embedding: new Array(512).fill(0.15) },
-];
-
-async function findNearestStrainsMock(
-  embedding: number[]
-): Promise<RetrievalCandidate[]> {
-  const results: RetrievalCandidate[] = [];
-  for (const item of mockEmbeddings) {
-    const similarity = cosineSimilarity(embedding, item.embedding);
-    if (similarity > 0.5) {
-      results.push({
-        strainName: item.strainName,
-        score: similarity,
-        source: "embedding",
-        reasons: ["Visual similarity (CLIP embedding — mock fallback)"],
-      });
-    }
-  }
-  return results.sort((a, b) => b.score - a.score).slice(0, 3);
+export async function isEmbeddingDatasetAvailable(
+  datasetPath = DEFAULT_DATASET_PATH
+): Promise<boolean> {
+  const dataset = await loadStrainEmbeddingDataset(datasetPath);
+  return Boolean(dataset?.strains?.length);
 }
 
-let datasetLoad: Promise<StrainEmbeddingDataset | null> | null = null;
-
-async function loadStrainEmbeddingDataset(): Promise<StrainEmbeddingDataset | null> {
-  if (!datasetLoad) {
-    datasetLoad = (async () => {
-      try {
-        const filePath = join(
-          process.cwd(),
-          "data/embeddings/strain-embeddings.json"
-        );
-        const text = await readFile(filePath, "utf8");
-        return JSON.parse(text) as StrainEmbeddingDataset;
-      } catch {
-        return null;
-      }
-    })();
-  }
-  return datasetLoad;
-}
-
-export async function isEmbeddingDatasetAvailable(): Promise<boolean> {
-  const ds = await loadStrainEmbeddingDataset();
-  return !!ds?.strains?.length;
-}
-
-/**
- * Nearest strains from `data/embeddings/strain-embeddings.json` (built offline).
- * Falls back to a small mock only when the artifact is missing or empty.
- */
 export async function findNearestStrainsFromDataset(
-  embedding: number[]
+  embedding: number[],
+  datasetPath = DEFAULT_DATASET_PATH
 ): Promise<RetrievalCandidate[]> {
-  const dataset = await loadStrainEmbeddingDataset();
+  const dataset = await loadStrainEmbeddingDataset(datasetPath);
+
   if (!dataset?.strains?.length) {
-    return findNearestStrainsMock(embedding);
+    return [
+      {
+        strainName: "Blue Dream",
+        score: 0.6,
+        source: "embedding",
+        reasons: [EMBEDDING_DATASET_MOCK_REASON],
+      },
+      {
+        strainName: "Sour Diesel",
+        score: 0.55,
+        source: "embedding",
+        reasons: [EMBEDDING_DATASET_MOCK_REASON],
+      },
+    ];
   }
 
-  const hits = findNearestEmbeddedStrains(embedding, dataset, 8);
-  return hits.map((h) => ({
-    strainName: displayStrainNameForSlug(h.strainName, h.strainName),
-    score: h.score,
+  const nearest = findNearestEmbeddedStrains(embedding, dataset, 12);
+  const strong = nearest.filter((item) => item.score >= MIN_EMBEDDING_SIMILARITY);
+
+  return strong.map((item) => ({
+    strainName: displayStrainNameForSlug(item.strainName),
+    score: item.score,
     source: "embedding",
     reasons: [
-      `CLIP vs labeled dataset (${h.imageCount} reference images) · cosine ${h.score.toFixed(3)}`,
+      `CLIP cosine similarity ${item.score.toFixed(3)} (dataset neighbors; weak matches filtered)`,
     ],
   }));
 }

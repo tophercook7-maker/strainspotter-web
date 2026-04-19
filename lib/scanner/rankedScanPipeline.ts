@@ -6,6 +6,8 @@
 import type { ScanAnalysisRaw } from "@/lib/scanner/scanTypes";
 import { convertGptMatchesToCandidates } from "@/lib/scanner/scanFusion";
 
+export { resolveStrainSlug } from "@/lib/scanner/strainSlug";
+
 export interface UnifiedScanPayload {
   status: "ok" | "limited" | "error";
   resultType: "match" | "no_match" | "degraded";
@@ -19,15 +21,6 @@ export interface UnifiedScanPayload {
   growCoach: unknown;
   improveTips: string[];
   poorImageMessage?: string;
-}
-
-/** Normalize a cultivar label to a stable slug for bucketing / catalog lookup. */
-export function resolveStrainSlug(raw: string): string {
-  return raw
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 export function buildUnifiedScanPayload(

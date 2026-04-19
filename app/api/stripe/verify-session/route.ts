@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { findAuthUserByEmail } from "@/lib/supabase/findAuthUserByEmail";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -42,9 +43,7 @@ export async function GET(req: NextRequest) {
       try {
         const supabase = getSupabaseAdmin();
         const { data: userList } = await supabase.auth.admin.listUsers();
-        const user = userList?.users?.find(
-          (u) => u.email?.toLowerCase() === email.toLowerCase()
-        );
+        const user = findAuthUserByEmail(userList, email);
 
         if (user) {
           const membership = tier === "pro" ? "pro" : "garden";

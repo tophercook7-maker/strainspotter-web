@@ -1,6 +1,4 @@
-/**
- * Lightweight image input preflight (string-level only — no decode, no extra deps).
- */
+// lib/scanner/imageQuality.ts
 
 export interface ImageQualitySignal {
   imageCount: number;
@@ -13,15 +11,12 @@ export interface ImageQualitySignal {
   shouldWarnUser: boolean;
 }
 
-/** Exported for orchestrator / route — same supported set as the vision API path. */
 export const SCAN_SUPPORTED_IMAGE_MIMES = [
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
-] as const;
-
-const SUPPORTED_MIMES: readonly string[] = SCAN_SUPPORTED_IMAGE_MIMES;
+];
 
 const TOO_SMALL_LENGTH_THRESHOLD = 20_000;
 
@@ -51,7 +46,7 @@ export function assessImageQualityInputs(images: string[]): ImageQualitySignal {
     }
 
     const mimeType = extractMimeType(img);
-    if (mimeType && !SUPPORTED_MIMES.includes(mimeType)) {
+    if (mimeType && !SCAN_SUPPORTED_IMAGE_MIMES.includes(mimeType)) {
       unsupportedMimeCount += 1;
     }
   }
@@ -59,15 +54,11 @@ export function assessImageQualityInputs(images: string[]): ImageQualitySignal {
   const warnings: string[] = [];
 
   if (estimatedTooSmallImageCount > 0) {
-    warnings.push(
-      "Some uploaded images may be too small for reliable analysis."
-    );
+    warnings.push("Some uploaded images may be too small for reliable analysis.");
   }
 
   if (unsupportedMimeCount > 0) {
-    warnings.push(
-      "Some uploaded images use unsupported formats and may be coerced to JPEG."
-    );
+    warnings.push("Some uploaded images use unsupported formats and may be coerced to JPEG.");
   }
 
   if (imageCount < 2 && hasImages) {

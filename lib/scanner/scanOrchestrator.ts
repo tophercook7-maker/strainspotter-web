@@ -5,6 +5,70 @@
 import type { ScannerViewModel } from "./viewModel";
 import type { ScanResult, WikiSynthesis } from "./types";
 
+/** Top-level `/api/scan` fields (hybrid pipeline) for UI — does not replace legacy `result`. */
+export interface HybridScanPresentation {
+  matches?: Array<{ strainName: string; confidence: number; reasons?: string[] }>;
+  plantAnalysis?: unknown;
+  growCoach?: unknown;
+  improveTips?: string[];
+  poorImageMessage?: string;
+  scanWarnings?: string[];
+}
+
+function extractHybridPresentation(
+  data: Record<string, unknown>
+): HybridScanPresentation | undefined {
+  const matchesRaw = data.matches;
+  const matches = Array.isArray(matchesRaw)
+    ? matchesRaw
+        .map((m) => {
+          if (!m || typeof m !== "object") return null;
+          const o = m as Record<string, unknown>;
+          const strainName =
+            typeof o.strainName === "string" ? o.strainName.trim() : "";
+          const confidence = Number(o.confidence);
+          if (!strainName || !Number.isFinite(confidence)) return null;
+          const reasons = Array.isArray(o.reasons)
+            ? o.reasons.filter((r): r is string => typeof r === "string")
+            : undefined;
+          return { strainName, confidence, reasons };
+        })
+        .filter((x) => x !== null) as HybridScanPresentation["matches"]
+    : undefined;
+
+  const improveTips = Array.isArray(data.improveTips)
+    ? data.improveTips.filter((t): t is string => typeof t === "string")
+    : undefined;
+
+  const scanWarnings = Array.isArray(data.scanWarnings)
+    ? data.scanWarnings.filter((t): t is string => typeof t === "string")
+    : undefined;
+
+  const poorImageMessage =
+    typeof data.poorImageMessage === "string" && data.poorImageMessage.trim()
+      ? data.poorImageMessage.trim()
+      : undefined;
+
+  const has =
+    (matches && matches.length > 0) ||
+    data.plantAnalysis != null ||
+    data.growCoach != null ||
+    (improveTips && improveTips.length > 0) ||
+    poorImageMessage ||
+    (scanWarnings && scanWarnings.length > 0);
+
+  if (!has) return undefined;
+
+  return {
+    ...(matches && matches.length > 0 ? { matches } : {}),
+    ...(data.plantAnalysis != null ? { plantAnalysis: data.plantAnalysis } : {}),
+    ...(data.growCoach != null ? { growCoach: data.growCoach } : {}),
+    ...(improveTips && improveTips.length > 0 ? { improveTips } : {}),
+    ...(poorImageMessage ? { poorImageMessage } : {}),
+    ...(scanWarnings && scanWarnings.length > 0 ? { scanWarnings } : {}),
+  };
+}
+
 export interface OrchestratedScanResult {
   displayName: string;
   confidencePercent: number;
@@ -13,6 +77,8 @@ export interface OrchestratedScanResult {
   warnings?: string[];
   rawScannerResult: ScannerViewModel;
   normalizedScanResult: ScanResult;
+  /** Present when the API returned hybrid / unified fields alongside `result`. */
+  hybridPresentation?: HybridScanPresentation;
 }
 
 /* ─── Image compression ─── */
@@ -449,6 +515,7 @@ export async function orchestrateScan(images: File[], authToken?: string): Promi
       summary: [viewModel.visualMatchSummary],
       rawScannerResult: viewModel,
       normalizedScanResult: scanResult,
+      hybridPresentation: extractHybridPresentation(data as Record<string, unknown>),
     };
   } catch (error: any) {
     console.error("orchestrateScan error:", error);
@@ -516,5 +583,6 @@ function buildFallback(message: string, imageCount: number): OrchestratedScanRes
     summary: [message],
     rawScannerResult: fallbackVm as ScannerViewModel,
     normalizedScanResult: fallbackResult,
+    hybridPresentation: undefined,
   };
 }

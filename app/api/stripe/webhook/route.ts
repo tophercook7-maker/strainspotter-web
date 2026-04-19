@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { findAuthUserByEmail } from "@/lib/supabase/findAuthUserByEmail";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -26,9 +27,7 @@ async function updateProfileByEmail(
 
   // Look up user in auth.users by email
   const { data: userList } = await supabase.auth.admin.listUsers();
-  const user = userList?.users?.find(
-    (u) => u.email?.toLowerCase() === email.toLowerCase()
-  );
+  const user = findAuthUserByEmail(userList, email);
 
   if (!user) {
     console.log(`⚠️ No Supabase user found for ${email} — will sync on next login`);
@@ -101,9 +100,7 @@ export async function POST(req: NextRequest) {
         const supabase = getSupabaseAdmin();
 
         const { data: userList } = await supabase.auth.admin.listUsers();
-        const user = userList?.users?.find(
-          (u) => u.email?.toLowerCase() === customerEmail.toLowerCase()
-        );
+        const user = findAuthUserByEmail(userList, customerEmail);
 
         if (user) {
           // Get current balance then add

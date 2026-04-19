@@ -1,3 +1,5 @@
+// lib/scanner/strainMatcher.ts
+
 import strainDb from "@/lib/data/strains.json";
 import type { RetrievalCandidate } from "@/lib/scanner/retrievalTypes";
 
@@ -9,6 +11,7 @@ interface StrainEntry {
     budStructure?: string;
     trichomeDensity?: string;
     leafShape?: string;
+    pistilColor?: string[];
   };
 }
 
@@ -31,6 +34,67 @@ function scoreTextSimilarity(a: string, b: string) {
   return matches / Math.max(aWords.length, 1);
 }
 
+/** Light boosts when GPT reason text aligns with catalog visualProfile (bounded). */
+function visualKeywordBoostFromReasons(
+  gpt: RetrievalCandidate,
+  strain: StrainEntry
+): number {
+  const parts = [...(gpt.reasons ?? []), gpt.strainName].filter(
+    (s): s is string => typeof s === "string" && s.trim().length > 0
+  );
+  const hay = normalize(parts.join(" "));
+  const vp = strain.visualProfile;
+  if (!hay || !vp) return 0;
+
+  const color = (vp.colorProfile ?? "").toLowerCase();
+  const bud = (vp.budStructure ?? "").toLowerCase();
+  const tri = (vp.trichomeDensity ?? "").toLowerCase();
+  const leaf = (vp.leafShape ?? "").toLowerCase();
+  const pistil = Array.isArray(vp.pistilColor)
+    ? vp.pistilColor.join(" ").toLowerCase()
+    : "";
+
+  let b = 0;
+
+  if (hay.includes("purple") && (color.includes("purple") || color.includes("violet"))) {
+    b += 0.05;
+  }
+  if (hay.includes("dense") && bud.includes("dense")) {
+    b += 0.04;
+  }
+  if (hay.includes("airy") && (bud.includes("airy") || bud.includes("open"))) {
+    b += 0.04;
+  }
+  if (
+    hay.includes("frosty") &&
+    (tri.includes("frost") || tri.includes("dense") || tri.includes("high") || tri.includes("heavy"))
+  ) {
+    b += 0.04;
+  }
+  if (
+    (hay.includes("orange") && hay.includes("hair")) &&
+    (pistil.includes("orange") || color.includes("orange"))
+  ) {
+    b += 0.04;
+  }
+  if (
+    hay.includes("broad") &&
+    hay.includes("leaf") &&
+    (leaf.includes("broad") || leaf.includes("wide") || leaf.includes("indica"))
+  ) {
+    b += 0.04;
+  }
+  if (
+    hay.includes("narrow") &&
+    hay.includes("leaf") &&
+    (leaf.includes("narrow") || leaf.includes("thin") || leaf.includes("sativa"))
+  ) {
+    b += 0.04;
+  }
+
+  return Math.min(0.15, b);
+}
+
 export function generateMetadataCandidates(
   gptCandidates: RetrievalCandidate[]
 ): RetrievalCandidate[] {
@@ -46,15 +110,12 @@ export function generateMetadataCandidates(
 
       let score = 0;
 
-      // Name similarity
       score += scoreTextSimilarity(gptName, name) * 0.5;
 
-      // Type similarity (indica/sativa/hybrid)
       if (strain.type && gptName.includes(strain.type.toLowerCase())) {
         score += 0.2;
       }
 
-      // Visual traits matching
       const vp = strain.visualProfile;
 
       if (vp?.colorProfile && gptName.includes(vp.colorProfile.toLowerCase())) {
@@ -68,6 +129,8 @@ export function generateMetadataCandidates(
       if (vp?.leafShape && gptName.includes(vp.leafShape.toLowerCase())) {
         score += 0.1;
       }
+
+      score += visualKeywordBoostFromReasons(gpt, strain);
 
       if (score > 0.25) {
         results.push({

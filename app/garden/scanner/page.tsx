@@ -2,7 +2,12 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
+import { orchestrateScan, type HybridScanPresentation } from "@/lib/scanner/scanOrchestrator";
+import {
+  HybridScanLeadSections,
+  HybridScanDetailSections,
+  matchConfidenceTier,
+} from "./HybridScanResultSections";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
 
@@ -371,6 +376,7 @@ export default function ScannerPage() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [result, setResult] = useState<SimpleResult | null>(null);
+  const [hybridPresentation, setHybridPresentation] = useState<HybridScanPresentation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -422,6 +428,7 @@ export default function ScannerPage() {
       return next;
     });
     setResult(null);
+    setHybridPresentation(null);
     setError(null);
     setScanState("ready");
   }, []);
@@ -434,12 +441,14 @@ export default function ScannerPage() {
       return next;
     });
     setResult(null);
+    setHybridPresentation(null);
   };
 
   const clearAll = () => {
     setImages([]);
     setPreviews([]);
     setResult(null);
+    setHybridPresentation(null);
     setError(null);
     setScanState("idle");
     setIsFavorited(false);
@@ -474,10 +483,12 @@ export default function ScannerPage() {
 
     setScanState("scanning");
     setError(null);
+    setHybridPresentation(null);
 
     try {
       const authToken = auth?.session?.access_token || undefined;
       const orchestrated = await orchestrateScan(images, authToken);
+      setHybridPresentation(orchestrated.hybridPresentation ?? null);
       const vm = orchestrated.rawScannerResult;
 
       const vm_chem = (vm as any).chemistry || {};
@@ -947,6 +958,7 @@ export default function ScannerPage() {
         {/* ── RESULT CARD ── */}
         {result && scanState === "done" && (
           <div style={{ marginTop: 12 }}>
+            <HybridScanLeadSections hybrid={hybridPresentation} />
             {/* Strain Name Hero */}
             <div style={{
               textAlign: "center",
@@ -990,7 +1002,7 @@ export default function ScannerPage() {
                   fontWeight: 600,
                   color: "rgba(255,255,255,0.7)",
                 }}>
-                  {result.confidenceLabel}
+                  {Math.round(Math.min(100, Math.max(0, result.confidence)))}% · {matchConfidenceTier(result.confidence)}
                 </span>
               </div>
 
@@ -1037,6 +1049,8 @@ export default function ScannerPage() {
                 </button>
               </div>
             </div>
+
+            <HybridScanDetailSections hybrid={hybridPresentation} />
 
             {/* ── TAB BAR ─────────────────────────────────────── */}
             {(() => {

@@ -1,30 +1,48 @@
-import strainDb from "@/lib/data/strains.json";
-import { resolveStrainSlug } from "@/lib/scanner/rankedScanPipeline";
+// lib/scanner/strainSlug.ts
 
-interface StrainRow {
+import strainDb from "@/lib/data/strains.json";
+
+interface StrainEntry {
   name: string;
 }
 
-/** Title-case a folder slug for UI when no catalog match exists. */
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function resolveStrainSlug(name: string): string | null {
+  const target = slugify(name);
+
+  for (const entry of strainDb as StrainEntry[]) {
+    if (slugify(entry.name) === target) {
+      return target;
+    }
+  }
+
+  return target || null;
+}
+
 export function titleCaseSlug(slug: string): string {
   return slug
     .split("-")
     .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }
 
-/**
- * Prefer canonical catalog casing; fall back to hint or title-cased slug.
- */
-export function displayStrainNameForSlug(
-  slug: string,
-  hint?: string
-): string {
-  const rows = strainDb as StrainRow[];
-  for (const row of rows) {
-    if (resolveStrainSlug(row.name) === slug) return row.name;
+export function displayStrainNameForSlug(slug: string): string {
+  const resolved = resolveStrainSlug(slug);
+  if (!resolved) return titleCaseSlug(slug);
+
+  for (const entry of strainDb as StrainEntry[]) {
+    if (slugify(entry.name) === resolved) {
+      return entry.name;
+    }
   }
-  if (hint?.trim() && resolveStrainSlug(hint) === slug) return hint.trim();
+
   return titleCaseSlug(slug);
 }

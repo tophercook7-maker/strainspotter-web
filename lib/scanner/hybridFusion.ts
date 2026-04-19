@@ -1,118 +1,117 @@
-/**
- * Weighted hybrid fusion: CLIP embedding neighbors + GPT bucket scores + metadata catalog hints.
- * Strains are keyed by catalog slug so "Blue Dream" and "blue-dream" merge.
- */
+// lib/scanner/hybridFusion.ts
 
-import type { RetrievalCandidate } from "@/lib/scanner/retrievalTypes";
-import { resolveStrainSlug } from "@/lib/scanner/rankedScanPipeline";
-import { displayStrainNameForSlug } from "@/lib/scanner/strainSlug";
-import type { FusedCandidate } from "@/lib/scanner/scanFusion";
+import type { RetrievalCandidate, RetrievalSource } from "@/lib/scanner/retrievalTypes";
+import { resolveStrainSlug } from "@/lib/scanner/strainSlug";
 
-export interface HybridFusionWeights {
+export interface FusedCandidate {
+  strainName: string;
+  score: number; // 0 to 100
+  sources: RetrievalSource[];
+  reasons: string[];
+}
+
+interface FusionWeights {
   gpt: number;
   embedding: number;
   metadata: number;
 }
 
-/** Weights sum to 1 — GPT explains, CLIP grounds, metadata nudges catalog fit. */
-export const DEFAULT_HYBRID_WEIGHTS: HybridFusionWeights = {
+const DEFAULT_WEIGHTS: FusionWeights = {
   gpt: 0.45,
   embedding: 0.35,
   metadata: 0.2,
 };
 
-type SourceKey = "gpt" | "embedding" | "metadata" | "ocr";
+/** Extra boost when GPT agrees with embedding or metadata on the same slug (conservative cap). */
+const MAX_PAIR_BONUS = 5;
 
-function normalizeWeights(w: HybridFusionWeights): HybridFusionWeights {
-  const sum = w.gpt + w.embedding + w.metadata;
-  if (sum <= 0) return DEFAULT_HYBRID_WEIGHTS;
-  return {
-    gpt: w.gpt / sum,
-    embedding: w.embedding / sum,
-    metadata: w.metadata / sum,
-  };
-}
-
-/**
- * Merge retrieval rows by strain slug, take best score per source, then weighted sum (0–100).
- * OCR-backed rows count toward the GPT channel for weighting.
- */
 export function fuseHybridScanCandidates(
   candidates: RetrievalCandidate[],
-  weights: HybridFusionWeights = DEFAULT_HYBRID_WEIGHTS
+  weights: FusionWeights = DEFAULT_WEIGHTS
 ): FusedCandidate[] {
-  const w = normalizeWeights(weights);
-
-  const buckets = new Map<
+  const grouped = new Map<
     string,
     {
-      slug: string;
-      bestHint: string;
-      best: Partial<Record<SourceKey, number>>;
+      strainName: string;
+      bestBySource: Partial<Record<"gpt" | "embedding" | "metadata", number>>;
+      sources: Set<RetrievalSource>;
       reasons: Set<string>;
     }
   >();
 
-  for (const c of candidates) {
-    const rawName = typeof c.strainName === "string" ? c.strainName.trim() : "";
-    if (!rawName) continue;
+  for (const candidate of candidates) {
+    const displayName =
+      typeof candidate.strainName === "string" ? candidate.strainName.trim() : "";
+    if (!displayName) continue;
 
-    const slug = resolveStrainSlug(rawName);
-    const src = c.source as SourceKey;
-    const channel: SourceKey =
-      src === "ocr" ? "gpt" : src === "gpt" || src === "embedding" || src === "metadata" ? src : "gpt";
+    const slug = resolveStrainSlug(displayName) || displayName.toLowerCase();
 
-    if (!buckets.has(slug)) {
-      buckets.set(slug, {
-        slug,
-        bestHint: rawName,
-        best: {},
-        reasons: new Set(),
+    if (!grouped.has(slug)) {
+      grouped.set(slug, {
+        strainName: displayName,
+        bestBySource: {},
+        sources: new Set<RetrievalSource>(),
+        reasons: new Set<string>(),
       });
     }
-    const b = buckets.get(slug)!;
-    if (rawName.length > b.bestHint.length) b.bestHint = rawName;
 
-    const score = Math.max(0, Math.min(1, Number(c.score) || 0));
-    const prev = b.best[channel];
-    if (prev === undefined || score > prev) b.best[channel] = score;
+    const entry = grouped.get(slug)!;
 
-    for (const r of c.reasons ?? []) {
-      if (typeof r === "string" && r.trim()) b.reasons.add(r.trim());
+    const normalizedSource: "gpt" | "embedding" | "metadata" =
+      candidate.source === "ocr"
+        ? "gpt"
+        : candidate.source === "embedding"
+          ? "embedding"
+          : candidate.source === "metadata"
+            ? "metadata"
+            : "gpt";
+
+    entry.sources.add(candidate.source);
+
+    const numericScore = Math.max(0, Math.min(1, Number(candidate.score) || 0));
+    const existing = entry.bestBySource[normalizedSource] ?? 0;
+    entry.bestBySource[normalizedSource] = Math.max(existing, numericScore);
+
+    for (const reason of candidate.reasons ?? []) {
+      if (typeof reason === "string" && reason.trim()) {
+        entry.reasons.add(reason.trim());
+      }
     }
   }
 
-  const fused: FusedCandidate[] = [];
+  const fused: FusedCandidate[] = Array.from(grouped.values()).map((entry) => {
+    const gptScore = entry.bestBySource.gpt ?? 0;
+    const embeddingScore = entry.bestBySource.embedding ?? 0;
+    const metadataScore = entry.bestBySource.metadata ?? 0;
 
-  for (const b of buckets.values()) {
-    const g = b.best.gpt ?? 0;
-    const e = b.best.embedding ?? 0;
-    const m = b.best.metadata ?? 0;
+    const weighted =
+      gptScore * weights.gpt +
+      embeddingScore * weights.embedding +
+      metadataScore * weights.metadata;
 
-    const combined01 =
-      w.gpt * g + w.embedding * e + w.metadata * m;
+    const agreementCount = [
+      gptScore > 0,
+      embeddingScore > 0,
+      metadataScore > 0,
+    ].filter(Boolean).length;
 
-    const sourcesPresent = [g > 0, e > 0, m > 0].filter(Boolean).length;
-    const agreementBonus = Math.min(12, Math.max(0, (sourcesPresent - 1) * 6));
+    const spreadBonus = Math.min(10, Math.max(0, (agreementCount - 1) * 3));
 
-    let score = Math.round(Math.min(100, combined01 * 100 + agreementBonus));
-    score = Math.max(0, Math.min(100, score));
+    const gptEmbPair = gptScore > 0 && embeddingScore > 0 ? 3 : 0;
+    const gptMetaPair = gptScore > 0 && metadataScore > 0 ? 2 : 0;
+    const pairBonus = Math.min(MAX_PAIR_BONUS, gptEmbPair + gptMetaPair);
 
-    const strainName = displayStrainNameForSlug(b.slug, b.bestHint);
+    const raw = weighted * 100 + spreadBonus + pairBonus;
 
-    const sources: FusedCandidate["sources"] = [];
-    if (g > 0) sources.push("gpt");
-    if (e > 0) sources.push("embedding");
-    if (m > 0) sources.push("metadata");
-
-    fused.push({
-      strainName,
-      score,
-      sources,
-      reasons: Array.from(b.reasons),
-    });
-  }
+    return {
+      strainName: entry.strainName,
+      score: Math.max(0, Math.min(100, Math.round(raw))),
+      sources: Array.from(entry.sources),
+      reasons: Array.from(entry.reasons),
+    };
+  });
 
   fused.sort((a, b) => b.score - a.score);
+
   return fused;
 }

@@ -1,6 +1,4 @@
-/**
- * Shared types for embedding / metadata / OCR / GPT retrieval candidates.
- */
+// lib/scanner/retrievalTypes.ts
 
 export type RetrievalSource = "embedding" | "metadata" | "ocr" | "gpt";
 
