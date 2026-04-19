@@ -1,0 +1,11 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Voice - microphone -->
+  <rect x="12" y="6" width="8" height="12" rx="4" stroke="#42FFB2" stroke-width="2.5" fill="none"/>
+  <path d="M14 18 L14 22" stroke="#42FFB2" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M18 18 L18 22" stroke="#42FFB2" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M10 22 L22 22" stroke="#42FFB2" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M12 26 L20 26" stroke="#42FFB2" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Sound waves -->
+  <path d="M6 14 Q8 12, 8 16 T6 18" stroke="#42FFB2" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <path d="M26 14 Q24 12, 24 16 T26 18" stroke="#42FFB2" stroke-width="1.5" fill="none" opacity="0.6"/>
+</svg>

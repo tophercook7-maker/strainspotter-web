@@ -1,0 +1,27 @@
+# Desktop / Tauri
+pipeline-control/
+src-tauri/
+*.rs
+
+# Supabase edge / functions (root only — not lib/supabase/)
+/supabase/
+scripts/
+ml-training/
+
+# Experiments & quarantine
+__quarantine__/
+
+# System
+.DS_Store
+.env*
+.vscode/
+logs/
+archive/
+
+!app/lib/**
+# --- Allow Supabase server client ---
+!app/_server/
+!app/_server/**
+!app/_server/supabase/
+!app/_server/supabase/**
+!app/_server/supabase/server.ts

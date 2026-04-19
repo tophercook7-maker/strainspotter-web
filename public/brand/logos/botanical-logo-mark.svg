@@ -1,0 +1,20 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon-only mark for Dock and mobile -->
+  <g transform="translate(12, 12)">
+    <!-- Main leaf body -->
+    <path d="M20 20 C20 13, 25 8, 30 5 C35 2, 40 1, 45 3 C50 5, 52 8, 52 13 C52 18, 50 21, 48 23 C46 25, 44 26, 42 27 C40 28, 38 29, 36 29 C34 29, 32 28, 30 27 C28 26, 26 25, 24 24 C22 23, 21 22, 20 20 Z" 
+          fill="#111416" 
+          stroke="#42FFB2" 
+          stroke-width="2.5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+    <!-- Leaf veins -->
+    <path d="M30 5 L30 23" stroke="#42FFB2" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M25 11 L35 18" stroke="#42FFB2" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+    <path d="M35 11 L25 18" stroke="#42FFB2" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+    <!-- Accent hotspot -->
+    <circle cx="30" cy="13" r="3" fill="#42FFB2" opacity="0.8">
+      <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

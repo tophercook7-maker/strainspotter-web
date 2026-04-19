@@ -1,7 +1,73 @@
-node_modules/
-.next/
-.vercel/
-.env
-.env*.local
-*.log
+# ===============================
+# BLOCK EVERYTHING THAT IS NOT THE NEXT.JS WEB APP
+# ===============================
+
+# Tooling / experiments
+pipeline-control/
+ml-training/
+supabase/functions/
+supabase/_shared/
+__quarantine__/
+env/
+logs/
+
+# Desktop / native
+src-tauri/
+tauri.conf.json
+
+# Local/editor
+.vscode/
 .DS_Store
+
+# Node noise
+node_modules/
+
+# Ignore everything by default
+*
+
+# ===============================
+# ALLOW ONLY THE WEB APP
+# ===============================
+!app/
+!app/**
+!components/
+!components/**
+!styles/
+!styles/**
+!public/
+!next.config.*
+!package.json
+!package-lock.json
+!tsconfig.json
+!postcss.config.js
+!tailwind.config.js
+!tailwind.config.ts
+!GLASS_UI*.md
+# ===============================
+# ALLOW DESKTOP APP
+# ===============================
+!desktop/
+!desktop/strainspotter-desktop/
+!desktop/strainspotter-desktop/**
+!lib/
+!lib/**
+
+# Hybrid scanner: embedding dataset + offline build scripts
+!data/
+!data/**
+!scripts/
+!scripts/**
+
+# ===============================
+# ENVIRONMENT / SECRETS (never commit)
+# ===============================
+.env
+.env.local
+.env.dataset
+.env.pipeline.local
+.env.*.local
+
+# Example / template env files (safe to commit)
+!.env.example
+!.env.local.example
+!.env.dataset.example

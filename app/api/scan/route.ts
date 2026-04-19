@@ -16,7 +16,7 @@ import {
   prepareScanInputs,
   buildFusionContext,
   applyConfidenceAdjustments,
-} from "@/lib/scanner/scanOrchestrator";
+} from "@/lib/scanner/scanRouteOrchestrator";
 import { convertGptMatchesToCandidates } from "@/lib/scanner/scanFusion";
 import { fuseHybridScanCandidates } from "@/lib/scanner/hybridFusion";
 import { generateMetadataCandidates } from "@/lib/scanner/strainMatcher";
