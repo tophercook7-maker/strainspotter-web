@@ -1,5 +1,6 @@
 "use client";
 
+import { apiUrl } from "@/lib/config/apiBase";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ScanPaywall from "@/components/ScanPaywall";
@@ -239,7 +240,7 @@ export default function SettingsPage() {
     if (!isLoggedIn || !auth?.session?.access_token) return;
     setSavingProfile(true);
     try {
-      await fetch("/api/profile", {
+      await fetch(apiUrl("/api/profile"), {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

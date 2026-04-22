@@ -1,5 +1,6 @@
 "use client";
 
+import { apiUrl } from "@/lib/config/apiBase";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -41,7 +42,7 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/strain-of-the-day")
+    fetch(apiUrl("/api/strain-of-the-day"))
       .then((r) => r.json())
       .then((d) => { setStrain(d.strain ?? null); setDate(d.date ?? ""); })
       .catch(() => {})
@@ -197,7 +198,7 @@ function UserStats({ auth }: { auth: any }) {
 
   useEffect(() => {
     if (!token) { setLoading(false); return; }
-    fetch("/api/user-stats", { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl("/api/user-stats"), { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((d) => setStats(d.totalScans != null ? d : null))
       .catch(() => {})

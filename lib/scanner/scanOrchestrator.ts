@@ -2,8 +2,14 @@
 // REWRITE: Call /api/scan directly, bypass bloated pipeline
 // Maps GPT-4o Vision response → ScannerViewModel → ScanResult
 
+import { apiUrl } from "@/lib/config/apiBase";
 import type { ScannerViewModel } from "./viewModel";
 import type { ScanResult, WikiSynthesis } from "./types";
+import {
+  computeCenterAspectCrop,
+  scaleToMaxDimension,
+  SCANNER_JPEG_MAX_EDGE,
+} from "@/lib/scanner/scannerImageGeometry";
 
 /** Top-level `/api/scan` fields (hybrid pipeline) for UI — does not replace legacy `result`. */
 export interface HybridScanPresentation {
@@ -69,41 +75,126 @@ function extractHybridPresentation(
   };
 }
 
+/** Top-level `/api/scan` `status` / `resultType` for optional client messaging (additive). */
+export interface ScanPayloadUiFlags {
+  status?: "ok" | "needs_better_images";
+  resultType?: "matched" | "unresolved";
+}
+
+function extractApiScanSummary(data: Record<string, unknown>): string | undefined {
+  const s = data.summary;
+  if (typeof s === "string" && s.trim()) return s.trim();
+  return undefined;
+}
+
+function extractScanPayloadFlags(
+  data: Record<string, unknown>
+): ScanPayloadUiFlags | undefined {
+  const status = data.status;
+  const resultType = data.resultType;
+  const out: ScanPayloadUiFlags = {};
+  if (status === "ok" || status === "needs_better_images") {
+    out.status = status;
+  }
+  if (resultType === "matched" || resultType === "unresolved") {
+    out.resultType = resultType;
+  }
+  return out.status !== undefined || out.resultType !== undefined
+    ? out
+    : undefined;
+}
+
 export interface OrchestratedScanResult {
   displayName: string;
   confidencePercent: number;
   confidenceTier: "Low" | "Medium" | "High" | "Very High";
   summary: string[];
+  /** Top-level `summary` string from `/api/scan` (hybrid pipeline narrative). */
+  apiScanSummary?: string;
   warnings?: string[];
   rawScannerResult: ScannerViewModel;
   normalizedScanResult: ScanResult;
   /** Present when the API returned hybrid / unified fields alongside `result`. */
   hybridPresentation?: HybridScanPresentation;
+  /** Top-level scan payload hints from `/api/scan` (optional). */
+  scanPayloadFlags?: ScanPayloadUiFlags;
 }
 
 /* ─── Image compression ─── */
-const MAX_DIMENSION = 1536;  // GPT-4o "high" detail tiles at 512px — 1536 = 3×3 tiles max
-const JPEG_QUALITY  = 0.82;  // Good balance: sharp enough for trichomes, small enough to send
+const MAX_DIMENSION = SCANNER_JPEG_MAX_EDGE; // GPT-4o "high" detail tiles at 512px — 1536 = 3×3 tiles max
+const JPEG_QUALITY  = 0.86;  // Slightly higher than 0.82 to preserve trichome edges after resize
+
+const EXPOSURE_GAIN_MAX = 1.5;
+/** Skip lift when sampled mean luminance exceeds this (0–255). */
+const EXPOSURE_MEAN_SKIP_ABOVE = 80;
+const EXPOSURE_BRIGHT_SKIP_AT_OR_ABOVE = 210;
+
+export interface ImageCompressResult {
+  dataUrl: string;
+  /** Multiplicative gain applied on the canvas (1 = none). Logged with `/api/scan` for debugging. */
+  exposureGain: number;
+}
+
+/**
+ * Gentle exposure lift for very dark frames. Gain capped at {@link EXPOSURE_GAIN_MAX};
+ * not applied when mean luminance > {@link EXPOSURE_MEAN_SKIP_ABOVE}/255.
+ * @returns Applied multiplicative gain (>= 1).
+ */
+function liftDarkExposure(ctx: CanvasRenderingContext2D, w: number, h: number): number {
+  if (w <= 0 || h <= 0) return 1;
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  let sum = 0;
+  const stride = 32;
+  let n = 0;
+  for (let i = 0; i < d.length; i += stride) {
+    sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    n++;
+  }
+  const avg = n ? sum / n : 128;
+  if (avg > EXPOSURE_MEAN_SKIP_ABOVE || avg >= EXPOSURE_BRIGHT_SKIP_AT_OR_ABOVE) return 1;
+
+  const raw = 48 / Math.max(10, avg);
+  const gain = Math.min(EXPOSURE_GAIN_MAX, raw);
+  if (gain <= 1.01) return 1;
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = Math.min(255, d[i] * gain);
+    d[i + 1] = Math.min(255, d[i + 1] * gain);
+    d[i + 2] = Math.min(255, d[i + 2] * gain);
+  }
+  ctx.putImageData(img, 0, 0);
+  return gain;
+}
 
 /** Compress a Blob/File that the browser can already decode via canvas → JPEG data-URL */
-async function blobToJpegDataUrl(blob: Blob): Promise<string> {
+async function blobToJpegDataUrl(blob: Blob): Promise<ImageCompressResult> {
   // Try createImageBitmap first (no blob URL needed, avoids iframe security issues)
   if (typeof createImageBitmap !== "undefined") {
     try {
       const bitmap = await createImageBitmap(blob);
-      let { width, height } = bitmap;
-      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-        const scale = MAX_DIMENSION / Math.max(width, height);
-        width  = Math.round(width * scale);
-        height = Math.round(height * scale);
-      }
+      const crop = computeCenterAspectCrop(bitmap.width, bitmap.height);
+      const { outW, outH } = scaleToMaxDimension(crop.cw, crop.ch);
       const canvas = document.createElement("canvas");
-      canvas.width = width; canvas.height = height;
+      canvas.width = outW;
+      canvas.height = outH;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("no-ctx");
-      ctx.drawImage(bitmap, 0, 0, width, height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(
+        bitmap,
+        crop.sx,
+        crop.sy,
+        crop.cw,
+        crop.ch,
+        0,
+        0,
+        outW,
+        outH
+      );
+      const exposureGain = liftDarkExposure(ctx, outW, outH);
       bitmap.close();
-      return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+      return { dataUrl: canvas.toDataURL("image/jpeg", JPEG_QUALITY), exposureGain };
     } catch { /* fall through */ }
   }
 
@@ -113,18 +204,30 @@ async function blobToJpegDataUrl(blob: Blob): Promise<string> {
     const url = URL.createObjectURL(blob);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      let { width, height } = img;
-      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-        const scale = MAX_DIMENSION / Math.max(width, height);
-        width  = Math.round(width * scale);
-        height = Math.round(height * scale);
-      }
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+      const crop = computeCenterAspectCrop(iw, ih);
+      const { outW, outH } = scaleToMaxDimension(crop.cw, crop.ch);
       const canvas = document.createElement("canvas");
-      canvas.width = width; canvas.height = height;
+      canvas.width = outW;
+      canvas.height = outH;
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("no-ctx")); return; }
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(
+        img,
+        crop.sx,
+        crop.sy,
+        crop.cw,
+        crop.ch,
+        0,
+        0,
+        outW,
+        outH
+      );
+      const exposureGain = liftDarkExposure(ctx, outW, outH);
+      resolve({ dataUrl: canvas.toDataURL("image/jpeg", JPEG_QUALITY), exposureGain });
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img-load")); };
     img.src = url;
@@ -138,7 +241,7 @@ async function blobToJpegDataUrl(blob: Blob): Promise<string> {
  * Other formats go through canvas compression.
  * Raw data-URL is the last resort so the API's error handler can surface a helpful message.
  */
-async function compressImage(file: File): Promise<string> {
+async function compressImage(file: File): Promise<ImageCompressResult> {
   const isHeic = file.type === "image/heic" || file.type === "image/heif" ||
                  file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
 
@@ -148,7 +251,7 @@ async function compressImage(file: File): Promise<string> {
       const heic2any = (await import("heic2any")).default;
       const result = await heic2any({ blob: file, toType: "image/jpeg", quality: JPEG_QUALITY });
       const jpegBlob = Array.isArray(result) ? result[0] : result;
-      return blobToJpegDataUrl(jpegBlob);
+      return await blobToJpegDataUrl(jpegBlob);
     } catch (e) {
       console.warn("heic2any conversion failed, falling back to raw:", e);
       // Fall through to raw as last resort
@@ -163,7 +266,8 @@ async function compressImage(file: File): Promise<string> {
   // ── Last resort: send raw bytes; API error handler surfaces friendly message
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () =>
+      resolve({ dataUrl: reader.result as string, exposureGain: 1 });
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -182,7 +286,11 @@ function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerV
   const reasoning = data.reasoning || {};
 
   const strainName = identity.strainName || "Unknown Cultivar";
-  const confidence = Math.max(55, Math.min(95, Number(identity.confidence) || 60));
+  /** Use server-fused 0–100 score as-is (`buildLegacyResultBlob` patches identity from hybrid matches). */
+  const rawIdentityConfidence = Number(identity.confidence);
+  const confidence = Number.isFinite(rawIdentityConfidence)
+    ? Math.max(0, Math.min(100, rawIdentityConfidence))
+    : 0;
   const dominance = genetics.dominance || "Hybrid";
   const lineageArr: string[] = Array.isArray(genetics.lineage) ? genetics.lineage : [];
   const lineageStr = lineageArr.length > 0 ? lineageArr.join(" × ") : "Unknown lineage";
@@ -244,8 +352,8 @@ function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerV
 
     // Confidence range
     confidenceRange: {
-      min: Math.max(50, confidence - 10),
-      max: Math.min(98, confidence + 5),
+      min: Math.max(0, confidence - 10),
+      max: Math.min(100, confidence + 5),
       explanation: "Range reflects phenotype variation and image quality factors",
     },
 
@@ -262,7 +370,10 @@ function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerV
     // Primary match
     primaryMatch: {
       name: strainName,
-      confidenceRange: { min: Math.max(50, confidence - 10), max: Math.min(98, confidence + 5) },
+      confidenceRange: {
+        min: Math.max(0, confidence - 10),
+        max: Math.min(100, confidence + 5),
+      },
       whyThisMatch: reasoning.whyThisMatch || "Visual feature alignment",
     },
 
@@ -276,8 +387,8 @@ function apiToViewModel(data: Record<string, any>, imageCount: number): ScannerV
     trustLayer: {
       confidenceBreakdown: {
         visualSimilarity: confidence,
-        traitOverlap: Math.max(50, confidence - 5),
-        consensusStrength: imageCount > 1 ? confidence : Math.max(50, confidence - 10),
+        traitOverlap: Math.max(0, confidence - 5),
+        consensusStrength: imageCount > 1 ? confidence : Math.max(0, confidence - 10),
       },
       whyThisMatch: reasoning.whyThisMatch
         ? [reasoning.whyThisMatch]
@@ -408,9 +519,10 @@ function apiToSynthesis(data: Record<string, any>): WikiSynthesis {
   const genetics = data.genetics || {};
   const experience = data.experience || {};
 
+  const synC = Number(identity.confidence);
   return {
     strain: identity.strainName || "Unknown",
-    confidence: Number(identity.confidence) || 60,
+    confidence: Number.isFinite(synC) ? Math.max(0, Math.min(100, synC)) : 0,
     dominance: (genetics.dominance as "Indica" | "Sativa" | "Hybrid") || "Hybrid",
     effects: Array.isArray(experience.effects) ? experience.effects : [],
     terpenes: [],
@@ -424,8 +536,10 @@ export async function orchestrateScan(images: File[], authToken?: string): Promi
   }
 
   try {
-    // 1. Compress & convert all images (resize to 1536px max, JPEG @ 82%)
-    const base64Images = await Promise.all(images.map(compressImage));
+    // 1. Compress & convert all images (resize to 1536px max, JPEG)
+    const packed = await Promise.all(images.map((f) => compressImage(f)));
+    const base64Images = packed.map((p) => p.dataUrl);
+    const exposureLiftGains = packed.map((p) => p.exposureGain);
 
     // 2. Call /api/scan directly (45s timeout for GPT-4o Vision)
     const controller = new AbortController();
@@ -438,10 +552,13 @@ export async function orchestrateScan(images: File[], authToken?: string): Promi
 
     let response: Response;
     try {
-      response = await fetch("/api/scan", {
+      response = await fetch(apiUrl("/api/scan"), {
         method: "POST",
         headers,
-        body: JSON.stringify({ images: base64Images }),
+        body: JSON.stringify({
+          images: base64Images,
+          clientPrepDiagnostics: { exposureLiftGains },
+        }),
         signal: controller.signal,
       });
     } catch (fetchErr: any) {
@@ -457,12 +574,22 @@ export async function orchestrateScan(images: File[], authToken?: string): Promi
       let reason = `status ${response.status}`;
       try {
         const errBody = await response.json();
-        if (errBody?.detail?.includes?.("insufficient_quota")) {
+        if (response.status === 403 && errBody?.code === "SCAN_LIMIT_REACHED") {
+          reason =
+            typeof errBody.error === "string"
+              ? errBody.error
+              : "Scan limit reached for your account";
+        } else if (errBody?.detail?.includes?.("insufficient_quota")) {
           reason = "OpenAI API credits exhausted — contact support";
         } else if (errBody?.detail?.includes?.("rate_limit")) {
           reason = "Too many requests — wait a moment and try again";
         } else if (errBody?.detail?.includes?.("image_parse_error") || errBody?.detail?.includes?.("unsupported image")) {
           reason = "Image format not supported — try taking a new photo instead of selecting from gallery";
+        } else if (response.status === 504) {
+          reason =
+            typeof errBody.error === "string"
+              ? errBody.error
+              : "Scan timed out on the server — try fewer or smaller images";
         } else if (errBody?.error) {
           reason = errBody.error;
           if (errBody?.detail) reason += ` (${String(errBody.detail).slice(0, 120)})`;
@@ -513,9 +640,11 @@ export async function orchestrateScan(images: File[], authToken?: string): Promi
       confidencePercent: confidence,
       confidenceTier: tier,
       summary: [viewModel.visualMatchSummary],
+      apiScanSummary: extractApiScanSummary(data as Record<string, unknown>),
       rawScannerResult: viewModel,
       normalizedScanResult: scanResult,
       hybridPresentation: extractHybridPresentation(data as Record<string, unknown>),
+      scanPayloadFlags: extractScanPayloadFlags(data as Record<string, unknown>),
     };
   } catch (error: any) {
     console.error("orchestrateScan error:", error);
@@ -581,8 +710,10 @@ function buildFallback(message: string, imageCount: number): OrchestratedScanRes
     confidencePercent: 0,
     confidenceTier: "Low",
     summary: [message],
+    apiScanSummary: undefined,
     rawScannerResult: fallbackVm as ScannerViewModel,
     normalizedScanResult: fallbackResult,
     hybridPresentation: undefined,
+    scanPayloadFlags: undefined,
   };
 }

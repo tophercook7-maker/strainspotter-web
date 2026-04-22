@@ -1,16 +1,12 @@
 /**
  * Unified scan payload + legacy result shaping for `/api/scan`.
- * Strain slug resolution for hybrid fusion + catalog display names.
  */
-
-import type { ScanAnalysisRaw } from "@/lib/scanner/scanTypes";
-import { convertGptMatchesToCandidates } from "@/lib/scanner/scanFusion";
 
 export { resolveStrainSlug } from "@/lib/scanner/strainSlug";
 
 export interface UnifiedScanPayload {
-  status: "ok" | "limited" | "error";
-  resultType: "match" | "no_match" | "degraded";
+  status: "ok" | "needs_better_images";
+  resultType: "matched" | "unresolved";
   summary: string;
   matches: Array<{
     strainName: string;
@@ -27,84 +23,98 @@ export function buildUnifiedScanPayload(
   analysis: Record<string, unknown>,
   imageCount: number
 ): UnifiedScanPayload {
-  void imageCount;
-  const raw = analysis as ScanAnalysisRaw;
-  const imageSignals = raw.imageSignals;
-  const usable = imageSignals?.usableVisualSignal !== false;
+  const imageSignals =
+    analysis.imageSignals && typeof analysis.imageSignals === "object"
+      ? (analysis.imageSignals as Record<string, unknown>)
+      : {};
 
-  const gptCandidates = convertGptMatchesToCandidates(raw.rankedMatches);
-  const matches = gptCandidates.map((c) => ({
-    strainName: c.strainName,
-    confidence: Math.round(Math.max(0, Math.min(100, (c.score ?? 0) * 100))),
-    reasons: c.reasons ?? [],
-  }));
+  const plantAnalysis =
+    analysis.plantAnalysis && typeof analysis.plantAnalysis === "object"
+      ? analysis.plantAnalysis
+      : null;
 
-  const identity = raw.identity;
-  const reasoning = raw.reasoning;
+  const growCoach =
+    analysis.growCoach && typeof analysis.growCoach === "object"
+      ? analysis.growCoach
+      : null;
 
-  const summary =
-    typeof reasoning?.whyThisMatch === "string" && reasoning.whyThisMatch.trim()
-      ? reasoning.whyThisMatch.trim()
-      : typeof identity?.strainName === "string" && identity.strainName.trim()
-        ? `Analysis suggests ${identity.strainName.trim()} as the leading match.`
-        : "Visual analysis complete. Review matches and plant details below.";
+  const rankedMatches = Array.isArray(analysis.rankedMatches)
+    ? analysis.rankedMatches
+    : [];
 
-  const plantAnalysis = raw.plantAnalysis ?? null;
-  const growCoach = raw.growCoach ?? null;
+  const identity =
+    analysis.identity && typeof analysis.identity === "object"
+      ? (analysis.identity as Record<string, unknown>)
+      : {};
 
-  const improveTips: string[] = [];
-  const gc = raw.growCoach;
-  if (gc && typeof gc === "object") {
-    const rec = gc as Record<string, unknown>;
-    const pa = Array.isArray(rec.priorityActions) ? rec.priorityActions : [];
-    const sug = Array.isArray(rec.suggestions) ? rec.suggestions : [];
-    improveTips.push(
-      ...pa.filter((x): x is string => typeof x === "string"),
-      ...sug.filter((x): x is string => typeof x === "string")
-    );
-  }
+  const matches = rankedMatches.slice(0, 3).map((match) => {
+    const m = match as Record<string, unknown>;
+    return {
+      strainName:
+        typeof m.strainName === "string" ? m.strainName : "Unknown Cultivar",
+      confidence:
+        typeof identity.confidence === "number" ? identity.confidence : 60,
+      reasons: Array.isArray(m.reasons)
+        ? m.reasons.filter((r): r is string => typeof r === "string")
+        : [],
+    };
+  });
 
-  let poorImageMessage: string | undefined;
-  let status: UnifiedScanPayload["status"] = "ok";
-  let resultType: UnifiedScanPayload["resultType"] = "match";
-
-  if (!usable) {
-    status = "limited";
-    resultType = "no_match";
-    poorImageMessage =
-      "Image quality or framing limits strain identification. Try brighter lighting, closer focus, or a clearer view of flower or labels.";
-  } else if (matches.length === 0) {
-    resultType = "no_match";
-  }
+  const usableVisualSignal = imageSignals.usableVisualSignal !== false;
 
   return {
-    status,
-    resultType,
-    summary,
+    status: usableVisualSignal ? "ok" : "needs_better_images",
+    resultType: matches.length > 0 ? "matched" : "unresolved",
+    summary:
+      matches.length > 0
+        ? `Top match: ${matches[0].strainName}`
+        : imageCount > 1
+          ? "No confident cultivar match found across uploaded images."
+          : "No confident cultivar match found.",
     matches,
     plantAnalysis,
     growCoach,
-    improveTips,
-    ...(poorImageMessage ? { poorImageMessage } : {}),
+    improveTips: usableVisualSignal
+      ? [
+          "Use multiple angles for better match confidence.",
+          "Try brighter, sharper photos with the bud filling more of the frame.",
+        ]
+      : [
+          "Use brighter lighting.",
+          "Keep the bud in focus and centered.",
+          "Try multiple angles or include packaging text if available.",
+        ],
+    poorImageMessage: usableVisualSignal
+      ? undefined
+      : "Image quality may be too poor for reliable analysis.",
   };
 }
 
 export function buildLegacyResultBlob(
   legacyNormalized: Record<string, unknown>,
-  fusedMatches: Array<{ strainName: string; confidence: number; reasons: string[] }>
+  matches: Array<{ strainName: string; confidence: number; reasons: string[] }>
 ): Record<string, unknown> {
-  const out = { ...legacyNormalized };
-  const prevIdentity =
-    typeof out.identity === "object" && out.identity !== null
-      ? (out.identity as Record<string, unknown>)
+  const identity =
+    legacyNormalized.identity && typeof legacyNormalized.identity === "object"
+      ? (legacyNormalized.identity as Record<string, unknown>)
       : {};
-  const identity = { ...prevIdentity };
 
-  if (fusedMatches.length > 0) {
-    identity.strainName = fusedMatches[0].strainName;
-    identity.confidence = fusedMatches[0].confidence;
-  }
-
-  out.identity = identity;
-  return out;
+  return {
+    ...legacyNormalized,
+    identity: {
+      ...identity,
+      strainName:
+        matches[0]?.strainName ||
+        (typeof identity.strainName === "string"
+          ? identity.strainName
+          : "Unknown Cultivar"),
+      confidence:
+        matches[0]?.confidence ||
+        (typeof identity.confidence === "number" ? identity.confidence : 60),
+      alternateMatches: matches.slice(1).map((m) => ({
+        strainName: m.strainName,
+        confidence: m.confidence,
+      })),
+    },
+  };
 }

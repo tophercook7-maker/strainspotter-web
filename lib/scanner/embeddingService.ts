@@ -8,7 +8,10 @@ import {
   findNearestEmbeddedStrains,
   type StrainEmbeddingDataset,
 } from "@/lib/scanner/embeddingDataset";
-import { displayStrainNameForSlug } from "@/lib/scanner/strainSlug";
+import {
+  displayStrainNameForSlug,
+  resolveStrainSlug,
+} from "@/lib/scanner/strainSlug";
 
 const MODEL_ID = "Xenova/clip-vit-base-patch32";
 const DEFAULT_DATASET_PATH = "data/embeddings/strain-embeddings.json";
@@ -16,17 +19,144 @@ const DEFAULT_DATASET_PATH = "data/embeddings/strain-embeddings.json";
 /** Drop very weak cosine neighbors so fusion is not dominated by noise. */
 const MIN_EMBEDDING_SIMILARITY = 0.2;
 
+/** After merging strains across images, keep this many for fusion (descending score). */
+const MAX_MERGED_EMBEDDING_CANDIDATES = 36;
+
+/** Conservative multi-image agreement boost on best per-strain score (0..1). */
+const MULTI_IMAGE_BOOST_PER_EXTRA_PHOTO = 0.02;
+const MULTI_IMAGE_BOOST_CAP = 0.06;
+
+function mergeKeyForStrain(strainName: string): string {
+  const trimmed = strainName.trim();
+  return resolveStrainSlug(trimmed) || trimmed.toLowerCase();
+}
+
 /** Matches `reasons` text when `findNearestStrainsFromDataset` uses the mock path. */
 export const EMBEDDING_DATASET_MOCK_REASON = "Mock fallback: embedding dataset missing or empty";
 
-/** True when candidates came from CLIP + on-disk dataset (not the empty-dataset mock). */
+/** True when at least one candidate came from CLIP + on-disk dataset (not the mock path). */
 export function embeddingCandidatesFromDataset(
   candidates: RetrievalCandidate[]
 ): boolean {
   if (candidates.length === 0) return false;
-  return !(candidates[0]?.reasons ?? []).some((r) =>
-    String(r).includes(EMBEDDING_DATASET_MOCK_REASON)
+  return candidates.some(
+    (c) =>
+      !(c.reasons ?? []).some((r) =>
+        String(r).includes(EMBEDDING_DATASET_MOCK_REASON)
+      )
   );
+}
+
+export type MultiImageEmbeddingResult = {
+  candidates: RetrievalCandidate[];
+  /** Images for which embedding + retrieval succeeded (failed images skipped). */
+  embeddingImageCount: number;
+  /** True when the top merged embedding candidate was supported by ≥2 images. */
+  embeddingTopStrainMultiImageReinforced: boolean;
+};
+
+/**
+ * Per image: CLIP embedding → nearest strains. Merge by strain (slug), keep best raw
+ * score per strain, count distinct supporting images, merge reasons, apply a small
+ * multi-image boost (capped), sort descending. Scores stay in 0..1 before fusion.
+ */
+export async function findNearestStrainsFromImages(
+  images: string[]
+): Promise<MultiImageEmbeddingResult> {
+  if (!Array.isArray(images) || images.length === 0) {
+    return {
+      candidates: [],
+      embeddingImageCount: 0,
+      embeddingTopStrainMultiImageReinforced: false,
+    };
+  }
+
+  type Acc = {
+    displayName: string;
+    bestScore: number;
+    imageIndices: Set<number>;
+    reasons: string[];
+  };
+
+  const byKey = new Map<string, Acc>();
+  let embeddingImageCount = 0;
+
+  for (let i = 0; i < images.length; i += 1) {
+    try {
+      const embedding = await getImageEmbedding(images[i]!);
+      const batch = await findNearestStrainsFromDataset(embedding);
+      embeddingImageCount += 1;
+
+      for (const c of batch) {
+        const raw = Number(c.score);
+        const score = Math.max(0, Math.min(1, Number.isFinite(raw) ? raw : 0));
+        const key = mergeKeyForStrain(c.strainName);
+        const nextReasons = (c.reasons ?? []).filter(
+          (r): r is string => typeof r === "string" && r.trim().length > 0
+        );
+
+        const existing = byKey.get(key);
+        if (!existing) {
+          byKey.set(key, {
+            displayName: c.strainName.trim(),
+            bestScore: score,
+            imageIndices: new Set([i]),
+            reasons: [...nextReasons],
+          });
+        } else {
+          if (score > existing.bestScore) {
+            existing.bestScore = score;
+            existing.displayName = c.strainName.trim();
+          }
+          existing.imageIndices.add(i);
+          for (const r of nextReasons) {
+            if (!existing.reasons.includes(r)) {
+              existing.reasons.push(r);
+            }
+          }
+        }
+      }
+    } catch {
+      /* continue with remaining images */
+    }
+  }
+
+  const rows: Array<{ candidate: RetrievalCandidate; supportCount: number }> = [];
+
+  for (const acc of byKey.values()) {
+    const n = acc.imageIndices.size;
+    const boost = Math.min(
+      MULTI_IMAGE_BOOST_CAP,
+      Math.max(0, (n - 1) * MULTI_IMAGE_BOOST_PER_EXTRA_PHOTO)
+    );
+    const finalScore = Math.max(0, Math.min(1, acc.bestScore + boost));
+    const extraReason =
+      n > 1
+        ? [`Multi-image support: ${n} photo(s) matched this strain (boost +${boost.toFixed(3)})`]
+        : [];
+
+    const candidate: RetrievalCandidate = {
+      strainName: acc.displayName,
+      score: finalScore,
+      source: "embedding",
+      reasons: [...acc.reasons, ...extraReason].slice(0, 12),
+      metadataAgreement:
+        embeddingImageCount > 0 ? n / embeddingImageCount : undefined,
+    };
+    rows.push({ candidate, supportCount: n });
+  }
+
+  rows.sort((a, b) => b.candidate.score - a.candidate.score);
+  const sliced = rows.slice(0, MAX_MERGED_EMBEDDING_CANDIDATES);
+  const candidates = sliced.map((r) => r.candidate);
+  const embeddingTopStrainMultiImageReinforced =
+    sliced.length > 0 && sliced[0]!.supportCount >= 2;
+
+  return {
+    candidates,
+    embeddingImageCount,
+    embeddingTopStrainMultiImageReinforced,
+  };
 }
 
 /** `pipeline()` return type is too wide for strict calls; runtime is CLIP image-feature-extraction. */
@@ -115,7 +245,7 @@ export async function findNearestStrainsFromDataset(
     score: item.score,
     source: "embedding",
     reasons: [
-      `CLIP cosine similarity ${item.score.toFixed(3)} (dataset neighbors; weak matches filtered)`,
+      `CLIP similarity ${item.score.toFixed(3)} (0.7× best image + 0.3× strain avg; weak matches filtered)`,
     ],
   }));
 }

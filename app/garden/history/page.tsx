@@ -1,30 +1,52 @@
 import TopNav from "../_components/TopNav";
 import { createServerClient } from "../../_server/supabase/server";
 import Link from "next/link";
+import {
+  historyListSubtitleFromStoredResult,
+  primaryStrainLabelFromStoredResult,
+  topConfidenceFromStoredResult,
+} from "@/lib/scanner/savedScanMappers";
 
-async function getScanHistory(strainFilter?: string) {
+type HistoryListRow = {
+  id: string;
+  primary_name: string | null;
+  confidence: number | null;
+  created_at: string | null;
+  /** Truncated API summary when stored (optional second line). */
+  subtitle: string | null;
+};
+
+async function getScanHistory(strainFilter?: string): Promise<HistoryListRow[]> {
   try {
     const supabase = createServerClient();
-    
-    let query = supabase
+
+    const { data, error } = await supabase
       .from("scans")
-      .select("id, primary_name, confidence, created_at")
+      .select("id, created_at, result")
       .order("created_at", { ascending: false })
-      .limit(20);
-
-    // Filter by strain if provided
-    if (strainFilter) {
-      query = query.ilike("primary_name", strainFilter);
-    }
-
-    const { data, error } = await query;
+      .limit(strainFilter ? 100 : 20);
 
     if (error) {
       console.error("Error fetching scan history:", error);
       return [];
     }
 
-    return data || [];
+    const rows = (data || []).map((row: Record<string, unknown>) => ({
+      id: String(row.id),
+      primary_name: primaryStrainLabelFromStoredResult(row.result),
+      confidence: topConfidenceFromStoredResult(row.result),
+      created_at: (row.created_at as string) ?? null,
+      subtitle: historyListSubtitleFromStoredResult(row.result),
+    }));
+
+    if (!strainFilter?.trim()) {
+      return rows;
+    }
+
+    const f = strainFilter.trim().toLowerCase();
+    return rows.filter((r) =>
+      (r.primary_name || "").toLowerCase().includes(f)
+    );
   } catch (err) {
     console.error("Error fetching scan history:", err);
     return [];
@@ -81,6 +103,11 @@ export default async function HistoryPage({
                       <h3 className="text-white font-semibold text-lg">
                         {scan.primary_name || "Unknown Strain"}
                       </h3>
+                      {scan.subtitle && (
+                        <p className="text-white/45 text-sm mt-1 line-clamp-2 leading-snug">
+                          {scan.subtitle}
+                        </p>
+                      )}
                       {scan.confidence !== null && (
                         <p className="text-white/70 text-sm mt-1">
                           {Math.round(scan.confidence)}% confidence

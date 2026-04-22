@@ -15,6 +15,11 @@ interface StrainEntry {
   };
 }
 
+/** Damp metadata candidates (derived from GPT) so they cannot overpower retrieval. */
+const METADATA_SCORE_DAMPING = 0.68;
+/** Require clearer trait overlap before surfacing a metadata candidate. */
+const METADATA_MIN_RAW_SCORE = 0.34;
+
 function normalize(text: string) {
   return text.toLowerCase();
 }
@@ -132,10 +137,22 @@ export function generateMetadataCandidates(
 
       score += visualKeywordBoostFromReasons(gpt, strain);
 
-      if (score > 0.25) {
+      const nameWordOverlap = scoreTextSimilarity(gptName, name);
+      const hasStrongNameSignal =
+        nameWordOverlap >= 0.28 ||
+        name.includes(gptName) ||
+        gptName.includes(name);
+      /** Allow rare high trait-only hits without forcing GPT name overlap. */
+      const strongTraitOnly = score >= 0.48;
+
+      if (
+        score > METADATA_MIN_RAW_SCORE &&
+        (hasStrongNameSignal || strongTraitOnly)
+      ) {
+        const damped = score * METADATA_SCORE_DAMPING;
         results.push({
           strainName: strain.name,
-          score: Math.min(1, score),
+          score: Math.min(1, damped),
           source: "metadata",
           reasons: ["Matched strain traits (name + structure + color)"],
         });

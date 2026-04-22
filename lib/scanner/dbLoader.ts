@@ -2,6 +2,7 @@
 // Phase 5.0.1 — Real Strain Database Loader
 // P0 BLOCKER FIX: Load 35,000+ strain database
 
+import { apiUrl, getApiBaseUrl } from "@/lib/config/apiBase";
 import type { CultivarReference } from "./cultivarLibrary";
 
 /**
@@ -21,9 +22,10 @@ export async function loadStrainDatabase(): Promise<CultivarReference[]> {
     let strains: CultivarReference[] = [];
     
     // Try multiple possible locations
+    const base = getApiBaseUrl();
     const possiblePaths = [
-      "/data/strains.json",
-      "/api/strains.json",
+      base ? `${base}/data/strains.json` : "/data/strains.json",
+      apiUrl("/api/strains.json"),
       "./data/strains.json",
     ];
     

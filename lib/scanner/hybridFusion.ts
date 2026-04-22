@@ -17,13 +17,23 @@ interface FusionWeights {
 }
 
 const DEFAULT_WEIGHTS: FusionWeights = {
-  gpt: 0.45,
-  embedding: 0.35,
-  metadata: 0.2,
+  gpt: 0.25,
+  embedding: 0.6,
+  metadata: 0.15,
 };
 
-/** Extra boost when GPT agrees with embedding or metadata on the same slug (conservative cap). */
-const MAX_PAIR_BONUS = 5;
+/** Below this (0–1 embedding channel), GPT is damped so it cannot fake high confidence alone. */
+const EMBEDDING_WEAK = 0.32;
+const EMBEDDING_VERY_WEAK = 0.2;
+
+/** When sum of per-source peaks is low, shrink fused score toward modest values. */
+const ALL_WEAK_SIGNAL_CUTOFF = 0.52;
+
+/** Bonuses are added to the 0–100 weighted score; kept small and capped. */
+const MAX_EMBEDDING_PAIR_BONUS = 5;
+
+/** When only GPT + metadata agree (metadata is derived from GPT), do not amplify the echo. */
+const GPT_METADATA_ONLY_BONUS = 0;
 
 export function fuseHybridScanCandidates(
   candidates: RetrievalCandidate[],
@@ -84,24 +94,48 @@ export function fuseHybridScanCandidates(
     const embeddingScore = entry.bestBySource.embedding ?? 0;
     const metadataScore = entry.bestBySource.metadata ?? 0;
 
-    const weighted =
-      gptScore * weights.gpt +
+    let gptEffective = gptScore;
+    if (embeddingScore < EMBEDDING_WEAK) {
+      const span = EMBEDDING_WEAK - EMBEDDING_VERY_WEAK;
+      const t =
+        embeddingScore <= EMBEDDING_VERY_WEAK
+          ? 0
+          : Math.min(1, (embeddingScore - EMBEDDING_VERY_WEAK) / span);
+      const dampen = 0.52 + 0.4 * t;
+      gptEffective = gptScore * dampen;
+    }
+
+    let weighted =
+      gptEffective * weights.gpt +
       embeddingScore * weights.embedding +
       metadataScore * weights.metadata;
 
-    const agreementCount = [
-      gptScore > 0,
-      embeddingScore > 0,
-      metadataScore > 0,
-    ].filter(Boolean).length;
+    const signalSum = embeddingScore + gptScore + metadataScore;
+    if (signalSum < ALL_WEAK_SIGNAL_CUTOFF) {
+      const factor = 0.68 + 0.32 * (signalSum / ALL_WEAK_SIGNAL_CUTOFF);
+      weighted *= factor;
+    }
 
-    const spreadBonus = Math.min(10, Math.max(0, (agreementCount - 1) * 3));
+    if (embeddingScore < 0.28 && gptScore > 0.55) {
+      weighted *= 0.88;
+    }
 
-    const gptEmbPair = gptScore > 0 && embeddingScore > 0 ? 3 : 0;
-    const gptMetaPair = gptScore > 0 && metadataScore > 0 ? 2 : 0;
-    const pairBonus = Math.min(MAX_PAIR_BONUS, gptEmbPair + gptMetaPair);
+    let base100 = weighted * 100;
 
-    const raw = weighted * 100 + spreadBonus + pairBonus;
+    let agreementBonus = 0;
+    if (embeddingScore > 0) {
+      if (gptScore > 0) agreementBonus += 2.5;
+      if (metadataScore > 0) agreementBonus += 2;
+      agreementBonus = Math.min(MAX_EMBEDDING_PAIR_BONUS, agreementBonus);
+    } else if (gptScore > 0 && metadataScore > 0) {
+      agreementBonus = GPT_METADATA_ONLY_BONUS;
+    }
+
+    if (embeddingScore < 0.3) {
+      agreementBonus *= 0.45;
+    }
+
+    const raw = base100 + agreementBonus;
 
     return {
       strainName: entry.strainName,

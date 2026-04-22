@@ -5,13 +5,14 @@
 import strainDb from "@/lib/data/strains.json";
 import type { StrainEntry } from "@/lib/scanner/scanTypes";
 
-const STRAINS = strainDb as StrainEntry[];
+function buildStrainCatalog(): string {
+  const strains = strainDb as StrainEntry[];
 
-/** Compact one-line-per-strain text for the system prompt. */
-export function buildStrainCatalog(): string {
-  const lines = STRAINS.map((s) => {
+  const lines = strains.map((s) => {
     const parts: string[] = [s.name];
+
     if (s.type) parts.push(s.type);
+
     const vp = s.visualProfile;
     if (vp) {
       const vis: string[] = [];
@@ -22,18 +23,20 @@ export function buildStrainCatalog(): string {
       if (vp.colorProfile) vis.push(vp.colorProfile);
       if (vis.length) parts.push(vis.join(", "));
     }
+
     if (s.terpeneProfile?.length) {
       parts.push(`[${s.terpeneProfile.slice(0, 3).join(",")}]`);
     }
+
     return parts.join(" | ");
   });
+
   return lines.join("\n");
 }
 
 const STRAIN_CATALOG = buildStrainCatalog();
-const STRAIN_COUNT = STRAINS.length;
+const STRAIN_COUNT = (strainDb as StrainEntry[]).length;
 
-/** Full system prompt including embedded catalog (cached at module load). */
 export function buildSystemPrompt(): string {
   return `You are StrainSpotter's cannabis visual analysis AI.
 
@@ -79,7 +82,6 @@ PLANT ANALYSIS (same response — one unified scan):
 You MUST return valid JSON only — no markdown.`;
 }
 
-/** User message JSON schema template (image count affects wording only). */
 export function buildUserPromptTemplate(imageCount: number): string {
   return `Analyze ${
     imageCount > 1 ? `these ${imageCount} images` : "this image"

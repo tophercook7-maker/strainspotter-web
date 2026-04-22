@@ -1,6 +1,5 @@
 /**
  * Shared types for the vision scan pipeline (GPT output shape + legacy normalization).
- * Extension-ready: raw AI JSON vs server-normalized legacy blob.
  */
 
 /** Row shape from `strains.json` used when building the prompt catalog. */
@@ -19,10 +18,9 @@ export interface StrainEntry {
   indicaSativaRatio?: { indica?: number; sativa?: number };
 }
 
-/** Top-level image quality / detection flags from the model (raw JSON). */
 export interface ImageSignals {
-  usableVisualSignal?: boolean;
-  blurOrDarkness?: "low" | "medium" | "high";
+  usableVisualSignal: boolean;
+  blurOrDarkness?: string;
   textDetected?: boolean;
   strongOcrAgreementWithVisualTopPick?: boolean;
   wholePlantDetected?: boolean;
@@ -31,33 +29,23 @@ export interface ImageSignals {
   packagedProductDetected?: boolean;
 }
 
-/** Plant-side signals: growth stage, health, morphology hints (raw JSON — flexible). */
+export interface ScoredLabel {
+  label: string;
+  rawScore: number;
+  reasons: string[];
+}
+
 export interface PlantAnalysis {
   multiImageReinforcement?: boolean;
-  typeEstimate?: {
-    label?: string;
-    rawScore?: number;
-    reasons?: string[];
-  };
-  growthStage?: {
-    label?: string;
-    rawScore?: number;
-    reasons?: string[];
-  };
-  health?: {
-    label?: string;
-    rawScore?: number;
-    reasons?: string[];
-    issues?: string[];
-  };
+  typeEstimate?: ScoredLabel | null;
+  growthStage?: ScoredLabel | null;
+  health?: (ScoredLabel & { issues?: string[] }) | null;
   deficiencyAnalysis?: unknown;
   harvestTiming?: unknown;
   sexEstimate?: unknown;
   stressAnalysis?: unknown;
-  [key: string]: unknown;
 }
 
-/** Grow coach block + optional log hints (raw JSON). */
 export interface GrowCoach {
   headline?: string;
   rawScore?: number;
@@ -65,165 +53,101 @@ export interface GrowCoach {
   suggestions?: string[];
   watchFor?: string[];
   cautions?: string[];
-  logSupport?: Record<string, unknown>;
-  [key: string]: unknown;
+  logSupport?: {
+    suggestedEntryTitle?: string;
+    suggestedSummary?: string;
+    suggestedFields?: Record<string, unknown>;
+    followUpSuggestion?: string;
+    tags?: string[];
+  };
 }
 
-export interface MatchScoreBuckets {
-  visualFlower: number;
-  structure: number;
-  ocr: number;
-  secondary: number;
-}
-
-/** One ranked cultivar candidate from the model (0–3 in practice). */
 export interface RankedMatch {
   strainName?: string;
-  scoreBuckets?: Partial<MatchScoreBuckets>;
+  scoreBuckets?: {
+    visualFlower?: number;
+    structure?: number;
+    ocr?: number;
+    secondary?: number;
+  };
   reasons?: string[];
   appearsInMultipleImagesConsistent?: boolean;
-}
-
-export interface AlternateMatchEntry {
-  strainName?: string;
-  confidence?: number;
 }
 
 export interface Identity {
   strainName?: string;
   confidence?: number;
-  alternateMatches?: AlternateMatchEntry[];
+  alternateMatches?: Array<{
+    strainName?: string;
+    confidence?: number;
+  }>;
 }
 
-export interface GeneticsBlock {
-  dominance?: string;
-  lineage?: string[];
-  breederNotes?: string;
-  confidenceNotes?: string | null;
-}
-
-export interface MorphologyBlock {
-  budStructure?: string;
-  coloration?: string;
-  trichomes?: string;
-  visualTraits?: string[];
-  growthIndicators?: string[];
-}
-
+/** Single terpene line item (normalized chemistry + normalizer defaults). */
 export interface TerpeneEstimate {
-  name?: string;
-  confidence?: number;
+  name: string;
+  confidence: number;
 }
 
-export interface ChemistryBlock {
-  terpenes?: TerpeneEstimate[];
-  cannabinoids?: Record<string, string>;
-  cannabinoidRange?: string;
-  likelyTerpenes?: TerpeneEstimate[];
+export interface ChemistryNormalized {
+  terpenes: TerpeneEstimate[];
+  cannabinoids: Record<string, unknown>;
+  cannabinoidRange: string;
+  likelyTerpenes: TerpeneEstimate[];
 }
 
-export interface ExperienceBlock {
-  effects?: string[];
-  primaryEffects?: string[];
-  secondaryEffects?: string[];
-  onset?: string;
-  duration?: string;
-  bestUse?: string[];
-}
-
-export interface CultivationBlock {
-  difficulty?: string;
-  floweringTime?: string;
-  yield?: string;
-  notes?: string;
-}
-
-export interface ReasoningBlock {
-  whyThisMatch?: string;
-  conflictingSignals?: unknown[] | null;
-  databaseMatch?: boolean;
-}
-
-/**
- * Parsed GPT JSON object (loose — model may omit or extend keys).
- * Used by `buildUnifiedScanPayload` and normalization.
- */
 export interface ScanAnalysisRaw {
   imageSignals?: ImageSignals;
   plantAnalysis?: PlantAnalysis;
   growCoach?: GrowCoach;
   rankedMatches?: RankedMatch[];
-  identity?: Identity;
-  genetics?: GeneticsBlock;
-  morphology?: MorphologyBlock;
-  chemistry?: ChemistryBlock;
-  experience?: ExperienceBlock;
-  cultivation?: CultivationBlock;
-  reasoning?: ReasoningBlock;
-  [key: string]: unknown;
+  identity?: Record<string, unknown>;
+  genetics?: Record<string, unknown>;
+  morphology?: Record<string, unknown>;
+  chemistry?: Record<string, unknown>;
+  experience?: Record<string, unknown>;
+  cultivation?: Record<string, unknown>;
+  reasoning?: Record<string, unknown>;
 }
 
-/** Legacy-normalized chemistry (includes `likelyTerpenes` mirror). */
-export interface ChemistryNormalized extends ChemistryBlock {
-  terpenes: TerpeneEstimate[];
-  cannabinoids: Record<string, string>;
-  cannabinoidRange: string;
-  likelyTerpenes: TerpeneEstimate[];
-}
-
-export interface IdentityNormalized {
-  strainName: string;
-  confidence: number;
-  alternateMatches: unknown[];
-}
-
-export interface GeneticsNormalized {
-  dominance: string;
-  lineage: string[];
-  breederNotes: string;
-  confidenceNotes: string | null;
-}
-
-export interface MorphologyNormalized {
-  budStructure: string;
-  coloration: string;
-  trichomes: string;
-  visualTraits: string[];
-  growthIndicators: string[];
-}
-
-export interface ExperienceNormalized {
-  effects: string[];
-  primaryEffects: string[];
-  secondaryEffects: string[];
-  onset: string;
-  duration: string;
-  bestUse: string[];
-}
-
-export interface CultivationNormalized {
-  difficulty: string;
-  floweringTime: string;
-  yield: string;
-  notes: string;
-}
-
-export interface ReasoningNormalized {
-  whyThisMatch: string;
-  conflictingSignals: unknown[] | null;
-  databaseMatch: boolean;
-}
-
-/**
- * Output of `normalizeScanAnalysis` — safe defaults for legacy `result` consumers.
- */
 export interface ScanAnalysisNormalized {
-  identity: IdentityNormalized;
-  genetics: GeneticsNormalized;
-  morphology: MorphologyNormalized;
+  identity: {
+    strainName: string;
+    confidence: number;
+    alternateMatches: Array<{ strainName?: string; confidence?: number }>;
+  };
+  genetics: {
+    dominance: "Indica" | "Sativa" | "Hybrid";
+    lineage: string[];
+    breederNotes: string;
+    confidenceNotes: string | null;
+  };
+  morphology: {
+    budStructure: string;
+    coloration: string;
+    trichomes: string;
+    visualTraits: string[];
+    growthIndicators: string[];
+  };
   chemistry: ChemistryNormalized;
-  experience: ExperienceNormalized;
-  cultivation: CultivationNormalized;
-  reasoning: ReasoningNormalized;
+  experience: {
+    effects: string[];
+    primaryEffects: string[];
+    secondaryEffects: string[];
+    onset: string;
+    duration: string;
+    bestUse: string[];
+  };
+  cultivation: {
+    difficulty: string;
+    floweringTime: string;
+    yield: string;
+    notes: string;
+  };
+  reasoning: {
+    whyThisMatch: string;
+    conflictingSignals: string[] | null;
+    databaseMatch: boolean;
+  };
   disclaimer: string;
 }

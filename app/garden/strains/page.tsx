@@ -1,5 +1,6 @@
 "use client";
 
+import { apiUrl } from "@/lib/config/apiBase";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
@@ -284,7 +285,7 @@ export default function StrainsPage() {
           ...(search ? { q: search } : {}),
           ...(typeFilter ? { type: typeFilter } : {}),
         });
-        const res = await fetch(`/api/strains?${params}`);
+        const res = await fetch(apiUrl(`/api/strains?${params}`));
         if (!res.ok) throw new Error("fail");
         const data: APIResponse = await res.json();
         setStrains((prev) => (append ? [...prev, ...data.strains] : data.strains));

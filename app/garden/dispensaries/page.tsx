@@ -1,5 +1,6 @@
 "use client";
 
+import { apiUrl } from "@/lib/config/apiBase";
 import { useState, useEffect } from "react";
 import TopNav from "../_components/TopNav";
 
@@ -76,7 +77,7 @@ export default function DispensariesPage() {
   const fetchDispensaries = async (lat: number, lng: number, r: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/dispensaries?lat=${lat}&lng=${lng}&radius=${r}`);
+      const res = await fetch(apiUrl(`/api/dispensaries?lat=${lat}&lng=${lng}&radius=${r}`));
       const data = await res.json();
       if (data.dispensaries && data.dispensaries.length > 0) {
         const withDist = data.dispensaries.map((d: any) => ({

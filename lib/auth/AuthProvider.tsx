@@ -41,6 +41,8 @@ interface AuthContextValue {
   ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  /** Re-fetch profile by id (e.g. right after sign-in before `user` state updates). */
+  refreshProfileByUserId: (userId: string) => Promise<void>;
   needsOnboarding: boolean;
   tier: "free" | "member" | "pro";
 }
@@ -91,12 +93,39 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     [supabase]
   );
 
+  const syncTierToLocalStorage = useCallback((p: Profile) => {
+    const tier =
+      p.membership === "pro"
+        ? "pro"
+        : p.membership === "garden" ||
+            p.membership === "standard" ||
+            p.membership === "elite"
+          ? "member"
+          : "free";
+    localStorage.setItem("ss_membership_tier", tier);
+  }, []);
+
   const refreshProfile = useCallback(async () => {
     if (user) {
       const p = await fetchProfile(user.id);
-      if (p) setProfile(p);
+      if (p) {
+        setProfile(p);
+        syncTierToLocalStorage(p);
+      }
     }
-  }, [user, fetchProfile]);
+  }, [user, fetchProfile, syncTierToLocalStorage]);
+
+  const refreshProfileByUserId = useCallback(
+    async (userId: string) => {
+      if (!userId) return;
+      const p = await fetchProfile(userId);
+      if (p) {
+        setProfile(p);
+        syncTierToLocalStorage(p);
+      }
+    },
+    [fetchProfile, syncTierToLocalStorage]
+  );
 
   // Initialize auth state
   useEffect(() => {
@@ -112,18 +141,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
           const p = await fetchProfile(currentSession.user.id);
           setProfile(p);
 
-          // Sync tier to localStorage for components that still use it
-          if (p) {
-            const tier =
-              p.membership === "pro"
-                ? "pro"
-                : p.membership === "garden" ||
-                  p.membership === "standard" ||
-                  p.membership === "elite"
-                ? "member"
-                : "free";
-            localStorage.setItem("ss_membership_tier", tier);
-          }
+          if (p) syncTierToLocalStorage(p);
         }
       } catch (err) {
         console.warn("Auth init error:", err);
@@ -145,18 +163,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         const p = await fetchProfile(newSession.user.id);
         setProfile(p);
 
-        // Sync tier to localStorage
-        if (p) {
-          const tier =
-            p.membership === "pro"
-              ? "pro"
-              : p.membership === "garden" ||
-                p.membership === "standard" ||
-                p.membership === "elite"
-              ? "member"
-              : "free";
-          localStorage.setItem("ss_membership_tier", tier);
-        }
+        if (p) syncTierToLocalStorage(p);
       } else {
         setProfile(null);
         localStorage.removeItem("ss_membership_tier");
@@ -164,7 +171,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase, fetchProfile]);
+  }, [supabase, fetchProfile, syncTierToLocalStorage]);
 
   // Sign up
   const signUp = async (
@@ -241,6 +248,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         refreshProfile,
+        refreshProfileByUserId,
         needsOnboarding,
         tier,
       }}

@@ -2,13 +2,14 @@
 
 import type { ReactNode } from "react";
 import type { HybridScanPresentation } from "@/lib/scanner/scanOrchestrator";
+import { SCAN_DISPLAY_HIGH_CONFIDENCE_MIN } from "@/lib/scanner/scanUiConfidence";
 
 /** Display tiers for 0–100 confidence — neutral, not overclaiming. */
 export function matchConfidenceTier(
   n: number
 ): "High confidence" | "Moderate confidence" | "Low confidence" {
   if (!Number.isFinite(n)) return "Low confidence";
-  if (n >= 70) return "High confidence";
+  if (n >= SCAN_DISPLAY_HIGH_CONFIDENCE_MIN) return "High confidence";
   if (n >= 40) return "Moderate confidence";
   return "Low confidence";
 }

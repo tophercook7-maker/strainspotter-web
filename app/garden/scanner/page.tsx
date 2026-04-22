@@ -1,8 +1,13 @@
 "use client";
 
+import { apiUrl } from "@/lib/config/apiBase";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { orchestrateScan, type HybridScanPresentation } from "@/lib/scanner/scanOrchestrator";
+import {
+  orchestrateScan,
+  type HybridScanPresentation,
+  type ScanPayloadUiFlags,
+} from "@/lib/scanner/scanOrchestrator";
 import {
   HybridScanLeadSections,
   HybridScanDetailSections,
@@ -10,6 +15,17 @@ import {
 } from "./HybridScanResultSections";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
+import type { ScanEntitlements } from "@/lib/scanner/scanEntitlements";
+import {
+  getScansRemaining,
+  bumpAnonymousScanUsage,
+  fetchScanEntitlements,
+  FREE_SCAN_TOTAL,
+  canScanAnonymousLocal,
+} from "@/lib/scanGating";
+import { persistUnifiedScan } from "@/lib/growlog/persistUnifiedScan";
+import { buildUnifiedScanUiForPersist } from "@/lib/scanner/savedScanMappers";
+import { savedScanResultsPath } from "@/lib/scanner/savedScanNav";
 
 /* ─── try to use real auth, fall back gracefully ─── */
 let useOptionalAuth: () => any;
@@ -59,7 +75,7 @@ function SimilarStrains({ result }: { result: SimpleResult }) {
       terpenes: result.terpenes.slice(0, 2).join(","),
       type: result.type,
     });
-    fetch(`/api/similar-strains?${params}`)
+    fetch(apiUrl(`/api/similar-strains?${params}`))
       .then((r) => r.json())
       .then((d) => setStrains(d.similar || []))
       .catch(() => {})
@@ -297,6 +313,34 @@ function mapConfidence(n: number): string {
   return "Low Match";
 }
 
+/** Aligns with hybrid fusion + flags — softer hero when match is weak or ambiguous. */
+function isWeakScanResult(
+  flags: ScanPayloadUiFlags | null | undefined,
+  hybrid: HybridScanPresentation | null | undefined,
+  confidence: number
+): boolean {
+  if (flags?.resultType === "unresolved") return true;
+  if (flags?.status === "needs_better_images") return true;
+  const top = hybrid?.matches?.[0]?.confidence;
+  if (typeof top === "number" && top < 42) return true;
+  if (matchConfidenceTier(confidence) === "Low confidence") return true;
+  return false;
+}
+
+async function filesToDataUrls(files: File[]): Promise<string[]> {
+  return Promise.all(
+    files.map(
+      (f) =>
+        new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.onerror = () => reject(new Error("read"));
+          r.readAsDataURL(f);
+        })
+    )
+  );
+}
+
 function typeGradient(type: string): string {
   if (type === "Indica") return "linear-gradient(135deg, #7B1FA2, #4A148C)";
   if (type === "Sativa") return "linear-gradient(135deg, #F57C00, #E65100)";
@@ -331,43 +375,25 @@ function activityEmoji(activity: string): string {
   return "✨";
 }
 
-/* ─── Scan credit helpers ─────────────────────────────────────────────────── */
-const DAILY_FREE_SCANS = 5;       // guests + free logged-in users
-const DAILY_MEMBER_SCANS = 250;   // 1st paid tier
-// Pro + Admin = unlimited (tier === "pro")
-const CREDIT_KEY = "ss_photo_credits";
-const FREE_SCANS_KEY = "ss_free_scans_used"; // permanent — never resets, only topups extend
-
-function thisMonthKey() { return `ss_monthly_${new Date().toISOString().slice(0, 7)}`; }
-
-// Free tier: permanent lifetime counter (no reset)
-function getFreeScansUsed(): number {
-  try { return parseInt(localStorage.getItem(FREE_SCANS_KEY) || "0"); } catch { return 0; }
-}
-function incrementFreeScans() {
-  try { localStorage.setItem(FREE_SCANS_KEY, String(getFreeScansUsed() + 1)); } catch {}
-}
-
-// Member tier: monthly counter
-function getScansUsedThisMonth(): number {
-  try { return parseInt(localStorage.getItem(thisMonthKey()) || "0"); } catch { return 0; }
-}
-function incrementScansThisMonth() {
-  try { localStorage.setItem(thisMonthKey(), String(getScansUsedThisMonth() + 1)); } catch {}
-}
-
-// Keep for UI state updates (reads member monthly count)
-function getScansUsedToday(): number { return getScansUsedThisMonth(); }
-function getPhotoCredits(): number {
-  try { return Math.max(0, parseInt(localStorage.getItem(CREDIT_KEY) || "0")); } catch { return 0; }
-}
-function addPhotoCredit() {
-  try { localStorage.setItem(CREDIT_KEY, String(getPhotoCredits() + 1)); } catch {}
-}
-function usePhotoCredit(): boolean {
-  const c = getPhotoCredits();
-  if (c <= 0) return false;
-  try { localStorage.setItem(CREDIT_KEY, String(c - 1)); return true; } catch { return false; }
+function formatScanAllowanceHint(e: ScanEntitlements): string {
+  if (e.isUnlimited) return "Unlimited";
+  if (e.tier === "free") {
+    const parts: string[] = [];
+    parts.push(`${e.freeScansRemaining} free left (3 total)`);
+    if (e.topupScansAvailable > 0) {
+      parts.push(`${e.topupScansAvailable} top-up`);
+    }
+    return parts.join(" · ");
+  }
+  if (e.tier === "member") {
+    const parts: string[] = [];
+    parts.push(`${e.memberScansRemaining}/75 this period`);
+    if (e.topupScansAvailable > 0) {
+      parts.push(`${e.topupScansAvailable} top-up`);
+    }
+    return parts.join(" · ");
+  }
+  return "";
 }
 
 export default function ScannerPage() {
@@ -377,6 +403,7 @@ export default function ScannerPage() {
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [result, setResult] = useState<SimpleResult | null>(null);
   const [hybridPresentation, setHybridPresentation] = useState<HybridScanPresentation | null>(null);
+  const [scanPayloadFlags, setScanPayloadFlags] = useState<ScanPayloadUiFlags | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -384,15 +411,48 @@ export default function ScannerPage() {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "medical" | "grower" | "breeder" | "dispensary">("overview");
   const [creditEarned, setCreditEarned] = useState(false);
-  const [photoCredits, setPhotoCredits] = useState(0);
-  const [scansUsedToday, setScansUsedToday] = useState(0);
+  const [serverEntitlements, setServerEntitlements] =
+    useState<ScanEntitlements | null>(null);
+  const [anonRemaining, setAnonRemaining] = useState(0);
+  const [apiScanSummary, setApiScanSummary] = useState<string | null>(null);
+  const [saveHistoryState, setSaveHistoryState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [savedScanLinkId, setSavedScanLinkId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraFileRef = useRef<HTMLInputElement>(null);
+  /** Tracks blob: URLs from `URL.createObjectURL` for matching `revokeObjectURL` calls. */
+  const previewObjectUrlsRef = useRef<string[]>([]);
 
-  // Load credit/usage state on mount
-  useEffect(() => {
-    setPhotoCredits(getPhotoCredits());
-    setScansUsedToday(getScansUsedToday());
+  const revokeAllPreviewUrls = useCallback(() => {
+    previewObjectUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    previewObjectUrlsRef.current = [];
   }, []);
+
+  const setPreviewUrlsForFiles = useCallback((files: File[]) => {
+    revokeAllPreviewUrls();
+    const urls = files.map((f) => URL.createObjectURL(f));
+    previewObjectUrlsRef.current = urls;
+    setPreviews(urls);
+  }, [revokeAllPreviewUrls]);
+
+  useEffect(() => {
+    setAnonRemaining(getScansRemaining());
+  }, []);
+
+  useEffect(
+    () => () => {
+      revokeAllPreviewUrls();
+    },
+    [revokeAllPreviewUrls]
+  );
+
+  /** Return save button to idle after a beat so users can save another copy (new row). */
+  useEffect(() => {
+    if (saveHistoryState !== "saved") return;
+    const t = setTimeout(() => setSaveHistoryState("idle"), 3200);
+    return () => clearTimeout(t);
+  }, [saveHistoryState]);
 
   const saveFavorite = () => {
     if (!result) return;
@@ -417,38 +477,67 @@ export default function ScannerPage() {
   const displayName = auth?.profile?.display_name || auth?.user?.email?.split("@")[0] || null;
   const tier = (auth?.profile != null ? auth.tier : (getLocalTier() || auth?.tier || "free")) as "free" | "member" | "pro";
 
+  useEffect(() => {
+    const token = auth?.session?.access_token;
+    if (!token) {
+      setServerEntitlements(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const r = await fetchScanEntitlements(token);
+      if (!cancelled && r.ok) setServerEntitlements(r.entitlements);
+      if (!cancelled && !r.ok) setServerEntitlements(null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [auth?.session?.access_token]);
+
   const addImages = useCallback((files: FileList | File[]) => {
     const fileArr = Array.from(files).filter(f => f.type.startsWith("image/"));
     if (fileArr.length === 0) return;
 
-    setImages(prev => {
+    setImages((prev) => {
       const next = [...prev, ...fileArr].slice(0, MAX_IMAGES);
-      const urls = next.map(f => URL.createObjectURL(f));
-      setPreviews(urls);
+      setPreviewUrlsForFiles(next);
       return next;
     });
     setResult(null);
     setHybridPresentation(null);
+    setScanPayloadFlags(null);
+    setApiScanSummary(null);
+    setSaveHistoryState("idle");
+    setSavedScanLinkId(null);
     setError(null);
     setScanState("ready");
-  }, []);
+  }, [setPreviewUrlsForFiles]);
 
   const removeImage = (idx: number) => {
-    setImages(prev => {
+    setImages((prev) => {
       const next = prev.filter((_, i) => i !== idx);
-      setPreviews(next.map(f => URL.createObjectURL(f)));
+      setPreviewUrlsForFiles(next);
       if (next.length === 0) setScanState("idle");
       return next;
     });
     setResult(null);
     setHybridPresentation(null);
+    setScanPayloadFlags(null);
+    setApiScanSummary(null);
+    setSaveHistoryState("idle");
+    setSavedScanLinkId(null);
   };
 
   const clearAll = () => {
+    revokeAllPreviewUrls();
     setImages([]);
     setPreviews([]);
     setResult(null);
     setHybridPresentation(null);
+    setScanPayloadFlags(null);
+    setApiScanSummary(null);
+    setSaveHistoryState("idle");
+    setSavedScanLinkId(null);
     setError(null);
     setScanState("idle");
     setIsFavorited(false);
@@ -458,37 +547,50 @@ export default function ScannerPage() {
   const handleScan = async () => {
     if (images.length === 0 || scanState === "scanning") return;
 
-    // Limit check — Pro tier and Admin bypass entirely
-    if (tier !== "pro") {
-      if (tier === "member") {
-        // Member: 250 scans per calendar month
-        const used = getScansUsedThisMonth();
-        const credits = getPhotoCredits();
-        const effectiveRemaining = (DAILY_MEMBER_SCANS - used) + credits;
-        if (effectiveRemaining <= 0) {
-          setError(`You've used all ${DAILY_MEMBER_SCANS} scans for this month. Upgrade to Pro for unlimited scans.`);
-          return;
-        }
-      } else {
-        // Free / Guest: 5 scans lifetime — never refills, only topup credits extend
-        const used = getFreeScansUsed();
-        const credits = getPhotoCredits();
-        const effectiveRemaining = (DAILY_FREE_SCANS - used) + credits;
-        if (effectiveRemaining <= 0) {
-          setError(`You've used all ${DAILY_FREE_SCANS} free scans. Become a Member for 250 scans/month, or go Pro for unlimited.`);
-          return;
-        }
+    if (isLoggedIn && auth?.session?.access_token) {
+      if (!serverEntitlements) {
+        setError("Loading scan allowance…");
+        return;
+      }
+      if (!serverEntitlements.canScan) {
+        setError(
+          "No scans remaining. Member plans include 75 scans per billing period; add a top-up pack for more."
+        );
+        return;
+      }
+    } else {
+      if (!canScanAnonymousLocal()) {
+        setError(
+          `You've used all ${FREE_SCAN_TOTAL} free scans. Sign in to sync your plan, or become a member for more.`
+        );
+        return;
       }
     }
 
     setScanState("scanning");
     setError(null);
     setHybridPresentation(null);
+    setScanPayloadFlags(null);
+    setApiScanSummary(null);
+    setSaveHistoryState("idle");
+    setSavedScanLinkId(null);
 
     try {
       const authToken = auth?.session?.access_token || undefined;
       const orchestrated = await orchestrateScan(images, authToken);
+
+      if (orchestrated.displayName === "Analysis Failed") {
+        const msg =
+          orchestrated.summary?.[0] ||
+          "We couldn’t complete this scan. Check your connection or try again.";
+        setError(msg);
+        setScanState("ready");
+        return;
+      }
+
       setHybridPresentation(orchestrated.hybridPresentation ?? null);
+      setScanPayloadFlags(orchestrated.scanPayloadFlags ?? null);
+      setApiScanSummary(orchestrated.apiScanSummary ?? null);
       const vm = orchestrated.rawScannerResult;
 
       const vm_chem = (vm as any).chemistry || {};
@@ -594,21 +696,14 @@ export default function ScannerPage() {
       setResult(simple);
       setScanState("done");
 
-      // Track scan usage for non-Pro users
-      if (tier !== "pro") {
-        if (tier === "member") {
-          // Member: monthly tracking
-          const used = getScansUsedThisMonth();
-          if (used >= DAILY_MEMBER_SCANS) usePhotoCredit();
-          incrementScansThisMonth();
-        } else {
-          // Free / Guest: permanent counter — never resets
-          const used = getFreeScansUsed();
-          if (used >= DAILY_FREE_SCANS) usePhotoCredit();
-          incrementFreeScans();
+      if (isLoggedIn && auth?.session?.access_token) {
+        const ent = await fetchScanEntitlements(auth.session.access_token);
+        if (ent.ok) {
+          setServerEntitlements(ent.entitlements);
         }
-        setScansUsedToday(getScansUsedToday());
-        setPhotoCredits(getPhotoCredits());
+      } else {
+        bumpAnonymousScanUsage();
+        setAnonRemaining(getScansRemaining());
       }
 
       // Non-blocking: upload scan photo to community DB if confidence is high enough and user is logged in
@@ -618,7 +713,7 @@ export default function ScannerPage() {
         const reader = new FileReader();
         reader.onload = () => {
           const dataUrl = reader.result as string;
-          fetch("/api/strain-photos", {
+          fetch(apiUrl("/api/strain-photos"), {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
             body: JSON.stringify({
@@ -646,6 +741,53 @@ export default function ScannerPage() {
       console.error("Scan error:", e);
       setError("Couldn't analyze the image. Try a clearer photo with better lighting.");
       setScanState("ready");
+    }
+  };
+
+  const weakResult =
+    result && scanState === "done"
+      ? isWeakScanResult(scanPayloadFlags, hybridPresentation, result.confidence)
+      : false;
+
+  const handleSaveToHistory = async () => {
+    if (!result || scanState !== "done") return;
+    if (saveHistoryState === "saving") return;
+    setSaveHistoryState("saving");
+    try {
+      const ui = buildUnifiedScanUiForPersist({
+        imageCount: images.length,
+        hybridMatches: hybridPresentation?.matches,
+        plantAnalysis: hybridPresentation?.plantAnalysis ?? null,
+        growCoach: hybridPresentation?.growCoach ?? null,
+        improveTips: hybridPresentation?.improveTips,
+        poorImageMessage: hybridPresentation?.poorImageMessage,
+        apiScanSummary,
+        topConfidence: result.confidence,
+        status: scanPayloadFlags?.status,
+        resultType: scanPayloadFlags?.resultType,
+      });
+      const imageDataUrls = images.length > 0 ? await filesToDataUrls(images) : undefined;
+      const clientSnapshotId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `scan-${Date.now()}`;
+      const out = await persistUnifiedScan({
+        ui,
+        userId: auth?.user?.id ?? null,
+        imageDataUrls,
+        clientSnapshotId,
+        linkedPlantId: null,
+        linkedPlantName: null,
+        legacyMetadata: {
+          apiScanSummary: apiScanSummary ?? undefined,
+          primaryStrainName: result.strainName,
+        },
+      });
+      setSavedScanLinkId(out.savedScanId);
+      setSaveHistoryState("saved");
+    } catch (e) {
+      console.error("Save to history failed:", e);
+      setSaveHistoryState("error");
     }
   };
 
@@ -698,13 +840,29 @@ export default function ScannerPage() {
               padding: 0,
             }}
           >
-            {photoCredits > 0 && (
+            {isLoggedIn && serverEntitlements && !serverEntitlements.isUnlimited && (
               <span style={{
                 fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
                 color: "#66BB6A", background: "rgba(102,187,106,0.15)",
                 border: "1px solid rgba(102,187,106,0.35)",
                 borderRadius: 5, padding: "2px 6px",
-              }}>+{photoCredits} scan{photoCredits !== 1 ? "s" : ""}</span>
+                maxWidth: 200,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }} title={formatScanAllowanceHint(serverEntitlements)}>
+                {formatScanAllowanceHint(serverEntitlements)}
+              </span>
+            )}
+            {!isLoggedIn && (
+              <span style={{
+                fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
+                color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 5, padding: "2px 6px",
+              }}>
+                {anonRemaining} free · {FREE_SCAN_TOTAL} total
+              </span>
             )}
             <span style={{
               fontSize: 9,
@@ -764,6 +922,14 @@ export default function ScannerPage() {
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             onClick={() => fileRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileRef.current?.click();
+              }
+            }}
             style={{
               margin: "24px auto 0",
               width: "100%",
@@ -863,9 +1029,71 @@ export default function ScannerPage() {
           type="file"
           accept="image/*"
           multiple
+          aria-label="Choose cannabis photos from your library"
           style={{ display: "none" }}
           onChange={(e) => { if (e.target.files) addImages(e.target.files); e.target.value = ""; }}
         />
+        <input
+          ref={cameraFileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          multiple
+          aria-label="Take a cannabis photo with your camera"
+          style={{ display: "none" }}
+          onChange={(e) => { if (e.target.files) addImages(e.target.files); e.target.value = ""; }}
+        />
+
+        {scanState !== "done" && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 10,
+              marginTop: 14,
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                cameraFileRef.current?.click();
+              }}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 999,
+                border: "1px solid rgba(76,175,80,0.45)",
+                background: "rgba(76,175,80,0.12)",
+                color: "#A5D6A7",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Use camera
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileRef.current?.click();
+              }}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.05)",
+                color: "rgba(255,255,255,0.65)",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Choose photos
+            </button>
+          </div>
+        )}
 
         {/* ── THUMBNAIL STRIP ── */}
         {images.length > 0 && scanState !== "done" && (
@@ -916,6 +1144,73 @@ export default function ScannerPage() {
           </div>
         )}
 
+        {/* ── PRE-SCAN QUALITY HINTS (improves real-world match rate) ── */}
+        {scanState === "ready" && images.length > 0 && (
+          <div
+            style={{
+              marginTop: 22,
+              padding: "14px 16px",
+              borderRadius: 14,
+              background: "rgba(255,255,255,0.035)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: 1.3,
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.38)",
+                marginBottom: 10,
+              }}
+            >
+              Stronger IDs start here
+            </div>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: 18,
+                fontSize: 13,
+                lineHeight: 1.55,
+                color: "rgba(255,255,255,0.62)",
+              }}
+            >
+              <li>
+                Use{" "}
+                <strong style={{ color: "rgba(255,255,255,0.88)", fontWeight: 600 }}>
+                  bright, even light
+                </strong>{" "}
+                so color and trichomes are visible (avoid heavy shadow on the bud).
+              </li>
+              <li>
+                Keep the flower{" "}
+                <strong style={{ color: "rgba(255,255,255,0.88)", fontWeight: 600 }}>
+                  in focus
+                </strong>{" "}
+                and{" "}
+                <strong style={{ color: "rgba(255,255,255,0.88)", fontWeight: 600 }}>
+                  filling most of the frame
+                </strong>
+                .
+              </li>
+              {images.length < 3 ? (
+                <li>
+                  <strong style={{ color: "rgba(129,199,132,0.95)", fontWeight: 700 }}>
+                    Add {Math.max(1, 3 - images.length)} more photo
+                    {3 - images.length > 1 ? "s" : ""}
+                  </strong>{" "}
+                  when you can—top, side, and a trichome macro give the matcher more signal.
+                </li>
+              ) : (
+                <li>
+                  Multiple angles help—include a macro trichome shot if anything looks blurry at arm&apos;s length.
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+
         {/* ── SCAN BUTTON ── */}
         {(scanState === "ready") && (
           <div style={{ marginTop: 28, textAlign: "center" }}>
@@ -958,22 +1253,151 @@ export default function ScannerPage() {
         {/* ── RESULT CARD ── */}
         {result && scanState === "done" && (
           <div style={{ marginTop: 12 }}>
+            {apiScanSummary && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  background: weakResult
+                    ? "rgba(255,183,77,0.07)"
+                    : "rgba(76,175,80,0.1)",
+                  border: weakResult
+                    ? "1px solid rgba(255,183,77,0.28)"
+                    : "1px solid rgba(76,175,80,0.32)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 1.2,
+                    color: weakResult
+                      ? "rgba(255,183,77,0.95)"
+                      : "rgba(165,214,167,0.95)",
+                    marginBottom: 8,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Scan summary
+                </div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 15,
+                    lineHeight: 1.55,
+                    color: "rgba(255,255,255,0.92)",
+                    fontWeight: 600,
+                  }}
+                >
+                  {apiScanSummary}
+                </p>
+              </div>
+            )}
+            {scanPayloadFlags?.status === "needs_better_images" && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  background: "rgba(255,152,0,0.1)",
+                  border: "1px solid rgba(255,152,0,0.35)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 1.1,
+                    color: "rgba(255,193,7,0.95)",
+                    marginBottom: 8,
+                  }}
+                >
+                  Photo quality limits confidence
+                </div>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "rgba(255,255,255,0.88)" }}>
+                  For more reliable strain matching, use <strong style={{ color: "rgba(255,255,255,0.95)" }}>brighter, even lighting</strong>, keep the subject <strong style={{ color: "rgba(255,255,255,0.95)" }}>in sharp focus</strong>, let the flower <strong style={{ color: "rgba(255,255,255,0.95)" }}>fill more of the frame</strong>, and add <strong style={{ color: "rgba(255,255,255,0.95)" }}>2–5 angles</strong> (top, side, trichomes) when you can.
+                </p>
+              </div>
+            )}
+            {scanPayloadFlags?.resultType === "unresolved" && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 0.8,
+                    color: "rgba(255,255,255,0.45)",
+                    marginBottom: 6,
+                  }}
+                >
+                  Match confidence
+                </div>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "rgba(255,255,255,0.72)" }}>
+                  We don&apos;t have a strong cultivar match from this scan yet—the results below are best-effort. Try sharper, well-lit photos or a different angle if you want a clearer ID.
+                </p>
+              </div>
+            )}
             <HybridScanLeadSections hybrid={hybridPresentation} />
             {/* Strain Name Hero */}
             <div style={{
               textAlign: "center",
               padding: "32px 0 20px",
             }}>
-              <span style={{ fontSize: 40 }}>{typeEmoji(result.type)}</span>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 1.3,
+                  textTransform: "uppercase",
+                  color: weakResult
+                    ? "rgba(255,183,77,0.92)"
+                    : "rgba(129,199,132,0.92)",
+                  marginBottom: 10,
+                }}
+              >
+                {weakResult ? "Best-effort match" : "Top cultivar match"}
+              </div>
+              <span
+                style={{
+                  fontSize: weakResult ? 34 : 40,
+                  opacity: weakResult ? 0.88 : 1,
+                  display: "inline-block",
+                }}
+              >
+                {typeEmoji(result.type)}
+              </span>
               <h1 style={{
-                fontSize: 32,
+                fontSize: weakResult ? 28 : 32,
                 fontWeight: 800,
                 margin: "12px 0 0",
                 letterSpacing: -0.5,
                 lineHeight: 1.1,
+                color: weakResult ? "rgba(255,255,255,0.9)" : "#fff",
               }}>
                 {result.strainName}
               </h1>
+              {weakResult && (
+                <p
+                  style={{
+                    margin: "12px 0 0",
+                    fontSize: 13,
+                    lineHeight: 1.55,
+                    color: "rgba(255,255,255,0.42)",
+                    padding: "0 8px",
+                  }}
+                >
+                  This is a visual suggestion—not a lab ID. Compare to your label or test results when it matters.
+                </p>
+              )}
 
               {/* Type + Confidence */}
               <div style={{
@@ -1029,24 +1453,132 @@ export default function ScannerPage() {
                 </p>
               )}
 
-              {/* Save to Favorites */}
-              <div style={{ marginTop: 16, display: "flex", justifyContent: "center", gap: 10 }}>
-                <button
-                  onClick={saveFavorite}
-                  disabled={isFavorited}
+              {/* Save to history + favorites */}
+              <div
+                style={{
+                  marginTop: 18,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <div
                   style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    padding: "9px 20px", borderRadius: 20,
-                    border: isFavorited ? "1px solid rgba(239,83,80,0.4)" : "1px solid rgba(239,83,80,0.35)",
-                    background: isFavorited ? "rgba(239,83,80,0.2)" : "rgba(255,255,255,0.06)",
-                    color: isFavorited ? "#EF5350" : "rgba(255,255,255,0.55)",
-                    fontSize: 13, fontWeight: 700, cursor: isFavorited ? "default" : "pointer",
-                    transition: "all 0.2s",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    gap: 10,
                   }}
                 >
-                  <span style={{ fontSize: 15 }}>{isFavorited ? "❤️" : "🤍"}</span>
-                  {isFavorited ? "Saved to Favorites" : "Save to Favorites"}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveToHistory}
+                    disabled={saveHistoryState === "saving"}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "10px 22px",
+                      borderRadius: 20,
+                      border:
+                        saveHistoryState === "saved"
+                          ? "1px solid rgba(76,175,80,0.55)"
+                          : "1px solid rgba(76,175,80,0.45)",
+                      background:
+                        saveHistoryState === "saved"
+                          ? "rgba(76,175,80,0.22)"
+                          : "linear-gradient(135deg, rgba(67,160,71,0.35), rgba(46,125,50,0.2))",
+                      color: saveHistoryState === "saved" ? "#A5D6A7" : "#E8F5E9",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      cursor: saveHistoryState === "saving" ? "default" : "pointer",
+                      transition: "all 0.2s",
+                      boxShadow: "0 2px 12px rgba(46,125,50,0.2)",
+                    }}
+                  >
+                    <span style={{ fontSize: 15 }}>
+                      {saveHistoryState === "saved" ? "✓" : "📓"}
+                    </span>
+                    {saveHistoryState === "saving"
+                      ? "Saving…"
+                      : saveHistoryState === "saved"
+                        ? "Added to history"
+                        : "Save to history"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveFavorite}
+                    disabled={isFavorited}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "9px 20px",
+                      borderRadius: 20,
+                      border: isFavorited
+                        ? "1px solid rgba(239,83,80,0.4)"
+                        : "1px solid rgba(239,83,80,0.35)",
+                      background: isFavorited ? "rgba(239,83,80,0.2)" : "rgba(255,255,255,0.06)",
+                      color: isFavorited ? "#EF5350" : "rgba(255,255,255,0.55)",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: isFavorited ? "default" : "pointer",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <span style={{ fontSize: 15 }}>{isFavorited ? "❤️" : "🤍"}</span>
+                    {isFavorited ? "Saved to Favorites" : "Save to Favorites"}
+                  </button>
+                </div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.28)",
+                    textAlign: "center",
+                    maxWidth: 280,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Each save adds a new entry—you can save again anytime for the same result.
+                </p>
+                {saveHistoryState === "error" && (
+                  <p style={{ margin: 0, fontSize: 12, color: "rgba(255,183,77,0.95)" }}>
+                    Couldn&apos;t sync to the cloud—saved on this device. Try again when online.
+                  </p>
+                )}
+                {saveHistoryState === "saved" && (
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 12,
+                      background: "rgba(76,175,80,0.15)",
+                      border: "1px solid rgba(76,175,80,0.35)",
+                      textAlign: "center",
+                      maxWidth: 320,
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#A5D6A7" }}>
+                      Saved — open it from Scan History anytime.
+                    </p>
+                  </div>
+                )}
+                {savedScanLinkId && (
+                  <Link
+                    href={savedScanResultsPath(savedScanLinkId)}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "#81C784",
+                      textDecoration: "none",
+                      borderBottom: "1px solid rgba(129,199,132,0.4)",
+                      paddingBottom: 2,
+                    }}
+                  >
+                    Open this scan →
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -1903,9 +2435,6 @@ export default function ScannerPage() {
 
             <button
               onClick={() => {
-                // Award credit + mark consent
-                addPhotoCredit();
-                setPhotoCredits(getPhotoCredits());
                 setCreditEarned(true);
                 localStorage.setItem(`ss_consented_${result.strainName}`, "1");
                 setShowConsentModal(false);
@@ -1916,7 +2445,7 @@ export default function ScannerPage() {
                 border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
               }}
             >
-              Yes — Contribute &amp; Earn +1 Scan
+              Yes — Contribute Photo
             </button>
             <button
               onClick={() => {

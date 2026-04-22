@@ -1,6 +1,8 @@
 "use client";
 
+import { apiUrl } from "@/lib/config/apiBase";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import {
   getScansRemaining,
   MEMBERSHIP_TIERS,
@@ -13,11 +15,18 @@ interface ScanPaywallProps {
   mode: "warning" | "locked";
 }
 
-async function startCheckout(priceKey: string, email?: string) {
-  const res = await fetch("/api/stripe/checkout", {
+async function startCheckout(
+  priceKey: string,
+  opts?: { email?: string; userId?: string }
+) {
+  const res = await fetch(apiUrl("/api/stripe/checkout"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ priceKey, email }),
+    body: JSON.stringify({
+      priceKey,
+      ...(opts?.email ? { email: opts.email } : {}),
+      ...(opts?.userId ? { userId: opts.userId } : {}),
+    }),
   });
   const data = await res.json();
   if (data.url) {
@@ -28,6 +37,7 @@ async function startCheckout(priceKey: string, email?: string) {
 }
 
 export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
+  const { user } = useAuth();
   const remaining = getScansRemaining();
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -46,7 +56,11 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
   const handleCheckout = async (priceKey: string) => {
     setLoading(priceKey);
     const savedEmail = emailSubmitted ? email : undefined;
-    await startCheckout(priceKey, savedEmail);
+    const emailForStripe = savedEmail || user?.email || undefined;
+    await startCheckout(priceKey, {
+      email: emailForStripe,
+      userId: user?.id,
+    });
     setLoading(null);
   };
 

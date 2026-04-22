@@ -2,34 +2,7 @@
  * Legacy normalization for GPT scan JSON — safe defaults for older `result` consumers.
  */
 
-import type {
-  ScanAnalysisNormalized,
-  TerpeneEstimate,
-} from "@/lib/scanner/scanTypes";
-
-const DEFAULT_TERPENE = { name: "Myrcene", confidence: 0.5 };
-const DOMINANCE_OPTIONS = ["Indica", "Sativa", "Hybrid"] as const;
-
-function safeString(value: unknown, fallback: string): string {
-  if (typeof value === "string" && value.trim()) return value;
-  return fallback;
-}
-
-function safeStringArray(value: unknown, fallback: string[]): string[] {
-  return Array.isArray(value) ? (value as string[]) : fallback;
-}
-
-/** Clamp identity-style confidence to [min, max], with optional default when NaN. */
-function boundedConfidence(
-  value: unknown,
-  min: number,
-  max: number,
-  defaultValue: number
-): number {
-  const n = Number(value);
-  const base = Number.isFinite(n) ? n : defaultValue;
-  return Math.max(min, Math.min(max, base));
-}
+import type { ScanAnalysisNormalized } from "@/lib/scanner/scanTypes";
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value != null && typeof value === "object"
@@ -37,9 +10,22 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
-/**
- * Ensure the AI response has all required fields with safe defaults (legacy `result` blob).
- */
+function safeString(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function safeStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function boundedConfidence(value: unknown, min = 35, max = 95, fallback = 38): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(min, Math.min(max, numeric));
+}
+
 export function normalizeScanAnalysis(
   raw: Record<string, unknown>
 ): ScanAnalysisNormalized {
@@ -51,63 +37,66 @@ export function normalizeScanAnalysis(
   const cultivation = asRecord(raw.cultivation);
   const reasoning = asRecord(raw.reasoning);
 
-  const terpenesRaw = chemistry.terpenes;
-  const terpenes: TerpeneEstimate[] = Array.isArray(terpenesRaw)
-    ? (terpenesRaw as TerpeneEstimate[])
-    : [DEFAULT_TERPENE];
+  const terpeneList = Array.isArray(chemistry.terpenes)
+    ? chemistry.terpenes
+    : [{ name: "Myrcene", confidence: 0.5 }];
 
-  const dominanceStr = genetics.dominance as string | undefined;
-  const dominance = DOMINANCE_OPTIONS.includes(
-    dominanceStr as (typeof DOMINANCE_OPTIONS)[number]
-  )
-    ? dominanceStr!
-    : "Hybrid";
+  const experienceEffects = safeStringArray(experience.effects);
 
   return {
     identity: {
       strainName: safeString(identity.strainName, "Unknown Cultivar"),
-      confidence: boundedConfidence(identity.confidence, 35, 95, 60),
+      confidence: boundedConfidence(identity.confidence),
       alternateMatches: Array.isArray(identity.alternateMatches)
-        ? identity.alternateMatches
+        ? (identity.alternateMatches as Array<{
+            strainName?: string;
+            confidence?: number;
+          }>)
         : [],
     },
     genetics: {
-      dominance,
-      lineage: Array.isArray(genetics.lineage) ? (genetics.lineage as string[]) : [],
+      dominance:
+        genetics.dominance === "Indica" ||
+        genetics.dominance === "Sativa" ||
+        genetics.dominance === "Hybrid"
+          ? genetics.dominance
+          : "Hybrid",
+      lineage: safeStringArray(genetics.lineage),
       breederNotes: safeString(
         genetics.breederNotes,
         "Lineage analysis based on visual traits"
       ),
-      confidenceNotes: (genetics.confidenceNotes as string | null | undefined) || null,
+      confidenceNotes:
+        typeof genetics.confidenceNotes === "string"
+          ? genetics.confidenceNotes
+          : null,
     },
     morphology: {
       budStructure: safeString(morphology.budStructure, "Analysis pending"),
       coloration: safeString(morphology.coloration, "Standard green coloration"),
       trichomes: safeString(morphology.trichomes, "Trichome assessment pending"),
-      visualTraits: safeStringArray(morphology.visualTraits, []),
-      growthIndicators: safeStringArray(morphology.growthIndicators, []),
+      visualTraits: safeStringArray(morphology.visualTraits),
+      growthIndicators: safeStringArray(morphology.growthIndicators),
     },
     chemistry: {
-      terpenes,
-      cannabinoids: (chemistry.cannabinoids as Record<string, string>) || {
-        THC: "15-25%",
-        CBD: "<1%",
-      },
+      terpenes: terpeneList as Array<{ name: string; confidence: number }>,
+      cannabinoids:
+        chemistry.cannabinoids && typeof chemistry.cannabinoids === "object"
+          ? (chemistry.cannabinoids as Record<string, unknown>)
+          : { THC: "15-25%", CBD: "<1%" },
       cannabinoidRange: safeString(
         chemistry.cannabinoidRange,
         "15-25% THC, <1% CBD"
       ),
-      likelyTerpenes: Array.isArray(terpenesRaw)
-        ? (terpenesRaw as TerpeneEstimate[]).slice(0, 3)
-        : [DEFAULT_TERPENE],
+      likelyTerpenes: terpeneList as Array<{ name: string; confidence: number }>,
     },
     experience: {
-      effects: safeStringArray(experience.effects, ["Relaxed"]),
-      primaryEffects: safeStringArray(experience.primaryEffects, []),
-      secondaryEffects: safeStringArray(experience.secondaryEffects, []),
+      effects: experienceEffects.length ? experienceEffects : ["Relaxed"],
+      primaryEffects: safeStringArray(experience.primaryEffects),
+      secondaryEffects: safeStringArray(experience.secondaryEffects),
       onset: safeString(experience.onset, "Moderate"),
       duration: safeString(experience.duration, "2-4 hours"),
-      bestUse: safeStringArray(experience.bestUse, []),
+      bestUse: safeStringArray(experience.bestUse),
     },
     cultivation: {
       difficulty: safeString(cultivation.difficulty, "Moderate"),
@@ -121,7 +110,7 @@ export function normalizeScanAnalysis(
         "Visual analysis of uploaded images"
       ),
       conflictingSignals: Array.isArray(reasoning.conflictingSignals)
-        ? reasoning.conflictingSignals
+        ? (reasoning.conflictingSignals as string[])
         : null,
       databaseMatch:
         typeof reasoning.databaseMatch === "boolean"
@@ -129,6 +118,6 @@ export function normalizeScanAnalysis(
           : false,
     },
     disclaimer:
-      "AI-assisted visual analysis powered by StrainSpotter's 314-strain database. Not a substitute for laboratory testing.",
+      "AI-assisted visual analysis powered by StrainSpotter's cannabis database. Not a substitute for laboratory testing.",
   };
 }
