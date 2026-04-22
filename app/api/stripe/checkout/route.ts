@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import type Stripe from "stripe";
 import { STRIPE_PRICES } from "@/lib/stripe/config";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-});
+import { getStripe } from "@/lib/stripe/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const stripe = getStripe();
     const body = await req.json();
     const { priceKey, email, userId, name, moderatorInterest } = body as {
       priceKey: keyof typeof STRIPE_PRICES;

@@ -1,7 +1,9 @@
 "use client";
 
+import { apiUrl } from "@/lib/config/apiBase";
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 /**
  * After Stripe redirects back with ?checkout=success&session_id=...
@@ -12,6 +14,7 @@ import { getSupabase } from "@/lib/supabase/client";
  * 5. Celebrate and reload
  */
 export default function CheckoutReturn() {
+  const { refreshProfileByUserId } = useAuth();
   const [status, setStatus] = useState<
     "idle" | "verifying" | "creating" | "success" | "error"
   >("idle");
@@ -37,7 +40,7 @@ export default function CheckoutReturn() {
     try {
       // Step 1: Verify the Stripe session
       const res = await fetch(
-        `/api/stripe/verify-session?session_id=${sessionId}`
+        apiUrl(`/api/stripe/verify-session?session_id=${encodeURIComponent(sessionId)}`)
       );
       const data = await res.json();
 
@@ -76,12 +79,28 @@ export default function CheckoutReturn() {
         setTierName(tier === "pro" ? "Pro" : "Member");
       }
 
+      // Server may have updated `profiles` (verify-session). Refresh if already signed in.
+      const supabase = getSupabase();
+      const {
+        data: { session: preSession },
+      } = await supabase.auth.getSession();
+      if (preSession?.user?.id) {
+        await refreshProfileByUserId(preSession.user.id);
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[checkout-return] verify-session ok, profile refresh", {
+            userId: preSession.user.id,
+            verifyTier: tier,
+            refreshProfileByUserId: true,
+          });
+        }
+      }
+
       // Step 3: Create real Supabase user via server route
       if (email && password) {
         setStatus("creating");
 
         try {
-          const createRes = await fetch("/api/auth/create-user", {
+          const createRes = await fetch(apiUrl("/api/auth/create-user"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -97,9 +116,23 @@ export default function CheckoutReturn() {
           if (createData.success) {
             // Step 4: Auto-sign in with the credentials
             try {
-              const supabase = getSupabase();
               await supabase.auth.signInWithPassword({ email, password });
-              // AuthProvider will pick up the session and sync everything
+              const {
+                data: { user: signedUser },
+              } = await supabase.auth.getUser();
+              if (signedUser?.id) {
+                await refreshProfileByUserId(signedUser.id);
+                if (process.env.NODE_ENV === "development") {
+                  console.debug(
+                    "[checkout-return] post-checkout sign-in, profile refresh",
+                    {
+                      userId: signedUser.id,
+                      verifyTier: tier,
+                      refreshProfileByUserId: true,
+                    }
+                  );
+                }
+              }
             } catch (signInErr) {
               // Sign-in failed — localStorage tier still works as fallback
               console.warn("Auto sign-in failed:", signInErr);
@@ -117,6 +150,21 @@ export default function CheckoutReturn() {
       localStorage.removeItem("ss_signup_info");
 
       setStatus("success");
+
+      // Final pull so UI tier matches DB before full reload (covers any race with auth listener).
+      const {
+        data: { session: finalSession },
+      } = await supabase.auth.getSession();
+      if (finalSession?.user?.id) {
+        await refreshProfileByUserId(finalSession.user.id);
+      }
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[checkout-return] success, final profile refresh", {
+          userId: finalSession?.user?.id ?? null,
+          verifyTier: tier,
+          refreshProfileByUserIdRan: !!finalSession?.user?.id,
+        });
+      }
 
       // Clean URL and reload after celebration
       setTimeout(() => {

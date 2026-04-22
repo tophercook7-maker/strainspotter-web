@@ -1,43 +1,47 @@
-// lib/ageGate.ts — 21+ age verification with localStorage persistence
+const STORAGE_KEY = "ss_age_verified";
 
-const AGE_GATE_KEY = "ss_age_verified";
+interface AgeVerificationPayload {
+  verified: true;
+  timestamp: number;
+  version: 2;
+}
+
+function canUseStorage() {
+  return typeof window !== "undefined" && typeof localStorage !== "undefined";
+}
 
 export function isAgeVerified(): boolean {
-  if (typeof window === "undefined") return false;
+  if (!canUseStorage()) return false;
+
   try {
-    const stored = localStorage.getItem(AGE_GATE_KEY);
-    if (!stored) return false;
-    const parsed = JSON.parse(stored);
-    return parsed?.verified === true && parsed?.dob;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+
+    const parsed = JSON.parse(raw);
+    return parsed?.verified === true;
   } catch {
     return false;
   }
 }
 
-export function verifyAge(dob: string): { verified: boolean; age: number } {
-  const birthDate = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
+export function verifyAge(): boolean {
+  if (!canUseStorage()) return false;
 
-  if (age >= 21) {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        AGE_GATE_KEY,
-        JSON.stringify({ verified: true, dob, timestamp: Date.now() })
-      );
-    }
-    return { verified: true, age };
-  }
+  try {
+    const payload: AgeVerificationPayload = {
+      verified: true,
+      timestamp: Date.now(),
+      version: 2,
+    };
 
-  return { verified: false, age };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function clearAgeVerification(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(AGE_GATE_KEY);
-  }
+  if (!canUseStorage()) return;
+  localStorage.removeItem(STORAGE_KEY);
 }

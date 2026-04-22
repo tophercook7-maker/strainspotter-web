@@ -1,6 +1,8 @@
 "use client";
 
+import { apiUrl } from "@/lib/config/apiBase";
 import { useState } from "react";
+import { useOptionalAuth } from "@/lib/auth/AuthProvider";
 
 interface MembershipSignupProps {
   onClose: () => void;
@@ -11,6 +13,7 @@ export default function MembershipSignup({
   onClose,
   defaultPlan = "member",
 }: MembershipSignupProps) {
+  const auth = useOptionalAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,13 +42,14 @@ export default function MembershipSignup({
       }
 
       // Go straight to Stripe checkout
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch(apiUrl("/api/stripe/checkout"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           priceKey: plan,
           email: email.trim(),
           name: name.trim(),
+          ...(auth?.user?.id ? { userId: auth.user.id } : {}),
         }),
       });
 
