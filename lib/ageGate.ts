@@ -6,15 +6,21 @@ interface AgeVerificationPayload {
   version: 2;
 }
 
-function canUseStorage() {
-  return typeof window !== "undefined" && typeof localStorage !== "undefined";
+function getStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 export function isAgeVerified(): boolean {
-  if (!canUseStorage()) return false;
-
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const storage = getStorage();
+    if (!storage) return false;
+
+    const raw = storage.getItem(STORAGE_KEY);
     if (!raw) return false;
 
     const parsed = JSON.parse(raw);
@@ -25,16 +31,17 @@ export function isAgeVerified(): boolean {
 }
 
 export function verifyAge(): boolean {
-  if (!canUseStorage()) return false;
-
   try {
+    const storage = getStorage();
+    if (!storage) return false;
+
     const payload: AgeVerificationPayload = {
       verified: true,
       timestamp: Date.now(),
       version: 2,
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    storage.setItem(STORAGE_KEY, JSON.stringify(payload));
     return true;
   } catch {
     return false;
@@ -42,6 +49,9 @@ export function verifyAge(): boolean {
 }
 
 export function clearAgeVerification(): void {
-  if (!canUseStorage()) return;
-  localStorage.removeItem(STORAGE_KEY);
+  try {
+    getStorage()?.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
 }

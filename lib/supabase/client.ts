@@ -12,13 +12,16 @@ let client: ReturnType<typeof createClient> | null = null;
 
 export function getSupabase() {
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Return a dummy client that won't crash but won't work
-    // This lets the app build even before the anon key is set
-    console.warn("Supabase not configured — auth features disabled");
-    return createClient(
-      supabaseUrl || "https://placeholder.supabase.co",
-      supabaseAnonKey || "placeholder"
-    );
+    if (!client) {
+      // Return a dummy client that won't crash but won't work.
+      // This lets the app build even before the anon key is set.
+      console.warn("Supabase not configured — auth features disabled");
+      client = createClient(
+        supabaseUrl || "https://placeholder.supabase.co",
+        supabaseAnonKey || "placeholder"
+      );
+    }
+    return client;
   }
 
   if (typeof window === "undefined") {

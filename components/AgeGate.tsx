@@ -20,16 +20,25 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
   const bypass = useMemo(() => isPublicRoute(pathname), [pathname]);
 
   useEffect(() => {
-    if (bypass) {
-      setVerified(true);
-      return;
-    }
+    try {
+      if (bypass) {
+        setVerified(true);
+        return;
+      }
 
-    setVerified(isAgeVerified());
+      setVerified(isAgeVerified());
+    } catch (error) {
+      console.warn("Age verification check failed:", error);
+      setVerified(false);
+    }
   }, [bypass]);
 
   function confirm() {
-    verifyAge();
+    try {
+      verifyAge();
+    } catch (error) {
+      console.warn("Age verification save failed:", error);
+    }
     setVerified(true);
   }
 
