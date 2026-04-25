@@ -16,7 +16,10 @@
     "cap:android": "npx cap open android",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "dataset:audit": "node scripts/audit-dataset-coverage.mjs",
+    "dataset:intake": "node scripts/intake-dataset.mjs",
+    "dataset:review": "node scripts/review-dataset-manifest.mjs --manifest data/review-manifest.json"
   },
   "dependencies": {
     "@capacitor/android": "8.3.1",

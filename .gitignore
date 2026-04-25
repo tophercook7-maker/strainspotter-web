@@ -11,10 +11,6 @@ __quarantine__/
 env/
 logs/
 
-# Desktop / native
-src-tauri/
-tauri.conf.json
-
 # Local/editor
 .vscode/
 .DS_Store
@@ -38,6 +34,11 @@ node_modules/
 !next.config.*
 !package.json
 !package-lock.json
+!README.md
+!vitest.config.ts
+!capacitor.config.ts
+!src-tauri/
+!src-tauri/**
 !tsconfig.json
 !postcss.config.js
 !tailwind.config.js
@@ -57,6 +58,9 @@ node_modules/
 !data/**
 !scripts/
 !scripts/**
+!docs/
+!docs/data-engine.md
+!docs/scanner-dataset-workflow.md
 
 # ===============================
 # ENVIRONMENT / SECRETS (never commit)
