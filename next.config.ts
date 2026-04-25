@@ -3,6 +3,9 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  outputFileTracingIncludes: {
+    "/api/scan": ["./data/embeddings/strain-embeddings.json"],
+  },
 
   typescript: {
     ignoreBuildErrors: false,
