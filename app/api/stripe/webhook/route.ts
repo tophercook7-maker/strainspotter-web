@@ -21,8 +21,18 @@ async function updateProfileByEmail(
   const supabase = getSupabaseAdmin();
 
   // Look up user in auth.users by email
-  const { data: userList } = await supabase.auth.admin.listUsers();
-  const user = userList?.users?.find(
+  const listRes = await supabase.auth.admin.listUsers();
+  if (listRes.error) {
+    console.error(
+      `❌ Failed to list users for ${email}:`,
+      listRes.error.message
+    );
+    return false;
+  }
+  // TS can't narrow the discriminated union; cast to success-branch shape.
+  const users = (listRes.data as { users: { id: string; email?: string }[] })
+    .users;
+  const user = users.find(
     (u) => u.email?.toLowerCase() === email.toLowerCase()
   );
 
@@ -99,8 +109,19 @@ export async function POST(req: NextRequest) {
         const { getSupabaseAdmin } = await import("@/lib/supabase/server");
         const supabase = getSupabaseAdmin();
 
-        const { data: userList } = await supabase.auth.admin.listUsers();
-        const user = userList?.users?.find(
+        const listRes = await supabase.auth.admin.listUsers();
+        if (listRes.error) {
+          console.error(
+            `❌ Failed to list users for top-up ${customerEmail}:`,
+            listRes.error.message
+          );
+          break;
+        }
+        // TS can't narrow the discriminated union; cast to success-branch shape.
+        const users = (
+          listRes.data as { users: { id: string; email?: string }[] }
+        ).users;
+        const user = users.find(
           (u) => u.email?.toLowerCase() === customerEmail.toLowerCase()
         );
 

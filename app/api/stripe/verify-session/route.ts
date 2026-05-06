@@ -37,8 +37,15 @@ export async function GET(req: NextRequest) {
       try {
         const { getSupabaseAdmin } = await import("@/lib/supabase/server");
         const supabase = getSupabaseAdmin();
-        const { data: userList } = await supabase.auth.admin.listUsers();
-        const user = userList?.users?.find(
+        const listRes = await supabase.auth.admin.listUsers();
+        if (listRes.error) {
+          throw listRes.error;
+        }
+        // TS can't narrow the discriminated union; cast to success-branch shape.
+        const users = (
+          listRes.data as { users: { id: string; email?: string }[] }
+        ).users;
+        const user = users.find(
           (u) => u.email?.toLowerCase() === email.toLowerCase()
         );
 

@@ -48,6 +48,7 @@
     "scripts",
     "pipeline-control",
     "tools",
+    "**/_unused/**",
     "**/*.backup.*",
     "**/*-backup.*"
   ]

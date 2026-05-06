@@ -19,8 +19,18 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseAdmin();
 
     // Check if user already exists
-    const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const existing = existingUsers?.users?.find(
+    const listRes = await supabase.auth.admin.listUsers();
+    if (listRes.error) {
+      return NextResponse.json(
+        { error: `Failed to list users: ${listRes.error.message}` },
+        { status: 500 }
+      );
+    }
+    // TS can't narrow the discriminated union after destructuring; cast to the
+    // success-branch shape (we already returned on error above).
+    const users = (listRes.data as { users: { id: string; email?: string }[] })
+      .users;
+    const existing = users.find(
       (u) => u.email?.toLowerCase() === email.toLowerCase()
     );
 
