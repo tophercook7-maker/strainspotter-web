@@ -4,6 +4,10 @@ import path from "path";
 const nextConfig: NextConfig = {
   turbopack: {},
 
+  // When multiple lockfiles exist, Next may infer a parent folder as workspace root.
+  // Pin tracing to this app so server code resolving `data/` sees the real repo.
+  outputFileTracingRoot: path.join(__dirname),
+
   // Skip TypeScript errors during build — legacy type mismatches
   // in scanner/monetization files pre-date the auth system.
   // Clean these up incrementally; don't block deploys.

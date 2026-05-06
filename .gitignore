@@ -43,6 +43,7 @@ node_modules/
 !postcss.config.js
 !tailwind.config.js
 !GLASS_UI*.md
+!CLAUDE_HANDOFF_STRAINSPOTTER.md
 # ===============================
 # ALLOW DESKTOP APP
 # ===============================

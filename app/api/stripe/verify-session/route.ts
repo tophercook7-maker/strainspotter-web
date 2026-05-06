@@ -1,10 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-import { getSupabaseAdmin } from "@/lib/supabase/server";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-});
 
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get("session_id");
@@ -14,7 +8,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const { getStripeServerClient } = await import("@/lib/stripe/server");
+    const session = await getStripeServerClient().checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== "paid") {
       return NextResponse.json(
@@ -40,6 +35,7 @@ export async function GET(req: NextRequest) {
     // Best-effort: sync to Supabase profile if user exists
     if (email && tier) {
       try {
+        const { getSupabaseAdmin } = await import("@/lib/supabase/server");
         const supabase = getSupabaseAdmin();
         const { data: userList } = await supabase.auth.admin.listUsers();
         const user = userList?.users?.find(

@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-import { getSupabaseAdmin } from "@/lib/supabase/server";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-});
+import type Stripe from "stripe";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
@@ -22,6 +17,7 @@ async function updateProfileByEmail(
   email: string,
   updates: Record<string, unknown>
 ) {
+  const { getSupabaseAdmin } = await import("@/lib/supabase/server");
   const supabase = getSupabaseAdmin();
 
   // Look up user in auth.users by email
@@ -51,6 +47,8 @@ async function updateProfileByEmail(
 
 /* ── Webhook handler ── */
 export async function POST(req: NextRequest) {
+  const { getStripeServerClient } = await import("@/lib/stripe/server");
+  const stripe = getStripeServerClient();
   const body = await req.text();
   const sig = req.headers.get("stripe-signature")!;
 
@@ -98,6 +96,7 @@ export async function POST(req: NextRequest) {
       // Scan top-ups
       if (priceKey === "topup_10" || priceKey === "topup_25") {
         const scansToAdd = priceKey === "topup_10" ? 10 : 25;
+        const { getSupabaseAdmin } = await import("@/lib/supabase/server");
         const supabase = getSupabaseAdmin();
 
         const { data: userList } = await supabase.auth.admin.listUsers();
