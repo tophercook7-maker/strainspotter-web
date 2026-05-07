@@ -4,7 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import TopNav from "../_components/TopNav";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Stage = "seed" | "seedling" | "veg" | "flower" | "dry" | "cure" | "harvested";
+type Stage =
+  | "sourcing"
+  | "seed"
+  | "seedling"
+  | "veg"
+  | "flower"
+  | "dry"
+  | "cure"
+  | "harvested"
+  | "partake";
 
 interface Grow {
   id: string;
@@ -27,52 +36,84 @@ interface GrowLog {
 interface CoachTip {
   title: string;
   body: string;
-  icon: "water" | "light" | "temp" | "nutrient" | "general";
+  icon: "water" | "light" | "temp" | "nutrient" | "general" | "shop" | "use";
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const STAGES: { key: Stage; label: string; emoji: string; color: string }[] = [
-  { key: "seed", label: "Seed", emoji: "🌰", color: "#8B6914" },
+  { key: "sourcing", label: "Sourcing", emoji: "🛒", color: "#9C27B0" },
+  { key: "seed", label: "Germination", emoji: "🌰", color: "#8B6914" },
   { key: "seedling", label: "Seedling", emoji: "🌱", color: "#4CAF50" },
   { key: "veg", label: "Vegetative", emoji: "🌿", color: "#2E7D32" },
   { key: "flower", label: "Flowering", emoji: "🌸", color: "#E91E63" },
   { key: "dry", label: "Drying", emoji: "🍂", color: "#FF9800" },
   { key: "cure", label: "Curing", emoji: "🫙", color: "#795548" },
   { key: "harvested", label: "Harvested", emoji: "✅", color: "#607D8B" },
+  { key: "partake", label: "Partake", emoji: "🌿", color: "#00ACC1" },
 ];
 
 const STAGE_TIPS: Record<Stage, CoachTip[]> = {
+  sourcing: [
+    { title: "Pick a strain that fits YOUR setup", body: "Indica strains finish faster (7-9 weeks flower) and stay shorter — great for tents and beginners. Sativas take longer (10-14 weeks) and stretch more. Auto-flowering strains finish in ~10 weeks total without needing a light-cycle change. Hybrids split the difference. Match the strain to your space, time, and patience.", icon: "shop" },
+    { title: "Photoperiod vs. autoflower", body: "Photoperiod plants need a 12/12 light cycle to flower — you control when. Autoflowers flip on their own around week 4-5 regardless of light, which means faster harvests but less yield and no training tolerance. Beginners often start with autos to learn the cycle without timing complexity.", icon: "general" },
+    { title: "Feminized seeds save trouble", body: "Regular seeds are 50/50 male/female — males have to be culled before they pollinate your flowers. Feminized seeds produce only female plants. Cost a bit more but eliminate the most stressful part of growing. For a first grow, feminized is almost always the right call.", icon: "shop" },
+    { title: "Buy from established breeders", body: "Reputable seed banks publish strain lineage, expected flowering time, yield ranges, and germination guarantees. Look for stealth shipping if you're in a region where seeds are gray-market. Check growing forum reviews before ordering — bad genetics ruin a grow before it starts.", icon: "shop" },
+    { title: "Seed quality check", body: "Healthy seeds are dark brown to nearly black with tiger-stripe patterns and a glossy, hard shell. Pale, green, or soft seeds are immature and germination rates drop. Squeeze gently — a good seed shouldn't crush. Store unused seeds in an airtight container in the fridge; they stay viable for years.", icon: "general" },
+    { title: "Set your goals before buying", body: "Decide what you want from this plant before you order seeds: high yield? a specific terpene profile? CBD-dominant? short flowering window? mold-resistant for outdoor? The strain catalog in this app lists effect families and morphology — match those to what you want before committing 12+ weeks to a grow.", icon: "general" },
+  ],
   seed: [
-    { title: "Germination", body: "Keep seeds warm (75-85°F) and moist. Paper towel method works great — place seeds between damp paper towels in a warm, dark spot.", icon: "temp" },
-    { title: "Patience", body: "Seeds typically crack within 24-72 hours. Don't overhandle them. Once the taproot is ½ inch, plant root-down in pre-moistened soil.", icon: "general" },
+    { title: "Germination method", body: "Paper towel method is most reliable for beginners. Place seeds between two damp (not soaked) paper towels in a sealed plastic container, in a dark spot at 75-85°F. Most seeds crack and show a taproot within 24-72 hours. Direct-to-soil works too but you can't see what's happening.", icon: "temp" },
+    { title: "When to plant", body: "Once the taproot is about ½ inch long, plant root-down in pre-moistened soil or a starter plug, ¼-½ inch deep. Don't bury the seed leaf. Cover loosely. The seedling should emerge within 2-7 days.", icon: "general" },
+    { title: "Patience matters here", body: "Don't poke, peek, or replant. Don't water from above with force. Seeds that take 5-7 days aren't dead — they're just slow. Seeds that haven't shown signs by day 10 are usually duds.", icon: "general" },
+    { title: "First moisture", body: "Spray the surface lightly with a mister, don't pour. The seedling's tiny root can't handle a flood. Aim for the soil staying like a wrung-out sponge — damp, not wet.", icon: "water" },
   ],
   seedling: [
-    { title: "Light Schedule", body: "18/6 light cycle. Keep lights 24-30 inches away to prevent stretching. Seedlings need gentle, indirect light at first.", icon: "light" },
-    { title: "Watering", body: "Mist lightly — seedlings have tiny root systems. Overwatering is the #1 killer at this stage. Let the top inch dry between waterings.", icon: "water" },
-    { title: "Temperature", body: "Keep 70-80°F with 65-70% humidity. A dome or humidity tray helps maintain moisture for delicate seedlings.", icon: "temp" },
+    { title: "Light schedule", body: "18/6 light cycle (or 24/0 if you're worried about stretching). Keep LED lights at 50%% intensity and 24-30 inches away to prevent stretching and bleaching. Seedlings need gentle, indirect light for the first 1-2 weeks.", icon: "light" },
+    { title: "Watering — the killer", body: "Overwatering kills more seedlings than anything else. Their root systems are tiny — a flood drowns them. Mist lightly or water in a small ring around (not on) the stem. Let the top inch of soil dry between waterings. Lift the pot — light = needs water, heavy = leave it.", icon: "water" },
+    { title: "Temperature & humidity", body: "70-80°F with 65-70%% humidity is the sweet spot. A clear humidity dome or plastic bag with airholes helps newborn seedlings establish. Crack the dome a bit more each day to harden them off over a week.", icon: "temp" },
+    { title: "Don't feed yet", body: "Seedlings have everything they need from their cotyledons (the round first leaves) for the first 2-3 weeks. Adding nutrients now causes burn — yellowing, crispy leaf tips. Plain water (slightly pH-adjusted to 6.0-6.5 for soil) is all you need until you see 4-5 sets of true leaves.", icon: "nutrient" },
+    { title: "Watch for stretching", body: "Tall, thin, leaning seedlings = light is too far away or too weak. Bring the light closer (carefully — check leaf temp with the back of your hand) or bump intensity. A small fan on the lowest setting strengthens stems and prevents damping-off.", icon: "general" },
   ],
   veg: [
-    { title: "Nitrogen Boost", body: "Vegetative plants are hungry for nitrogen. Start feeding at ¼ strength and increase weekly. Watch for dark green, healthy leaves.", icon: "nutrient" },
-    { title: "Training Time", body: "LST (Low Stress Training) and topping are best done now. Bend and tie branches to create an even canopy for maximum light exposure.", icon: "general" },
-    { title: "Light Schedule", body: "18/6 is standard. Some growers run 20/4. Ensure strong, full-spectrum light coverage across the entire canopy.", icon: "light" },
-    { title: "Humidity & Airflow", body: "Keep 40-60% humidity with good air circulation. Oscillating fans strengthen stems and prevent mold.", icon: "temp" },
+    { title: "Nitrogen is king now", body: "Vegetative plants are hungry for nitrogen — it builds leaf and stem mass. Start at ¼ strength with a veg-formula nutrient and ramp up over 2 weeks. Healthy vegetative plants have rich green leaves with a slight glossy shine. Pale = needs more N. Dark, clawing tips = too much.", icon: "nutrient" },
+    { title: "Training time — biggest yield lever", body: "LST (Low Stress Training) — gently bend and tie down the main stem to expose lower bud sites. Topping — cut the main growing tip when 4-5 nodes have formed; this creates 2 main colas instead of 1. SCROG — train branches through a screen for an even canopy. Pick one, learn it well, double your yield.", icon: "general" },
+    { title: "Light schedule", body: "18/6 is standard and effective. Some growers run 20/4 for slightly faster growth, but the extra electricity rarely pays off. What matters more is light intensity and coverage — a strong 18/6 beats a weak 24/0 every time. Aim for 400-600 PPFD across the canopy.", icon: "light" },
+    { title: "Humidity & airflow", body: "Drop humidity to 40-60%% as plants get bigger. Constant gentle airflow over and under the canopy strengthens stems, prevents mold, and keeps pests from settling. An oscillating fan plus an exhaust fan covers most setups.", icon: "temp" },
+    { title: "When to flip", body: "Flip to 12/12 when plants are about half the height you want them at harvest — they typically double in size during the stretch (first 2-3 weeks of flower). For a 4-foot final plant, flip at ~2 feet. Stronger genetics need less veg time; weaker plants benefit from extra weeks.", icon: "general" },
   ],
   flower: [
-    { title: "12/12 Flip", body: "Switch to 12/12 light schedule to trigger flowering. No light leaks! Even brief interruptions can cause stress or hermaphroditism.", icon: "light" },
-    { title: "Phosphorus & Potassium", body: "Reduce nitrogen, increase P and K. A bloom-specific nutrient formula will support bud development. Watch for deficiency signs.", icon: "nutrient" },
-    { title: "Humidity Control", body: "Lower humidity to 40-50% to prevent bud rot. Increase airflow around colas. Defoliate strategically to improve air circulation.", icon: "temp" },
-    { title: "Trichome Watch", body: "Around week 6-8, start checking trichomes with a jeweler's loupe. Cloudy = peak THC. Amber = more body/sedative effect.", icon: "general" },
+    { title: "The 12/12 flip", body: "Switch to 12/12 light schedule to trigger flowering in photoperiod plants. ZERO light leaks during the 12 dark hours — even brief interruptions cause stress, reduced yield, or hermaphroditism (which seeds your buds and ruins them). Tape any indicator LEDs in the room.", icon: "light" },
+    { title: "The stretch", body: "Plants will double or triple in height in the first 2-3 weeks of 12/12. This is normal and expected. Make sure your light has the headroom. Mid-stretch is the last good chance to do any heavy training (super-cropping, defoliation).", icon: "general" },
+    { title: "Switch to bloom nutrients", body: "Reduce nitrogen significantly, increase phosphorus and potassium (P-K). Bloom-formula nutrients support bud development and resin production. Most lines have a clear veg-to-bloom transition product. Watch for purple/red stems and yellowing lower leaves — early signs of P or K deficiency.", icon: "nutrient" },
+    { title: "Humidity control = bud rot prevention", body: "Lower humidity to 40-50%% during flower, dropping to 35-45%% in the last 2 weeks. Dense, mature buds trap moisture and bud rot (botrytis) can ruin a harvest in days. Increase airflow around colas. Defoliate strategically — remove fan leaves shading bud sites, but don't strip the plant naked.", icon: "temp" },
+    { title: "Trichome watch — when to harvest", body: "Around week 6-8 of flower, start checking trichomes with a 60x jeweler's loupe or USB microscope. Clear/glassy trichomes = not ready (high CBG, low THC). Mostly cloudy/milky = peak THC (most uplifting). 20-40%% amber mixed with cloudy = peak ripeness for fuller-body, more sedating effect. Don't go by pistil color alone — it's unreliable.", icon: "general" },
+    { title: "Last-2-week flush", body: "Many growers stop nutrients and feed plain pH-adjusted water for the last 10-14 days. The plant uses up stored nutrients in the leaves (which yellow) and the resulting smoke is smoother. Some skip the flush — both camps have results — but new growers usually benefit from it.", icon: "water" },
   ],
   dry: [
-    { title: "Slow Dry", body: "Hang whole plants or branches in a dark room at 60°F, 60% humidity. Slow drying (7-14 days) preserves terpenes and smoothness.", icon: "temp" },
-    { title: "Airflow", body: "Gentle air circulation — never point fans directly at buds. You want slow, even moisture removal without creating harsh, hay-smelling flower.", icon: "general" },
+    { title: "Slow and dark wins", body: "Hang whole plants or branches upside down in a dark room at 60°F and 60%% humidity (the 60/60 rule). Slow drying — 7-14 days — preserves terpenes and gives smoother smoke. Fast drying (3-4 days at higher temps) leaves a hay smell and harsh smoke that won't fully recover even with curing.", icon: "temp" },
+    { title: "Airflow but not direct", body: "Gentle air circulation in the room — never point fans directly at buds. You want slow, even moisture removal from the inside out. Direct airflow dries the outside while the inside stays wet, leading to mold or uneven cure.", icon: "general" },
+    { title: "When is it done", body: "Bend a small stem from a bud — it should snap with a slight crackle, not bend like green wood. Larger stems can stay slightly flexible. Buds should feel dry on the outside but still have a tiny bit of give when squeezed. Don't over-dry; you can rehydrate slightly during cure but you can't undo crispy.", icon: "general" },
+    { title: "Trim now or later", body: "Wet trim (right after harvest) is faster and easier — leaves are turgid and easy to cut. Dry trim (after drying) keeps more terpenes and smells better. Either works; wet trim is the beginner choice. Dry-trim crowd swears by the smell. Personal preference.", icon: "general" },
   ],
   cure: [
-    { title: "Mason Jar Cure", body: "Trim and place buds in mason jars at 62% humidity. Burp jars 2-3 times daily for the first week, then once daily for 2-3 more weeks.", icon: "general" },
-    { title: "Humidity Packs", body: "Boveda 62% packs are a grower's best friend. They maintain perfect humidity inside cure jars. Check buds for any signs of mold regularly.", icon: "water" },
+    { title: "Mason jar cure", body: "Trim and place buds in mason jars, filled to 75%% full (don't pack them tight). Cure in a cool, dark, room-temperature spot. The first week is critical — buds release stored moisture into the air space. The next 3-4 weeks the cannabinoids and terpenes finish maturing.", icon: "general" },
+    { title: "Burping — the rhythm", body: "First week: open jars 2-3 times per day for 5-10 minutes to release moisture and prevent mold. Second week: once a day. Third week and beyond: every few days. Smell each time — a fresh, complex aroma is good; ammonia or hay smells need more burping (or indicate mold).", icon: "general" },
+    { title: "Humidity packs simplify it", body: "Boveda 62%% packs (or similar) inside jars maintain perfect humidity automatically. They're a one-time investment that pays off through the entire cure and storage. Don't skip burping in the first week even with packs — let the buds breathe.", icon: "water" },
+    { title: "How long", body: "Minimum 2 weeks for smokable. 4 weeks is when most flavors lock in. 6-8 weeks is the connoisseur level — terpenes round out, harshness fades, and effects feel cleaner and more nuanced. Long cures separate good growers from great ones.", icon: "general" },
   ],
   harvested: [
-    { title: "Enjoy & Document", body: "Rate the final product. Note the effects, taste, and yield. This data helps you optimize future grows of this strain.", icon: "general" },
+    { title: "Document everything", body: "Rate the final product honestly: smell, taste, smoothness, effects, total yield (dry weight). Note what worked and what didn't — soil, lights, timing, training methods, problems you hit. The data lives in your grow log here. Future grows of this strain will be much better.", icon: "general" },
+    { title: "Dial in your records", body: "Total grow time, time in each stage, peak height, final yield in grams, nutrient line and schedule used. The more you record, the more your next grow benefits from your own experience instead of generic internet advice.", icon: "general" },
+    { title: "Save genetics if you loved it", body: "If a strain killed it, take a clone next time before flowering — that's how growers preserve a 'keeper' phenotype. You can't reproduce exact genetics from seed since each seed is genetically unique.", icon: "general" },
+  ],
+  partake: [
+    { title: "Long-term storage", body: "Cured flower stays at peak quality for 6-12 months stored properly: airtight glass jars, with humidity packs (62%%), in a cool dark place. Vacuum-sealing or dark-tinted jars extends this further. Heat, light, and air are the enemies of terpenes and potency. Avoid plastic for long storage — terpenes plasticize the surface.", icon: "general" },
+    { title: "Common consumption methods", body: "Inhalation (joint, pipe, dry herb vape) — onset 1-3 minutes, effects last 1-3 hours. Edibles (decarboxylated and infused into fat or oil) — onset 30 minutes to 2 hours, effects last 4-8 hours and feel more full-body. Tinctures (alcohol-based, sublingual) — onset 15-30 minutes, effects last 2-4 hours. Each method delivers cannabinoids differently and feels different.", icon: "use" },
+    { title: "Decarboxylation 101", body: "Raw cannabis has THCA, not active THC. Heat converts (decarboxylates) THCA into THC. Smoking and vaping decarb instantly. For edibles, you decarb in the oven — typically 240°F for 30-40 minutes — before infusing into butter, oil, or fat. Skip the decarb and your edibles barely work.", icon: "use" },
+    { title: "Start LOW, go SLOW (especially with edibles)", body: "Edibles hit hours later and last hours longer than expected — the most common bad experiences come from people taking a second dose before the first kicks in. A common starting dose is 2.5-5 mg THC for edibles; wait at least 2 hours before considering more. Inhalation is more dose-controllable since onset is fast and you can stop.", icon: "use" },
+    { title: "Set, setting, and sense", body: "Effects depend heavily on your mood, environment, and what else is going on. The same flower hits differently after a hard day vs. a good one. Be in a comfortable place the first time you try a new strain or dose. Hydration helps. So does food. So does company you trust.", icon: "general" },
+    { title: "Practical safety", body: "Don't drive or operate machinery impaired — same standard as alcohol. Be aware of the legal status where you are; cannabis remains a controlled substance federally in the US and laws vary by state and country. Avoid mixing with alcohol if you're not experienced — they amplify each other unpredictably. If you don't feel right, water + food + sleep is the standard reset.", icon: "general" },
+    { title: "If you grew it, you know it", body: "One of the underrated benefits of home growing is full-stack knowledge: you know exactly what's in your flower (or not — no pesticide surprises), how it was cured, and how fresh it is. Take notes on how this batch hits, and the next grow you'll know how to dial it in even better.", icon: "general" },
   ],
 };
 
@@ -129,7 +170,7 @@ function StageChip({ stage, size = "md" }: { stage: Stage; size?: "sm" | "md" })
 }
 
 const TIP_ICONS: Record<string, string> = {
-  water: "💧", light: "☀️", temp: "🌡️", nutrient: "🌿", general: "✨",
+  water: "💧", light: "☀️", temp: "🌡️", nutrient: "🌿", general: "✨", shop: "🛒", use: "🌬️",
 };
 
 function CoachTipCard({ tip }: { tip: CoachTip }) {
@@ -152,7 +193,7 @@ function NewGrowForm({ onAdd, onCancel }: { onAdd: (g: Grow) => void; onCancel: 
     if (!name.trim()) return;
     const grow: Grow = {
       id: generateId(), name: name.trim(), strain_name: strain.trim() || "Unknown",
-      stage: "seed", started_at: new Date().toISOString().split("T")[0],
+      stage: "sourcing", started_at: new Date().toISOString().split("T")[0],
       created_at: new Date().toISOString(), logs: [],
     };
     onAdd(grow);
@@ -365,7 +406,7 @@ function GrowCard({ grow, onUpdate, onDelete }: { grow: Grow; onUpdate: (g: Grow
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                 <span style={{ fontSize: 16 }}>✨</span>
                 <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-                  Grow Coach Tips — {stageInfo.label} Stage
+                  Grow Doctor — {stageInfo.label} Stage
                 </span>
               </div>
               {tips.map((tip, i) => <CoachTipCard key={i} tip={tip} />)}
@@ -440,7 +481,7 @@ export default function GrowCoachPage() {
   if (!loaded) {
     return (
       <>
-        <TopNav title="Grow Coach" showBack />
+        <TopNav title="Grow Doctor" showBack />
         <main className="min-h-screen text-white flex items-center justify-center">
           <div style={{
             width: 32, height: 32, border: "3px solid rgba(255,255,255,0.15)",
@@ -455,18 +496,20 @@ export default function GrowCoachPage() {
 
   return (
     <>
-      <TopNav title="Grow Coach" showBack />
+      <TopNav title="Grow Doctor" showBack />
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
           {/* Hero */}
           <div style={{ ...glass, padding: 24, marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-              <span style={{ fontSize: 28 }}>✨</span>
-              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Grow Coach</span>
+              <span style={{ fontSize: 28 }}>🩺</span>
+              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Grow Doctor</span>
             </div>
             <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
-              Track your grows from seed to harvest. Get stage-specific coaching tips,
-              log daily progress, and build a complete grow history for every plant.
+              Your full-lifecycle grow companion — from picking the right
+              seeds, through every stage of cultivation, all the way to safe,
+              informed enjoyment of what you grew. Track grows, log progress,
+              and get stage-specific guidance every step of the way.
             </div>
           </div>
 

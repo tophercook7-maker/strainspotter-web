@@ -2037,7 +2037,7 @@ export default function ScannerPage() {
                   { icon: "🧬", title: "Discovery", body: "Filter by effect, terpene, and experience" },
                   { icon: "🧪", title: "Terpenes", body: "Deep dives + community photos" },
                   { icon: "⚖️", title: "Compare", body: "Side-by-side strain comparison" },
-                  { icon: "🌱", title: "Grow Coach", body: "AI analysis on every journal entry" },
+                  { icon: "🩺", title: "Grow Doctor", body: "AI analysis on every journal entry" },
                   { icon: "📍", title: "Directory", body: "Dispensaries & licensed growers nearby" },
                   { icon: "🌰", title: "Seed Vendors", body: "Trusted seed sources worldwide" },
                   { icon: "❤️", title: "Favorites", body: "Your personal strain collection" },

@@ -142,7 +142,7 @@ export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps
           AI strain scanning, grow coaching, dispensary finder, and more — all unlimited from {MEMBERSHIP_TIERS.member.price}.
         </p>
         <div style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
-          {["📷 100 Scans/mo", "🌱 Grow Coach", "📍 Dispensaries", "🧬 Ecosystem"].map((tag) => (
+          {["📷 100 Scans/mo", "🩺 Grow Doctor", "📍 Dispensaries", "🧬 Ecosystem"].map((tag) => (
             <span
               key={tag}
               style={{

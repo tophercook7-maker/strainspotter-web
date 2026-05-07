@@ -264,7 +264,7 @@ const FEATURES: FeatureItem[] = [
   { href: "/garden/ecosystem", icon: "🧬", label: "Discovery", desc: "Find strains by effect or terpene" },
   { href: "/garden/terpenes", icon: "🧪", label: "Terpenes", desc: "Aroma deep dives + community photos" },
   { href: "/garden/compare", icon: "⚖️", label: "Compare", desc: "Compare strains side by side" },
-  { href: "/garden/grow-coach", icon: "🌱", label: "Grow Coach", desc: "Track & improve your grows" },
+  { href: "/garden/grow-coach", icon: "🩺", label: "Grow Doctor", desc: "Seed sourcing → harvest → safe enjoyment" },
   { href: "/garden/dispensaries", icon: "📍", label: "Directory", desc: "Dispensaries & licensed growers" },
   { href: "/garden/seed-vendors", icon: "🌰", label: "Seed Vendors", desc: "Trusted seed sources" },
   { href: "/garden/favorites", icon: "❤️", label: "Favorites", desc: "Your saved strains" },
