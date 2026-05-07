@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
+import ScannerExpectationsModal, {
+  hasSeenScannerExpectations,
+} from "./ScannerExpectationsModal";
 
 /* ─── try to use real auth, fall back gracefully ─── */
 let useOptionalAuth: () => any;
@@ -289,6 +292,13 @@ interface SimpleResult {
   ocrStrainCandidates: string[];
   headline: string;
   advisoryNote: string | null;
+  imageType:
+    | "flower"
+    | "packaging"
+    | "label"
+    | "plant"
+    | "other"
+    | "unclear";
   claimValidation: {
     sellersClaim: string;
     consistent: "yes" | "ambiguous" | "no";
@@ -395,12 +405,16 @@ export default function ScannerPage() {
   const [creditEarned, setCreditEarned] = useState(false);
   const [photoCredits, setPhotoCredits] = useState(0);
   const [scansUsedToday, setScansUsedToday] = useState(0);
+  const [showExpectationsModal, setShowExpectationsModal] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Load credit/usage state on mount
   useEffect(() => {
     setPhotoCredits(getPhotoCredits());
     setScansUsedToday(getScansUsedToday());
+    if (!hasSeenScannerExpectations()) {
+      setShowExpectationsModal(true);
+    }
   }, []);
 
   const saveFavorite = () => {
@@ -602,6 +616,7 @@ export default function ScannerPage() {
         ocrStrainCandidates: vm.v2?.observation.ocrStrainCandidates || [],
         headline: vm.v2?.summary.headline || "",
         advisoryNote: vm.v2?.summary.advisoryNote ?? null,
+        imageType: vm.v2?.observation.imageType || "unclear",
         claimValidation: vm.v2?.claimValidation ?? null,
       };
 
@@ -676,6 +691,11 @@ export default function ScannerPage() {
       color: "#fff",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     }}>
+      {showExpectationsModal && (
+        <ScannerExpectationsModal
+          onDismiss={() => setShowExpectationsModal(false)}
+        />
+      )}
       {/* Top Bar */}
       <div style={{
         display: "flex",
@@ -1009,7 +1029,7 @@ export default function ScannerPage() {
                 transition: "all 0.2s",
               }}
             >
-              Identify Strain
+              Scan &amp; Analyze
             </button>
           </div>
         )}
@@ -1032,6 +1052,51 @@ export default function ScannerPage() {
         {/* ── RESULT CARD ── */}
         {result && scanState === "done" && (
           <div style={{ marginTop: 12 }}>
+            {/* ── Phase 2: "Doesn't look like cannabis" banner ── */}
+            {(result.imageType === "other" || result.imageType === "unclear") &&
+              result.confidence < 15 && (
+                <div
+                  style={{
+                    marginTop: 16,
+                    padding: "16px 18px",
+                    borderRadius: 14,
+                    background: "rgba(255,183,77,0.10)",
+                    border: "1px solid rgba(255,183,77,0.35)",
+                    display: "flex",
+                    gap: 12,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>
+                    🤔
+                  </span>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "#FFB74D",
+                        marginBottom: 4,
+                      }}
+                    >
+                      This doesn&apos;t look like cannabis to us
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        lineHeight: 1.55,
+                        color: "rgba(255,255,255,0.78)",
+                      }}
+                    >
+                      The image may be too low quality, taken from too far away,
+                      or the subject isn&apos;t clearly cannabis. For best
+                      results, try a close, well-lit photo of a bud, a jar
+                      label, or a single cannabis leaf.
+                    </div>
+                  </div>
+                </div>
+              )}
+
             {/* ── Phase 2: Seller's-claim validation card ── */}
             {result.claimValidation && (
               <div
