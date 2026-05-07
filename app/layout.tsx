@@ -2,6 +2,7 @@ import './globals.css'
 import { DatabaseInitializer } from '@/lib/scanner/dbInitializer'
 import AgeGate from '@/components/AgeGate'
 import OfflineBanner from '@/components/OfflineBanner'
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar'
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 
@@ -62,7 +63,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#1a1f1c',
+  themeColor: '#0a0f0a',
+  colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -77,6 +79,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <DatabaseInitializer />
+        <ServiceWorkerRegistrar />
         <OfflineBanner />
         <AgeGate>
           {children}
