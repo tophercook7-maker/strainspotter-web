@@ -71,13 +71,22 @@ npx cap init StrainSpotter com.mixedmakershop.strainspotter \
 
 # Generate the iOS project. Creates ios/ at repo root.
 npx cap add ios
+
+# IMPORTANT: Capacitor 8 requires iOS 15+ minimum but the generated
+# Podfile + Xcode project default to iOS 14. Without this step, the
+# workspace opens empty in Xcode because pod install failed.
+./scripts/capacitor/post-add-ios.sh
 ```
 
-This creates `ios/App/App.xcworkspace`. Open it with:
+This creates `ios/App/App.xcworkspace` and runs `pod install` cleanly.
+Open it with:
 
 ```bash
-npx cap open ios
+open ios/App/App.xcworkspace
 ```
+
+> Don't use `npx cap open ios` — it sometimes opens the .xcodeproj
+> instead of the .xcworkspace. The workspace is what wires Pods in.
 
 ---
 
