@@ -38,7 +38,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
     if (result.verified) {
       setVerified(true);
     } else {
-      setError("You must be 21 or older to use StrainSpotter.");
+      setError("You must be 18 or older to use StrainSpotter.");
       triggerShake();
     }
   };
@@ -63,13 +63,19 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
       }}
     >
       <div style={{ marginBottom: "8px", display: "flex", justifyContent: "center" }}>
-        <img src="/brand/cannabis-icon.png" width={88} height={88} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} />
+        <img
+          src="/icons/app/icon-180.png"
+          width={88}
+          height={88}
+          alt="StrainSpotter"
+          style={{ display: "inline-block", flexShrink: 0, borderRadius: "20%" }}
+        />
       </div>
       <h1 style={{ fontSize: "32px", fontWeight: 800, color: "#fff", margin: "0 0 4px 0", letterSpacing: "-0.5px" }}>
         StrainSpotter
       </h1>
       <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "11px", letterSpacing: "3px", textTransform: "uppercase", margin: "0 0 48px 0" }}>
-        AI Cannabis Identification
+        Scan &amp; Analyze · Grow Doctor
       </p>
 
       <div
@@ -95,7 +101,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
             Age Verification
           </h2>
           <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
-            You must be 21+ to enter. Enter your date of birth.
+            You must be 18+ to enter. Enter your date of birth.
           </p>
         </div>
 
@@ -146,7 +152,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
         </button>
 
         <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "10px", textAlign: "center", marginTop: "16px", lineHeight: 1.5 }}>
-          By entering, you confirm you are at least 21 years of age and agree to our Terms of Service and Privacy Policy.
+          By entering, you confirm you are at least 18 years of age and agree to our Terms of Service and Privacy Policy.
         </p>
       </div>
 

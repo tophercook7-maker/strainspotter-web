@@ -6,38 +6,57 @@ import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
   title: {
-    default: 'StrainSpotter — AI Cannabis Identification',
+    default: 'StrainSpotter — Scan, Analyze, and Grow Cannabis',
     template: '%s | StrainSpotter',
   },
   description:
-    'AI-powered cannabis strain identification. Snap a photo and get instant strain analysis with terpene profiles, effects, and grow coaching tips.',
+    'Scan cannabis labels and flower with AI for honest strain analysis, validate seller claims, and follow Grow Doctor through the entire cultivation lifecycle — from seed sourcing to safe enjoyment.',
+  applicationName: 'StrainSpotter',
+  manifest: '/manifest.json',
   keywords: [
     'cannabis',
     'strain identification',
     'AI scanner',
     'terpene profile',
+    'grow doctor',
     'grow coach',
     'marijuana',
     'weed identifier',
+    'cannabis cultivation',
   ],
   openGraph: {
-    title: 'StrainSpotter — AI Cannabis Identification',
+    title: 'StrainSpotter — Scan, Analyze, and Grow Cannabis',
     description:
-      'Snap a photo. Get instant strain analysis with terpene profiles, effects, and grow coaching.',
+      'Snap a photo for honest strain analysis. Track your grow from seed to harvest with Grow Doctor.',
     url: 'https://strainspotter.app',
     siteName: 'StrainSpotter',
     type: 'website',
+    images: [{ url: '/icons/app/icon-1024.png', width: 1024, height: 1024 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'StrainSpotter — AI Cannabis Identification',
+    title: 'StrainSpotter — Scan, Analyze, and Grow Cannabis',
     description:
-      'Snap a photo. Get instant strain analysis with terpene profiles, effects, and grow coaching.',
+      'Snap a photo for honest strain analysis. Track your grow from seed to harvest with Grow Doctor.',
+    images: ['/icons/app/icon-1024.png'],
   },
   robots: { index: true, follow: true },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'StrainSpotter',
+    statusBarStyle: 'black-translucent',
   },
 }
 

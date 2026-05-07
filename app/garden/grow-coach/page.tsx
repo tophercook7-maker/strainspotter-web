@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import TopNav from "../_components/TopNav";
+import DiagnosticDialog from "./DiagnosticDialog";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Stage =
@@ -454,6 +455,7 @@ export default function GrowCoachPage() {
   const [grows, setGrows] = useState<Grow[]>([]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
 
   useEffect(() => {
     setGrows(loadGrows());
@@ -500,7 +502,7 @@ export default function GrowCoachPage() {
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
           {/* Hero */}
-          <div style={{ ...glass, padding: 24, marginBottom: 24 }}>
+          <div style={{ ...glass, padding: 24, marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
               <span style={{ fontSize: 28 }}>🩺</span>
               <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Grow Doctor</span>
@@ -512,6 +514,41 @@ export default function GrowCoachPage() {
               and get stage-specific guidance every step of the way.
             </div>
           </div>
+
+          {/* Diagnose CTA */}
+          <button
+            onClick={() => setShowDiagnostic(true)}
+            style={{
+              width: "100%",
+              padding: "16px 18px",
+              marginBottom: 24,
+              borderRadius: 16,
+              border: "1px solid rgba(76,175,80,0.40)",
+              background: "linear-gradient(135deg, rgba(67,160,71,0.18), rgba(46,125,50,0.28))",
+              color: "#fff",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              textAlign: "left" as const,
+            }}
+          >
+            <span style={{
+              fontSize: 28, lineHeight: 1, flexShrink: 0,
+              width: 48, height: 48, borderRadius: 12,
+              background: "rgba(76,175,80,0.22)",
+              display: "grid", placeItems: "center",
+            }}>📷</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>
+                Diagnose a Plant Problem
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>
+                Photo of yellowing leaves, pests, weird buds — get an AI cultivation diagnosis with concrete next steps
+              </div>
+            </div>
+            <span style={{ fontSize: 22, color: "rgba(255,255,255,0.50)" }}>›</span>
+          </button>
 
           {/* New grow button */}
           {!showNewForm && (
@@ -550,6 +587,9 @@ export default function GrowCoachPage() {
           )}
         </div>
       </main>
+      {showDiagnostic && (
+        <DiagnosticDialog onClose={() => setShowDiagnostic(false)} />
+      )}
     </>
   );
 }

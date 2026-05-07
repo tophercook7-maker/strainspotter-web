@@ -1,6 +1,7 @@
-// lib/ageGate.ts — 21+ age verification with localStorage persistence
+// lib/ageGate.ts — 18+ age verification with localStorage persistence
 
 const AGE_GATE_KEY = "ss_age_verified";
+export const MIN_AGE = 18;
 
 export function isAgeVerified(): boolean {
   if (typeof window === "undefined") return false;
@@ -23,7 +24,7 @@ export function verifyAge(dob: string): { verified: boolean; age: number } {
     age--;
   }
 
-  if (age >= 21) {
+  if (age >= MIN_AGE) {
     if (typeof window !== "undefined") {
       localStorage.setItem(
         AGE_GATE_KEY,

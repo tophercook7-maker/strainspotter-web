@@ -780,6 +780,51 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {/* ═══ Privacy & Age Verification ═══ */}
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="🔒" title="Privacy & Age" />
+            <p
+              style={{
+                color: "rgba(255,255,255,0.55)",
+                fontSize: 13,
+                lineHeight: 1.6,
+                margin: "0 0 14px",
+              }}
+            >
+              StrainSpotter is for adults 18+. Age verification is stored
+              locally on this device. If someone else uses your device or you
+              want to clear the verification, tap below.
+            </p>
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    "Clear age verification? You'll be asked to confirm your age the next time you open StrainSpotter."
+                  )
+                ) {
+                  try {
+                    localStorage.removeItem("ss_age_verified");
+                  } catch {
+                    /* ignore */
+                  }
+                  alert("Age verification cleared. Reload the app to re-verify.");
+                }
+              }}
+              style={{
+                background: "rgba(244,67,54,0.10)",
+                border: "1px solid rgba(244,67,54,0.30)",
+                color: "#EF5350",
+                fontSize: 13,
+                fontWeight: 600,
+                padding: "10px 16px",
+                borderRadius: 10,
+                cursor: "pointer",
+              }}
+            >
+              Clear age verification
+            </button>
+          </div>
+
           {/* ═══ About ═══ */}
           <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="ℹ️" title="About" />
