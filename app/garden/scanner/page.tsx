@@ -376,7 +376,9 @@ export default function ScannerPage() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [photoContributed, setPhotoContributed] = useState<"verified" | "saved" | null>(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "medical" | "grower" | "breeder" | "dispensary">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "grower" | "breeder" | "dispensary">("overview");
+  const [sellersClaim, setSellersClaim] = useState<string>("");
+  const [showSellersClaim, setShowSellersClaim] = useState(false);
   const [creditEarned, setCreditEarned] = useState(false);
   const [photoCredits, setPhotoCredits] = useState(0);
   const [scansUsedToday, setScansUsedToday] = useState(0);
@@ -477,7 +479,10 @@ export default function ScannerPage() {
 
     try {
       const authToken = auth?.session?.access_token || undefined;
-      const orchestrated = await orchestrateScan(images, authToken);
+      const orchestrated = await orchestrateScan(images, {
+        authToken,
+        sellersClaim: sellersClaim.trim() || undefined,
+      });
       const vm = orchestrated.rawScannerResult;
 
       const vm_chem = (vm as any).chemistry || {};
@@ -905,6 +910,66 @@ export default function ScannerPage() {
           </div>
         )}
 
+        {/* ── SELLER'S CLAIM (optional) ── */}
+        {(scanState === "ready") && (
+          <div style={{ marginTop: 24, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
+            {!showSellersClaim ? (
+              <button
+                onClick={() => setShowSellersClaim(true)}
+                style={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px dashed rgba(255,255,255,0.15)",
+                  borderRadius: 14,
+                  padding: "12px 16px",
+                  color: "rgba(255,255,255,0.55)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  textAlign: "center" as const,
+                }}
+              >
+                + Tell us what the seller called this (optional)
+              </button>
+            ) : (
+              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.45)" }}>
+                    Seller's claim
+                  </label>
+                  <button
+                    onClick={() => { setShowSellersClaim(false); setSellersClaim(""); }}
+                    style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 18, cursor: "pointer", lineHeight: 1, padding: 0 }}
+                    aria-label="Close"
+                  >×</button>
+                </div>
+                <input
+                  type="text"
+                  value={sellersClaim}
+                  onChange={(e) => setSellersClaim(e.target.value.slice(0, 80))}
+                  placeholder="e.g. Blue Dream, Gelato, Sour Diesel"
+                  maxLength={80}
+                  autoFocus
+                  style={{
+                    width: "100%",
+                    background: "rgba(0,0,0,0.25)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                    color: "#fff",
+                    fontSize: 14,
+                    outline: "none",
+                    boxSizing: "border-box" as const,
+                  }}
+                />
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+                  We&apos;ll check whether the visible traits are consistent with that strain.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── SCAN BUTTON ── */}
         {(scanState === "ready") && (
           <div style={{ marginTop: 28, textAlign: "center" }}>
@@ -1042,7 +1107,6 @@ export default function ScannerPage() {
             {(() => {
               const tabs: Array<{ key: typeof activeTab; label: string; icon: string }> = [
                 { key: "overview", label: "Overview", icon: "🌿" },
-                { key: "medical", label: "Medical", icon: "🏥" },
                 { key: "grower", label: "Grower", icon: "🌱" },
                 { key: "breeder", label: "Breeder", icon: "🧬" },
                 { key: "dispensary", label: "Dispensary", icon: "🏪" },
@@ -1283,86 +1347,6 @@ export default function ScannerPage() {
               </div>
             )}
 
-            {/* ── MEDICAL TAB ──────────────────────────────────── */}
-            {activeTab === "medical" && (
-              <div>
-                {result.medicalConditions.length > 0 && (
-                  <div style={{ padding: "18px", borderRadius: 16, background: "linear-gradient(135deg, rgba(56,142,60,0.12), rgba(27,94,32,0.08))", border: "1px solid rgba(76,175,80,0.2)", marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#81C784", marginBottom: 12 }}>🏥 Reported Medical Benefits</h3>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
-                      {result.medicalConditions.map((c, i) => (
-                        <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 700, background: "rgba(76,175,80,0.15)", color: "rgba(165,214,167,0.95)", border: "1px solid rgba(76,175,80,0.2)" }}>{c}</span>
-                      ))}
-                    </div>
-                    {result.cbdContext && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginTop: 12, marginBottom: 0 }}>{result.cbdContext}</p>}
-                  </div>
-                )}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 14 }}>
-                  {result.intensity && (
-                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
-                      <div style={{ fontSize: 22, marginBottom: 4 }}>{result.intensity === "Mild" ? "🟢" : result.intensity === "Moderate" ? "🟡" : result.intensity === "Strong" ? "🟠" : "🔴"}</div>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>Intensity</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{result.intensity}</div>
-                    </div>
-                  )}
-                  {result.timeOfDay && (
-                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
-                      <div style={{ fontSize: 22, marginBottom: 4 }}>{result.timeOfDay === "Daytime" ? "☀️" : result.timeOfDay === "Nighttime" ? "🌙" : result.timeOfDay === "Evening" ? "🌆" : "🕐"}</div>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>Best Time</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{result.timeOfDay}</div>
-                    </div>
-                  )}
-                  {result.thc && (
-                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
-                      <div style={{ fontSize: 22, marginBottom: 4 }}>🧪</div>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>THC</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#81C784", marginTop: 3 }}>{result.thc}</div>
-                    </div>
-                  )}
-                  {result.cbd && (
-                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
-                      <div style={{ fontSize: 22, marginBottom: 4 }}>💊</div>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>CBD</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#4FC3F7", marginTop: 3 }}>{result.cbd}</div>
-                    </div>
-                  )}
-                  {result.duration && (
-                    <div style={{ padding: "14px 10px", borderRadius: 14, background: "rgba(255,255,255,0.04)", textAlign: "center" as const }}>
-                      <div style={{ fontSize: 22, marginBottom: 4 }}>⏱️</div>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const }}>Duration</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>{result.duration}</div>
-                    </div>
-                  )}
-                </div>
-                {(result.cautions || result.sideEffects.length > 0) && (
-                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,152,0,0.06)", border: "1px solid rgba(255,152,0,0.18)", marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                      <span style={{ fontSize: 16 }}>⚠️</span>
-                      <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,183,77,0.8)", margin: 0 }}>Cautions</h3>
-                    </div>
-                    {result.cautions && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, margin: "0 0 10px" }}>{result.cautions}</p>}
-                    {result.sideEffects.length > 0 && (
-                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" as const }}>
-                        {result.sideEffects.map((s, i) => (
-                          <span key={i} style={{ padding: "6px 13px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(255,152,0,0.1)", color: "rgba(255,213,79,0.8)" }}>{s}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {result.bestUse.length > 0 && (
-                  <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Best For</h3>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
-                      {result.bestUse.map((u, i) => (
-                        <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 600, background: "rgba(255,183,77,0.1)", color: "rgba(255,213,79,0.85)" }}>{u}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* ── GROWER TAB ───────────────────────────────────── */}
             {activeTab === "grower" && (
               <div>
@@ -1594,14 +1578,6 @@ export default function ScannerPage() {
                     <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>35k+ cultivars</div>
                   </div>
                 </a>
-                <button
-                  onClick={() => { setActiveTab("medical"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(56,142,60,0.07)", border: "1px solid rgba(76,175,80,0.13)", textAlign: "center" as const, cursor: "pointer" }}
-                >
-                  <div style={{ fontSize: 24, marginBottom: 5 }}>🏥</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(129,199,132,0.8)" }}>Medical Info</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Benefits &amp; cautions</div>
-                </button>
                 <button
                   onClick={() => { setActiveTab("grower"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(56,142,60,0.07)", border: "1px solid rgba(76,175,80,0.13)", textAlign: "center" as const, cursor: "pointer" }}

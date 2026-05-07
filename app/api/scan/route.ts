@@ -1,16 +1,29 @@
 // app/api/scan/route.ts
-// StrainSpotter AI Scanner — GPT-4o Vision + 314-Strain Database Context
-// Phase 1: Clean pipeline that matches against our actual strain catalog
-// Edge Runtime for 30s timeout (Hobby plan serverless caps at 10s)
+// StrainSpotter AI Scanner — Phase 2: OCR-first, trait-based, multi-candidate
+//
+// Architecture (post-pivot, May 2026):
+//   1. Single GPT-4o Vision call analyzes the image(s) and returns:
+//      - OCR text (every readable word — most reliable signal when present)
+//      - Visual traits (factual observations)
+//      - Likelihood (probabilistic terpene/effect family)
+//      - Candidates (top 5 strains from catalog, honest confidence 0-100)
+//      - Summary (top-line headline, confidence tier, advisory note)
+//      - Optional claimValidation (when the caller passes sellersClaim)
+//   2. No artificial confidence floor. 0-100 range.
+//   3. No medical claims. "Users commonly report …" framing, not "treats X".
+//   4. The catalog is just a guide — the model is allowed to say "uncertain".
+//
+// Edge runtime — GPT-4o Vision can take 15-30s, Vercel Hobby serverless caps at 10s.
 
 import { NextRequest, NextResponse } from "next/server";
 import strainDb from "@/lib/data/strains.json";
 
-// Edge Runtime — needed because GPT-4o Vision takes 15-30s and
-// Vercel Hobby serverless functions time out at 10s.
 export const runtime = "edge";
 
-/* ─── Build a compact strain reference for the system prompt ─── */
+/* ─────────────────────────────────────────────────────────────────
+ *  Catalog → compact textual reference for the system prompt
+ * ───────────────────────────────────────────────────────────────── */
+
 interface StrainEntry {
   name: string;
   type?: string;
@@ -24,6 +37,13 @@ interface StrainEntry {
   terpeneProfile?: string[];
   effects?: string[];
   indicaSativaRatio?: { indica?: number; sativa?: number };
+}
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 function buildStrainCatalog(): string {
@@ -50,116 +70,413 @@ function buildStrainCatalog(): string {
 const STRAIN_CATALOG = buildStrainCatalog();
 const STRAIN_COUNT = (strainDb as StrainEntry[]).length;
 
-const SYSTEM_PROMPT = `You are StrainSpotter's cannabis visual analysis AI — the most advanced plant identification system available.
+/* ─────────────────────────────────────────────────────────────────
+ *  System prompt — honest, OCR-first, multi-candidate
+ * ───────────────────────────────────────────────────────────────── */
 
-You analyze cannabis plant photographs and return structured identification data based on observable visual characteristics.
+const SYSTEM_PROMPT = `You are StrainSpotter's cannabis identification assistant.
 
-═══ STRAINSPOTTER DATABASE (${STRAIN_COUNT} verified cultivars) ═══
-When identifying a strain, ALWAYS check against this catalog first.
-Prefer matches from this list when visual traits align. Only suggest strains outside this list if nothing matches well.
+Your job is to analyze cannabis flower or packaging images and return a structured, HONEST identification. You have access to a catalog of ${STRAIN_COUNT} cultivars; use it as a reference guide, not a constraint.
+
+═══ STRAINSPOTTER CATALOG (${STRAIN_COUNT} cultivars) ═══
+Format per line: name | type | visual cues | [common terpenes]
 
 ${STRAIN_CATALOG}
 
-═══ END DATABASE ═══
+═══ END CATALOG ═══
 
-ANALYSIS PROTOCOL:
-1. MORPHOLOGY FIRST: Examine bud structure, density, shape, calyx-to-leaf ratio
-2. TRICHOME ASSESSMENT: Density, color (clear/cloudy/amber), coverage pattern, maturity indicators
-3. PISTIL ANALYSIS: Color spectrum (white→orange→amber→brown), density, curl pattern
-4. COLORATION: Base green shade, purple/anthocyanin presence, sugar leaf coloring, fade patterns
-5. LEAF STRUCTURE: Broad vs narrow leaflets, serration pattern, internode spacing clues
-6. OVERALL MORPHOTYPE: Growth pattern indicators (indica-dominant structure vs sativa stretch)
+═══ ANALYSIS PROTOCOL ═══
 
-STRAIN IDENTIFICATION:
-- FIRST cross-reference all visual traits against the StrainSpotter database above
-- Match bud structure, trichome density, pistil color, leaf shape, and coloration against known entries
-- Consider phenotype variation within strains
-- Factor in grow conditions that affect appearance (indoor vs outdoor, maturity stage)
-- If visual features strongly align with a database cultivar, name it with appropriate confidence
-- If ambiguous between database strains, list top 2-3 as alternates
+Step 1 — READ EVERY VISIBLE WORD.
+Cannabis sold in dispensaries or by reputable seed banks is almost always labelled. If the image contains packaging, a jar label, a menu board, a seed packet, or any other visible text, transcribe it COMPLETELY and identify any cannabis strain names within. Strain names visible in text are your single most reliable signal — far more reliable than guessing from bud appearance.
 
-CONFIDENCE RULES:
-- 85-95%: Multiple strong visual markers align with a specific cultivar in the database
-- 70-84%: Good morphological match but some traits could fit related cultivars
-- 55-69%: General family/lineage identification, specific cultivar uncertain
-- Below 55%: Not enough visual data for meaningful identification
-- NEVER output exactly 81% (avoid the uncanny valley of fake confidence)
-- Be genuinely calibrated — if you're unsure, say so
+Step 2 — OBSERVE VISUAL TRAITS.
+Examine bud structure (dense / airy / popcorn / chunky), trichome coverage and color (clear / cloudy / amber / mixed), pistil color and density, base coloration, leaf shape (narrow vs broad), and overall morphotype. Report what you actually see, not what you think the answer "should" be.
 
-TERPENE PREDICTION:
-- When the matched strain has known terpenes in the database, use those with high confidence
-- Also predict from visual cues:
-  - Dense, resinous buds → higher myrcene likelihood
-  - Purple coloration → anthocyanin presence, often correlates with linalool
-  - Strong citrus-colored trichomes → limonene indicators
-  - Piney/earthy visual structure → pinene/caryophyllene correlation
-- Assign confidence to each terpene prediction (0.0-1.0)
+Step 3 — INFER LIKELIHOOD CAREFULLY.
+You may infer typical terpene families and typical effect categories from visual cues, but always with calibrated probability. Dense trichome coverage + rich coloration suggests high-quality flower; visible amber trichomes suggest later harvest with more sedating effects. Do not invent specific cannabinoid percentages — say "typical range" if asked.
 
-You MUST return valid JSON matching the exact schema below. No markdown, no commentary — pure JSON only.`;
+Step 4 — RANK CANDIDATES.
+Produce 1–5 candidate strains from the catalog (or "Unknown") ranked by how well visual + textual evidence matches. Confidence is bounded 0–100 and must be honestly calibrated:
+  • 80–100 — Strain name visible in image AND visual traits consistent. (Rare; reserved for clearly-labelled dispensary product.)
+  •  60–79 — Strain name visible in text but traits ambiguous, OR visual traits strongly distinctive AND match a single catalog cultivar.
+  •  40–59 — Multiple plausible candidates; visual traits broadly match a small group.
+  •  20–39 — General category clear (indica/sativa/hybrid) but specific strain genuinely uncertain.
+  •   0–19 — Insufficient evidence. Image may not even be cannabis flower, or quality is too low.
 
-const USER_PROMPT_TEMPLATE = (imageCount: number) =>
-  `Analyze ${
-    imageCount > 1
-      ? `these ${imageCount} cannabis plant images`
-      : "this cannabis plant image"
-  } and return a detailed identification.
+DO NOT inflate confidence. If you genuinely don't know, say so. Returning multiple plausible candidates with honest 30–50% confidence is BETTER than picking one with fake 85%.
 
-IMPORTANT: Match against the StrainSpotter database strains first. Use the visual profiles from the database to guide your identification.
+Step 5 — SUMMARY.
+Produce a one-sentence headline that states what you actually concluded. Examples:
+  • "Label reads 'Blue Dream' — visual traits consistent with that strain."
+  • "No readable text. Visual traits suggest an indica-leaning hybrid; top candidates: Granddaddy Purple, Purple Punch, Grape Ape."
+  • "Image quality too low for confident identification."
 
-Return ONLY valid JSON with this exact structure:
+═══ APPLE / HEALTH-CLAIM SAFETY ═══
+You are NOT a medical authority. NEVER claim a strain treats, cures, prevents, or alleviates any medical condition. When describing effects, use language like "users commonly report" or "typically associated with". Do not list "medical conditions" — that field has been removed. Frame effects as experiential, not therapeutic.
+
+═══ OUTPUT FORMAT ═══
+Return ONE valid JSON object, no markdown, no commentary, no code fences.
+
 {
-  "identity": {
-    "strainName": "string — most likely cultivar name (prefer database matches)",
-    "confidence": "number 55-95",
-    "alternateMatches": [{"strainName": "string", "confidence": "number"}]
+  "observation": {
+    "ocrText": "every readable word from the image, joined with newlines, or empty string",
+    "ocrStrainCandidates": ["strain name extracted from text", "..."],
+    "visibleCategory": "indica" | "sativa" | "hybrid" | "unknown",
+    "categoryConfidence": 0-100,
+    "imageType": "flower" | "packaging" | "label" | "plant" | "other" | "unclear"
   },
-  "genetics": {
-    "dominance": "Indica | Sativa | Hybrid",
-    "lineage": ["parent1", "parent2"],
-    "breederNotes": "string — origin/breeding history",
-    "confidenceNotes": "string | null — any uncertainty explanation"
+  "traits": {
+    "budStructure": "string — dense/airy/chunky/popcorn/etc",
+    "trichomeCoverage": "low" | "medium" | "high" | "very-high" | "unknown",
+    "trichomeColor": "clear" | "cloudy" | "amber" | "mixed" | "unknown",
+    "pistilColors": ["orange", "rust", ...],
+    "pistilDensity": "sparse" | "moderate" | "dense" | "unknown",
+    "coloration": "string — overall color description",
+    "leafShape": "narrow" | "broad" | "mixed" | "unknown",
+    "qualityIndicators": ["well-cured", "good trichome coverage", ...]
   },
-  "morphology": {
-    "budStructure": "string — detailed bud structure analysis",
-    "coloration": "string — color analysis with specific shades",
-    "trichomes": "string — trichome density, type, maturity assessment",
-    "visualTraits": ["trait1", "trait2", "trait3"],
-    "growthIndicators": ["indicator1", "indicator2"]
+  "likelihood": {
+    "dominantTerpenes": [
+      { "name": "myrcene", "probability": 0.0-1.0 }
+    ],
+    "typicalEffectFamily": [
+      { "name": "relaxation", "probability": 0.0-1.0 }
+    ]
   },
-  "chemistry": {
-    "terpenes": [{"name": "string", "confidence": 0.0}],
-    "cannabinoids": {"THC": "range%", "CBD": "range%"},
-    "cannabinoidRange": "string summary"
+  "candidates": [
+    {
+      "strainName": "string — from catalog when possible",
+      "slug": "lowercase-hyphenated",
+      "confidence": 0-100,
+      "matchReasoning": "one sentence explaining what supports this match",
+      "matchSignals": {
+        "nameInImage": true | false,
+        "categoryMatches": true | false,
+        "visualTraitsMatchPercent": 0-100,
+        "terpeneFamilyMatches": true | false
+      }
+    }
+  ],
+  "summary": {
+    "primaryCandidateSlug": "slug of candidates[0] when confidence >= 60, else null",
+    "confidenceTier": "high" | "moderate" | "low" | "uncertain",
+    "headline": "one sentence — honest top-line conclusion",
+    "advisoryNote": "string | null — caveat the user should know about"
   },
-  "experience": {
-    "effects": ["effect1", "effect2", "effect3"],
-    "primaryEffects": ["primary1", "primary2"],
-    "secondaryEffects": ["secondary1", "secondary2"],
-    "onset": "Quick | Gradual | Moderate",
-    "duration": "string range",
-    "bestUse": ["use1", "use2"]
-  },
-  "cultivation": {
-    "difficulty": "string",
-    "floweringTime": "string range",
-    "yield": "string",
-    "notes": "string — growing tips"
-  },
-  "reasoning": {
-    "whyThisMatch": "string — detailed explanation of why this strain was identified, reference database traits that matched",
-    "conflictingSignals": ["signal1"] or null,
-    "databaseMatch": true or false
+  "claimValidation": null
+}
+
+When the user supplies a "sellersClaim" string in their request, additionally fill claimValidation:
+
+  "claimValidation": {
+    "sellersClaim": "Blue Dream",
+    "consistent": "yes" | "ambiguous" | "no",
+    "reasoning": "one sentence",
+    "expectedTraits": ["traits we'd expect for the claimed strain"],
+    "discrepancies": ["traits that DON'T match the claimed strain"]
   }
-}`;
+
+`;
+
+/* ─────────────────────────────────────────────────────────────────
+ *  User-prompt builder
+ * ───────────────────────────────────────────────────────────────── */
+
+function buildUserPrompt(imageCount: number, sellersClaim?: string): string {
+  const claim = sellersClaim?.trim();
+  const lines: string[] = [];
+  lines.push(
+    `Analyze ${
+      imageCount > 1
+        ? `these ${imageCount} cannabis-related images`
+        : "this cannabis-related image"
+    } and return the JSON described in the system prompt.`
+  );
+  if (claim) {
+    lines.push("");
+    lines.push(
+      `The seller / source claims this is: "${claim.replace(/"/g, '\\"')}". ` +
+        `Fill claimValidation with your assessment of whether the visible evidence ` +
+        `is consistent with that claim. Do not let the claim bias your candidates list — ` +
+        `evaluate the image on its own merits, then judge consistency separately.`
+    );
+  }
+  lines.push("");
+  lines.push("Return ONLY valid JSON. No markdown, no commentary, no code fences.");
+  return lines.join("\n");
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ *  Response normalization (defensive — model can drift from schema)
+ * ───────────────────────────────────────────────────────────────── */
+
+const VALID_CATEGORIES = ["indica", "sativa", "hybrid", "unknown"] as const;
+const VALID_TIERS = ["high", "moderate", "low", "uncertain"] as const;
+const VALID_TRICH_COVER = [
+  "low",
+  "medium",
+  "high",
+  "very-high",
+  "unknown",
+] as const;
+const VALID_TRICH_COLOR = [
+  "clear",
+  "cloudy",
+  "amber",
+  "mixed",
+  "unknown",
+] as const;
+const VALID_PISTIL_DENSITY = [
+  "sparse",
+  "moderate",
+  "dense",
+  "unknown",
+] as const;
+const VALID_LEAF_SHAPE = ["narrow", "broad", "mixed", "unknown"] as const;
+const VALID_IMAGE_TYPE = [
+  "flower",
+  "packaging",
+  "label",
+  "plant",
+  "other",
+  "unclear",
+] as const;
+const VALID_CONSISTENT = ["yes", "ambiguous", "no"] as const;
+
+function pickEnum<T extends string>(
+  v: unknown,
+  allowed: readonly T[],
+  fallback: T
+): T {
+  return typeof v === "string" && (allowed as readonly string[]).includes(v)
+    ? (v as T)
+    : fallback;
+}
+
+function clampInt(v: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+function clampFloat(v: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+function asStringArray(v: unknown, max = 12): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    .map((x) => x.trim())
+    .slice(0, max);
+}
+
+function normalizeAnalysis(
+  raw: Record<string, unknown>,
+  sellersClaim: string | undefined
+): Record<string, unknown> {
+  const obs = (raw.observation as Record<string, unknown>) || {};
+  const traits = (raw.traits as Record<string, unknown>) || {};
+  const likelihood = (raw.likelihood as Record<string, unknown>) || {};
+  const summary = (raw.summary as Record<string, unknown>) || {};
+  const candidatesRaw = Array.isArray(raw.candidates) ? raw.candidates : [];
+
+  // Candidates
+  const candidates = candidatesRaw
+    .slice(0, 5)
+    .map((c: unknown) => {
+      const cc = (c as Record<string, unknown>) || {};
+      const ms = (cc.matchSignals as Record<string, unknown>) || {};
+      const name =
+        typeof cc.strainName === "string" ? cc.strainName.trim() : "Unknown";
+      const slug =
+        typeof cc.slug === "string" && cc.slug.trim()
+          ? cc.slug.trim().toLowerCase()
+          : slugify(name);
+      return {
+        strainName: name,
+        slug,
+        confidence: clampInt(cc.confidence, 0, 100, 0),
+        matchReasoning:
+          typeof cc.matchReasoning === "string"
+            ? cc.matchReasoning.trim()
+            : "Visual analysis of the uploaded image.",
+        matchSignals: {
+          nameInImage: ms.nameInImage === true,
+          categoryMatches: ms.categoryMatches === true,
+          visualTraitsMatchPercent: clampInt(
+            ms.visualTraitsMatchPercent,
+            0,
+            100,
+            0
+          ),
+          terpeneFamilyMatches: ms.terpeneFamilyMatches === true,
+        },
+      };
+    })
+    .sort((a, b) => b.confidence - a.confidence);
+
+  // Likelihoods
+  const dominantTerpenesRaw = Array.isArray(likelihood.dominantTerpenes)
+    ? likelihood.dominantTerpenes
+    : [];
+  const dominantTerpenes = dominantTerpenesRaw
+    .slice(0, 6)
+    .map((t: unknown) => {
+      const tt = (t as Record<string, unknown>) || {};
+      return {
+        name:
+          typeof tt.name === "string" ? tt.name.trim().toLowerCase() : "unknown",
+        probability: clampFloat(tt.probability, 0, 1, 0),
+      };
+    })
+    .filter((t) => t.name !== "unknown");
+
+  const effectFamilyRaw = Array.isArray(likelihood.typicalEffectFamily)
+    ? likelihood.typicalEffectFamily
+    : [];
+  const typicalEffectFamily = effectFamilyRaw
+    .slice(0, 6)
+    .map((t: unknown) => {
+      const tt = (t as Record<string, unknown>) || {};
+      return {
+        name:
+          typeof tt.name === "string" ? tt.name.trim().toLowerCase() : "unknown",
+        probability: clampFloat(tt.probability, 0, 1, 0),
+      };
+    })
+    .filter((t) => t.name !== "unknown");
+
+  // Summary
+  const topConfidence = candidates[0]?.confidence ?? 0;
+  const computedTier =
+    topConfidence >= 80
+      ? "high"
+      : topConfidence >= 60
+        ? "moderate"
+        : topConfidence >= 30
+          ? "low"
+          : "uncertain";
+  const tier = pickEnum(summary.confidenceTier, VALID_TIERS, computedTier);
+
+  const primarySlug =
+    typeof summary.primaryCandidateSlug === "string" &&
+    summary.primaryCandidateSlug.trim()
+      ? summary.primaryCandidateSlug.trim().toLowerCase()
+      : topConfidence >= 60 && candidates[0]
+        ? candidates[0].slug
+        : null;
+
+  const headline =
+    typeof summary.headline === "string" && summary.headline.trim()
+      ? summary.headline.trim()
+      : candidates[0]
+        ? `Top candidate: ${candidates[0].strainName} (${candidates[0].confidence}% confidence).`
+        : "Insufficient evidence to identify this image.";
+
+  const advisoryNote =
+    typeof summary.advisoryNote === "string" && summary.advisoryNote.trim()
+      ? summary.advisoryNote.trim()
+      : null;
+
+  // Claim validation
+  let claimValidation: Record<string, unknown> | null = null;
+  const cv = raw.claimValidation as Record<string, unknown> | null;
+  if (sellersClaim && cv && typeof cv === "object") {
+    claimValidation = {
+      sellersClaim,
+      consistent: pickEnum(cv.consistent, VALID_CONSISTENT, "ambiguous"),
+      reasoning:
+        typeof cv.reasoning === "string"
+          ? cv.reasoning.trim()
+          : "Insufficient evidence to confirm or deny the seller's claim.",
+      expectedTraits: asStringArray(cv.expectedTraits, 8),
+      discrepancies: asStringArray(cv.discrepancies, 8),
+    };
+  }
+
+  return {
+    schemaVersion: "scan-v2",
+    observation: {
+      ocrText: typeof obs.ocrText === "string" ? obs.ocrText : "",
+      ocrStrainCandidates: asStringArray(obs.ocrStrainCandidates, 6),
+      visibleCategory: pickEnum(obs.visibleCategory, VALID_CATEGORIES, "unknown"),
+      categoryConfidence: clampInt(obs.categoryConfidence, 0, 100, 0),
+      imageType: pickEnum(obs.imageType, VALID_IMAGE_TYPE, "unclear"),
+    },
+    traits: {
+      budStructure:
+        typeof traits.budStructure === "string"
+          ? traits.budStructure.trim()
+          : "Not assessable from image.",
+      trichomeCoverage: pickEnum(
+        traits.trichomeCoverage,
+        VALID_TRICH_COVER,
+        "unknown"
+      ),
+      trichomeColor: pickEnum(
+        traits.trichomeColor,
+        VALID_TRICH_COLOR,
+        "unknown"
+      ),
+      pistilColors: asStringArray(traits.pistilColors, 6),
+      pistilDensity: pickEnum(
+        traits.pistilDensity,
+        VALID_PISTIL_DENSITY,
+        "unknown"
+      ),
+      coloration:
+        typeof traits.coloration === "string"
+          ? traits.coloration.trim()
+          : "Not assessable from image.",
+      leafShape: pickEnum(traits.leafShape, VALID_LEAF_SHAPE, "unknown"),
+      qualityIndicators: asStringArray(traits.qualityIndicators, 8),
+    },
+    likelihood: {
+      dominantTerpenes,
+      typicalEffectFamily,
+    },
+    candidates,
+    summary: {
+      primaryCandidateSlug: primarySlug,
+      confidenceTier: tier,
+      headline,
+      advisoryNote,
+    },
+    claimValidation,
+  };
+}
+
+/* ─────────────────────────────────────────────────────────────────
+ *  POST handler
+ * ───────────────────────────────────────────────────────────────── */
+
+type ScanRequestBody = {
+  images: string[];
+  sellersClaim?: string;
+};
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { images } = body as { images: string[] };
+    const body = (await req.json()) as ScanRequestBody;
+    const images = body.images;
+    const sellersClaim =
+      typeof body.sellersClaim === "string" && body.sellersClaim.trim()
+        ? body.sellersClaim.trim().slice(0, 80)
+        : undefined;
 
-    if (!images || images.length === 0) {
+    if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json(
         { error: "No images provided" },
+        { status: 400 }
+      );
+    }
+    if (images.length > 6) {
+      return NextResponse.json(
+        { error: "Too many images (max 6)" },
         { status: 400 }
       );
     }
@@ -172,44 +489,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build message content with images
+    // Build multimodal content
     const content: Array<
       | { type: "text"; text: string }
       | { type: "image_url"; image_url: { url: string; detail: string } }
-    > = [];
+    > = [{ type: "text", text: buildUserPrompt(images.length, sellersClaim) }];
 
-    const SUPPORTED_MIMES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-
-    // Add each image (max 5)
-    for (const img of images.slice(0, 5)) {
-      let dataUrl = img.startsWith("data:")
-        ? img
-        : `data:image/jpeg;base64,${img}`;
-
-      // Force unsupported formats (HEIC etc) to jpeg mime so OpenAI at least attempts decode
-      const mimeMatch = dataUrl.match(/^data:([^;]+);/);
-      if (mimeMatch && !SUPPORTED_MIMES.includes(mimeMatch[1])) {
-        dataUrl = dataUrl.replace(/^data:[^;]+;/, "data:image/jpeg;");
-      }
-
+    for (const img of images) {
+      if (typeof img !== "string" || !img.startsWith("data:image/")) continue;
       content.push({
         type: "image_url",
-        image_url: { url: dataUrl, detail: "high" },
+        image_url: { url: img, detail: "high" },
       });
     }
 
-    // Add text prompt after images
-    content.push({
-      type: "text",
-      text: USER_PROMPT_TEMPLATE(images.length),
-    });
-
-    // Call GPT-4o with vision
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: "gpt-4o",
@@ -217,159 +515,58 @@ export async function POST(req: NextRequest) {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content },
         ],
-        max_tokens: 4096,
-        temperature: 0.3,
         response_format: { type: "json_object" },
+        temperature: 0.2,
+        max_tokens: 1800,
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenAI API error:", response.status, errorText);
+    if (!aiRes.ok) {
+      const errText = await aiRes.text().catch(() => "");
       return NextResponse.json(
         {
-          error: `AI analysis failed (upstream ${response.status})`,
-          detail: errorText.slice(0, 500),
+          error: `OpenAI request failed (${aiRes.status})`,
+          detail: errText.slice(0, 500),
         },
         { status: 502 }
       );
     }
 
-    const data = await response.json();
-    const analysisText = data.choices?.[0]?.message?.content;
+    const aiJson = (await aiRes.json()) as Record<string, unknown>;
+    const choices = aiJson.choices as Array<Record<string, unknown>> | undefined;
+    const messageContent = choices?.[0]?.message
+      ? ((choices[0].message as Record<string, unknown>).content as string)
+      : "";
 
-    if (!analysisText) {
-      return NextResponse.json(
-        { error: "No analysis returned from AI" },
-        { status: 502 }
-      );
-    }
-
-    let analysis;
+    let parsed: Record<string, unknown> = {};
     try {
-      analysis = JSON.parse(analysisText);
+      parsed = JSON.parse(messageContent);
     } catch {
-      console.error("Failed to parse AI response:", analysisText);
-      return NextResponse.json(
-        { error: "Failed to parse AI analysis" },
-        { status: 502 }
-      );
+      // Attempt to extract a JSON object from the response if model wrapped it
+      const m = messageContent.match(/\{[\s\S]*\}/);
+      if (m) {
+        try {
+          parsed = JSON.parse(m[0]);
+        } catch {
+          /* fall through */
+        }
+      }
     }
 
-    const result = normalizeAnalysis(analysis);
+    const normalized = normalizeAnalysis(parsed, sellersClaim);
 
     return NextResponse.json({
       ok: true,
-      result,
-      model: data.model,
-      usage: data.usage,
+      model: "gpt-4o",
+      result: normalized,
+      usage: aiJson.usage ?? null,
     });
-  } catch (error) {
-    console.error("Scan API error:", error);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Scan API error:", message);
     return NextResponse.json(
-      { error: "Internal scanner error", detail: String(error).slice(0, 500) },
+      { error: "Scan failed", detail: message },
       { status: 500 }
     );
   }
-}
-
-/**
- * Ensure the AI response has all required fields with safe defaults
- */
-function normalizeAnalysis(
-  raw: Record<string, unknown>
-): Record<string, unknown> {
-  const identity = (raw.identity as Record<string, unknown>) || {};
-  const genetics = (raw.genetics as Record<string, unknown>) || {};
-  const morphology = (raw.morphology as Record<string, unknown>) || {};
-  const chemistry = (raw.chemistry as Record<string, unknown>) || {};
-  const experience = (raw.experience as Record<string, unknown>) || {};
-  const cultivation = (raw.cultivation as Record<string, unknown>) || {};
-  const reasoning = (raw.reasoning as Record<string, unknown>) || {};
-
-  return {
-    identity: {
-      strainName: identity.strainName || "Unknown Cultivar",
-      confidence: Math.max(
-        55,
-        Math.min(95, Number(identity.confidence) || 60)
-      ),
-      alternateMatches: Array.isArray(identity.alternateMatches)
-        ? identity.alternateMatches
-        : [],
-    },
-    genetics: {
-      dominance: ["Indica", "Sativa", "Hybrid"].includes(
-        genetics.dominance as string
-      )
-        ? genetics.dominance
-        : "Hybrid",
-      lineage: Array.isArray(genetics.lineage) ? genetics.lineage : [],
-      breederNotes:
-        genetics.breederNotes || "Lineage analysis based on visual traits",
-      confidenceNotes: genetics.confidenceNotes || null,
-    },
-    morphology: {
-      budStructure: morphology.budStructure || "Analysis pending",
-      coloration: morphology.coloration || "Standard green coloration",
-      trichomes: morphology.trichomes || "Trichome assessment pending",
-      visualTraits: Array.isArray(morphology.visualTraits)
-        ? morphology.visualTraits
-        : [],
-      growthIndicators: Array.isArray(morphology.growthIndicators)
-        ? morphology.growthIndicators
-        : [],
-    },
-    chemistry: {
-      terpenes: Array.isArray(
-        (chemistry as Record<string, unknown>).terpenes
-      )
-        ? (chemistry as Record<string, unknown>).terpenes
-        : [{ name: "Myrcene", confidence: 0.5 }],
-      cannabinoids: (chemistry as Record<string, unknown>).cannabinoids || {
-        THC: "15-25%",
-        CBD: "<1%",
-      },
-      cannabinoidRange:
-        (chemistry as Record<string, unknown>).cannabinoidRange ||
-        "15-25% THC, <1% CBD",
-      likelyTerpenes: Array.isArray(
-        (chemistry as Record<string, unknown>).terpenes
-      )
-        ? (
-            (chemistry as Record<string, unknown>).terpenes as Array<unknown>
-          ).slice(0, 3)
-        : [{ name: "Myrcene", confidence: 0.5 }],
-    },
-    experience: {
-      effects: Array.isArray(experience.effects)
-        ? experience.effects
-        : ["Relaxed"],
-      primaryEffects: Array.isArray(experience.primaryEffects)
-        ? experience.primaryEffects
-        : [],
-      secondaryEffects: Array.isArray(experience.secondaryEffects)
-        ? experience.secondaryEffects
-        : [],
-      onset: experience.onset || "Moderate",
-      duration: experience.duration || "2-4 hours",
-      bestUse: Array.isArray(experience.bestUse) ? experience.bestUse : [],
-    },
-    cultivation: {
-      difficulty: cultivation.difficulty || "Moderate",
-      floweringTime: cultivation.floweringTime || "8-10 weeks",
-      yield: cultivation.yield || "Medium",
-      notes: cultivation.notes || "Standard cultivation requirements",
-    },
-    reasoning: {
-      whyThisMatch:
-        reasoning.whyThisMatch || "Visual analysis of uploaded images",
-      conflictingSignals: Array.isArray(reasoning.conflictingSignals)
-        ? reasoning.conflictingSignals
-        : null,
-      databaseMatch: reasoning.databaseMatch ?? false,
-    },
-    disclaimer:
-      "AI-assisted visual analysis powered by StrainSpotter's 314-strain database. Not a substitute for laboratory testing.",
-  };
 }
