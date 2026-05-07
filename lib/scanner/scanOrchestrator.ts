@@ -468,6 +468,20 @@ function v2ToSynthesis(data: V2Result): WikiSynthesis {
 
 /* ─── Public entry point ─── */
 
+/**
+ * Thrown when the scan API responds with 401 (auth required) or 402
+ * (subscription required) — the caller should treat this as a UI signal
+ * to show the paywall, not a generic scan failure.
+ */
+export class ScanSubscriptionRequiredError extends Error {
+  status: 401 | 402;
+  constructor(status: 401 | 402, message: string) {
+    super(message);
+    this.name = "ScanSubscriptionRequiredError";
+    this.status = status;
+  }
+}
+
 export async function orchestrateScan(
   images: File[],
   options?: { authToken?: string; sellersClaim?: string }
@@ -520,6 +534,24 @@ export async function orchestrateScan(
     clearTimeout(timeout);
 
     if (!response.ok) {
+      // Auth / subscription failures bubble up as a typed error so the UI
+      // can pop the paywall instead of a generic 'scan failed' card.
+      if (response.status === 401 || response.status === 402) {
+        let msg =
+          response.status === 402
+            ? "Active subscription required."
+            : "Sign in to continue.";
+        try {
+          const body = await response.json();
+          if (typeof body?.error === "string" && body.error.trim()) {
+            msg = body.error;
+          }
+        } catch { /* ignore */ }
+        throw new ScanSubscriptionRequiredError(
+          response.status as 401 | 402,
+          msg
+        );
+      }
       let reason = `status ${response.status}`;
       try {
         const errBody = await response.json();
@@ -611,6 +643,10 @@ export async function orchestrateScan(
       normalizedScanResult: scanResult,
     };
   } catch (error: any) {
+    if (error instanceof ScanSubscriptionRequiredError) {
+      // Re-throw so the calling component can react (open paywall).
+      throw error;
+    }
     console.error("orchestrateScan error:", error);
     return buildFallback("Scanner encountered an error", images.length);
   }

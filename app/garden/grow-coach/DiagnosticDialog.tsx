@@ -108,10 +108,14 @@ const categoryEmoji: Record<string, string> = {
 
 export default function DiagnosticDialog({
   onClose,
+  onSubscriptionRequired,
   initialStage,
   initialStrain,
 }: {
   onClose: () => void;
+  /** Optional: called when the server returns 401 or 402. Lets the
+   *  parent open the paywall instead of showing a plain error. */
+  onSubscriptionRequired?: () => void;
   initialStage?: Stage;
   initialStrain?: string;
 }) {
@@ -170,6 +174,11 @@ export default function DiagnosticDialog({
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => ({}));
         if (resp.status === 401 || resp.status === 402) {
+          if (onSubscriptionRequired) {
+            // Hand off to parent — they'll close us and pop the paywall.
+            onSubscriptionRequired();
+            return;
+          }
           throw new Error(
             errBody?.error ||
               "Active subscription required for plant diagnostics. Open Settings to manage your plan."

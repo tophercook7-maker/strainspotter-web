@@ -1,6 +1,7 @@
 import './globals.css'
 import { DatabaseInitializer } from '@/lib/scanner/dbInitializer'
 import AgeGate from '@/components/AgeGate'
+import OfflineBanner from '@/components/OfflineBanner'
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 
@@ -76,6 +77,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <DatabaseInitializer />
+        <OfflineBanner />
         <AgeGate>
           {children}
         </AgeGate>

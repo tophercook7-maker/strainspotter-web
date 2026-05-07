@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
+import { orchestrateScan, ScanSubscriptionRequiredError } from "@/lib/scanner/scanOrchestrator";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
 import ScanPaywall from "@/components/ScanPaywall";
@@ -645,6 +645,13 @@ export default function ScannerPage() {
         reader.readAsDataURL(firstFile);
       }
     } catch (e: any) {
+      if (e instanceof ScanSubscriptionRequiredError) {
+        // Server says: no active subscription. Open the paywall instead
+        // of showing a generic scan-failure error card.
+        setShowPaywall(true);
+        setScanState("ready");
+        return;
+      }
       console.error("Scan error:", e);
       setError("Couldn't analyze the image. Try a clearer photo with better lighting.");
       setScanState("ready");

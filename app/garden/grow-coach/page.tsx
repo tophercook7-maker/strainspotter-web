@@ -5,6 +5,7 @@ import Link from "next/link";
 import TopNav from "../_components/TopNav";
 import ZoneNav from "../_components/ZoneNav";
 import DiagnosticDialog from "./DiagnosticDialog";
+import ScanPaywall from "@/components/ScanPaywall";
 import { listGrowGroupsSorted } from "@/lib/growlog/growGroupStorage";
 import { listPlantsSortedByUpdated } from "@/lib/growlog/plantStorage";
 
@@ -460,6 +461,7 @@ export default function GrowCoachPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const [plantCount, setPlantCount] = useState(0);
   const [groupCount, setGroupCount] = useState(0);
 
@@ -664,7 +666,19 @@ export default function GrowCoachPage() {
         </div>
       </main>
       {showDiagnostic && (
-        <DiagnosticDialog onClose={() => setShowDiagnostic(false)} />
+        <DiagnosticDialog
+          onClose={() => setShowDiagnostic(false)}
+          onSubscriptionRequired={() => {
+            setShowDiagnostic(false);
+            setShowPaywall(true);
+          }}
+        />
+      )}
+      {showPaywall && (
+        <ScanPaywall
+          onClose={() => setShowPaywall(false)}
+          reason="diagnose"
+        />
       )}
     </>
   );
