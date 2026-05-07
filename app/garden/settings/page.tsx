@@ -577,6 +577,56 @@ export default function SettingsPage() {
                 </span>
               </div>
             )}
+
+            {tier !== "free" && isLoggedIn && (
+              <button
+                onClick={async () => {
+                  const token = auth?.session?.access_token;
+                  if (!token) {
+                    alert("Please sign in again to manage your subscription.");
+                    return;
+                  }
+                  try {
+                    const resp = await fetch("/api/stripe/portal", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: "{}",
+                    });
+                    const data = await resp.json().catch(() => ({}));
+                    if (!resp.ok || !data?.url) {
+                      alert(
+                        data?.error ||
+                          "Couldn't open the billing portal. Please try again."
+                      );
+                      return;
+                    }
+                    window.location.href = data.url as string;
+                  } catch {
+                    alert("Couldn't open the billing portal. Please try again.");
+                  }
+                }}
+                style={{
+                  marginTop: 12,
+                  width: "100%",
+                  padding: "12px 0",
+                  borderRadius: 10,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Manage subscription
+                <span style={{ float: "right", color: "rgba(255,255,255,0.45)" }}>
+                  &rsaquo;
+                </span>
+              </button>
+            )}
           </div>
 
           {/* ═══ Scanner ═══ */}

@@ -85,6 +85,78 @@ async function updateProfileByEmail(
   return true;
 }
 
+/**
+ * Idempotency check: returns true if we've already successfully processed
+ * this Stripe event.id. We use a dedicated table 'stripe_webhook_events'
+ * (see migrations/2026_05_07_stripe_webhook_idempotency.sql) keyed by the
+ * event_id Stripe assigns to every delivery.
+ *
+ * Returns true on already-processed (skip), false on first-seen.
+ * On any error we conservatively return false and let the handler run —
+ * better to risk a rare double-apply than to drop a real event when our
+ * idempotency table is unreachable.
+ */
+async function alreadyProcessed(
+  eventId: string,
+  log: ReturnType<typeof logger.child>,
+  reqId: string
+): Promise<boolean> {
+  try {
+    const supabase = await loadAdmin();
+    const { data, error } = await supabase
+      .from("stripe_webhook_events")
+      .select("event_id")
+      .eq("event_id", eventId)
+      .maybeSingle();
+    if (error) {
+      log.warn("webhook_idempotency_lookup_error", {
+        req: reqId,
+        eventId,
+        message: error.message,
+      });
+      return false;
+    }
+    return !!data;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    log.warn("webhook_idempotency_lookup_threw", {
+      req: reqId,
+      eventId,
+      message,
+    });
+    return false;
+  }
+}
+
+async function recordProcessed(
+  eventId: string,
+  eventType: string,
+  log: ReturnType<typeof logger.child>,
+  reqId: string
+): Promise<void> {
+  try {
+    const supabase = await loadAdmin();
+    const { error } = await supabase
+      .from("stripe_webhook_events")
+      .insert({ event_id: eventId, event_type: eventType });
+    if (error && !/duplicate key/i.test(error.message)) {
+      // Duplicate key just means a concurrent delivery already wrote it.
+      log.warn("webhook_idempotency_insert_error", {
+        req: reqId,
+        eventId,
+        message: error.message,
+      });
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    log.warn("webhook_idempotency_insert_threw", {
+      req: reqId,
+      eventId,
+      message,
+    });
+  }
+}
+
 export async function POST(req: NextRequest) {
   const log = logger.child({ route: "/api/stripe/webhook" });
   const reqId = log.requestId();
@@ -124,6 +196,19 @@ export async function POST(req: NextRequest) {
     eventId: event.id,
     type: event.type,
   });
+
+  // Idempotency — Stripe redelivers events under several conditions
+  // (network errors on our side, manual replay from the Stripe dashboard,
+  // their own at-least-once guarantee). Skip if we've already processed
+  // this event.id.
+  if (await alreadyProcessed(event.id, log, reqId)) {
+    log.info("webhook_idempotent_skip", {
+      req: reqId,
+      eventId: event.id,
+      type: event.type,
+    });
+    return NextResponse.json({ received: true, idempotent: true });
+  }
 
   try {
     switch (event.type) {
@@ -303,6 +388,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  await recordProcessed(event.id, event.type, log, reqId);
   log.info("webhook_done", {
     req: reqId,
     type: event.type,
