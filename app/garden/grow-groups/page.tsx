@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useReducer } from "react";
+import ZoneNav from "../_components/ZoneNav";
 import {
   createGrowGroup,
   listGrowGroupsSorted,
@@ -21,6 +22,7 @@ export default function GrowGroupsListPage() {
       <Link href="/garden" className="text-white/50 text-sm hover:text-white mb-6 inline-block">
         ← Garden
       </Link>
+      <ZoneNav zone="grow" zoneLabel="Grow" />
       <h1 className="text-2xl font-bold mb-1">Grow Groups</h1>
       <p className="text-white/50 text-sm mb-6">
         Organize plants by tent, room, outdoor plot, season, or run — optional.

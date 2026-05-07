@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import TopNav from "../_components/TopNav";
+import ZoneNav from "../_components/ZoneNav";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface SeedVendor {
@@ -93,6 +94,7 @@ export default function SeedVendorsPage() {
       <TopNav title="Seed Vendors" showBack />
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
+          <ZoneNav zone="nearby" zoneLabel="Nearby" />
           {/* Hero */}
           <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>

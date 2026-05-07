@@ -259,30 +259,29 @@ interface FeatureItem {
   comingSoonLabel?: string;
 }
 
+/**
+ * Five primary destinations (the consolidated garden).
+ * Each tile is a "zone" that absorbs related routes:
+ *
+ *   Scan      → scanner, history, saved-scan
+ *   Grow      → grow-coach (doctor + diagnostic), plants, grow-groups, grow-log
+ *   Library   → strains, ecosystem, compare, terpenes, favorites
+ *   Journal   → consumption / session diary
+ *   Nearby    → dispensaries + seed-vendors
+ */
 const FEATURES: FeatureItem[] = [
-  { href: "/garden/strains", icon: "🔬", label: "Strains", desc: "Browse strain database" },
-  { href: "/garden/ecosystem", icon: "🧬", label: "Discovery", desc: "Find strains by effect or terpene" },
-  { href: "/garden/terpenes", icon: "🧪", label: "Terpenes", desc: "Aroma deep dives + community photos" },
-  { href: "/garden/compare", icon: "⚖️", label: "Compare", desc: "Compare strains side by side" },
-  { href: "/garden/grow-coach", icon: "🩺", label: "Grow Doctor", desc: "Seed sourcing → harvest → safe enjoyment" },
-  { href: "/garden/dispensaries", icon: "📍", label: "Directory", desc: "Dispensaries & licensed growers" },
-  { href: "/garden/seed-vendors", icon: "🌰", label: "Seed Vendors", desc: "Trusted seed sources" },
-  { href: "/garden/favorites", icon: "❤️", label: "Favorites", desc: "Your saved strains" },
-  { href: "/garden/journal", icon: "📓", label: "Journal", desc: "Log sessions & track mood" },
-  { href: "/garden/profile", icon: "👤", label: "Profile", desc: "Your stats & personality type" },
-  {
-    href: "#",
-    icon: "💬",
-    label: "Community",
-    desc: "Group messaging for growers, consumers & dispensaries",
-    comingSoon: true,
-    comingSoonLabel: "Coming Next",
-  },
+  { href: "/garden/scanner",      icon: "📷", label: "Scan",    desc: "AI strain analysis + seller's-claim check" },
+  { href: "/garden/grow-coach",   icon: "🩺", label: "Grow",    desc: "Grow Doctor: lifecycle + photo diagnostics" },
+  { href: "/garden/strains",      icon: "📚", label: "Library", desc: "Strains, terpenes, discovery, compare" },
+  { href: "/garden/journal",      icon: "📓", label: "Journal", desc: "Session diary — mood, dose, notes" },
+  { href: "/garden/dispensaries", icon: "📍", label: "Nearby",  desc: "Dispensaries & seed vendors" },
 ];
 
 const QUICK_LINKS = [
-  { href: "/garden/history", icon: "📋", label: "Scan History" },
-  { href: "/garden/settings", icon: "⚙️", label: "Settings" },
+  { href: "/garden/history",   icon: "📋", label: "Scan History" },
+  { href: "/garden/favorites", icon: "❤️", label: "Favorites" },
+  { href: "/garden/profile",   icon: "👤", label: "Profile" },
+  { href: "/garden/settings",  icon: "⚙️", label: "Settings" },
 ];
 
 /* ─── Tier display helpers ─── */

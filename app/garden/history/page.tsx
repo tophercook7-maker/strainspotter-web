@@ -1,4 +1,5 @@
 import TopNav from "../_components/TopNav";
+import ZoneNav from "../_components/ZoneNav";
 import { createServerClient } from "../../_server/supabase/server";
 import Link from "next/link";
 
@@ -44,6 +45,7 @@ export default async function HistoryPage({
       <TopNav title="History" showBack />
       <main className="min-h-screen bg-black text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
+          <ZoneNav zone="scan" zoneLabel="Scan" />
           {strainFilter && (
             <div className="mb-4 rounded-lg border border-white/15 bg-white/10 p-3 flex items-center justify-between">
               <span className="text-white/80 text-sm">

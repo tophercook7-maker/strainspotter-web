@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import ZoneNav from "../_components/ZoneNav";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 type StrainType = "Sativa" | "Indica" | "Hybrid";
@@ -199,6 +200,7 @@ export default function EcosystemPage() {
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #111816, #0d120f)", color: "#fff" }}>
       <div style={{ padding: "16px 16px 96px", maxWidth: 600, margin: "0 auto" }}>
+        <ZoneNav zone="library" zoneLabel="Library" />
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, marginTop: 4 }}>
           <button onClick={() => router.push("/garden")} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>‹</button>

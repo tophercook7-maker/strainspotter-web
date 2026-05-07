@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useReducer, useState } from "react";
+import ZoneNav from "../_components/ZoneNav";
 import {
   createGrowGroup,
   listGrowGroupsSorted,
@@ -30,6 +31,7 @@ export default function PlantsListPage() {
       <Link href="/garden" className="text-white/50 text-sm hover:text-white mb-6 inline-block">
         ← Garden
       </Link>
+      <ZoneNav zone="grow" zoneLabel="Grow" />
       <div className="flex items-start justify-between gap-4 mb-2">
         <h1 className="text-2xl font-bold">Your plants</h1>
         <Link

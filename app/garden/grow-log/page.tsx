@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import ZoneNav from "../_components/ZoneNav";
 import { loadGrowLogEntries, type GrowLogEntry } from "@/lib/growlog/growLogStorage";
 
 function GrowLogContent() {
@@ -16,6 +17,7 @@ function GrowLogContent() {
 
   return (
     <div className="min-h-screen bg-black text-white px-4 py-8 max-w-lg mx-auto pb-24">
+      <ZoneNav zone="grow" zoneLabel="Grow" />
       <div className="flex items-center justify-between mb-2">
         <Link
           href="/garden"

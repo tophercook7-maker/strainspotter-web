@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import TopNav from "../_components/TopNav";
+import ZoneNav from "../_components/ZoneNav";
 import DiagnosticDialog from "./DiagnosticDialog";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -501,6 +502,7 @@ export default function GrowCoachPage() {
       <TopNav title="Grow Doctor" showBack />
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
+          <ZoneNav zone="grow" zoneLabel="Grow" />
           {/* Hero */}
           <div style={{ ...glass, padding: 24, marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import TopNav from "../_components/TopNav";
+import ZoneNav from "../_components/ZoneNav";
 import Link from "next/link";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ export default function FavoritesPage() {
       <TopNav title="Favorites" showBack />
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
+          <ZoneNav zone="library" zoneLabel="Library" />
           {/* Hero */}
           <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
