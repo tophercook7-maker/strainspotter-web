@@ -20,6 +20,26 @@ tauri.conf.json
 .vscode/
 .DS_Store
 
+# macOS Finder / iCloud collision copies (e.g. "page 2.tsx", "route 3.ts")
+# These get auto-created when files conflict during sync. Always safe to ignore.
+* 2.ts
+* 2.tsx
+* 2.js
+* 2.jsx
+* 2.json
+* 2.md
+* 2.sql
+* 2.css
+* 2.example
+* 2.html
+* 2.jsonl
+* 3.ts
+* 3.tsx
+* 3.js
+* 3.jsx
+* 3.json
+* 3.md
+
 # Node noise
 node_modules/
 
