@@ -276,6 +276,14 @@ const FEATURES: FeatureItem[] = [
   { href: "/garden/strains",      icon: "📚", label: "Library", desc: "Strains, terpenes, discovery, compare" },
   { href: "/garden/journal",      icon: "📓", label: "Journal", desc: "Session diary — mood, dose, notes" },
   { href: "/garden/dispensaries", icon: "📍", label: "Nearby",  desc: "Dispensaries & seed vendors" },
+  {
+    href: "#",
+    icon: "💬",
+    label: "Community",
+    desc: "Grower & dispensary networking — connect, share, learn",
+    comingSoon: true,
+    comingSoonLabel: "Coming v2.0",
+  },
 ];
 
 const QUICK_LINKS = [
@@ -508,7 +516,7 @@ export default function GardenPage() {
           {/* Footer credit */}
           <div style={{ textAlign: "center", paddingBottom: 32 }}>
             <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginBottom: 4 }}>
-              StrainSpotter • AI-Powered Cannabis Identification
+              StrainSpotter • Scan. Grow. Learn. Honestly.
             </div>
             <a
               href="https://mixedmakershop.com"

@@ -2058,11 +2058,11 @@ export default function ScannerPage() {
                   boxShadow: "0 4px 18px rgba(67,160,71,0.3)",
                 }}
               >
-                {isLoggedIn ? "Open My Garden →" : "Join the Garden — Free"}
+                {isLoggedIn ? "Open My Garden →" : "Sign In to StrainSpotter"}
               </button>
               {!isLoggedIn && (
                 <p style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.18)", marginBottom: 0 }}>
-                  Free to join. Upgrade anytime for unlimited scans.
+                  Subscriber-only. Plans start at $4.99/mo. Cancel anytime.
                 </p>
               )}
             </div>

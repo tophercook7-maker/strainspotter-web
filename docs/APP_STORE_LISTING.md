@@ -36,39 +36,50 @@ Alternates if the above feels redundant with the name:
 
 ## Description
 
-(4000 char limit. Below is ~2200 — leaves room to tune.)
+(4000 char limit. Below is ~2700 — leaves room to tune.)
 
 > StrainSpotter is the cannabis companion built for honesty.
 >
 > Most strain-ID apps lie about their confidence. We don't. When you scan a labeled jar or seed packet, our AI reads the label and confirms the strain. When you scan unlabeled flower, we tell you exactly what we see — bud structure, trichome maturity, likely terpene family — and give you a ranked list of plausible candidates with calibrated confidence, instead of pretending we're sure when we're not.
 >
-> ━ FEATURES ━
+> ━ WHAT YOU GET ━
 >
 > SCAN & ANALYZE
 > • Snap a photo of a dispensary jar, seed packet, or bud and get an honest strain analysis
 > • Catch mislabeled product — tell us what the seller called it and we'll check whether the visual evidence supports the claim
-> • OCR-first design: when there's a label, we use it
-> • Multi-candidate output with calibrated 0–100 confidence — no inflated numbers
+> • OCR-first design: when there's a label, we use it. When there isn't, we don't fake it
 > • Detects when an image isn't cannabis and tells you instead of guessing
 >
 > GROW DOCTOR
-> • Full grow-lifecycle companion: seed sourcing, germination, seedling, vegetative, flowering, drying, curing, post-cure storage, and informed enjoyment
-> • 40+ in-depth tips across 9 stages, written by experienced growers
-> • Diagnose a plant problem from a photo — yellowing leaves, pests, weird buds, mystery spots — with ranked likely causes, severity assessment, and concrete same-day actions
-> • Track every grow with a stage-aware journal
+> • A cultivation companion across the entire 9-stage lifecycle — from picking the right seeds to dialing in the cure
+> • 40+ in-depth tips covering sourcing, germination, seedling, vegetative, flowering, drying, curing, and post-harvest
+> • Diagnose a plant problem from a photo: yellow leaves, pests, weird buds — get ranked likely causes with severity and concrete same-day actions
+> • Track every grow; organize plants into Grow Groups (tents, rooms, runs)
 >
 > STRAIN LIBRARY
-> • 314 cultivars and growing
-> • Type, lineage, terpene profile, effect family, and visual morphology
-> • Filter and discover by what you actually want
+> • 314 cultivars with type, lineage, terpene profile, effect family, and visual morphology
+> • Filter by what you actually want — discover strains by effect or terpene
+> • Save favorites
+>
+> SESSION DIARY
+> • Log how each session went: strain, method, dose, mood before and after, setting, rating
+> • Build your own personal map of what works for you
+>
+> NEARBY
+> • Find cannabis dispensaries within your selected radius
+> • Browse vetted seed vendors with proven track records
 >
 > ━ HONEST ABOUT WHAT AI CAN AND CAN'T DO ━
 >
 > Specific strain identification from an unlabeled bud photo is genuinely hard — phenotype variation within a strain often exceeds the visual variation between strains. We tell you that up front, and our app is designed around being useful even when certainty isn't possible.
 >
-> ━ NOT MEDICAL ADVICE ━
+> ━ COMING SOON ━
 >
-> StrainSpotter provides educational information about cannabis cultivation and the plant. It is not medical advice and does not facilitate the sale of cannabis. Always follow the law where you live.
+> StrainSpotter is built to grow into the broader cannabis community: networking between growers, dispensaries, and consumers (no commerce inside the app — just connection and conversation). When you're ready to share what you've learned and what you've grown, the platform will be ready for you.
+>
+> ━ HONEST ABOUT WHAT THIS APP IS NOT ━
+>
+> StrainSpotter is not a marketplace. It does not facilitate the sale of cannabis or any controlled substance. It is not medical advice. Always follow the law where you live.
 
 ## Keywords
 

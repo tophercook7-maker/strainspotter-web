@@ -932,7 +932,7 @@ export default function SettingsPage() {
           {/* Footer */}
           <div style={{ textAlign: "center", padding: "32px 0" }}>
             <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-              StrainSpotter • AI-Powered Cannabis Identification
+              StrainSpotter • Scan. Grow. Learn. Honestly.
             </span>
           </div>
         </div>
