@@ -283,6 +283,19 @@ interface SimpleResult {
   tagline: string;
   vibeScore: { energizing: number; creative: number; social: number; relaxing: number } | null;
   expertTip: string;
+
+  // Phase 2 v2 — OCR + claim validation surface to the UI
+  ocrText: string;
+  ocrStrainCandidates: string[];
+  headline: string;
+  advisoryNote: string | null;
+  claimValidation: {
+    sellersClaim: string;
+    consistent: "yes" | "ambiguous" | "no";
+    reasoning: string;
+    expectedTraits: string[];
+    discrepancies: string[];
+  } | null;
 }
 
 function mapConfidence(n: number): string {
@@ -583,6 +596,13 @@ export default function ScannerPage() {
             }
           : null,
         expertTip: (vm as any).engagementRaw?.expertTip || "",
+
+        // Phase 2 v2 fields — populated by scanOrchestrator from /api/scan response
+        ocrText: vm.v2?.observation.ocrText || "",
+        ocrStrainCandidates: vm.v2?.observation.ocrStrainCandidates || [],
+        headline: vm.v2?.summary.headline || "",
+        advisoryNote: vm.v2?.summary.advisoryNote ?? null,
+        claimValidation: vm.v2?.claimValidation ?? null,
       };
 
       setResult(simple);
@@ -1012,6 +1032,203 @@ export default function ScannerPage() {
         {/* ── RESULT CARD ── */}
         {result && scanState === "done" && (
           <div style={{ marginTop: 12 }}>
+            {/* ── Phase 2: Seller's-claim validation card ── */}
+            {result.claimValidation && (
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  background:
+                    result.claimValidation.consistent === "yes"
+                      ? "rgba(76,175,80,0.10)"
+                      : result.claimValidation.consistent === "no"
+                      ? "rgba(244,67,54,0.10)"
+                      : "rgba(255,183,77,0.10)",
+                  border:
+                    result.claimValidation.consistent === "yes"
+                      ? "1px solid rgba(76,175,80,0.35)"
+                      : result.claimValidation.consistent === "no"
+                      ? "1px solid rgba(244,67,54,0.35)"
+                      : "1px solid rgba(255,183,77,0.35)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 1.2,
+                    textTransform: "uppercase" as const,
+                    color: "rgba(255,255,255,0.55)",
+                    marginBottom: 6,
+                  }}
+                >
+                  Seller&apos;s claim check
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginBottom: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>
+                    {result.claimValidation.consistent === "yes"
+                      ? "✅"
+                      : result.claimValidation.consistent === "no"
+                      ? "⚠️"
+                      : "🤔"}
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>
+                    Claimed:{" "}
+                    <span style={{ color: "rgba(255,255,255,0.85)" }}>
+                      &ldquo;{result.claimValidation.sellersClaim}&rdquo;
+                    </span>
+                  </span>
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: 0.5,
+                      textTransform: "uppercase" as const,
+                      color:
+                        result.claimValidation.consistent === "yes"
+                          ? "#81C784"
+                          : result.claimValidation.consistent === "no"
+                          ? "#E57373"
+                          : "#FFB74D",
+                    }}
+                  >
+                    {result.claimValidation.consistent === "yes"
+                      ? "Consistent"
+                      : result.claimValidation.consistent === "no"
+                      ? "Inconsistent"
+                      : "Ambiguous"}
+                  </span>
+                </div>
+                {result.claimValidation.reasoning && (
+                  <p
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      color: "rgba(255,255,255,0.75)",
+                      margin: "6px 0 0",
+                    }}
+                  >
+                    {result.claimValidation.reasoning}
+                  </p>
+                )}
+                {result.claimValidation.discrepancies.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: 1,
+                        textTransform: "uppercase" as const,
+                        color: "rgba(255,255,255,0.45)",
+                        marginBottom: 4,
+                      }}
+                    >
+                      Doesn&apos;t match
+                    </div>
+                    <ul
+                      style={{
+                        margin: 0,
+                        paddingLeft: 18,
+                        fontSize: 13,
+                        color: "rgba(255,255,255,0.75)",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {result.claimValidation.discrepancies
+                        .slice(0, 4)
+                        .map((d, i) => (
+                          <li key={i}>{d}</li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Phase 2: OCR text card (only when readable text was found) ── */}
+            {result.ocrText && result.ocrText.trim().length > 0 && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  background: "rgba(33,150,243,0.08)",
+                  border: "1px solid rgba(33,150,243,0.25)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 1.2,
+                    textTransform: "uppercase" as const,
+                    color: "rgba(255,255,255,0.55)",
+                    marginBottom: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span>📋</span>
+                  <span>What we read on your image</span>
+                </div>
+                {result.ocrStrainCandidates.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "rgba(255,255,255,0.55)",
+                        marginRight: 6,
+                      }}
+                    >
+                      Strain names spotted:
+                    </span>
+                    {result.ocrStrainCandidates.slice(0, 4).map((s, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          display: "inline-block",
+                          margin: "2px 4px 2px 0",
+                          padding: "2px 8px",
+                          borderRadius: 8,
+                          background: "rgba(33,150,243,0.18)",
+                          fontSize: 12,
+                          color: "#90CAF9",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontFamily:
+                      "ui-monospace, SFMono-Regular, Menlo, monospace",
+                    color: "rgba(255,255,255,0.65)",
+                    lineHeight: 1.5,
+                    maxHeight: 88,
+                    overflowY: "auto" as const,
+                    whiteSpace: "pre-wrap" as const,
+                    wordBreak: "break-word" as const,
+                  }}
+                >
+                  {result.ocrText}
+                </div>
+              </div>
+            )}
+
             {/* Strain Name Hero */}
             <div style={{
               textAlign: "center",

@@ -521,4 +521,64 @@ export interface ScannerViewModel {
     reason: string;
     recommendation: string;
   };
+
+  /**
+   * Phase 2 (May 2026) — OCR-first / multi-candidate / claim-validation fields.
+   * Populated by `scanOrchestrator` from the `/api/scan` v2 response.
+   * Optional so existing legacy view-model consumers keep working.
+   */
+  v2?: {
+    observation: {
+      ocrText: string;
+      ocrStrainCandidates: string[];
+      visibleCategory: "indica" | "sativa" | "hybrid" | "unknown";
+      categoryConfidence: number;
+      imageType:
+        | "flower"
+        | "packaging"
+        | "label"
+        | "plant"
+        | "other"
+        | "unclear";
+    };
+    traits: {
+      budStructure: string;
+      trichomeCoverage: "low" | "medium" | "high" | "very-high" | "unknown";
+      trichomeColor: "clear" | "cloudy" | "amber" | "mixed" | "unknown";
+      pistilColors: string[];
+      pistilDensity: "sparse" | "moderate" | "dense" | "unknown";
+      coloration: string;
+      leafShape: "narrow" | "broad" | "mixed" | "unknown";
+      qualityIndicators: string[];
+    };
+    likelihood: {
+      dominantTerpenes: Array<{ name: string; probability: number }>;
+      typicalEffectFamily: Array<{ name: string; probability: number }>;
+    };
+    candidates: Array<{
+      strainName: string;
+      slug: string;
+      confidence: number;
+      matchReasoning: string;
+      matchSignals: {
+        nameInImage: boolean;
+        categoryMatches: boolean;
+        visualTraitsMatchPercent: number;
+        terpeneFamilyMatches: boolean;
+      };
+    }>;
+    summary: {
+      primaryCandidateSlug: string | null;
+      confidenceTier: "high" | "moderate" | "low" | "uncertain";
+      headline: string;
+      advisoryNote: string | null;
+    };
+    claimValidation: {
+      sellersClaim: string;
+      consistent: "yes" | "ambiguous" | "no";
+      reasoning: string;
+      expectedTraits: string[];
+      discrepancies: string[];
+    } | null;
+  };
 }
