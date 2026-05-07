@@ -13,6 +13,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireSubscription } from "@/lib/auth/serverGate";
+import { logger } from "@/lib/observability/log";
+import { checkRateLimit } from "@/lib/observability/rateLimit";
 
 export const runtime = "edge";
 
@@ -201,12 +203,41 @@ function normalizeDiagnosis(raw: any) {
 }
 
 export async function POST(req: NextRequest) {
+  const log = logger.child({ route: "/api/grow-doctor/diagnose" });
+  const reqId = log.requestId();
+  const t0 = Date.now();
   try {
     // ── Subscription gate ──
     // Plant-problem diagnostics burn a GPT-4o Vision call per request.
     // Subscribers only.
     const gate = await requireSubscription(req);
-    if (gate.ok === false) return gate.response;
+    if (gate.ok === false) {
+      log.warn("diagnose_gate_blocked", { req: reqId });
+      return gate.response;
+    }
+    // Per-user rate limit — diagnostics burn the same dollars as scans.
+    // Pro: 20/min, Member: 6/min.
+    const rl = checkRateLimit(
+      `diagnose:${gate.userId}`,
+      gate.tier === "pro" ? 20 : 6,
+      60
+    );
+    if (rl.ok === false) {
+      log.warn("diagnose_rate_limited", {
+        req: reqId,
+        user: gate.userId,
+        tier: gate.tier,
+        retryAfter: rl.retryAfterSec,
+      });
+      return NextResponse.json(
+        { error: "Slow down a moment, then try again.", code: "rate_limited" },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rl.retryAfterSec) },
+        }
+      );
+    }
+    log.info("diagnose_start", { req: reqId, user: gate.userId, tier: gate.tier });
 
     const body = await req.json();
     const images: unknown = body?.images;
@@ -309,10 +340,24 @@ export async function POST(req: NextRequest) {
     }
 
     const normalized = normalizeDiagnosis(parsed);
+    log.info("diagnose_done", {
+      req: reqId,
+      ms: Date.now() - t0,
+      diagnoses: Array.isArray((normalized as any)?.diagnoses)
+        ? (normalized as any).diagnoses.length
+        : 0,
+      severity: (normalized as any)?.severity ?? null,
+    });
     return NextResponse.json(normalized);
   } catch (err: any) {
+    const message = err?.message || String(err);
+    log.error("diagnose_error", {
+      req: reqId,
+      ms: Date.now() - t0,
+      message,
+    });
     return NextResponse.json(
-      { error: "Diagnosis failed.", detail: err?.message || String(err) },
+      { error: "Diagnosis failed.", detail: message },
       { status: 500 }
     );
   }

@@ -18,6 +18,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import strainDb from "@/lib/data/strains.json";
 import { requireSubscription } from "@/lib/auth/serverGate";
+import { logger } from "@/lib/observability/log";
+import { checkRateLimit } from "@/lib/observability/rateLimit";
 
 export const runtime = "edge";
 
@@ -461,12 +463,41 @@ type ScanRequestBody = {
 };
 
 export async function POST(req: NextRequest) {
+  const log = logger.child({ route: "/api/scan" });
+  const reqId = log.requestId();
+  const t0 = Date.now();
   try {
     // ── Subscription gate (Apple-safe, money-protection layer) ──
     // Anyone hitting this endpoint must have a valid Supabase session AND
     // an active 'member' or 'pro' membership. Free tier was retired May 2026.
     const gate = await requireSubscription(req);
-    if (gate.ok === false) return gate.response;
+    if (gate.ok === false) {
+      log.warn("scan_gate_blocked", { req: reqId });
+      return gate.response;
+    }
+    // Per-user rate limit — Pro: 30/min, Member: 10/min. In-memory
+    // soft cap; the Stripe-side monthly cap is the hard ceiling.
+    const rl = checkRateLimit(
+      `scan:${gate.userId}`,
+      gate.tier === "pro" ? 30 : 10,
+      60
+    );
+    if (rl.ok === false) {
+      log.warn("scan_rate_limited", {
+        req: reqId,
+        user: gate.userId,
+        tier: gate.tier,
+        retryAfter: rl.retryAfterSec,
+      });
+      return NextResponse.json(
+        { error: "Slow down a moment, then try again.", code: "rate_limited" },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rl.retryAfterSec) },
+        }
+      );
+    }
+    log.info("scan_start", { req: reqId, user: gate.userId, tier: gate.tier });
 
     const body = (await req.json()) as ScanRequestBody;
     const images = body.images;
@@ -562,6 +593,13 @@ export async function POST(req: NextRequest) {
 
     const normalized = normalizeAnalysis(parsed, sellersClaim);
 
+    log.info("scan_done", {
+      req: reqId,
+      ms: Date.now() - t0,
+      candidates: Array.isArray((normalized as any)?.candidates)
+        ? (normalized as any).candidates.length
+        : 0,
+    });
     return NextResponse.json({
       ok: true,
       model: "gpt-4o",
@@ -570,7 +608,11 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Scan API error:", message);
+    log.error("scan_error", {
+      req: reqId,
+      ms: Date.now() - t0,
+      message,
+    });
     return NextResponse.json(
       { error: "Scan failed", detail: message },
       { status: 500 }
