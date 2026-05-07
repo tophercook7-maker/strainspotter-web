@@ -6,6 +6,7 @@ import { orchestrateScan, ScanSubscriptionRequiredError } from "@/lib/scanner/sc
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
 import ScanPaywall from "@/components/ScanPaywall";
+import MembershipCTA from "@/components/MembershipCTA";
 import ScannerExpectationsModal, {
   hasSeenScannerExpectations,
 } from "./ScannerExpectationsModal";
@@ -773,6 +774,11 @@ export default function ScannerPage() {
         {/* ── PWA Install Banner ── */}
         <div style={{ paddingTop: 16 }}>
           <InstallBanner />
+        </div>
+
+        {/* ── Subscribe nudge — renders nothing if user is already subscribed */}
+        <div style={{ marginTop: 12 }}>
+          <MembershipCTA variant="scanner-status" />
         </div>
 
         {/* ── UPLOAD AREA ── */}

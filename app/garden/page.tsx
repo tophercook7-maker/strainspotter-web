@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import MembershipCTA from "@/components/MembershipCTA";
 import { useState, useEffect } from "react";
 import AuthScreen from "@/components/AuthScreen";
 
@@ -404,6 +405,9 @@ export default function GardenPage() {
             </div>
             <span style={{ marginLeft: "auto", fontSize: 18, color: "rgba(255,255,255,0.3)" }}>→</span>
           </button>
+
+          {/* Membership nudge for unsubscribed users (renders null otherwise) */}
+          <MembershipCTA variant="banner" />
 
           {/* Strain of the Day */}
           <StrainOfTheDay router={router} />
