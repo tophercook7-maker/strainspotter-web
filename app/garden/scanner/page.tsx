@@ -308,6 +308,18 @@ interface SimpleResult {
     expectedTraits: string[];
     discrepancies: string[];
   } | null;
+  /** Phase-2 candidate breakdown — used by the "Why this confidence?" drill-down. */
+  v2Candidates: Array<{
+    strainName: string;
+    confidence: number;
+    matchReasoning: string;
+    matchSignals: {
+      nameInImage: boolean;
+      categoryMatches: boolean;
+      visualTraitsMatchPercent: number;
+      terpeneFamilyMatches: boolean;
+    };
+  }>;
 }
 
 function mapConfidence(n: number): string {
@@ -605,6 +617,17 @@ export default function ScannerPage() {
         advisoryNote: vm.v2?.summary.advisoryNote ?? null,
         imageType: vm.v2?.observation.imageType || "unclear",
         claimValidation: vm.v2?.claimValidation ?? null,
+        v2Candidates: Array.isArray(vm.v2?.candidates) ? vm.v2.candidates.slice(0, 4).map((c: any) => ({
+          strainName: c.strainName,
+          confidence: typeof c.confidence === "number" ? c.confidence : 0,
+          matchReasoning: c.matchReasoning || "",
+          matchSignals: {
+            nameInImage: !!c.matchSignals?.nameInImage,
+            categoryMatches: !!c.matchSignals?.categoryMatches,
+            visualTraitsMatchPercent: Number(c.matchSignals?.visualTraitsMatchPercent) || 0,
+            terpeneFamilyMatches: !!c.matchSignals?.terpeneFamilyMatches,
+          },
+        })) : [],
       };
 
       setResult(simple);
@@ -1606,6 +1629,135 @@ export default function ScannerPage() {
                   </div>
                 )}
 
+                {/* Why this confidence? — drill-down on the v2 candidates */}
+                {result.v2Candidates.length > 0 && (
+                  <details style={{ marginBottom: 14 }}>
+                    <summary style={{
+                      cursor: "pointer",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: 1.5,
+                      textTransform: "uppercase" as const,
+                      color: "rgba(255,255,255,0.45)",
+                      marginBottom: 10,
+                      userSelect: "none" as const,
+                    }}>
+                      Why this confidence? · Tap to expand
+                    </summary>
+                    <div style={{ display: "flex", flexDirection: "column" as const, gap: 8, marginTop: 10 }}>
+                      {result.v2Candidates.map((c, i) => (
+                        <div key={i} style={{
+                          padding: "12px 14px",
+                          borderRadius: 12,
+                          background: i === 0 ? "rgba(76,175,80,0.08)" : "rgba(255,255,255,0.03)",
+                          border: i === 0 ? "1px solid rgba(76,175,80,0.20)" : "1px solid rgba(255,255,255,0.05)",
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{c.strainName}</span>
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{Math.round(c.confidence)}%</span>
+                          </div>
+                          {c.matchReasoning && (
+                            <p style={{ fontSize: 12, lineHeight: 1.55, color: "rgba(255,255,255,0.65)", margin: "4px 0 8px" }}>
+                              {c.matchReasoning}
+                            </p>
+                          )}
+                          <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6, marginTop: 4 }}>
+                            <Pill ok={c.matchSignals.nameInImage}>
+                              {c.matchSignals.nameInImage ? "Name visible in image" : "No label match"}
+                            </Pill>
+                            <Pill ok={c.matchSignals.categoryMatches}>
+                              {c.matchSignals.categoryMatches ? "Category fits" : "Category mismatch"}
+                            </Pill>
+                            <Pill ok={c.matchSignals.visualTraitsMatchPercent >= 60}>
+                              Visual {Math.round(c.matchSignals.visualTraitsMatchPercent)}%
+                            </Pill>
+                            <Pill ok={c.matchSignals.terpeneFamilyMatches}>
+                              {c.matchSignals.terpeneFamilyMatches ? "Terpene family fits" : "Terpene mismatch"}
+                            </Pill>
+                          </div>
+                        </div>
+                      ))}
+                      <p style={{
+                        fontSize: 11,
+                        color: "rgba(255,255,255,0.30)",
+                        margin: "8px 4px 0",
+                        lineHeight: 1.5,
+                      }}>
+                        Confidence is calibrated — a 50% result means roughly half of similar
+                        scans turned out to be this strain. Specific strain ID from an
+                        unlabeled photo is genuinely hard.
+                      </p>
+                    </div>
+                  </details>
+                )}
+
+                {/* Reported to help with — uses already-collected medical data */}
+                {result.medicalConditions.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>
+                      Users commonly report this for
+                    </h3>
+                    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+                      {result.medicalConditions.map((m, i) => (
+                        <span key={i} style={{
+                          fontSize: 12, padding: "5px 11px", borderRadius: 99,
+                          background: "rgba(76,175,80,0.10)",
+                          border: "1px solid rgba(76,175,80,0.22)",
+                          color: "rgba(255,255,255,0.75)",
+                        }}>{m}</span>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.30)", margin: "8px 0 0", lineHeight: 1.5 }}>
+                      Self-reported by users. Not medical advice.
+                    </p>
+                  </div>
+                )}
+
+                {/* Watch out for — side effects */}
+                {result.sideEffects.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,183,77,0.55)", marginBottom: 10 }}>
+                      Watch out for
+                    </h3>
+                    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+                      {result.sideEffects.map((sx, i) => (
+                        <span key={i} style={{
+                          fontSize: 12, padding: "5px 11px", borderRadius: 99,
+                          background: "rgba(255,183,77,0.08)",
+                          border: "1px solid rgba(255,183,77,0.20)",
+                          color: "rgba(255,255,255,0.70)",
+                        }}>{sx}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Best for — usage context */}
+                {result.bestUse.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>
+                      Best for
+                    </h3>
+                    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+                      {result.bestUse.map((u, i) => (
+                        <span key={i} style={{
+                          fontSize: 12, padding: "5px 11px", borderRadius: 99,
+                          background: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.70)",
+                        }}>{u}</span>
+                      ))}
+                    </div>
+                    {(result.timeOfDay || result.intensity || result.duration) && (
+                      <div style={{ display: "flex", gap: 14, marginTop: 10, flexWrap: "wrap" as const }}>
+                        {result.timeOfDay && <Meta label="Time of day" value={result.timeOfDay} />}
+                        {result.intensity && <Meta label="Intensity" value={result.intensity} />}
+                        {result.duration && <Meta label="Duration" value={result.duration} />}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Better Results Tips */}
                 {result.tips.length > 0 && (
                   <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", marginBottom: 8 }}>
@@ -2195,6 +2347,51 @@ export default function ScannerPage() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+/* ─── small helpers used by the educational result sections ─── */
+
+function Pill({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        fontSize: 11,
+        padding: "3px 9px",
+        borderRadius: 99,
+        background: ok ? "rgba(76,175,80,0.12)" : "rgba(244,67,54,0.10)",
+        border: ok
+          ? "1px solid rgba(76,175,80,0.30)"
+          : "1px solid rgba(244,67,54,0.25)",
+        color: ok ? "#A5D6A7" : "rgba(244,67,54,0.85)",
+        fontWeight: 600,
+        letterSpacing: 0.2,
+      }}
+    >
+      {ok ? "✓ " : "✗ "}
+      {children}
+    </span>
+  );
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column" as const, gap: 2 }}>
+      <span
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: 1.2,
+          textTransform: "uppercase" as const,
+          color: "rgba(255,255,255,0.30)",
+        }}
+      >
+        {label}
+      </span>
+      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.78)" }}>
+        {value}
+      </span>
     </div>
   );
 }
