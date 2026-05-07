@@ -5,10 +5,18 @@
 // "Doctor's office" — photo + symptoms → AI plant-problem diagnosis.
 // Self-contained modal: upload up to 4 images, optionally describe the
 // problem, optionally tag stage/strain. Calls /api/grow-doctor/diagnose
-// and renders ranked diagnoses with severity, immediate actions, and
-// prevention guidance.
+// (subscription-gated) and renders ranked diagnoses with severity,
+// immediate actions, and prevention guidance.
 
 import { useState, useRef } from "react";
+
+/* ─── try to use real auth, fall back gracefully ─── */
+let useOptionalAuth: () => any;
+try {
+  useOptionalAuth = require("@/lib/auth/AuthProvider").useOptionalAuth;
+} catch {
+  useOptionalAuth = () => null;
+}
 
 type Stage =
   | "sourcing" | "seed" | "seedling" | "veg" | "flower"
@@ -107,6 +115,7 @@ export default function DiagnosticDialog({
   initialStage?: Stage;
   initialStrain?: string;
 }) {
+  const auth = useOptionalAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -141,9 +150,15 @@ export default function DiagnosticDialog({
     setLoading(true);
     try {
       const compressed = await Promise.all(images.map((f) => compressImage(f)));
+      const authToken = auth?.session?.access_token;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+
       const resp = await fetch("/api/grow-doctor/diagnose", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           images: compressed,
           stage: stage || undefined,
@@ -154,6 +169,12 @@ export default function DiagnosticDialog({
       });
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => ({}));
+        if (resp.status === 401 || resp.status === 402) {
+          throw new Error(
+            errBody?.error ||
+              "Active subscription required for plant diagnostics. Open Settings to manage your plan."
+          );
+        }
         throw new Error(errBody?.error || `Server returned ${resp.status}`);
       }
       const data = (await resp.json()) as DiagnosisResponse;

@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import strainDb from "@/lib/data/strains.json";
+import { requireSubscription } from "@/lib/auth/serverGate";
 
 export const runtime = "edge";
 
@@ -461,6 +462,12 @@ type ScanRequestBody = {
 
 export async function POST(req: NextRequest) {
   try {
+    // ── Subscription gate (Apple-safe, money-protection layer) ──
+    // Anyone hitting this endpoint must have a valid Supabase session AND
+    // an active 'member' or 'pro' membership. Free tier was retired May 2026.
+    const gate = await requireSubscription(req);
+    if (gate.ok === false) return gate.response;
+
     const body = (await req.json()) as ScanRequestBody;
     const images = body.images;
     const sellersClaim =

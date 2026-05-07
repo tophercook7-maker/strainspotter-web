@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { orchestrateScan } from "@/lib/scanner/scanOrchestrator";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
+import ScanPaywall from "@/components/ScanPaywall";
 import ScannerExpectationsModal, {
   hasSeenScannerExpectations,
 } from "./ScannerExpectationsModal";
@@ -406,6 +407,7 @@ export default function ScannerPage() {
   const [photoCredits, setPhotoCredits] = useState(0);
   const [scansUsedToday, setScansUsedToday] = useState(0);
   const [showExpectationsModal, setShowExpectationsModal] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Load credit/usage state on mount
@@ -478,27 +480,11 @@ export default function ScannerPage() {
   const handleScan = async () => {
     if (images.length === 0 || scanState === "scanning") return;
 
-    // Limit check — Pro tier and Admin bypass entirely
-    if (tier !== "pro") {
-      if (tier === "member") {
-        // Member: 250 scans per calendar month
-        const used = getScansUsedThisMonth();
-        const credits = getPhotoCredits();
-        const effectiveRemaining = (DAILY_MEMBER_SCANS - used) + credits;
-        if (effectiveRemaining <= 0) {
-          setError(`You've used all ${DAILY_MEMBER_SCANS} scans for this month. Upgrade to Pro for unlimited scans.`);
-          return;
-        }
-      } else {
-        // Free / Guest: 5 scans lifetime — never refills, only topup credits extend
-        const used = getFreeScansUsed();
-        const credits = getPhotoCredits();
-        const effectiveRemaining = (DAILY_FREE_SCANS - used) + credits;
-        if (effectiveRemaining <= 0) {
-          setError(`You've used all ${DAILY_FREE_SCANS} free scans. Become a Member for 250 scans/month, or go Pro for unlimited.`);
-          return;
-        }
-      }
+    // Subscribe-or-pay-wall: anyone without an active subscription must
+    // subscribe before scanning. No free scans, no daily allowance.
+    if (tier !== "member" && tier !== "pro") {
+      setShowPaywall(true);
+      return;
     }
 
     setScanState("scanning");
@@ -623,22 +609,9 @@ export default function ScannerPage() {
       setResult(simple);
       setScanState("done");
 
-      // Track scan usage for non-Pro users
-      if (tier !== "pro") {
-        if (tier === "member") {
-          // Member: monthly tracking
-          const used = getScansUsedThisMonth();
-          if (used >= DAILY_MEMBER_SCANS) usePhotoCredit();
-          incrementScansThisMonth();
-        } else {
-          // Free / Guest: permanent counter — never resets
-          const used = getFreeScansUsed();
-          if (used >= DAILY_FREE_SCANS) usePhotoCredit();
-          incrementFreeScans();
-        }
-        setScansUsedToday(getScansUsedToday());
-        setPhotoCredits(getPhotoCredits());
-      }
+      // No client-side scan accounting. Subscription state is server-authoritative;
+      // monthly limits (e.g. Member 100/mo) are enforced by /api/scan via the
+      // Authorization header.
 
       // Non-blocking: upload scan photo to community DB if confidence is high enough and user is logged in
       if (simple.confidence >= 65 && authToken && images.length > 0) {
@@ -695,6 +668,9 @@ export default function ScannerPage() {
         <ScannerExpectationsModal
           onDismiss={() => setShowExpectationsModal(false)}
         />
+      )}
+      {showPaywall && (
+        <ScanPaywall onClose={() => setShowPaywall(false)} reason="scan" />
       )}
       {/* Top Bar */}
       <div style={{

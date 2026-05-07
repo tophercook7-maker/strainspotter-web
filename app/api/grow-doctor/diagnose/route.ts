@@ -12,6 +12,7 @@
 // no consumption instructions. Frames everything as "common grower practice".
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireSubscription } from "@/lib/auth/serverGate";
 
 export const runtime = "edge";
 
@@ -201,6 +202,12 @@ function normalizeDiagnosis(raw: any) {
 
 export async function POST(req: NextRequest) {
   try {
+    // ── Subscription gate ──
+    // Plant-problem diagnostics burn a GPT-4o Vision call per request.
+    // Subscribers only.
+    const gate = await requireSubscription(req);
+    if (gate.ok === false) return gate.response;
+
     const body = await req.json();
     const images: unknown = body?.images;
     const stage: unknown = body?.stage;

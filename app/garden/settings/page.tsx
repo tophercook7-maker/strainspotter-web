@@ -856,7 +856,7 @@ export default function SettingsPage() {
 
       {showPaywall && (
         <ScanPaywall
-          mode="warning"
+          reason="feature"
           onClose={() => setShowPaywall(false)}
         />
       )}

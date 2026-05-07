@@ -1,16 +1,22 @@
 "use client";
 
+// components/ScanPaywall.tsx
+//
+// Subscribe-only paywall (May 2026 — no free tier).
+//
+// Shown when an unsubscribed user tries to scan, run a diagnostic, or
+// access any AI-powered feature. There is no "warning mode" anymore —
+// every unsubscribed scan attempt opens this dialog.
+
 import { useState } from "react";
-import {
-  getScansRemaining,
-  MEMBERSHIP_TIERS,
-  TOPUP_PACKS,
-  FREE_SCAN_TOTAL,
-} from "@/lib/scanGating";
+import { MEMBERSHIP_TIERS, TOPUP_PACKS } from "@/lib/scanGating";
 
 interface ScanPaywallProps {
   onClose: () => void;
-  mode: "warning" | "locked";
+  /** Optional context — what they were trying to do when the wall hit */
+  reason?: "scan" | "diagnose" | "feature";
+  /** When true (default), the modal can be dismissed by tapping the backdrop. */
+  dismissible?: boolean;
 }
 
 async function startCheckout(priceKey: string, email?: string) {
@@ -23,21 +29,47 @@ async function startCheckout(priceKey: string, email?: string) {
   if (data.url) {
     window.location.href = data.url;
   } else {
-    alert("Something went wrong. Please try again.");
+    alert("Couldn't start checkout. Please try again.");
   }
 }
 
-export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
-  const remaining = getScansRemaining();
+const REASON_COPY = {
+  scan: {
+    emoji: "📷",
+    title: "Subscribe to start scanning",
+    body: "StrainSpotter is subscriber-only. Pick a plan to unlock AI scanning, the full strain library, and Grow Doctor.",
+  },
+  diagnose: {
+    emoji: "🩺",
+    title: "Subscribe to use Grow Doctor",
+    body: "Photo-based plant diagnostics are part of the StrainSpotter subscription. Pick a plan to start.",
+  },
+  feature: {
+    emoji: "🌿",
+    title: "Subscribe to unlock this feature",
+    body: "This is a subscriber feature. Pick a plan to get full access to everything StrainSpotter does.",
+  },
+};
+
+export default function ScanPaywall({
+  onClose,
+  reason = "scan",
+  dismissible = true,
+}: ScanPaywallProps) {
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [showTopups, setShowTopups] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
 
+  const copy = REASON_COPY[reason];
+
   const handleEmailSubmit = () => {
     if (email && email.includes("@")) {
       if (typeof window !== "undefined") {
-        localStorage.setItem("ss_email_collected", JSON.stringify({ email, ts: Date.now() }));
+        localStorage.setItem(
+          "ss_email_collected",
+          JSON.stringify({ email, ts: Date.now() })
+        );
       }
       setEmailSubmitted(true);
     }
@@ -61,320 +93,285 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "20px",
+        padding: 20,
         overflow: "auto",
       }}
-      onClick={mode === "warning" ? onClose : undefined}
+      onClick={dismissible ? onClose : undefined}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           background: "linear-gradient(160deg, #151a16, #1a2120)",
           border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "24px",
+          borderRadius: 24,
           padding: "32px 24px",
-          maxWidth: "400px",
+          maxWidth: 420,
           width: "100%",
-          maxHeight: "90vh",
+          maxHeight: "92vh",
           overflow: "auto",
+          color: "#fff",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        {mode === "locked" ? (
-          <div style={{ textAlign: "center", marginBottom: "24px" }}>
-            <div style={{ fontSize: "48px", marginBottom: "8px" }}>🔒</div>
-            <h2 style={{ color: "#fff", fontSize: "22px", fontWeight: 800, margin: "0 0 8px" }}>
-              You&apos;ve Used All {FREE_SCAN_TOTAL} Free Scans
-            </h2>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
-              Your free trial is over — but the best is just getting started. 
-              Become a member to unlock unlimited AI-powered strain identification 
-              and every feature StrainSpotter has to offer.
-            </p>
-          </div>
-        ) : (
-          <div style={{ textAlign: "center", marginBottom: "24px" }}>
-            <div style={{ fontSize: "48px", marginBottom: "8px" }}>⚠️</div>
-            <h2 style={{ color: "#FFB74D", fontSize: "20px", fontWeight: 800, margin: "0 0 8px" }}>
-              {remaining === 1 ? "Last Scan Remaining!" : `Only ${remaining} Scans Left`}
-            </h2>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
-              You started with {FREE_SCAN_TOTAL} free scans. Once they&apos;re gone, you&apos;ll need 
-              a membership or top-up pack to keep scanning.
-            </p>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 44, marginBottom: 8 }}>{copy.emoji}</div>
+          <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px" }}>
+            {copy.title}
+          </h2>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.55)",
+              fontSize: 14,
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
+            {copy.body}
+          </p>
+        </div>
+
+        {/* Email capture (only if not submitted) */}
+        {!emailSubmitted && (
+          <div style={{ marginBottom: 18 }}>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com (optional, prefills checkout)"
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                background: "rgba(0,0,0,0.30)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: 10,
+                color: "#fff",
+                fontSize: 14,
+                outline: "none",
+              }}
+            />
+            {email && email.includes("@") && (
+              <button
+                onClick={handleEmailSubmit}
+                style={{
+                  width: "100%",
+                  marginTop: 8,
+                  padding: "8px 0",
+                  background: "rgba(76,175,80,0.15)",
+                  border: "1px solid rgba(76,175,80,0.30)",
+                  color: "#81C784",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Save email
+              </button>
+            )}
           </div>
         )}
 
-        {/* Membership Tiers */}
-        <div style={{ marginBottom: "16px" }}>
-          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "2px", marginBottom: "10px", textAlign: "center" }}>
-            Membership Plans
-          </p>
-
-          {/* Member Tier */}
-          <div
+        {/* Plans */}
+        <div style={{ marginBottom: 16 }}>
+          <p
             style={{
-              background: "rgba(76,175,80,0.08)",
-              border: "1px solid rgba(76,175,80,0.25)",
-              borderRadius: "16px",
-              padding: "16px",
-              marginBottom: "10px",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-              <div>
-                <span style={{ color: "#66BB6A", fontSize: "16px", fontWeight: 800 }}>
-                  🌿 {MEMBERSHIP_TIERS.member.name}
-                </span>
-              </div>
-              <span style={{ color: "#66BB6A", fontSize: "20px", fontWeight: 800 }}>
-                {MEMBERSHIP_TIERS.member.price}
-              </span>
-            </div>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {MEMBERSHIP_TIERS.member.features.map((f) => (
-                <li key={f} style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px", padding: "3px 0", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ color: "#66BB6A" }}>✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => handleCheckout("member")}
-              disabled={loading === "member"}
-              style={{
-                width: "100%",
-                marginTop: "12px",
-                padding: "12px",
-                borderRadius: "12px",
-                border: "none",
-                background: loading === "member" ? "#555" : "linear-gradient(135deg, #43A047, #2E7D32)",
-                color: "#fff",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: loading === "member" ? "wait" : "pointer",
-              }}
-            >
-              {loading === "member" ? "Loading..." : `Join as Member — ${MEMBERSHIP_TIERS.member.price}`}
-            </button>
-          </div>
-
-          {/* Pro Tier */}
-          <div
-            style={{
-              background: "rgba(255,215,0,0.05)",
-              border: "1px solid rgba(255,215,0,0.2)",
-              borderRadius: "16px",
-              padding: "16px",
-              marginBottom: "10px",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: "-8px",
-                right: "16px",
-                background: "linear-gradient(135deg, #FFD54F, #FF8F00)",
-                color: "#000",
-                fontSize: "9px",
-                fontWeight: 800,
-                padding: "3px 10px",
-                borderRadius: "99px",
-                textTransform: "uppercase",
-                letterSpacing: "1px",
-              }}
-            >
-              Best Value
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-              <span style={{ color: "#FFD54F", fontSize: "16px", fontWeight: 800 }}>
-                ⭐ {MEMBERSHIP_TIERS.pro.name}
-              </span>
-              <span style={{ color: "#FFD54F", fontSize: "20px", fontWeight: 800 }}>
-                {MEMBERSHIP_TIERS.pro.price}
-              </span>
-            </div>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {MEMBERSHIP_TIERS.pro.features.map((f) => (
-                <li key={f} style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px", padding: "3px 0", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ color: "#FFD54F" }}>✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => handleCheckout("pro")}
-              disabled={loading === "pro"}
-              style={{
-                width: "100%",
-                marginTop: "12px",
-                padding: "12px",
-                borderRadius: "12px",
-                border: "none",
-                background: loading === "pro" ? "#555" : "linear-gradient(135deg, #FFD54F, #FF8F00)",
-                color: "#000",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: loading === "pro" ? "wait" : "pointer",
-              }}
-            >
-              {loading === "pro" ? "Loading..." : `Go Pro — ${MEMBERSHIP_TIERS.pro.price}`}
-            </button>
-          </div>
-        </div>
-
-        {/* Top-up section */}
-        <div style={{ marginBottom: "16px" }}>
-          <button
-            onClick={() => setShowTopups(!showTopups)}
-            style={{
-              width: "100%",
-              background: "none",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "12px",
-              padding: "12px",
-              color: "rgba(255,255,255,0.5)",
-              fontSize: "13px",
-              cursor: "pointer",
+              color: "rgba(255,255,255,0.35)",
+              fontSize: 10,
+              textTransform: "uppercase",
+              letterSpacing: 2,
+              margin: "0 0 10px",
               textAlign: "center",
             }}
           >
-            {showTopups ? "Hide" : "Just need a few more scans?"} {showTopups ? "▲" : "▼"}
-          </button>
+            Pick a plan
+          </p>
 
-          {showTopups && (
-            <div style={{ marginTop: "10px" }}>
-              {/* Email gate for top-ups */}
-              {!emailSubmitted && (
-                <div
-                  style={{
-                    background: "rgba(79,195,247,0.06)",
-                    border: "1px solid rgba(79,195,247,0.15)",
-                    borderRadius: "12px",
-                    padding: "14px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px", margin: "0 0 8px", lineHeight: 1.5 }}>
-                    Enter your email to unlock scan top-up packs and get strain spotting tips, new feature alerts, and exclusive deals.
-                  </p>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      type="email"
-                      placeholder="your@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
-                      style={{
-                        flex: 1,
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        borderRadius: "10px",
-                        padding: "10px 12px",
-                        color: "#fff",
-                        fontSize: "13px",
-                        outline: "none",
-                      }}
-                    />
-                    <button
-                      onClick={handleEmailSubmit}
-                      style={{
-                        background: "rgba(79,195,247,0.2)",
-                        border: "1px solid rgba(79,195,247,0.3)",
-                        borderRadius: "10px",
-                        padding: "10px 16px",
-                        color: "#4FC3F7",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      Unlock
-                    </button>
-                  </div>
-                </div>
-              )}
+          {/* Member */}
+          <PlanCard
+            highlight={false}
+            badge="🌿"
+            name={MEMBERSHIP_TIERS.member.name}
+            price={MEMBERSHIP_TIERS.member.price}
+            scans={MEMBERSHIP_TIERS.member.scans}
+            features={MEMBERSHIP_TIERS.member.features as readonly string[]}
+            ctaLabel={`Join — ${MEMBERSHIP_TIERS.member.price}`}
+            loading={loading === "member"}
+            onClick={() => handleCheckout("member")}
+            color="#66BB6A"
+          />
 
-              {emailSubmitted && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {TOPUP_PACKS.map((pack) => (
-                    <button
-                      key={pack.id}
-                      onClick={() => handleCheckout(pack.id)}
-                      disabled={loading === pack.id}
-                      style={{
-                        background: loading === pack.id ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: "12px",
-                        padding: "14px 16px",
-                        color: "#fff",
-                        fontSize: "14px",
-                        cursor: loading === pack.id ? "wait" : "pointer",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span>📷 {pack.scans} Scans</span>
-                      <span style={{ color: "#4FC3F7", fontWeight: 700 }}>
-                        {loading === pack.id ? "Loading..." : pack.price}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Pro */}
+          <PlanCard
+            highlight={true}
+            badge="⭐"
+            name={MEMBERSHIP_TIERS.pro.name}
+            price={MEMBERSHIP_TIERS.pro.price}
+            scans={MEMBERSHIP_TIERS.pro.scans}
+            features={MEMBERSHIP_TIERS.pro.features as readonly string[]}
+            ctaLabel={`Go Pro — ${MEMBERSHIP_TIERS.pro.price}`}
+            loading={loading === "pro"}
+            onClick={() => handleCheckout("pro")}
+            color="#FFB74D"
+          />
         </div>
 
-        {/* Why join section */}
-        <div
-          style={{
-            background: "rgba(255,255,255,0.02)",
-            borderRadius: "14px",
-            padding: "16px",
-            marginBottom: "16px",
-          }}
-        >
-          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "2px", marginBottom: "10px", textAlign: "center" }}>
-            Why Members Love StrainSpotter
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {[
-              { emoji: "🎯", text: "Know exactly what you're smoking — AI identifies strains from a photo" },
-              { emoji: "🌱", text: "Grow like a pro — step-by-step coaching from seed to harvest" },
-              { emoji: "📍", text: "Find dispensaries near you — always know where to go" },
-              { emoji: "🧬", text: "Explore strain genetics — family trees, terpenes, effects" },
-              { emoji: "📊", text: "Track your journey — scan history, favorites, grow logs" },
-            ].map((item) => (
-              <div key={item.text} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                <span style={{ fontSize: "16px", flexShrink: 0 }}>{item.emoji}</span>
-                <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "12px", lineHeight: 1.5, margin: 0 }}>
-                  {item.text}
-                </p>
-              </div>
+        {/* Top-ups link */}
+        <div style={{ textAlign: "center", marginBottom: 8 }}>
+          <button
+            onClick={() => setShowTopups((s) => !s)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "rgba(255,255,255,0.45)",
+              fontSize: 12,
+              cursor: "pointer",
+              textDecoration: "underline",
+            }}
+          >
+            Already a member? Buy a top-up pack
+          </button>
+        </div>
+
+        {showTopups && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+            {TOPUP_PACKS.map((p) => (
+              <button
+                key={p.id}
+                disabled={loading !== null}
+                onClick={() => handleCheckout(p.id)}
+                style={{
+                  padding: "12px 10px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 10,
+                  color: "#fff",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <div style={{ fontWeight: 700 }}>{p.label}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+                  {p.price}
+                </div>
+              </button>
             ))}
           </div>
-        </div>
+        )}
 
-        {/* Dismiss for warnings */}
-        {mode === "warning" && (
+        {/* Footer */}
+        <p
+          style={{
+            color: "rgba(255,255,255,0.30)",
+            fontSize: 10,
+            textAlign: "center",
+            margin: "12px 0 0",
+            lineHeight: 1.6,
+          }}
+        >
+          Cancel anytime. By subscribing you agree to our Terms and Privacy Policy.
+        </p>
+
+        {dismissible && (
           <button
             onClick={onClose}
             style={{
               width: "100%",
-              background: "none",
-              border: "none",
-              color: "rgba(255,255,255,0.3)",
-              fontSize: "13px",
+              marginTop: 14,
+              padding: "10px 0",
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 10,
+              color: "rgba(255,255,255,0.55)",
+              fontSize: 13,
+              fontWeight: 600,
               cursor: "pointer",
-              padding: "8px",
             }}
           >
-            Continue with free scan →
+            Maybe later
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+function PlanCard({
+  highlight,
+  badge,
+  name,
+  price,
+  scans,
+  features,
+  ctaLabel,
+  loading,
+  onClick,
+  color,
+}: {
+  highlight: boolean;
+  badge: string;
+  name: string;
+  price: string;
+  scans: string;
+  features: readonly string[];
+  ctaLabel: string;
+  loading: boolean;
+  onClick: () => void;
+  color: string;
+}) {
+  return (
+    <div
+      style={{
+        background: highlight ? `${color}14` : "rgba(255,255,255,0.04)",
+        border: highlight ? `1px solid ${color}55` : "1px solid rgba(255,255,255,0.10)",
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 10,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ color, fontSize: 16, fontWeight: 800 }}>
+          {badge} {name}
+        </span>
+        <span style={{ color, fontSize: 20, fontWeight: 800 }}>{price}</span>
+      </div>
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 10 }}>
+        {scans}
+      </div>
+      <ul
+        style={{
+          margin: 0,
+          padding: "0 0 0 16px",
+          fontSize: 12,
+          color: "rgba(255,255,255,0.75)",
+          lineHeight: 1.6,
+        }}
+      >
+        {features.map((f, i) => (
+          <li key={i}>{f}</li>
+        ))}
+      </ul>
+      <button
+        disabled={loading}
+        onClick={onClick}
+        style={{
+          width: "100%",
+          marginTop: 12,
+          padding: "11px 0",
+          background: loading
+            ? "rgba(255,255,255,0.08)"
+            : `linear-gradient(135deg, ${color}, ${color}dd)`,
+          color: loading ? "rgba(255,255,255,0.5)" : "#0a0f0a",
+          border: "none",
+          borderRadius: 10,
+          fontSize: 14,
+          fontWeight: 800,
+          cursor: loading ? "not-allowed" : "pointer",
+          letterSpacing: 0.3,
+        }}
+      >
+        {loading ? "Loading…" : ctaLabel}
+      </button>
     </div>
   );
 }
