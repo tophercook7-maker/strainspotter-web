@@ -1303,6 +1303,60 @@ export default function ScannerPage() {
                 >
                   {result.ocrText}
                 </div>
+
+                {/* Lab data / COA verification — extract URLs the OCR
+                    found in the label or QR code and surface them as
+                    clickable verify links. */}
+                {(() => {
+                  const urls = extractCoaUrls(result.ocrText);
+                  if (urls.length === 0) return null;
+                  return (
+                    <div style={{ marginTop: 12 }}>
+                      <h3 style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: 1.5,
+                        textTransform: "uppercase" as const,
+                        color: "rgba(129,199,132,0.65)",
+                        marginBottom: 8,
+                      }}>
+                        Verify lab data
+                      </h3>
+                      <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+                        {urls.map((u, i) => (
+                          <a
+                            key={i}
+                            href={u}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: "10px 12px",
+                              borderRadius: 10,
+                              background: "rgba(76,175,80,0.08)",
+                              border: "1px solid rgba(76,175,80,0.20)",
+                              color: "#A5D6A7",
+                              fontSize: 12,
+                              textDecoration: "none",
+                              wordBreak: "break-all" as const,
+                              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                            }}
+                          >
+                            🔬 {u}
+                          </a>
+                        ))}
+                      </div>
+                      <p style={{
+                        fontSize: 10,
+                        color: "rgba(255,255,255,0.30)",
+                        margin: "6px 0 0",
+                        lineHeight: 1.5,
+                      }}>
+                        Detected on the label. Open to verify the
+                        Certificate of Analysis directly with the lab.
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -1627,6 +1681,56 @@ export default function ScannerPage() {
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* "Help our database" CTA — when confidence is moderate-or-lower
+                    AND the OCR found a strain name, invite the user to submit
+                    it as a candidate for the catalog. Routes to the
+                    submission flow with the OCR pre-filled. */}
+                {result.confidence < 70 &&
+                  result.ocrStrainCandidates.length > 0 &&
+                  (result.imageType === "label" || result.imageType === "packaging") && (
+                  <button
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem(
+                          "ss_pending_submission",
+                          JSON.stringify({
+                            proposedName: result.ocrStrainCandidates[0],
+                            ocrText: result.ocrText,
+                            evidencePreview: previews[0] || null,
+                          })
+                        );
+                      } catch { /* best effort */ }
+                      router.push("/garden/strains/submit");
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "14px 16px",
+                      marginBottom: 14,
+                      borderRadius: 12,
+                      background: "rgba(76,175,80,0.10)",
+                      border: "1px dashed rgba(76,175,80,0.45)",
+                      color: "#81C784",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textAlign: "left" as const,
+                      cursor: "pointer",
+                    }}
+                  >
+                    🌱 Help our database — submit "{result.ocrStrainCandidates[0]}" as a new strain
+                    <div style={{
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.40)",
+                      fontWeight: 400,
+                      marginTop: 4,
+                      lineHeight: 1.4,
+                    }}>
+                      Your photo + label become evidence. After 3 verified
+                      subscribers submit the same strain, our team reviews
+                      and approves it.
+                    </div>
+                  </button>
                 )}
 
                 {/* Why this confidence? — drill-down on the v2 candidates */}
@@ -2394,4 +2498,31 @@ function Meta({ label, value }: { label: string; value: string }) {
       </span>
     </div>
   );
+}
+
+/**
+ * Pull URLs that look like Certificate-of-Analysis links out of OCR text.
+ * Conservative: requires http(s) prefix, dedupes, caps at 4 results.
+ * We don't enforce a "looks like a lab" heuristic — surfacing any URL
+ * the user sees on the label is the right move; they can recognize the
+ * lab name themselves.
+ */
+function extractCoaUrls(ocrText: string): string[] {
+  if (!ocrText) return [];
+  const urlRe = /\bhttps?:\/\/[^\s<>"'`]+/gi;
+  const found = ocrText.match(urlRe) || [];
+  const cleaned = found
+    .map((u) => u.replace(/[.,)\];]+$/, "")) // strip trailing punctuation
+    .filter((u) => u.length >= 12 && u.length <= 200);
+  // Dedupe, preserve order.
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const u of cleaned) {
+    if (!seen.has(u)) {
+      seen.add(u);
+      out.push(u);
+    }
+    if (out.length >= 4) break;
+  }
+  return out;
 }

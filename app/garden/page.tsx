@@ -277,7 +277,7 @@ const FEATURES: FeatureItem[] = [
   { href: "/garden/journal",      icon: "📓", label: "Journal", desc: "Session diary — mood, dose, notes" },
   { href: "/garden/dispensaries", icon: "📍", label: "Nearby",  desc: "Dispensaries & seed vendors" },
   {
-    href: "#",
+    href: "/garden/community",
     icon: "💬",
     label: "Community",
     desc: "Grower & dispensary networking — connect, share, learn",
@@ -424,17 +424,26 @@ export default function GardenPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {FEATURES.map((item) => {
               if (item.comingSoon) {
+                const isClickable = item.href && item.href !== "#";
                 return (
-                  <div
+                  <button
                     key={item.href}
+                    onClick={() => isClickable && router.push(item.href)}
+                    disabled={!isClickable}
                     style={{
                       gridColumn: "1 / -1",
                       display: "flex", alignItems: "center", gap: 16,
                       padding: "18px 20px",
                       background: "linear-gradient(135deg, rgba(102,187,106,0.06), rgba(46,125,50,0.03))",
                       border: "1px solid rgba(102,187,106,0.18)",
-                      borderRadius: 16, cursor: "default", position: "relative",
+                      borderRadius: 16,
+                      cursor: isClickable ? "pointer" : "default",
+                      position: "relative",
                       overflow: "hidden",
+                      textAlign: "left" as const,
+                      color: "inherit",
+                      font: "inherit",
+                      width: "100%",
                     }}
                   >
                     {/* Subtle glow */}
@@ -473,7 +482,7 @@ export default function GardenPage() {
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               }
 

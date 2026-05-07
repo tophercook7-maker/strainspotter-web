@@ -2,6 +2,7 @@ import TopNav from "../_components/TopNav";
 import ZoneNav from "../_components/ZoneNav";
 import { createServerClient } from "../../_server/supabase/server";
 import Link from "next/link";
+import HistoryList from "./_components/HistoryList";
 
 async function getScanHistory(strainFilter?: string) {
   try {
@@ -71,33 +72,7 @@ export default async function HistoryPage({
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {scans.map((scan) => (
-                <Link
-                  key={scan.id}
-                  href={`/garden/history/${scan.id}`}
-                  className="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg">
-                        {scan.primary_name || "Unknown Strain"}
-                      </h3>
-                      {scan.confidence !== null && (
-                        <p className="text-white/70 text-sm mt-1">
-                          {Math.round(scan.confidence)}% confidence
-                        </p>
-                      )}
-                    </div>
-                    {scan.created_at && (
-                      <p className="text-white/50 text-xs whitespace-nowrap">
-                        {new Date(scan.created_at).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <HistoryList scans={scans} />
           )}
         </div>
       </main>
