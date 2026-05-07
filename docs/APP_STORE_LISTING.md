@@ -144,9 +144,15 @@ Resulting rating: **17+**
 > - No medical advice; we explicitly disclaim medical claims throughout
 > - No content directed at minors; 18+ age gate on first launch and re-accessible from Settings → Privacy & Age
 >
-> Test account (if needed):
->   email: [TODO]
->   password: [TODO]
+> Test account:
+>   email: topher.cook7@gmail.com
+>   password: [SET IN APP STORE CONNECT — never commit to repo]
+>
+> The test account is a real Member-tier subscriber so the reviewer
+> can exercise all gated features (AI scan, Grow Doctor diagnostic).
+> The password is entered directly in App Store Connect's "App Review
+> Information" form at submission time — it is intentionally not
+> stored in this document or anywhere in the repository.
 >
 > Notes for the reviewer:
 > - The "Diagnose a Plant Problem" feature is for plant health (e.g., nutrient deficiency, pests). It does not provide medical advice for humans.
