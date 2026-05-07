@@ -59,6 +59,10 @@ node_modules/
 !public/**
 !docs/
 !docs/**
+!migrations/
+!migrations/**
+!HOW_SCANNER_WORKS.md
+!README.md
 !next.config.*
 !package.json
 !package-lock.json
