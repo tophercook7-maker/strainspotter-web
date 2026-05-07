@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import TopNav from "../_components/TopNav";
 import ZoneNav from "../_components/ZoneNav";
 import DiagnosticDialog from "./DiagnosticDialog";
+import { listGrowGroupsSorted } from "@/lib/growlog/growGroupStorage";
+import { listPlantsSortedByUpdated } from "@/lib/growlog/plantStorage";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Stage =
@@ -457,9 +460,13 @@ export default function GrowCoachPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [plantCount, setPlantCount] = useState(0);
+  const [groupCount, setGroupCount] = useState(0);
 
   useEffect(() => {
     setGrows(loadGrows());
+    setPlantCount(listPlantsSortedByUpdated().length);
+    setGroupCount(listGrowGroupsSorted().length);
     setLoaded(true);
   }, []);
 
@@ -516,6 +523,73 @@ export default function GrowCoachPage() {
               and get stage-specific guidance every step of the way.
             </div>
           </div>
+
+          {/* Your Garden snapshot */}
+          {(plantCount > 0 || groupCount > 0) && (
+            <div
+              style={{
+                ...glass,
+                padding: 16,
+                marginBottom: 16,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10,
+              }}
+            >
+              <Link
+                href="/garden/plants"
+                style={{
+                  display: "block",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  background: "rgba(76,175,80,0.10)",
+                  border: "1px solid rgba(76,175,80,0.25)",
+                  textDecoration: "none",
+                  color: "#fff",
+                }}
+              >
+                <div style={{ fontSize: 22, marginBottom: 4 }}>🌱</div>
+                <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1 }}>
+                  {plantCount}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.55)",
+                    marginTop: 2,
+                  }}
+                >
+                  Plant{plantCount === 1 ? "" : "s"} tracked
+                </div>
+              </Link>
+              <Link
+                href="/garden/grow-groups"
+                style={{
+                  display: "block",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  background: "rgba(76,175,80,0.10)",
+                  border: "1px solid rgba(76,175,80,0.25)",
+                  textDecoration: "none",
+                  color: "#fff",
+                }}
+              >
+                <div style={{ fontSize: 22, marginBottom: 4 }}>🪴</div>
+                <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1 }}>
+                  {groupCount}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.55)",
+                    marginTop: 2,
+                  }}
+                >
+                  Grow group{groupCount === 1 ? "" : "s"}
+                </div>
+              </Link>
+            </div>
+          )}
 
           {/* Diagnose CTA */}
           <button

@@ -152,7 +152,10 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
         </button>
 
         <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "10px", textAlign: "center", marginTop: "16px", lineHeight: 1.5 }}>
-          By entering, you confirm you are at least 18 years of age and agree to our Terms of Service and Privacy Policy.
+          By entering, you confirm you are at least 18 years of age and agree to our{" "}
+          <a href="/terms" style={{ color: "rgba(129,199,132,0.7)" }}>Terms of Service</a>
+          {" "}and{" "}
+          <a href="/privacy" style={{ color: "rgba(129,199,132,0.7)" }}>Privacy Policy</a>.
         </p>
       </div>
 

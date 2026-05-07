@@ -825,6 +825,40 @@ export default function SettingsPage() {
             </button>
           </div>
 
+          {/* ═══ Legal ═══ */}
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="📄" title="Legal" />
+            <a
+              href="/privacy"
+              style={{
+                display: "block",
+                padding: "10px 0",
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: 600,
+                textDecoration: "none",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              Privacy Policy
+              <span style={{ float: "right", color: "rgba(255,255,255,0.4)" }}>›</span>
+            </a>
+            <a
+              href="/terms"
+              style={{
+                display: "block",
+                padding: "10px 0",
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Terms of Service
+              <span style={{ float: "right", color: "rgba(255,255,255,0.4)" }}>›</span>
+            </a>
+          </div>
+
           {/* ═══ About ═══ */}
           <div style={{ ...card, padding: 20, marginBottom: 16 }}>
             <SectionHeader icon="ℹ️" title="About" />
