@@ -95,8 +95,22 @@ export async function requireSubscription(req: Request): Promise<GateResult> {
     return failure(500, "Subscription check failed.", "profile_network");
   }
 
-  // 5. Tier check
-  if (membership !== "member" && membership !== "pro") {
+  // 5. Tier check.
+  // The database column 'profiles.membership' uses the historical labels
+  // 'garden' (Member tier), 'standard' (legacy Member-equivalent),
+  // 'elite' (legacy Pro-equivalent), and 'pro'. The client-side
+  // AuthProvider already collapses these into "member" | "pro"; we do
+  // the same translation here so all paid tiers resolve correctly.
+  let tier: "member" | "pro";
+  if (membership === "pro" || membership === "elite") {
+    tier = "pro";
+  } else if (
+    membership === "member" ||
+    membership === "garden" ||
+    membership === "standard"
+  ) {
+    tier = "member";
+  } else {
     return failure(
       402,
       "Active subscription required.",
@@ -104,7 +118,7 @@ export async function requireSubscription(req: Request): Promise<GateResult> {
     );
   }
 
-  return { ok: true, userId, tier: membership };
+  return { ok: true, userId, tier };
 }
 
 function failure(
