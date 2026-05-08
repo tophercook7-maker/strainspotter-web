@@ -40,7 +40,7 @@ const glass: React.CSSProperties = {
 };
 
 function confidenceColor(c: number | null): string {
-  if (c === null) return "rgba(255,255,255,0.5)";
+  if (c === null) return "rgba(255,255,255,0.78)";
   if (c >= 80) return "#66BB6A";
   if (c >= 60) return "#FFA726";
   return "#EF5350";
@@ -109,7 +109,7 @@ export default function FavoritesPage() {
               <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
                 No favorites yet
               </div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, marginBottom: 24 }}>
+              <div style={{ color: "rgba(255,255,255,0.72)", fontSize: 14, marginBottom: 24 }}>
                 After scanning a plant, tap the heart icon to save it here
               </div>
               <Link href="/garden/scanner">
@@ -127,7 +127,7 @@ export default function FavoritesPage() {
               {/* Search + Clear */}
               <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
                 <div style={{ position: "relative", flex: 1 }}>
-                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 20 }}>🔍</span>
+                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.72)", fontSize: 20 }}>🔍</span>
                   <input
                     type="text"
                     value={search}
@@ -144,7 +144,7 @@ export default function FavoritesPage() {
                   onClick={handleClearAll}
                   style={{
                     padding: "8px 16px", borderRadius: 8,
-                    background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)",
+                    background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.78)",
                     fontSize: 12, fontWeight: 600, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer",
                   }}
                 >
@@ -156,11 +156,11 @@ export default function FavoritesPage() {
               <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
                 <div style={{ ...glass, padding: 16, flex: 1, textAlign: "center" }}>
                   <div style={{ color: "#EF5350", fontSize: 28, fontWeight: 800 }}>{favorites.length}</div>
-                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600 }}>Saved</div>
+                  <div style={{ color: "rgba(255,255,255,0.78)", fontSize: 12, fontWeight: 600 }}>Saved</div>
                 </div>
                 <div style={{ ...glass, padding: 16, flex: 1, textAlign: "center" }}>
                   <div style={{ color: "#66BB6A", fontSize: 28, fontWeight: 800 }}>{Object.keys(grouped).length}</div>
-                  <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600 }}>Strains</div>
+                  <div style={{ color: "rgba(255,255,255,0.78)", fontSize: 12, fontWeight: 600 }}>Strains</div>
                 </div>
               </div>
 
@@ -170,7 +170,7 @@ export default function FavoritesPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                     <span style={{ fontSize: 16 }}>🌿</span>
                     <span style={{ color: "white", fontWeight: 700, fontSize: 15 }}>{strain}</span>
-                    <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>({items.length})</span>
+                    <span style={{ color: "rgba(255,255,255,0.72)", fontSize: 12 }}>({items.length})</span>
                   </div>
 
                   {items.map((fav) => (
@@ -186,7 +186,7 @@ export default function FavoritesPage() {
                             {Math.round(fav.confidence)}% confidence
                           </div>
                         )}
-                        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
+                        <div style={{ color: "rgba(255,255,255,0.72)", fontSize: 11 }}>
                           Saved {new Date(fav.savedAt).toLocaleDateString()}
                         </div>
                       </div>
@@ -195,7 +195,7 @@ export default function FavoritesPage() {
                         <Link href={`/garden/history/${fav.scanId}`}>
                           <button style={{
                             padding: 8, borderRadius: 4, background: "none",
-                            color: "rgba(255,255,255,0.5)", border: "none", cursor: "pointer", fontSize: 18,
+                            color: "rgba(255,255,255,0.78)", border: "none", cursor: "pointer", fontSize: 18,
                           }}>
                             📋
                           </button>
@@ -206,7 +206,7 @@ export default function FavoritesPage() {
                         onClick={() => handleRemove(fav.id)}
                         style={{
                           padding: 8, borderRadius: 4, background: "none",
-                          color: "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", fontSize: 18,
+                          color: "rgba(255,255,255,0.65)", border: "none", cursor: "pointer", fontSize: 18,
                         }}
                       >
                         🗑️

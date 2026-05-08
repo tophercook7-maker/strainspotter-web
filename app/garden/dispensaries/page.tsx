@@ -154,7 +154,7 @@ export default function DispensariesPage() {
 
           {/* Search */}
           <div style={{ position: "relative", marginBottom: 16 }}>
-            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 20 }}>🔍</span>
+            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.72)", fontSize: 20 }}>🔍</span>
             <input
               type="text"
               value={search}
@@ -170,7 +170,7 @@ export default function DispensariesPage() {
 
           {/* Radius selector */}
           <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, marginRight: 4 }}>RADIUS:</span>
+            <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 12, fontWeight: 600, marginRight: 4 }}>RADIUS:</span>
             {RADIUS_OPTIONS.map((r) => (
               <button
                 key={r}
@@ -207,8 +207,8 @@ export default function DispensariesPage() {
           {/* Loading */}
           {loading && (
             <div style={{ textAlign: "center", padding: "64px 0" }}>
-              <div style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.15)", borderTopColor: "rgba(255,255,255,0.5)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Finding dispensaries near you...</span>
+              <div style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.15)", borderTopColor: "rgba(255,255,255,0.78)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+              <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 14 }}>Finding dispensaries near you...</span>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           )}
@@ -218,7 +218,7 @@ export default function DispensariesPage() {
             <div style={{ textAlign: "center", padding: "64px 0" }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🏪</div>
               <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No dispensaries found</div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Try increasing the search radius or check a different area</div>
+              <div style={{ color: "rgba(255,255,255,0.72)", fontSize: 14 }}>Try increasing the search radius or check a different area</div>
             </div>
           )}
 
@@ -226,11 +226,11 @@ export default function DispensariesPage() {
           {!loading && filtered.length > 0 && (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>
+                <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5 }}>
                   {filtered.length} Dispensar{filtered.length === 1 ? "y" : "ies"} Found
                 </span>
                 {source === "local" && (
-                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Arkansas data</span>
+                  <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 11 }}>Arkansas data</span>
                 )}
               </div>
 
@@ -252,15 +252,15 @@ export default function DispensariesPage() {
 
                       {d.address && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
-                          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>📍</span>
+                          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.72)" }}>📍</span>
                           <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{d.address}</span>
                         </div>
                       )}
 
                       {d.openingHours && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
-                          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>🕐</span>
-                          <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{d.openingHours}</span>
+                          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.72)" }}>🕐</span>
+                          <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 12 }}>{d.openingHours}</span>
                         </div>
                       )}
 

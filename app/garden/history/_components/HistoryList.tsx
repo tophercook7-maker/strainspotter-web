@@ -93,11 +93,11 @@ export default function HistoryList({ scans }: { scans: Scan[] }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div
             style={{
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: 700,
               letterSpacing: 1.4,
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.45)",
+              color: "rgba(255,255,255,0.75)",
             }}
           >
             {filtered.length} of {scans.length} scans

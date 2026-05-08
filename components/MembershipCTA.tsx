@@ -66,7 +66,7 @@ export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps
             <div
               style={{
                 color: "rgba(255,255,255,0.55)",
-                fontSize: 11,
+                fontSize: 13,
               }}
             >
               From {MEMBERSHIP_TIERS.member.price} · Cancel anytime
@@ -179,7 +179,7 @@ export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 99,
                 padding: "4px 10px",
-                fontSize: 10,
+                fontSize: 12,
                 color: "rgba(255,255,255,0.6)",
               }}
             >

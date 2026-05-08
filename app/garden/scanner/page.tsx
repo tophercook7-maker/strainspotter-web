@@ -24,7 +24,7 @@ function getLocalTier(): string | null {
   try { return localStorage.getItem("ss_membership_tier"); } catch { return null; }
 }
 function tierLabel(t: string) { return t === "pro" ? "Pro" : t === "member" ? "Member" : "Free"; }
-function tierColor(t: string) { return t === "pro" ? "#FFD700" : t === "member" ? "#4CAF50" : "rgba(255,255,255,0.35)"; }
+function tierColor(t: string) { return t === "pro" ? "#FFD700" : t === "member" ? "#4CAF50" : "rgba(255,255,255,0.68)"; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    StrainSpotter Scanner — Clean Visual Redesign
@@ -67,7 +67,7 @@ function SimilarStrains({ result }: { result: SimpleResult }) {
   }, [result.strainName]);
 
   if (loading) return (
-    <div style={{ textAlign: "center", padding: "16px 0", color: "rgba(255,255,255,0.3)", fontSize: 12 }}>
+    <div style={{ textAlign: "center", padding: "16px 0", color: "rgba(255,255,255,0.65)", fontSize: 12 }}>
       Finding similar strains…
     </div>
   );
@@ -75,7 +75,7 @@ function SimilarStrains({ result }: { result: SimpleResult }) {
 
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
+      <div style={{ color: "rgba(255,255,255,0.78)", fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
         You Might Also Like
       </div>
       <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none" }}>
@@ -99,20 +99,20 @@ function SimilarStrains({ result }: { result: SimpleResult }) {
               </div>
               <div style={{
                 display: "inline-block", padding: "2px 8px", borderRadius: 6,
-                fontSize: 10, fontWeight: 700, background: pill.bg, color: pill.color,
+                fontSize: 12, fontWeight: 700, background: pill.bg, color: pill.color,
                 marginBottom: 8,
               }}>
                 {s.type}
               </div>
               {s.thc != null && s.thc > 0 && (
-                <div style={{ fontSize: 11, color: "#66BB6A", fontWeight: 700, marginBottom: 6 }}>
+                <div style={{ fontSize: 13, color: "#66BB6A", fontWeight: 700, marginBottom: 6 }}>
                   THC {s.thc}%
                 </div>
               )}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                 {s.effects.slice(0, 3).map((e) => (
                   <span key={e} style={{
-                    padding: "2px 6px", borderRadius: 5, fontSize: 10,
+                    padding: "2px 6px", borderRadius: 5, fontSize: 12,
                     background: "rgba(102,187,106,0.1)", color: "#81C784",
                     border: "1px solid rgba(102,187,106,0.15)",
                   }}>
@@ -207,7 +207,7 @@ function InstallBanner() {
       <button
         onClick={dismiss}
         style={{
-          background: "none", border: "none", color: "rgba(255,255,255,0.3)",
+          background: "none", border: "none", color: "rgba(255,255,255,0.65)",
           fontSize: 18, cursor: "pointer", padding: 0, flexShrink: 0, lineHeight: 1,
         }}
       >✕</button>
@@ -716,7 +716,7 @@ export default function ScannerPage() {
         backdropFilter: "blur(20px)",
       }}>
         <Link href="/garden" style={{
-          color: "rgba(255,255,255,0.5)",
+          color: "rgba(255,255,255,0.78)",
           textDecoration: "none",
           fontSize: 14,
           fontWeight: 500,
@@ -741,14 +741,14 @@ export default function ScannerPage() {
           >
             {photoCredits > 0 && (
               <span style={{
-                fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
+                fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
                 color: "#66BB6A", background: "rgba(102,187,106,0.15)",
                 border: "1px solid rgba(102,187,106,0.35)",
                 borderRadius: 5, padding: "2px 6px",
               }}>+{photoCredits} scan{photoCredits !== 1 ? "s" : ""}</span>
             )}
             <span style={{
-              fontSize: 9,
+              fontSize: 13,
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: 0.5,
@@ -868,7 +868,7 @@ export default function ScannerPage() {
                 <p style={{ color: "rgba(76,175,80,0.9)", fontSize: 16, fontWeight: 600 }}>
                   Analyzing...
                 </p>
-                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 6 }}>
+                <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginTop: 6 }}>
                   AI is identifying your strain
                 </p>
               </div>
@@ -882,7 +882,7 @@ export default function ScannerPage() {
                 <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: 600 }}>
                   {images.length} photo{images.length > 1 ? "s" : ""} ready
                 </p>
-                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 4 }}>
+                <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginTop: 4 }}>
                   Tap to add more (up to {MAX_IMAGES})
                 </p>
               </div>
@@ -893,10 +893,10 @@ export default function ScannerPage() {
                   marginBottom: 16,
                   opacity: 0.6,
                 }}>🔍</div>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: 600 }}>
+                <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 15, fontWeight: 600 }}>
                   Upload Photos
                 </p>
-                <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, marginTop: 6 }}>
+                <p style={{ color: "rgba(255,255,255,0.60)", fontSize: 12, marginTop: 6 }}>
                   2–5 photos from different angles work best
                 </p>
               </div>
@@ -949,7 +949,7 @@ export default function ScannerPage() {
                       background: "rgba(0,0,0,0.8)",
                       border: "1px solid rgba(255,255,255,0.2)",
                       color: "#fff",
-                      fontSize: 11,
+                      fontSize: 13,
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -986,12 +986,12 @@ export default function ScannerPage() {
             ) : (
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.45)" }}>
+                  <label style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.75)" }}>
                     Seller's claim
                   </label>
                   <button
                     onClick={() => { setShowSellersClaim(false); setSellersClaim(""); }}
-                    style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 18, cursor: "pointer", lineHeight: 1, padding: 0 }}
+                    style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.68)", fontSize: 18, cursor: "pointer", lineHeight: 1, padding: 0 }}
                     aria-label="Close"
                   >×</button>
                 </div>
@@ -1014,7 +1014,7 @@ export default function ScannerPage() {
                     boxSizing: "border-box" as const,
                   }}
                 />
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
                   We&apos;ll check whether the visible traits are consistent with that strain.
                 </p>
               </div>
@@ -1132,7 +1132,7 @@ export default function ScannerPage() {
               >
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 700,
                     letterSpacing: 1.2,
                     textTransform: "uppercase" as const,
@@ -1201,11 +1201,11 @@ export default function ScannerPage() {
                   <div style={{ marginTop: 10 }}>
                     <div
                       style={{
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: 700,
                         letterSpacing: 1,
                         textTransform: "uppercase" as const,
-                        color: "rgba(255,255,255,0.45)",
+                        color: "rgba(255,255,255,0.75)",
                         marginBottom: 4,
                       }}
                     >
@@ -1244,7 +1244,7 @@ export default function ScannerPage() {
               >
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 700,
                     letterSpacing: 1.2,
                     textTransform: "uppercase" as const,
@@ -1313,7 +1313,7 @@ export default function ScannerPage() {
                   return (
                     <div style={{ marginTop: 12 }}>
                       <h3 style={{
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: 700,
                         letterSpacing: 1.5,
                         textTransform: "uppercase" as const,
@@ -1346,8 +1346,8 @@ export default function ScannerPage() {
                         ))}
                       </div>
                       <p style={{
-                        fontSize: 10,
-                        color: "rgba(255,255,255,0.30)",
+                        fontSize: 12,
+                        color: "rgba(255,255,255,0.65)",
                         margin: "6px 0 0",
                         lineHeight: 1.5,
                       }}>
@@ -1409,7 +1409,7 @@ export default function ScannerPage() {
 
               {result.tagline && (
                 <p style={{
-                  color: "rgba(255,255,255,0.5)",
+                  color: "rgba(255,255,255,0.78)",
                   fontSize: 14,
                   marginTop: 12,
                   fontStyle: "italic",
@@ -1481,7 +1481,7 @@ export default function ScannerPage() {
                         cursor: "pointer",
                         border: activeTab === tab.key ? "1px solid rgba(76,175,80,0.5)" : "1px solid rgba(255,255,255,0.08)",
                         background: activeTab === tab.key ? "rgba(76,175,80,0.15)" : "rgba(255,255,255,0.04)",
-                        color: activeTab === tab.key ? "#81C784" : "rgba(255,255,255,0.45)",
+                        color: activeTab === tab.key ? "#81C784" : "rgba(255,255,255,0.75)",
                         transition: "all 0.15s",
                         display: "flex",
                         alignItems: "center",
@@ -1511,7 +1511,7 @@ export default function ScannerPage() {
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                       <span style={{ fontSize: 18 }}>🔍</span>
-                      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.8, textTransform: "uppercase" as const, color: "rgba(255,193,7,0.75)" }}>AI Detective&apos;s Report</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.8, textTransform: "uppercase" as const, color: "rgba(255,193,7,0.75)" }}>AI Detective&apos;s Report</span>
                     </div>
                     <p style={{ fontSize: 14, lineHeight: 1.8, color: "rgba(255,255,255,0.78)", margin: 0 }}>{result.description}</p>
                   </div>
@@ -1520,7 +1520,7 @@ export default function ScannerPage() {
                 {/* 🎛️ Vibe Meter */}
                 {result.vibeScore && (
                   <div style={{ padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.28)", marginBottom: 16 }}>🎛️ Vibe Meter</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.28)", marginBottom: 16 }}>🎛️ Vibe Meter</div>
                     {([
                       { label: "Energizing", key: "energizing" as const, icon: "⚡", color: "#66BB6A" },
                       { label: "Creative",   key: "creative"   as const, icon: "🎨", color: "#AB47BC" },
@@ -1532,7 +1532,7 @@ export default function ScannerPage() {
                       return (
                         <div key={v.key} style={{ marginBottom: i < arr.length - 1 ? 14 : 0 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>{v.icon} {v.label}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.78)" }}>{v.icon} {v.label}</span>
                             <span style={{ fontSize: 12, fontWeight: 700, color: v.color }}>{score}/10</span>
                           </div>
                           <div style={{ height: 7, borderRadius: 7, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
@@ -1547,7 +1547,7 @@ export default function ScannerPage() {
                 {/* 🎯 Perfect For — Activity Pairings */}
                 {result.activityPairing.length > 0 && (
                   <div style={{ marginBottom: 16 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>🎯 Perfect For</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>🎯 Perfect For</h3>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                       {result.activityPairing.map((a, i) => (
                         <span key={i} style={{
@@ -1566,12 +1566,12 @@ export default function ScannerPage() {
                 {/* 👅 Flavor & Aroma */}
                 {(result.flavorNotes || result.aromaProfile) && (
                   <div style={{ padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.25)", marginBottom: 12 }}>👅 Flavor &amp; Aroma</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.60)", marginBottom: 12 }}>👅 Flavor &amp; Aroma</div>
                     {result.flavorNotes && (
                       <div style={{ display: "flex", gap: 10, marginBottom: result.aromaProfile ? 12 : 0 }}>
                         <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.3 }}>🍋</span>
                         <div>
-                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 3 }}>Taste</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 3 }}>Taste</div>
                           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", margin: 0, lineHeight: 1.6 }}>{result.flavorNotes}</p>
                         </div>
                       </div>
@@ -1580,7 +1580,7 @@ export default function ScannerPage() {
                       <div style={{ display: "flex", gap: 10 }}>
                         <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.3 }}>🌸</span>
                         <div>
-                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 3 }}>Aroma</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 3 }}>Aroma</div>
                           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", margin: 0, lineHeight: 1.6 }}>{result.aromaProfile}</p>
                         </div>
                       </div>
@@ -1599,7 +1599,7 @@ export default function ScannerPage() {
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                       <span style={{ fontSize: 16 }}>💚</span>
-                      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(129,199,132,0.75)" }}>Expert Tip</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(129,199,132,0.75)" }}>Expert Tip</span>
                     </div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", margin: 0, lineHeight: 1.7 }}>{result.expertTip}</p>
                   </div>
@@ -1608,7 +1608,7 @@ export default function ScannerPage() {
                 {/* Effects */}
                 {result.effects.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Effects</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Effects</h3>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                       {result.effects.map((e, i) => (
                         <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 600, background: "rgba(76,175,80,0.12)", color: "rgba(129,199,132,0.9)" }}>{e}</span>
@@ -1620,7 +1620,7 @@ export default function ScannerPage() {
                 {/* Terpenes */}
                 {result.terpenes.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Terpenes</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Terpenes</h3>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                       {result.terpenes.map((t, i) => {
                         const colors = [
@@ -1639,29 +1639,29 @@ export default function ScannerPage() {
                 {/* Visual Analysis */}
                 {(result.budStructure || result.trichomes || result.coloration || result.visualTraits.length > 0) && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Visual Analysis</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Visual Analysis</h3>
                     {result.budStructure && result.budStructure !== "Bud structure analysis complete" && (
                       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                         <span style={{ fontSize: 14 }}>🌿</span>
-                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Structure: </strong>{result.budStructure}</p>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.72)", fontWeight: 600 }}>Structure: </strong>{result.budStructure}</p>
                       </div>
                     )}
                     {result.trichomes && result.trichomes !== "Trichome assessment complete" && (
                       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                         <span style={{ fontSize: 14 }}>💎</span>
-                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Trichomes: </strong>{result.trichomes}</p>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.72)", fontWeight: 600 }}>Trichomes: </strong>{result.trichomes}</p>
                       </div>
                     )}
                     {result.coloration && result.coloration !== "Color analysis complete" && (
                       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                         <span style={{ fontSize: 14 }}>🎨</span>
-                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Color: </strong>{result.coloration}</p>
+                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.5 }}><strong style={{ color: "rgba(255,255,255,0.72)", fontWeight: 600 }}>Color: </strong>{result.coloration}</p>
                       </div>
                     )}
                     {result.visualTraits.length > 0 && (
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const, marginTop: 6 }}>
                         {result.visualTraits.map((t, i) => (
-                          <span key={i} style={{ padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}>{t}</span>
+                          <span key={i} style={{ padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.78)" }}>{t}</span>
                         ))}
                       </div>
                     )}
@@ -1671,12 +1671,12 @@ export default function ScannerPage() {
                 {/* Could Also Be */}
                 {result.alternates.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Could Also Be</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Could Also Be</h3>
                     <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
                       {result.alternates.map((a, i) => (
                         <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)" }}>
                           <span style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>{a.name}</span>
-                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontWeight: 600 }}>{mapConfidence(a.confidence)}</span>
+                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", fontWeight: 600 }}>{mapConfidence(a.confidence)}</span>
                         </div>
                       ))}
                     </div>
@@ -1720,8 +1720,8 @@ export default function ScannerPage() {
                   >
                     🌱 Help our database — submit "{result.ocrStrainCandidates[0]}" as a new strain
                     <div style={{
-                      fontSize: 11,
-                      color: "rgba(255,255,255,0.40)",
+                      fontSize: 13,
+                      color: "rgba(255,255,255,0.72)",
                       fontWeight: 400,
                       marginTop: 4,
                       lineHeight: 1.4,
@@ -1738,11 +1738,11 @@ export default function ScannerPage() {
                   <details style={{ marginBottom: 14 }}>
                     <summary style={{
                       cursor: "pointer",
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: 700,
                       letterSpacing: 1.5,
                       textTransform: "uppercase" as const,
-                      color: "rgba(255,255,255,0.45)",
+                      color: "rgba(255,255,255,0.75)",
                       marginBottom: 10,
                       userSelect: "none" as const,
                     }}>
@@ -1758,7 +1758,7 @@ export default function ScannerPage() {
                         }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
                             <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{c.strainName}</span>
-                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{Math.round(c.confidence)}%</span>
+                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.78)", fontWeight: 600 }}>{Math.round(c.confidence)}%</span>
                           </div>
                           {c.matchReasoning && (
                             <p style={{ fontSize: 12, lineHeight: 1.55, color: "rgba(255,255,255,0.65)", margin: "4px 0 8px" }}>
@@ -1782,8 +1782,8 @@ export default function ScannerPage() {
                         </div>
                       ))}
                       <p style={{
-                        fontSize: 11,
-                        color: "rgba(255,255,255,0.30)",
+                        fontSize: 13,
+                        color: "rgba(255,255,255,0.65)",
                         margin: "8px 4px 0",
                         lineHeight: 1.5,
                       }}>
@@ -1798,7 +1798,7 @@ export default function ScannerPage() {
                 {/* Reported to help with — uses already-collected medical data */}
                 {result.medicalConditions.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>
                       Users commonly report this for
                     </h3>
                     <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
@@ -1811,7 +1811,7 @@ export default function ScannerPage() {
                         }}>{m}</span>
                       ))}
                     </div>
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.30)", margin: "8px 0 0", lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", margin: "8px 0 0", lineHeight: 1.5 }}>
                       Self-reported by users. Not medical advice.
                     </p>
                   </div>
@@ -1820,7 +1820,7 @@ export default function ScannerPage() {
                 {/* Watch out for — side effects */}
                 {result.sideEffects.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,183,77,0.55)", marginBottom: 10 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,183,77,0.55)", marginBottom: 10 }}>
                       Watch out for
                     </h3>
                     <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
@@ -1839,7 +1839,7 @@ export default function ScannerPage() {
                 {/* Best for — usage context */}
                 {result.bestUse.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>
                       Best for
                     </h3>
                     <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
@@ -1865,9 +1865,9 @@ export default function ScannerPage() {
                 {/* Better Results Tips */}
                 {result.tips.length > 0 && (
                   <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", marginBottom: 8 }}>
-                    <h3 style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.2)", marginBottom: 6 }}>Better Results</h3>
+                    <h3 style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.2)", marginBottom: 6 }}>Better Results</h3>
                     {result.tips.map((tip, i) => (
-                      <p key={i} style={{ fontSize: 12, lineHeight: 1.6, color: "rgba(255,255,255,0.4)", margin: "3px 0" }}>💡 {tip}</p>
+                      <p key={i} style={{ fontSize: 12, lineHeight: 1.6, color: "rgba(255,255,255,0.72)", margin: "3px 0" }}>💡 {tip}</p>
                     ))}
                   </div>
                 )}
@@ -1891,14 +1891,14 @@ export default function ScannerPage() {
                     { label: "Cure Time", value: result.cureTime, icon: "⏰" },
                   ].filter(s => s.value).map((stat, i) => (
                     <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{stat.value}</div>
                     </div>
                   ))}
                 </div>
                 {result.trainingMethods.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Training Methods</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Training Methods</h3>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                       {result.trainingMethods.map((m, i) => (
                         <span key={i} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: "rgba(79,195,247,0.1)", color: "rgba(129,212,250,0.85)" }}>{m}</span>
@@ -1908,25 +1908,25 @@ export default function ScannerPage() {
                 )}
                 {result.nutrientNeeds && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>🌊 Nutrient Profile</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 6 }}>🌊 Nutrient Profile</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.nutrientNeeds}</p>
                   </div>
                 )}
                 {result.climate && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>🌡️ Ideal Climate</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 6 }}>🌡️ Ideal Climate</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.climate}</p>
                   </div>
                 )}
                 {result.harvestIndicators && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,183,77,0.06)", border: "1px solid rgba(255,183,77,0.15)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,213,79,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>🔬 Harvest Indicators</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,213,79,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>🔬 Harvest Indicators</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.harvestIndicators}</p>
                   </div>
                 )}
                 {result.growNotes && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(76,175,80,0.05)", border: "1px solid rgba(76,175,80,0.12)", marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(129,199,132,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>📝 Grow Notes</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(129,199,132,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>📝 Grow Notes</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.growNotes}</p>
                   </div>
                 )}
@@ -1938,16 +1938,16 @@ export default function ScannerPage() {
               <div>
                 {result.originStory && (
                   <div style={{ padding: "16px", borderRadius: 14, background: "rgba(171,71,188,0.07)", border: "1px solid rgba(171,71,188,0.2)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(206,147,216,0.7)", textTransform: "uppercase" as const, marginBottom: 8 }}>🧬 Origin Story</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(206,147,216,0.7)", textTransform: "uppercase" as const, marginBottom: 8 }}>🧬 Origin Story</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.7 }}>{result.originStory}</p>
                   </div>
                 )}
                 {(result.parentStrains.length > 0 || result.grandparentStrains.length > 0) && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.04)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 10 }}>🌳 Genetic Lineage</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 10 }}>🌳 Genetic Lineage</div>
                     {result.parentStrains.length > 0 && (
                       <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>Parent Strains</div>
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", marginBottom: 6 }}>Parent Strains</div>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                           {result.parentStrains.map((p, i) => (
                             <span key={i} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 700, background: "rgba(171,71,188,0.15)", color: "rgba(206,147,216,0.9)" }}>{p}</span>
@@ -1957,7 +1957,7 @@ export default function ScannerPage() {
                     )}
                     {result.grandparentStrains.length > 0 && (
                       <div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginBottom: 6 }}>Grandparent Strains</div>
+                        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", marginBottom: 6 }}>Grandparent Strains</div>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                           {result.grandparentStrains.map((g, i) => (
                             <span key={i} style={{ padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(171,71,188,0.08)", color: "rgba(206,147,216,0.6)" }}>{g}</span>
@@ -1973,32 +1973,32 @@ export default function ScannerPage() {
                     { label: "Seed Types", value: result.seedTypes, icon: "🌱" },
                   ].filter(s => s.value).map((stat, i) => (
                     <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{stat.value}</div>
                     </div>
                   ))}
                 </div>
                 {result.phenotypeVariation && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>🎭 Phenotype Variation</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 6 }}>🎭 Phenotype Variation</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.phenotypeVariation}</p>
                   </div>
                 )}
                 {result.terpeneInheritance && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>🧪 Terpene Inheritance</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 6 }}>🧪 Terpene Inheritance</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.terpeneInheritance}</p>
                   </div>
                 )}
                 {result.breedingPotential && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(171,71,188,0.05)", border: "1px solid rgba(171,71,188,0.15)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(206,147,216,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>✨ Breeding Potential</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(206,147,216,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>✨ Breeding Potential</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.breedingPotential}</p>
                   </div>
                 )}
                 {result.breedingNotes && (
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 6 }}>📝 Breeder Notes</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 6 }}>📝 Breeder Notes</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.breedingNotes}</p>
                   </div>
                 )}
@@ -2010,13 +2010,13 @@ export default function ScannerPage() {
               <div>
                 {result.salesDescription && (
                   <div style={{ padding: "18px", borderRadius: 16, background: "linear-gradient(135deg, rgba(255,183,77,0.08), rgba(255,87,34,0.05))", border: "1px solid rgba(255,183,77,0.2)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,213,79,0.7)", marginBottom: 8 }}>🏪 Product Pitch</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,213,79,0.7)", marginBottom: 8 }}>🏪 Product Pitch</div>
                     <p style={{ fontSize: 15, fontWeight: 500, color: "rgba(255,255,255,0.8)", margin: 0, lineHeight: 1.6 }}>{result.salesDescription}</p>
                   </div>
                 )}
                 {result.menuDescription && (
                   <div style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" as const, marginBottom: 4 }}>📋 Menu Copy</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, marginBottom: 4 }}>📋 Menu Copy</div>
                     <p style={{ fontSize: 14, fontStyle: "italic", color: "rgba(255,255,255,0.7)", margin: 0 }}>"{result.menuDescription}"</p>
                   </div>
                 )}
@@ -2027,7 +2027,7 @@ export default function ScannerPage() {
                     { label: "Target Customer", value: result.targetCustomer, icon: "👤" },
                   ].filter(s => s.value).map((stat, i) => (
                     <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", gridColumn: stat.label === "Target Customer" ? "span 2" : undefined }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>{stat.value}</div>
                     </div>
                   ))}
@@ -2036,13 +2036,13 @@ export default function ScannerPage() {
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.03)", marginBottom: 14 }}>
                     {result.flavorNotes && (
                       <div style={{ marginBottom: result.aromaProfile ? 10 : 0 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4 }}>👅 Flavor Profile</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 4 }}>👅 Flavor Profile</div>
                         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.5 }}>{result.flavorNotes}</p>
                       </div>
                     )}
                     {result.aromaProfile && (
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" as const, marginBottom: 4, marginTop: result.flavorNotes ? 10 : 0 }}>👃 Aroma</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 4, marginTop: result.flavorNotes ? 10 : 0 }}>👃 Aroma</div>
                         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.5 }}>{result.aromaProfile}</p>
                       </div>
                     )}
@@ -2050,7 +2050,7 @@ export default function ScannerPage() {
                 )}
                 {result.bestProductForms.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Best Product Forms</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Best Product Forms</h3>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                       {result.bestProductForms.map((f, i) => (
                         <span key={i} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, background: "rgba(255,183,77,0.1)", color: "rgba(255,213,79,0.85)" }}>{f}</span>
@@ -2060,7 +2060,7 @@ export default function ScannerPage() {
                 )}
                 {result.activityPairing.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Activity Pairings</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Activity Pairings</h3>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                       {result.activityPairing.map((a, i) => (
                         <span key={i} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, background: "rgba(79,195,247,0.1)", color: "rgba(129,212,250,0.85)" }}>{a}</span>
@@ -2070,7 +2070,7 @@ export default function ScannerPage() {
                 )}
                 {result.marketingTags.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)", marginBottom: 10 }}>Menu Tags</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Menu Tags</h3>
                     <div style={{ display: "flex", gap: 7, flexWrap: "wrap" as const }}>
                       {result.marketingTags.map((t, i) => (
                         <span key={i} style={{ padding: "6px 12px", borderRadius: 16, fontSize: 12, fontWeight: 700, background: "rgba(239,83,80,0.1)", color: "rgba(239,154,154,0.85)", border: "1px solid rgba(239,83,80,0.15)" }}>{t}</span>
@@ -2080,7 +2080,7 @@ export default function ScannerPage() {
                 )}
                 {result.consultingScript && (
                   <div style={{ padding: "16px", borderRadius: 14, background: "rgba(76,175,80,0.05)", border: "1px solid rgba(76,175,80,0.15)", marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "rgba(129,199,132,0.7)", textTransform: "uppercase" as const, marginBottom: 8 }}>💬 Budtender Script</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(129,199,132,0.7)", textTransform: "uppercase" as const, marginBottom: 8 }}>💬 Budtender Script</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.7, fontStyle: "italic" }}>"{result.consultingScript}"</p>
                   </div>
                 )}
@@ -2089,20 +2089,20 @@ export default function ScannerPage() {
 
             {/* ── WHAT'S NEXT ──────────────────────────────────────── */}
             <div style={{ marginTop: 24, marginBottom: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.2)", marginBottom: 12, textAlign: "center" as const }}>Explore More</div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.2)", marginBottom: 12, textAlign: "center" as const }}>Explore More</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <a href="/garden/dispensaries" style={{ textDecoration: "none" }}>
                   <div style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" as const, cursor: "pointer" }}>
                     <div style={{ fontSize: 24, marginBottom: 5 }}>🏪</div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)" }}>Find Nearby</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Dispensaries</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>Dispensaries</div>
                   </div>
                 </a>
                 <a href="/garden/strains" style={{ textDecoration: "none" }}>
                   <div style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" as const, cursor: "pointer" }}>
                     <div style={{ marginBottom: 5, display: "flex", justifyContent: "center" }}><img src="/brand/cannabis-icon.png" width={24} height={24} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} /></div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)" }}>Browse Strains</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>35k+ cultivars</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>35k+ cultivars</div>
                   </div>
                 </a>
                 <button
@@ -2111,7 +2111,7 @@ export default function ScannerPage() {
                 >
                   <div style={{ fontSize: 24, marginBottom: 5 }}>🌱</div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(129,199,132,0.8)" }}>Grow Guide</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Tips &amp; yield data</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>Tips &amp; yield data</div>
                 </button>
               </div>
             </div>
@@ -2135,7 +2135,7 @@ export default function ScannerPage() {
                       ? "Photo added to the community database"
                       : "Photo saved to your history"}
                   </div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", lineHeight: 1.5 }}>
                     {photoContributed === "verified"
                       ? "Your high-confidence scan is now visible on the terpene deep dive pages, helping others identify this strain."
                       : "Reach 80%+ match confidence to have your photo contribute to the shared community gallery."}
@@ -2157,7 +2157,7 @@ export default function ScannerPage() {
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                 <span style={{ fontSize: 16 }}>🧠</span>
-                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.3)" }}>
+                <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)" }}>
                   Why Confidence Isn&apos;t Always 100%
                 </span>
               </div>
@@ -2172,13 +2172,13 @@ export default function ScannerPage() {
                     <span style={{ fontSize: 18, flexShrink: 0, opacity: 0.65, marginTop: 1 }}>{item.icon}</span>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.58)", marginBottom: 2 }}>{item.title}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", lineHeight: 1.55 }}>{item.body}</div>
+                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.32)", lineHeight: 1.55 }}>{item.body}</div>
                     </div>
                   </div>
                 ))}
               </div>
               <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: "rgba(102,187,106,0.05)", border: "1px solid rgba(102,187,106,0.11)" }}>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", margin: 0, lineHeight: 1.6 }}>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", margin: 0, lineHeight: 1.6 }}>
                   <strong style={{ color: "rgba(102,187,106,0.65)" }}>You help us get better.</strong> Every scan you contribute trains the model to better distinguish look-alike cultivars. The more the community uses it, the sharper the AI gets.
                 </p>
               </div>
@@ -2210,7 +2210,7 @@ export default function ScannerPage() {
             {/* Disclaimer */}
             <p style={{
               textAlign: "center",
-              fontSize: 11,
+              fontSize: 13,
               color: "rgba(255,255,255,0.2)",
               lineHeight: 1.5,
               paddingBottom: 20,
@@ -2245,8 +2245,8 @@ export default function ScannerPage() {
                 }}>
                   <div style={{ fontSize: 24, marginBottom: 4 }}>{tip.icon}</div>
                   <div style={{
-                    fontSize: 11,
-                    color: "rgba(255,255,255,0.3)",
+                    fontSize: 13,
+                    color: "rgba(255,255,255,0.65)",
                     lineHeight: 1.3,
                   }}>
                     {tip.label}
@@ -2269,7 +2269,7 @@ export default function ScannerPage() {
                 <div style={{ fontWeight: 800, fontSize: 17, color: "#fff", marginBottom: 6 }}>
                   {isLoggedIn ? "Explore Your Garden" : "The Scanner Is Just the Start"}
                 </div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.65 }}>
                   {isLoggedIn
                     ? "You've got a full suite of cannabis tools waiting for you."
                     : "Create a free account and unlock a full cannabis companion app — built for growers, consumers, and dispensary pros."}
@@ -2298,8 +2298,8 @@ export default function ScannerPage() {
                     border: "1px solid rgba(255,255,255,0.05)",
                   }}>
                     <div style={{ fontSize: 15, marginBottom: 3 }}>{f.icon}</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>{f.title}</div>
-                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", lineHeight: 1.35 }}>{f.body}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>{f.title}</div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.28)", lineHeight: 1.35 }}>{f.body}</div>
                   </div>
                 ))}
               </div>
@@ -2317,7 +2317,7 @@ export default function ScannerPage() {
                 {isLoggedIn ? "Open My Garden →" : "Sign In to StrainSpotter"}
               </button>
               {!isLoggedIn && (
-                <p style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.18)", marginBottom: 0 }}>
+                <p style={{ textAlign: "center", marginTop: 8, fontSize: 13, color: "rgba(255,255,255,0.18)", marginBottom: 0 }}>
                   Subscriber-only. Plans start at $4.99/mo. Cancel anytime.
                 </p>
               )}
@@ -2380,13 +2380,13 @@ export default function ScannerPage() {
                 <div style={{ fontWeight: 700, fontSize: 13, color: "#81C784", marginBottom: 3 }}>
                   Help improve StrainSpotter
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>
                   Your photo helps train our AI to better identify this cultivar for everyone. Contribute anonymously — no personal data attached.
                 </div>
               </div>
             </div>
 
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 18, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginBottom: 18, lineHeight: 1.5 }}>
               Your photo may appear on terpene and strain pages to help other users identify this cultivar. You can opt out any time from Settings. We never sell your data.
             </div>
 
@@ -2415,7 +2415,7 @@ export default function ScannerPage() {
               style={{
                 width: "100%", padding: "12px 0", borderRadius: 14,
                 background: "transparent", border: "1px solid rgba(255,255,255,0.12)",
-                color: "rgba(255,255,255,0.45)", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: 600, cursor: "pointer",
               }}
             >
               No thanks, skip
@@ -2461,7 +2461,7 @@ function Pill({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   return (
     <span
       style={{
-        fontSize: 11,
+        fontSize: 13,
         padding: "3px 9px",
         borderRadius: 99,
         background: ok ? "rgba(76,175,80,0.12)" : "rgba(244,67,54,0.10)",
@@ -2484,11 +2484,11 @@ function Meta({ label, value }: { label: string; value: string }) {
     <div style={{ display: "flex", flexDirection: "column" as const, gap: 2 }}>
       <span
         style={{
-          fontSize: 9,
+          fontSize: 13,
           fontWeight: 700,
           letterSpacing: 1.2,
           textTransform: "uppercase" as const,
-          color: "rgba(255,255,255,0.30)",
+          color: "rgba(255,255,255,0.65)",
         }}
       >
         {label}

@@ -56,7 +56,7 @@ function savePrefs(prefs: LocalPrefs) {
 // ─── Style helpers — HIGH CONTRAST ──────────────────────────────────────────
 const card: React.CSSProperties = {
   background: "rgba(255,255,255,0.10)",
-  border: "1px solid rgba(255,255,255,0.20)",
+  border: "1px solid rgba(255,255,255,0.55)",
   borderRadius: 16,
 };
 
@@ -148,7 +148,7 @@ function Toggle({
         borderRadius: 13,
         padding: 3,
         cursor: "pointer",
-        background: checked ? "#43A047" : "rgba(255,255,255,0.20)",
+        background: checked ? "#43A047" : "rgba(255,255,255,0.55)",
         border: "none",
         position: "relative",
         transition: "background 0.2s",
@@ -306,7 +306,7 @@ export default function SettingsPage() {
     boxSizing: "border-box",
     padding: "12px 14px",
     borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.20)",
+    border: "1px solid rgba(255,255,255,0.55)",
     background: "rgba(255,255,255,0.08)",
     color: "#fff",
     fontSize: 15,
@@ -439,7 +439,7 @@ export default function SettingsPage() {
                 {savingProfile && (
                   <div
                     style={{
-                      color: "rgba(255,255,255,0.5)",
+                      color: "rgba(255,255,255,0.78)",
                       fontSize: 12,
                       marginTop: 8,
                     }}
@@ -622,7 +622,7 @@ export default function SettingsPage() {
                 }}
               >
                 Manage subscription
-                <span style={{ float: "right", color: "rgba(255,255,255,0.45)" }}>
+                <span style={{ float: "right", color: "rgba(255,255,255,0.75)" }}>
                   &rsaquo;
                 </span>
               </button>
@@ -891,7 +891,7 @@ export default function SettingsPage() {
               }}
             >
               Privacy Policy
-              <span style={{ float: "right", color: "rgba(255,255,255,0.4)" }}>›</span>
+              <span style={{ float: "right", color: "rgba(255,255,255,0.72)" }}>›</span>
             </a>
             <a
               href="/terms"
@@ -905,7 +905,7 @@ export default function SettingsPage() {
               }}
             >
               Terms of Service
-              <span style={{ float: "right", color: "rgba(255,255,255,0.4)" }}>›</span>
+              <span style={{ float: "right", color: "rgba(255,255,255,0.72)" }}>›</span>
             </a>
           </div>
 
@@ -931,7 +931,7 @@ export default function SettingsPage() {
 
           {/* Footer */}
           <div style={{ textAlign: "center", padding: "32px 0" }}>
-            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+            <span style={{ color: "rgba(255,255,255,0.72)", fontSize: 12 }}>
               StrainSpotter • Scan. Grow. Learn. Honestly.
             </span>
           </div>

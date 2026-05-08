@@ -109,7 +109,7 @@ export default function SeedVendorsPage() {
 
           {/* Search */}
           <div style={{ position: "relative", marginBottom: 16 }}>
-            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.4)", fontSize: 20 }}>🔍</span>
+            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.72)", fontSize: 20 }}>🔍</span>
             <input
               type="text"
               value={search}
@@ -130,7 +130,7 @@ export default function SeedVendorsPage() {
               style={{
                 padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
                 background: !activeTag ? "rgba(102,187,106,0.25)" : "rgba(255,255,255,0.06)",
-                color: !activeTag ? "#81C784" : "rgba(255,255,255,0.5)",
+                color: !activeTag ? "#81C784" : "rgba(255,255,255,0.78)",
                 border: `1px solid ${!activeTag ? "rgba(102,187,106,0.4)" : "rgba(255,255,255,0.1)"}`,
               }}
             >
@@ -143,7 +143,7 @@ export default function SeedVendorsPage() {
                 style={{
                   padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
                   background: activeTag === tag ? "rgba(102,187,106,0.25)" : "rgba(255,255,255,0.06)",
-                  color: activeTag === tag ? "#81C784" : "rgba(255,255,255,0.5)",
+                  color: activeTag === tag ? "#81C784" : "rgba(255,255,255,0.78)",
                   border: `1px solid ${activeTag === tag ? "rgba(102,187,106,0.4)" : "rgba(255,255,255,0.1)"}`,
                 }}
               >
@@ -157,11 +157,11 @@ export default function SeedVendorsPage() {
             <div style={{ textAlign: "center", padding: "64px 0" }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🌱</div>
               <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No vendors match your search</div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Try different search terms or clear the filter</div>
+              <div style={{ color: "rgba(255,255,255,0.72)", fontSize: 14 }}>Try different search terms or clear the filter</div>
             </div>
           ) : (
             <>
-              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
+              <div style={{ color: "rgba(255,255,255,0.78)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
                 {sorted.length} Vendor{sorted.length !== 1 ? "s" : ""}
               </div>
 
@@ -197,7 +197,7 @@ export default function SeedVendorsPage() {
                           </span>
                           <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
                             <span style={{ fontSize: 14 }}>🚚</span>
-                            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{vendor.shipping}</span>
+                            <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 12 }}>{vendor.shipping}</span>
                           </span>
                         </div>
                       </div>
@@ -215,8 +215,8 @@ export default function SeedVendorsPage() {
                           <span
                             key={tag}
                             style={{
-                              padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 600,
-                              background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)",
+                              padding: "2px 8px", borderRadius: 99, fontSize: 13, fontWeight: 600,
+                              background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.78)",
                               border: "1px solid rgba(255,255,255,0.1)",
                             }}
                           >

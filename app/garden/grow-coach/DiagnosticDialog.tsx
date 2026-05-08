@@ -255,7 +255,7 @@ export default function DiagnosticDialog({
             aria-label="Close"
             style={{
               background: "transparent", border: "none",
-              color: "rgba(255,255,255,0.5)", fontSize: 24,
+              color: "rgba(255,255,255,0.78)", fontSize: 24,
               cursor: "pointer", lineHeight: 1, padding: 4,
             }}
           >×</button>
@@ -294,7 +294,7 @@ export default function DiagnosticDialog({
                     onClick={() => fileRef.current?.click()}
                     style={{
                       paddingTop: "100%", position: "relative",
-                      border: "1.5px dashed rgba(255,255,255,0.20)",
+                      border: "1.5px dashed rgba(255,255,255,0.55)",
                       borderRadius: 10, background: "rgba(255,255,255,0.03)",
                       cursor: "pointer",
                     }}
@@ -302,7 +302,7 @@ export default function DiagnosticDialog({
                     <span style={{
                       position: "absolute", inset: 0,
                       display: "grid", placeItems: "center",
-                      fontSize: 22, color: "rgba(255,255,255,0.4)",
+                      fontSize: 22, color: "rgba(255,255,255,0.72)",
                     }}>+</span>
                   </button>
                 )}
@@ -393,7 +393,7 @@ export default function DiagnosticDialog({
                 background: loading || images.length === 0
                   ? "rgba(255,255,255,0.08)"
                   : "linear-gradient(135deg, #43A047, #2E7D32)",
-                color: loading || images.length === 0 ? "rgba(255,255,255,0.4)" : "#fff",
+                color: loading || images.length === 0 ? "rgba(255,255,255,0.72)" : "#fff",
                 fontSize: 15, fontWeight: 700, letterSpacing: 0.4,
                 cursor: loading || images.length === 0 ? "not-allowed" : "pointer",
                 boxShadow: loading || images.length === 0 ? "none" : "0 4px 18px rgba(46,125,50,0.35)",
@@ -403,8 +403,8 @@ export default function DiagnosticDialog({
             </button>
 
             <p style={{
-              margin: "14px 0 0", fontSize: 11,
-              color: "rgba(255,255,255,0.40)", lineHeight: 1.5, textAlign: "center",
+              margin: "14px 0 0", fontSize: 13,
+              color: "rgba(255,255,255,0.72)", lineHeight: 1.5, textAlign: "center",
             }}>
               AI-assisted plant-health analysis. For severe issues, also consult an experienced grower or your local agricultural extension service.
             </p>
@@ -460,7 +460,7 @@ function DiagnosisResult({
       }}>
         <span style={{ fontSize: 16 }}>{sev.emoji}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: sev.text }}>
+          <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: sev.text }}>
             {result.severity === "urgent" ? "Act Today" : result.severity === "moderate" ? "Act This Week" : "Monitor"}
           </div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>
@@ -570,7 +570,7 @@ function DiagnosisResult({
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 11, fontWeight: 700, letterSpacing: 1.2,
+      fontSize: 13, fontWeight: 700, letterSpacing: 1.2,
       textTransform: "uppercase" as const,
       color: "rgba(255,255,255,0.55)", marginBottom: 6,
     }}>{children}</div>
@@ -578,7 +578,7 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 function Hint({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", marginTop: 6 }}>
       {children}
     </div>
   );
@@ -587,7 +587,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       marginTop: 18, marginBottom: 8,
-      fontSize: 11, fontWeight: 700, letterSpacing: 1.2,
+      fontSize: 13, fontWeight: 700, letterSpacing: 1.2,
       textTransform: "uppercase" as const,
       color: "rgba(255,255,255,0.55)",
     }}>{children}</div>

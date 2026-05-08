@@ -215,7 +215,7 @@ export default function StrainSubmitPage() {
               >
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 700,
                     letterSpacing: 1.2,
                     textTransform: "uppercase" as const,
@@ -296,8 +296,8 @@ export default function StrainSubmitPage() {
             </p>
             <p
               style={{
-                color: "rgba(255,255,255,0.40)",
-                fontSize: 11,
+                color: "rgba(255,255,255,0.72)",
+                fontSize: 13,
                 lineHeight: 1.55,
                 margin: "10px 0 0",
               }}
@@ -402,8 +402,8 @@ export default function StrainSubmitPage() {
               />
               <div
                 style={{
-                  fontSize: 11,
-                  color: "rgba(255,255,255,0.35)",
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.68)",
                   marginTop: 4,
                   textAlign: "right" as const,
                 }}
@@ -503,7 +503,7 @@ export default function StrainSubmitPage() {
                 background: submitting
                   ? "rgba(255,255,255,0.08)"
                   : "linear-gradient(135deg, #43A047, #2E7D32)",
-                color: submitting ? "rgba(255,255,255,0.45)" : "#fff",
+                color: submitting ? "rgba(255,255,255,0.75)" : "#fff",
                 fontSize: 15,
                 fontWeight: 800,
                 cursor: submitting ? "not-allowed" : "pointer",
@@ -529,7 +529,7 @@ function Field({
     <div style={{ marginBottom: 14 }}>
       <div
         style={{
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 700,
           letterSpacing: 1.2,
           textTransform: "uppercase" as const,

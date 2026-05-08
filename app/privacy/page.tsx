@@ -25,7 +25,7 @@ export default function PrivacyPage() {
         <Link
           href="/"
           style={{
-            color: "rgba(255,255,255,0.45)",
+            color: "rgba(255,255,255,0.75)",
             fontSize: 13,
             textDecoration: "none",
           }}
@@ -43,7 +43,7 @@ export default function PrivacyPage() {
         >
           Privacy Policy
         </h1>
-        <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, margin: 0 }}>
+        <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, margin: 0 }}>
           Last updated: {updated}
         </p>
 
@@ -182,7 +182,7 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <p style={{ color: "rgba(255,255,255,0.30)", fontSize: 11, marginTop: 32 }}>
+        <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, marginTop: 32 }}>
           See also the{" "}
           <Link href="/terms" style={{ color: "rgba(129,199,132,0.7)" }}>
             Terms of Service

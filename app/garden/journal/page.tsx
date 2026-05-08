@@ -103,7 +103,7 @@ export default function JournalPage() {
       <>
         <TopNav title="Journal" showBack />
         <main className="min-h-screen text-white flex items-center justify-center">
-          <div style={{ color: "rgba(255,255,255,0.4)" }}>Loading…</div>
+          <div style={{ color: "rgba(255,255,255,0.72)" }}>Loading…</div>
         </main>
       </>
     );
@@ -162,7 +162,7 @@ export default function JournalPage() {
               <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, margin: "0 0 6px", fontWeight: 600 }}>
                 No sessions logged yet
               </p>
-              <p style={{ color: "rgba(255,255,255,0.40)", fontSize: 13, margin: 0 }}>
+              <p style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, margin: 0 }}>
                 Tap &ldquo;Log a session&rdquo; to start your diary.
               </p>
             </div>
@@ -170,11 +170,11 @@ export default function JournalPage() {
             <>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: 700,
                   letterSpacing: 1.4,
                   textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.45)",
+                  color: "rgba(255,255,255,0.75)",
                   marginBottom: 10,
                 }}
               >
@@ -315,7 +315,7 @@ function NewSessionForm({
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
-                color: n <= rating ? "#FFD54F" : "rgba(255,255,255,0.25)",
+                color: n <= rating ? "#FFD54F" : "rgba(255,255,255,0.60)",
                 padding: 0,
                 lineHeight: 1,
               }}
@@ -335,7 +335,7 @@ function NewSessionForm({
           rows={3}
           style={{ ...inputStyle, resize: "vertical", minHeight: 70, fontFamily: "inherit" }}
         />
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4, textAlign: "right" }}>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", marginTop: 4, textAlign: "right" }}>
           {notes.length}/500
         </div>
       </Field>
@@ -358,7 +358,7 @@ function NewSessionForm({
             background: strain.trim()
               ? "linear-gradient(135deg, #43A047, #2E7D32)"
               : "rgba(255,255,255,0.08)",
-            color: strain.trim() ? "#fff" : "rgba(255,255,255,0.4)",
+            color: strain.trim() ? "#fff" : "rgba(255,255,255,0.72)",
             fontSize: 14, fontWeight: 700,
             cursor: strain.trim() ? "pointer" : "not-allowed",
           }}
@@ -383,12 +383,12 @@ function SessionCard({
   return (
     <div style={{ ...glass, padding: 16, marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ color: "rgba(255,255,255,0.40)", fontSize: 11 }}>
+        <span style={{ color: "rgba(255,255,255,0.72)", fontSize: 11 }}>
           {date.toLocaleDateString()} · {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </span>
         <span style={{ color: "#FFD54F", fontSize: 13 }}>
           {"★".repeat(entry.rating)}
-          <span style={{ color: "rgba(255,255,255,0.20)" }}>{"★".repeat(5 - entry.rating)}</span>
+          <span style={{ color: "rgba(255,255,255,0.55)" }}>{"★".repeat(5 - entry.rating)}</span>
         </span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
@@ -412,7 +412,7 @@ function SessionCard({
 
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, fontSize: 13 }}>
         <span title={`Before: ${bef.label}`}>{bef.emoji}</span>
-        <span style={{ color: "rgba(255,255,255,0.40)" }}>→</span>
+        <span style={{ color: "rgba(255,255,255,0.72)" }}>→</span>
         <span title={`After: ${aft.label}`}>{aft.emoji}</span>
         <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, marginLeft: 4 }}>
           {bef.label} → {aft.label}
@@ -440,7 +440,7 @@ function SessionCard({
           background: "transparent",
           border: "none",
           color: "rgba(244,67,54,0.65)",
-          fontSize: 11,
+          fontSize: 13,
           padding: 0,
           cursor: "pointer",
         }}
@@ -458,7 +458,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div style={{ marginBottom: 12 }}>
       <div
         style={{
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 700,
           letterSpacing: 1.2,
           textTransform: "uppercase",

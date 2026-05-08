@@ -175,8 +175,8 @@ export default function ScanPaywall({
         <div style={{ marginBottom: 16 }}>
           <p
             style={{
-              color: "rgba(255,255,255,0.35)",
-              fontSize: 10,
+              color: "rgba(255,255,255,0.68)",
+              fontSize: 12,
               textTransform: "uppercase",
               letterSpacing: 2,
               margin: "0 0 10px",
@@ -222,7 +222,7 @@ export default function ScanPaywall({
             style={{
               background: "transparent",
               border: "none",
-              color: "rgba(255,255,255,0.45)",
+              color: "rgba(255,255,255,0.75)",
               fontSize: 12,
               cursor: "pointer",
               textDecoration: "underline",
@@ -251,7 +251,7 @@ export default function ScanPaywall({
                 }}
               >
                 <div style={{ fontWeight: 700 }}>{p.label}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.78)", marginTop: 2 }}>
                   {p.price}
                 </div>
               </button>
@@ -262,8 +262,8 @@ export default function ScanPaywall({
         {/* Footer */}
         <p
           style={{
-            color: "rgba(255,255,255,0.30)",
-            fontSize: 10,
+            color: "rgba(255,255,255,0.65)",
+            fontSize: 12,
             textAlign: "center",
             margin: "12px 0 0",
             lineHeight: 1.6,
@@ -361,7 +361,7 @@ function PlanCard({
           background: loading
             ? "rgba(255,255,255,0.08)"
             : `linear-gradient(135deg, ${color}, ${color}dd)`,
-          color: loading ? "rgba(255,255,255,0.5)" : "#0a0f0a",
+          color: loading ? "rgba(255,255,255,0.78)" : "#0a0f0a",
           border: "none",
           borderRadius: 10,
           fontSize: 14,

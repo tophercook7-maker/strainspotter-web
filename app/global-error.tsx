@@ -80,7 +80,7 @@ export default function GlobalError({
           <p
             style={{
               marginTop: 22,
-              color: "rgba(255,255,255,0.30)",
+              color: "rgba(255,255,255,0.65)",
               fontSize: 11,
               fontFamily: "ui-monospace, SFMono-Regular, monospace",
             }}

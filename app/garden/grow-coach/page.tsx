@@ -350,16 +350,16 @@ function GrowCard({ grow, onUpdate, onDelete }: { grow: Grow; onUpdate: (g: Grow
             {grow.name}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{grow.strain_name}</span>
-            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>•</span>
-            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Day {days}</span>
-            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10 }}>•</span>
-            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{grow.logs.length} log{grow.logs.length !== 1 ? "s" : ""}</span>
+            <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 12 }}>{grow.strain_name}</span>
+            <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 10 }}>•</span>
+            <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 12 }}>Day {days}</span>
+            <span style={{ color: "rgba(255,255,255,0.65)", fontSize: 10 }}>•</span>
+            <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 12 }}>{grow.logs.length} log{grow.logs.length !== 1 ? "s" : ""}</span>
           </div>
         </div>
 
         <StageChip stage={grow.stage} size="sm" />
-        <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 20 }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 20 }}>{expanded ? "▲" : "▼"}</span>
       </div>
 
       {/* Expanded */}
@@ -437,7 +437,7 @@ function GrowCard({ grow, onUpdate, onDelete }: { grow: Grow; onUpdate: (g: Grow
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <StageChip stage={log.stage} size="sm" />
-                      <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
+                      <span style={{ color: "rgba(255,255,255,0.72)", fontSize: 11 }}>
                         {new Date(log.created_at).toLocaleDateString()} {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </div>
@@ -497,7 +497,7 @@ export default function GrowCoachPage() {
         <main className="min-h-screen text-white flex items-center justify-center">
           <div style={{
             width: 32, height: 32, border: "3px solid rgba(255,255,255,0.15)",
-            borderTopColor: "rgba(255,255,255,0.5)", borderRadius: "50%",
+            borderTopColor: "rgba(255,255,255,0.78)", borderRadius: "50%",
             animation: "spin 0.8s linear infinite",
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -556,7 +556,7 @@ export default function GrowCoachPage() {
                 </div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 13,
                     color: "rgba(255,255,255,0.55)",
                     marginTop: 2,
                   }}
@@ -582,7 +582,7 @@ export default function GrowCoachPage() {
                 </div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: 13,
                     color: "rgba(255,255,255,0.55)",
                     marginTop: 2,
                   }}
@@ -625,7 +625,7 @@ export default function GrowCoachPage() {
                 Photo of yellowing leaves, pests, weird buds — get an AI cultivation diagnosis with concrete next steps
               </div>
             </div>
-            <span style={{ fontSize: 22, color: "rgba(255,255,255,0.50)" }}>›</span>
+            <span style={{ fontSize: 22, color: "rgba(255,255,255,0.78)" }}>›</span>
           </button>
 
           {/* New grow button */}
@@ -651,11 +651,11 @@ export default function GrowCoachPage() {
             <div style={{ textAlign: "center", padding: "64px 0" }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🌱</div>
               <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No grows yet</div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Start tracking your first grow to get personalized coaching tips</div>
+              <div style={{ color: "rgba(255,255,255,0.72)", fontSize: 14 }}>Start tracking your first grow to get personalized coaching tips</div>
             </div>
           ) : (
             <>
-              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
+              <div style={{ color: "rgba(255,255,255,0.78)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
                 Your Grows ({grows.length})
               </div>
               {grows.map((grow) => (

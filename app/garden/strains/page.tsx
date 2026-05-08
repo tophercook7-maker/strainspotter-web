@@ -69,7 +69,7 @@ function StrainCard({ strain: s, onTap }: { strain: Strain; onTap: () => void })
           {s.name}
         </div>
         <div style={{
-          padding: "2px 8px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+          padding: "2px 8px", borderRadius: 8, fontSize: 13, fontWeight: 700,
           background: tc.bg, color: tc.text, border: `1px solid ${tc.border}44`,
           whiteSpace: "nowrap", letterSpacing: "0.04em", flexShrink: 0,
         }}>
@@ -79,20 +79,20 @@ function StrainCard({ strain: s, onTap }: { strain: Strain; onTap: () => void })
 
       {/* Ratio bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: (hasDesc || hasEffects) ? 8 : 0 }}>
-        <span style={{ fontSize: 10, color: "#9575CD", fontWeight: 600, minWidth: 30 }}>I {s.indica_percentage}%</span>
+        <span style={{ fontSize: 12, color: "#9575CD", fontWeight: 600, minWidth: 30 }}>I {s.indica_percentage}%</span>
         <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
           <div style={{
             width: `${s.indica_percentage}%`, height: "100%", borderRadius: 2,
             background: "linear-gradient(90deg, #9575CD 0%, #66BB6A 60%, #FFD54F 100%)",
           }} />
         </div>
-        <span style={{ fontSize: 10, color: "#FFD54F", fontWeight: 600, minWidth: 30, textAlign: "right" }}>S {s.sativa_percentage}%</span>
+        <span style={{ fontSize: 12, color: "#FFD54F", fontWeight: 600, minWidth: 30, textAlign: "right" }}>S {s.sativa_percentage}%</span>
       </div>
 
       {/* Description */}
       {hasDesc && (
         <div style={{
-          fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.4, marginBottom: hasEffects ? 8 : 0,
+          fontSize: 12, color: "rgba(255,255,255,0.78)", lineHeight: 1.4, marginBottom: hasEffects ? 8 : 0,
           overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
         }}>
           {s.description}
@@ -104,14 +104,14 @@ function StrainCard({ strain: s, onTap }: { strain: Strain; onTap: () => void })
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
           {s.effects.slice(0, 4).map((e) => (
             <span key={e} style={{
-              padding: "2px 6px", borderRadius: 6, fontSize: 10,
+              padding: "2px 6px", borderRadius: 6, fontSize: 12,
               background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)",
             }}>
               {EFFECT_ICONS[e.toLowerCase()] || "🌿"} {cap(e)}
             </span>
           ))}
           {s.effects.length > 4 && (
-            <span style={{ padding: "2px 6px", fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
+            <span style={{ padding: "2px 6px", fontSize: 12, color: "rgba(255,255,255,0.65)" }}>
               +{s.effects.length - 4}
             </span>
           )}
@@ -149,7 +149,7 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
             onClick={onClose}
             style={{
               background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%",
-              width: 32, height: 32, cursor: "pointer", color: "rgba(255,255,255,0.5)",
+              width: 32, height: 32, cursor: "pointer", color: "rgba(255,255,255,0.78)",
               fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >✕</button>
@@ -189,7 +189,7 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
                 background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 12, padding: "8px 16px",
               }}>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>THC</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>THC</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#66BB6A" }}>{s.thc}%</div>
               </div>
             )}
@@ -198,7 +198,7 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
                 background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 12, padding: "8px 16px",
               }}>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>CBD</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>CBD</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "#9575CD" }}>{s.cbd}%</div>
               </div>
             )}
@@ -215,7 +215,7 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
         {/* Effects */}
         {s.effects && s.effects.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 8, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", marginBottom: 8, letterSpacing: "0.1em", textTransform: "uppercase" }}>
               Effects
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -235,7 +235,7 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
         {/* Terpenes */}
         {s.flavors && s.flavors.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginBottom: 8, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", marginBottom: 8, letterSpacing: "0.1em", textTransform: "uppercase" }}>
               Terpenes
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -336,7 +336,7 @@ export default function StrainsPage() {
             onClick={() => router.push("/garden")}
             style={{
               background: "rgba(255,255,255,0.06)", border: "none", borderRadius: "50%",
-              width: 32, height: 32, cursor: "pointer", color: "rgba(255,255,255,0.5)",
+              width: 32, height: 32, cursor: "pointer", color: "rgba(255,255,255,0.78)",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
             }}
           >‹</button>
@@ -344,7 +344,7 @@ export default function StrainsPage() {
             <div style={{ fontSize: 22, fontWeight: 800, color: "#66BB6A" }}>
               🔬 Strain Database
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", marginTop: 2 }}>
               {loading ? "Loading…" : `${total.toLocaleString()} strains`}
             </div>
           </div>
@@ -356,7 +356,7 @@ export default function StrainsPage() {
           background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
           borderRadius: 16, display: "flex", alignItems: "center", padding: "10px 16px", marginBottom: 12,
         }}>
-          <span style={{ color: "rgba(255,255,255,0.3)", marginRight: 8, fontSize: 16 }}>🔍</span>
+          <span style={{ color: "rgba(255,255,255,0.65)", marginRight: 8, fontSize: 16 }}>🔍</span>
           <input
             type="text"
             placeholder="Search strains…"
@@ -370,7 +370,7 @@ export default function StrainsPage() {
           {searchInput && (
             <button
               onClick={() => { setSearchInput(""); setSearch(""); }}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 16, padding: 4 }}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.65)", cursor: "pointer", fontSize: 16, padding: 4 }}
             >✕</button>
           )}
         </div>
@@ -389,7 +389,7 @@ export default function StrainsPage() {
                   background: active ? tc.bg : "rgba(255,255,255,0.03)",
                   border: `1px solid ${active ? tc.border : "rgba(255,255,255,0.08)"}`,
                   display: "flex", alignItems: "center", gap: 4,
-                  color: active ? tc.text : "rgba(255,255,255,0.45)",
+                  color: active ? tc.text : "rgba(255,255,255,0.75)",
                   fontSize: 12, fontWeight: 600,
                 }}
               >
@@ -403,7 +403,7 @@ export default function StrainsPage() {
             style={{
               marginLeft: "auto", padding: "6px 12px", borderRadius: 10, cursor: "pointer",
               background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.45)", fontSize: 11, fontWeight: 600,
+              color: "rgba(255,255,255,0.75)", fontSize: 13, fontWeight: 600,
             }}
           >
             {sort === "popular" ? "🔥 Popular" : "🔤 A–Z"}
@@ -421,15 +421,15 @@ export default function StrainsPage() {
           }}
         >
           {loading ? (
-            <div style={{ textAlign: "center", padding: "60px 0", color: "rgba(255,255,255,0.3)" }}>
+            <div style={{ textAlign: "center", padding: "60px 0", color: "rgba(255,255,255,0.65)" }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>🌿</div>
               Loading strains…
             </div>
           ) : strains.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 0" }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>No strains found</div>
-              <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, marginTop: 4 }}>Try a different search or filter</div>
+              <div style={{ color: "rgba(255,255,255,0.72)", fontSize: 14 }}>No strains found</div>
+              <div style={{ color: "rgba(255,255,255,0.60)", fontSize: 12, marginTop: 4 }}>Try a different search or filter</div>
             </div>
           ) : (
             <>
@@ -437,12 +437,12 @@ export default function StrainsPage() {
                 <StrainCard key={s.id} strain={s} onTap={() => setSelected(s)} />
               ))}
               {loadingMore && (
-                <div style={{ textAlign: "center", padding: 16, color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
+                <div style={{ textAlign: "center", padding: 16, color: "rgba(255,255,255,0.65)", fontSize: 13 }}>
                   Loading more…
                 </div>
               )}
               {page >= totalPages && strains.length > 0 && (
-                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 11, padding: 16 }}>
+                <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 13, padding: 16 }}>
                   That's all {total.toLocaleString()} strains
                 </div>
               )}

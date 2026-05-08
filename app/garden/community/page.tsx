@@ -48,7 +48,7 @@ export default function CommunityComingSoonPage() {
                 background: "rgba(102,187,106,0.15)",
                 border: "1px solid rgba(102,187,106,0.30)",
                 color: "#81C784",
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 800,
                 letterSpacing: 1.2,
                 textTransform: "uppercase" as const,
@@ -83,11 +83,11 @@ export default function CommunityComingSoonPage() {
           >
             <h2
               style={{
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 700,
                 letterSpacing: 1.5,
                 textTransform: "uppercase" as const,
-                color: "rgba(255,255,255,0.45)",
+                color: "rgba(255,255,255,0.75)",
                 margin: "0 0 14px",
               }}
             >
@@ -232,7 +232,7 @@ function FeatureRow({
           <div
             style={{
               marginTop: 6,
-              fontSize: 11,
+              fontSize: 13,
               color: "#81C784",
               fontWeight: 600,
             }}

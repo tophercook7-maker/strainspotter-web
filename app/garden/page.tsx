@@ -76,10 +76,10 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
       {/* Header row */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: colors.text, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 4 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: colors.text, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 4 }}>
             🌟 Strain of the Day
           </div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginBottom: 8 }}>
             {dayLabel}
           </div>
           {loading ? (
@@ -92,7 +92,7 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
         </div>
         {!loading && strain && (
           <div style={{
-            padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+            padding: "4px 10px", borderRadius: 8, fontSize: 13, fontWeight: 700,
             background: colors.badge, color: colors.text, flexShrink: 0, marginTop: 4,
           }}>
             {strain.type}
@@ -105,7 +105,7 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           {strain.thc != null && strain.thc > 0 && (
             <span style={{
-              padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+              padding: "3px 10px", borderRadius: 6, fontSize: 13, fontWeight: 700,
               background: "rgba(102,187,106,0.12)", color: "#81C784",
               border: "1px solid rgba(102,187,106,0.2)",
             }}>
@@ -114,7 +114,7 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
           )}
           {strain.cbd != null && strain.cbd > 0 && (
             <span style={{
-              padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+              padding: "3px 10px", borderRadius: 6, fontSize: 13, fontWeight: 700,
               background: "rgba(79,195,247,0.1)", color: "#4FC3F7",
               border: "1px solid rgba(79,195,247,0.2)",
             }}>
@@ -126,7 +126,7 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
 
       {/* Description */}
       {!loading && strain?.description && (
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, marginBottom: 12, margin: "0 0 12px" }}>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.78)", lineHeight: 1.6, marginBottom: 12, margin: "0 0 12px" }}>
           {strain.description.length > 130 ? strain.description.slice(0, 130) + "…" : strain.description}
         </p>
       )}
@@ -136,7 +136,7 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
           {strain.effects.slice(0, 5).map((e) => (
             <span key={e} style={{
-              padding: "3px 8px", borderRadius: 5, fontSize: 11,
+              padding: "3px 8px", borderRadius: 5, fontSize: 13,
               background: "rgba(102,187,106,0.1)", color: "#81C784",
               border: "1px solid rgba(102,187,106,0.15)",
             }}>
@@ -221,7 +221,7 @@ function UserStats({ auth }: { auth: any }) {
       border: "1px solid rgba(255,255,255,0.07)",
       padding: "14px 16px",
     }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.68)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
         Your Stats
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
@@ -234,11 +234,11 @@ function UserStats({ auth }: { auth: any }) {
               </>
             ) : (
               <>
-                <div style={{ fontSize: 10, marginBottom: 4 }}>{item.icon}</div>
+                <div style={{ fontSize: 12, marginBottom: 4 }}>{item.icon}</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1, marginBottom: 4 }}>
                   {item.value}
                 </div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>
                   {item.label}
                 </div>
               </>
@@ -302,7 +302,7 @@ function tierLabel(t: string): string {
 function tierColor(t: string): string {
   if (t === "pro") return "#FFD700";
   if (t === "member") return "#4CAF50";
-  return "rgba(255,255,255,0.35)";
+  return "rgba(255,255,255,0.68)";
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -357,7 +357,7 @@ export default function GardenPage() {
               }}
             >
               <span style={{
-                fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5,
+                fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5,
                 color: tierColor(tier), background: `${tierColor(tier)}18`,
                 border: `1px solid ${tierColor(tier)}44`, borderRadius: 6, padding: "3px 8px",
               }}>
@@ -407,11 +407,11 @@ export default function GardenPage() {
             </span>
             <div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Scanner</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.78)", marginTop: 2 }}>
                 AI strain identification — snap &amp; analyze
               </div>
             </div>
-            <span style={{ marginLeft: "auto", fontSize: 18, color: "rgba(255,255,255,0.3)" }}>→</span>
+            <span style={{ marginLeft: "auto", fontSize: 18, color: "rgba(255,255,255,0.65)" }}>→</span>
           </button>
 
           {/* Membership nudge for unsubscribed users (renders null otherwise) */}
@@ -463,7 +463,7 @@ export default function GardenPage() {
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                         <span style={{ color: "#fff", fontSize: 15, fontWeight: 700 }}>{item.label}</span>
                         <span style={{
-                          fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5,
+                          fontSize: 13, fontWeight: 800, padding: "2px 7px", borderRadius: 5,
                           background: "rgba(102,187,106,0.15)", color: "#81C784",
                           border: "1px solid rgba(102,187,106,0.25)", letterSpacing: 0.8,
                           textTransform: "uppercase" as const,
@@ -471,12 +471,12 @@ export default function GardenPage() {
                           {item.comingSoonLabel}
                         </span>
                       </div>
-                      <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, lineHeight: 1.4 }}>{item.desc}</span>
+                      <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, lineHeight: 1.4 }}>{item.desc}</span>
                       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" as const }}>
                         {["Grower ↔ Consumer", "Dispensary threads", "Group channels"].map((tag) => (
                           <span key={tag} style={{
-                            fontSize: 10, padding: "2px 8px", borderRadius: 20,
-                            background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.3)",
+                            fontSize: 12, padding: "2px 8px", borderRadius: 20,
+                            background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.65)",
                             border: "1px solid rgba(255,255,255,0.07)",
                           }}>{tag}</span>
                         ))}
@@ -500,7 +500,7 @@ export default function GardenPage() {
                 >
                   <span style={{ fontSize: 24 }}>{item.icon}</span>
                   <span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{item.label}</span>
-                  <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, lineHeight: 1.3 }}>{item.desc}</span>
+                  <span style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, lineHeight: 1.3 }}>{item.desc}</span>
                 </Link>
               );
             })}
@@ -515,7 +515,7 @@ export default function GardenPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, textDecoration: "none", fontWeight: 500 }}
+                style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, textDecoration: "none", fontWeight: 500 }}
               >
                 {link.icon} {link.label}
               </Link>
@@ -524,14 +524,14 @@ export default function GardenPage() {
 
           {/* Footer credit */}
           <div style={{ textAlign: "center", paddingBottom: 32 }}>
-            <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginBottom: 4 }}>
+            <div style={{ color: "rgba(255,255,255,0.60)", fontSize: 13, marginBottom: 4 }}>
               StrainSpotter • Scan. Grow. Learn. Honestly.
             </div>
             <a
               href="https://mixedmakershop.com"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "rgba(255,255,255,0.18)", fontSize: 11, textDecoration: "none" }}
+              style={{ color: "rgba(255,255,255,0.18)", fontSize: 13, textDecoration: "none" }}
             >
               Made by mixedmakershop.com
             </a>

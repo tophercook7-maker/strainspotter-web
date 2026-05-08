@@ -74,7 +74,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
       <h1 style={{ fontSize: "32px", fontWeight: 800, color: "#fff", margin: "0 0 4px 0", letterSpacing: "-0.5px" }}>
         StrainSpotter
       </h1>
-      <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "11px", letterSpacing: "3px", textTransform: "uppercase", margin: "0 0 48px 0" }}>
+      <p style={{ color: "rgba(255,255,255,0.72)", fontSize: "13px", letterSpacing: "3px", textTransform: "uppercase", margin: "0 0 48px 0" }}>
         Scan &amp; Analyze · Grow Doctor
       </p>
 
@@ -100,7 +100,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
           <h2 style={{ color: "#fff", fontSize: "18px", fontWeight: 700, margin: "0 0 6px 0" }}>
             Age Verification
           </h2>
-          <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
+          <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "13px", lineHeight: 1.5, margin: 0 }}>
             You must be 18+ to enter. Enter your date of birth.
           </p>
         </div>
@@ -151,7 +151,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
           Enter StrainSpotter
         </button>
 
-        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "10px", textAlign: "center", marginTop: "16px", lineHeight: 1.5 }}>
+        <p style={{ color: "rgba(255,255,255,0.60)", fontSize: "12px", textAlign: "center", marginTop: "16px", lineHeight: 1.5 }}>
           By entering, you confirm you are at least 18 years of age and agree to our{" "}
           <a href="/terms" style={{ color: "rgba(129,199,132,0.7)" }}>Terms of Service</a>
           {" "}and{" "}
@@ -159,7 +159,7 @@ export default function AgeGate({ children }: { children: React.ReactNode }) {
         </p>
       </div>
 
-      <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "10px", textAlign: "center", marginTop: "32px", maxWidth: "340px", lineHeight: 1.5 }}>
+      <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "12px", textAlign: "center", marginTop: "32px", maxWidth: "340px", lineHeight: 1.5 }}>
         StrainSpotter is intended for use only in jurisdictions where cannabis is legal. Always follow your local laws.
       </p>
 

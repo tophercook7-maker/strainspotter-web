@@ -99,7 +99,7 @@ export default function GardenError({
       {error?.digest && (
         <p
           style={{
-            color: "rgba(255,255,255,0.30)",
+            color: "rgba(255,255,255,0.65)",
             fontSize: 11,
             margin: 0,
             fontFamily: "ui-monospace, SFMono-Regular, monospace",
