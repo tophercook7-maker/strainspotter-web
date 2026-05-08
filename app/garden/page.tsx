@@ -217,9 +217,12 @@ function UserStats({ auth }: { auth: any }) {
   return (
     <div style={{
       borderRadius: 16,
-      background: "rgba(255,255,255,0.03)",
-      border: "1px solid rgba(255,255,255,0.07)",
+      background: "rgba(255,255,255,0.10)",
+      border: "1px solid rgba(255,255,255,0.20)",
       padding: "14px 16px",
+      backdropFilter: "blur(18px) saturate(1.4)",
+      WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
     }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.68)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>
         Your Stats
@@ -515,29 +518,52 @@ export default function GardenPage() {
           {/* User Stats */}
           <UserStats auth={auth} />
 
-          {/* Quick Links */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 24, paddingTop: 8, paddingBottom: 16 }}>
+          {/* Quick Links — frosted bar */}
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 24,
+            padding: "12px 16px",
+            marginTop: 14,
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.16)",
+            backdropFilter: "blur(18px) saturate(1.4)",
+            WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
+          }}>
             {QUICK_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, textDecoration: "none", fontWeight: 500 }}
+                style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, textDecoration: "none", fontWeight: 600 }}
               >
                 {link.icon} {link.label}
               </Link>
             ))}
           </div>
 
-          {/* Footer credit */}
-          <div style={{ textAlign: "center", paddingBottom: 32 }}>
-            <div style={{ color: "rgba(255,255,255,0.60)", fontSize: 13, marginBottom: 4 }}>
+          {/* Footer credit — frosted */}
+          <div style={{
+            textAlign: "center" as const,
+            marginTop: 14,
+            marginBottom: 32,
+            padding: "16px 18px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.16)",
+            backdropFilter: "blur(18px) saturate(1.4)",
+            WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
+          }}>
+            <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
               StrainSpotter • Scan. Grow. Learn. Honestly.
             </div>
             <a
               href="https://mixedmakershop.com"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "rgba(255,255,255,0.18)", fontSize: 13, textDecoration: "none" }}
+              style={{ color: "rgba(255,255,255,0.62)", fontSize: 12, textDecoration: "none" }}
             >
               Made by mixedmakershop.com
             </a>
