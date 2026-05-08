@@ -294,7 +294,7 @@ export default function DiagnosticDialog({
                     onClick={() => fileRef.current?.click()}
                     style={{
                       paddingTop: "100%", position: "relative",
-                      border: "1.5px dashed rgba(255,255,255,0.55)",
+                      border: "1.5px dashed rgba(255,255,255,0.20)",
                       borderRadius: 10, background: "rgba(255,255,255,0.03)",
                       cursor: "pointer",
                     }}

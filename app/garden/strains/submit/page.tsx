@@ -29,9 +29,15 @@ interface PendingSubmission {
 }
 
 const glass: React.CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  // Frosted-glass surface — Apple-style backdrop blur with a soft white
+  // tint and a 1px border. Gives text a readable cushion against any
+  // background. -webkit prefix for iOS Safari / Capacitor WebView.
+  background: "rgba(255,255,255,0.10)",
+  border: "1px solid rgba(255,255,255,0.18)",
   borderRadius: 16,
+  backdropFilter: "blur(18px) saturate(1.4)",
+  WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
 };
 
 export default function StrainSubmitPage() {

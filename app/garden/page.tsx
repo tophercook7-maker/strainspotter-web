@@ -493,9 +493,12 @@ export default function GardenPage() {
                   style={{
                     display: "flex", flexDirection: "column", gap: 6,
                     padding: "16px 14px",
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.10)",
+                    border: "1px solid rgba(255,255,255,0.20)",
                     borderRadius: 14, textDecoration: "none", color: "inherit",
+                    backdropFilter: "blur(18px) saturate(1.4)",
+                    WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
                   }}
                 >
                   <span style={{ fontSize: 24 }}>{item.icon}</span>

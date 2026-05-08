@@ -970,7 +970,7 @@ export default function ScannerPage() {
                 onClick={() => setShowSellersClaim(true)}
                 style={{
                   width: "100%",
-                  background: "rgba(255,255,255,0.04)",
+                  background: "rgba(255,255,255,0.10)",
                   border: "1px dashed rgba(255,255,255,0.15)",
                   borderRadius: 14,
                   padding: "12px 16px",
@@ -979,6 +979,8 @@ export default function ScannerPage() {
                   fontWeight: 600,
                   cursor: "pointer",
                   textAlign: "center" as const,
+                  backdropFilter: "blur(18px) saturate(1.4)",
+                  WebkitBackdropFilter: "blur(18px) saturate(1.4)",
                 }}
               >
                 + Tell us what the seller called this (optional)
@@ -1846,10 +1848,12 @@ export default function ScannerPage() {
                       {result.bestUse.map((u, i) => (
                         <span key={i} style={{
                           fontSize: 12, padding: "5px 11px", borderRadius: 99,
-                          background: "rgba(255,255,255,0.04)",
+                          background: "rgba(255,255,255,0.10)",
                           border: "1px solid rgba(255,255,255,0.08)",
                           color: "rgba(255,255,255,0.70)",
-                        }}>{u}</span>
+                        backdropFilter: "blur(18px) saturate(1.4)",
+                        WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+                      }}>{u}</span>
                       ))}
                     </div>
                     {(result.timeOfDay || result.intensity || result.duration) && (
@@ -1890,7 +1894,7 @@ export default function ScannerPage() {
                     { label: "Pest Resistance", value: result.pestResistance, icon: "🐛" },
                     { label: "Cure Time", value: result.cureTime, icon: "⏰" },
                   ].filter(s => s.value).map((stat, i) => (
-                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.10)" , backdropFilter: "blur(18px) saturate(1.4)", WebkitBackdropFilter: "blur(18px) saturate(1.4)" }}>
                       <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{stat.value}</div>
                     </div>
@@ -1943,7 +1947,7 @@ export default function ScannerPage() {
                   </div>
                 )}
                 {(result.parentStrains.length > 0 || result.grandparentStrains.length > 0) && (
-                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.04)", marginBottom: 14 }}>
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(255,255,255,0.10)", marginBottom: 14 , backdropFilter: "blur(18px) saturate(1.4)", WebkitBackdropFilter: "blur(18px) saturate(1.4)" }}>
                     <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 10 }}>🌳 Genetic Lineage</div>
                     {result.parentStrains.length > 0 && (
                       <div style={{ marginBottom: 10 }}>
@@ -1972,7 +1976,7 @@ export default function ScannerPage() {
                     { label: "Genetic Stability", value: result.geneticStability, icon: "📊" },
                     { label: "Seed Types", value: result.seedTypes, icon: "🌱" },
                   ].filter(s => s.value).map((stat, i) => (
-                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.10)" , backdropFilter: "blur(18px) saturate(1.4)", WebkitBackdropFilter: "blur(18px) saturate(1.4)" }}>
                       <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)" }}>{stat.value}</div>
                     </div>
@@ -2026,7 +2030,7 @@ export default function ScannerPage() {
                     { label: "Experience Level", value: result.experienceLevel, icon: "🎯" },
                     { label: "Target Customer", value: result.targetCustomer, icon: "👤" },
                   ].filter(s => s.value).map((stat, i) => (
-                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.04)", gridColumn: stat.label === "Target Customer" ? "span 2" : undefined }}>
+                    <div key={i} style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.10)", gridColumn: stat.label === "Target Customer" ? "span 2" : undefined , backdropFilter: "blur(18px) saturate(1.4)", WebkitBackdropFilter: "blur(18px) saturate(1.4)" }}>
                       <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, marginBottom: 4 }}>{stat.icon} {stat.label}</div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>{stat.value}</div>
                     </div>
@@ -2092,14 +2096,14 @@ export default function ScannerPage() {
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.2)", marginBottom: 12, textAlign: "center" as const }}>Explore More</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <a href="/garden/dispensaries" style={{ textDecoration: "none" }}>
-                  <div style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" as const, cursor: "pointer" }}>
+                  <div style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" as const, cursor: "pointer" , backdropFilter: "blur(18px) saturate(1.4)", WebkitBackdropFilter: "blur(18px) saturate(1.4)" }}>
                     <div style={{ fontSize: 24, marginBottom: 5 }}>🏪</div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)" }}>Find Nearby</div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>Dispensaries</div>
                   </div>
                 </a>
                 <a href="/garden/strains" style={{ textDecoration: "none" }}>
-                  <div style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" as const, cursor: "pointer" }}>
+                  <div style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.07)", textAlign: "center" as const, cursor: "pointer" , backdropFilter: "blur(18px) saturate(1.4)", WebkitBackdropFilter: "blur(18px) saturate(1.4)" }}>
                     <div style={{ marginBottom: 5, display: "flex", justifyContent: "center" }}><img src="/brand/cannabis-icon.png" width={24} height={24} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} /></div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.65)" }}>Browse Strains</div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>35k+ cultivars</div>

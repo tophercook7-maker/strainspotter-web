@@ -55,9 +55,13 @@ function savePrefs(prefs: LocalPrefs) {
 
 // ─── Style helpers — HIGH CONTRAST ──────────────────────────────────────────
 const card: React.CSSProperties = {
+  // Frosted-glass surface for settings rows.
   background: "rgba(255,255,255,0.10)",
-  border: "1px solid rgba(255,255,255,0.55)",
+  border: "1px solid rgba(255,255,255,0.20)",
   borderRadius: 16,
+  backdropFilter: "blur(18px) saturate(1.4)",
+  WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
 };
 
 function SectionHeader({ icon, title }: { icon: string; title: string }) {
@@ -306,7 +310,7 @@ export default function SettingsPage() {
     boxSizing: "border-box",
     padding: "12px 14px",
     borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.55)",
+    border: "1px solid rgba(255,255,255,0.20)",
     background: "rgba(255,255,255,0.08)",
     color: "#fff",
     fontSize: 15,
