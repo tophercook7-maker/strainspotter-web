@@ -21,12 +21,15 @@ export default function CommunityComingSoonPage() {
           <div
             style={{
               background:
-                "linear-gradient(135deg, rgba(102,187,106,0.10), rgba(46,125,50,0.05))",
-              border: "1px solid rgba(102,187,106,0.25)",
+                "linear-gradient(135deg, rgba(102,187,106,0.20), rgba(46,125,50,0.10))",
+              border: "1px solid rgba(102,187,106,0.40)",
               borderRadius: 18,
               padding: "32px 24px",
               textAlign: "center" as const,
               marginBottom: 22,
+              backdropFilter: "blur(18px) saturate(1.4)",
+              WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
             }}
           >
             <div style={{ fontSize: 48, marginBottom: 10 }}>💬</div>
@@ -74,11 +77,14 @@ export default function CommunityComingSoonPage() {
           {/* What's coming */}
           <div
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.10)",
+              border: "1px solid rgba(255,255,255,0.20)",
               borderRadius: 16,
               padding: 22,
               marginBottom: 16,
+              backdropFilter: "blur(18px) saturate(1.4)",
+              WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
             }}
           >
             <h2
@@ -132,11 +138,14 @@ export default function CommunityComingSoonPage() {
             style={{
               padding: "16px 18px",
               borderRadius: 12,
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.55)",
-              fontSize: 12,
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.16)",
+              color: "rgba(255,255,255,0.78)",
+              fontSize: 13,
               lineHeight: 1.6,
+              backdropFilter: "blur(18px) saturate(1.4)",
+              WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
             }}
           >
             <strong style={{ color: "#fff" }}>An honest note:</strong>{" "}
@@ -155,12 +164,14 @@ export default function CommunityComingSoonPage() {
                 display: "inline-block",
                 padding: "12px 24px",
                 borderRadius: 12,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(255,255,255,0.10)",
+                border: "1px solid rgba(255,255,255,0.20)",
                 color: "#fff",
                 fontSize: 13,
                 fontWeight: 600,
                 textDecoration: "none",
+                backdropFilter: "blur(18px) saturate(1.4)",
+                WebkitBackdropFilter: "blur(18px) saturate(1.4)",
               }}
             >
               ← Back to Garden
