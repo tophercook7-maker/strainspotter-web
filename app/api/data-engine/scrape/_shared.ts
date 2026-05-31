@@ -283,7 +283,9 @@ export async function runScrapeCommand() {
     );
   }
 
-  const script = "scripts/run-photo-scraper.mjs";
+  // Built at runtime so Turbopack doesn't try to statically resolve it
+  // as a module import (it's a child_process target, not a module).
+  const script = ["scripts", "run-photo-scraper.mjs"].join("/");
   const startedAt = new Date().toISOString();
   await writeScrapeStatus({
     running: true,
