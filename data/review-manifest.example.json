@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "fileName": "blackberry__user__001.jpg",
+      "strainSlug": "blackberry",
+      "source": "user",
+      "labelConfidence": "high",
+      "approvedForTraining": true,
+      "approvedForEval": false,
+      "rejectReason": null,
+      "notes": "Clear bud photo, good lighting."
+    }
+  ]
+}

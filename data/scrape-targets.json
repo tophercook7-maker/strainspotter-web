@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "active": true,
+  "mode": "priority-cluster",
+  "reviewMode": "auto-sort-safe",
+  "filterMode": "review-borderline",
+  "maxImagesPerStrain": 50,
+  "maxPagesPerRun": 1000,
+  "clusters": {
+    "purple-lookalike": {
+      "enabled": true,
+      "strains": [
+        "blackberry",
+        "purple-afghan",
+        "purple-punch",
+        "purple-kush",
+        "granddaddy-purple",
+        "grape-ape"
+      ]
+    },
+    "starter-core": {
+      "enabled": true,
+      "strains": [
+        "white-widow",
+        "blue-dream",
+        "og-kush",
+        "sour-diesel",
+        "gelato",
+        "wedding-cake",
+        "runtz",
+        "gorilla-glue",
+        "girl-scout-cookies",
+        "northern-lights",
+        "jack-herer",
+        "green-crack",
+        "pineapple-express",
+        "zkittlez",
+        "apple-fritter",
+        "mac",
+        "ice-cream-cake",
+        "durban-poison",
+        "trainwreck",
+        "bubba-kush",
+        "afghan-kush"
+      ]
+    }
+  },
+  "selectedStrains": [
+    "blackberry",
+    "purple-afghan",
+    "purple-punch",
+    "purple-kush",
+    "granddaddy-purple",
+    "grape-ape",
+    "white-widow",
+    "blue-dream",
+    "og-kush",
+    "sour-diesel",
+    "gelato",
+    "wedding-cake",
+    "runtz",
+    "gorilla-glue",
+    "girl-scout-cookies",
+    "northern-lights",
+    "jack-herer",
+    "green-crack",
+    "pineapple-express",
+    "zkittlez",
+    "apple-fritter",
+    "mac",
+    "ice-cream-cake",
+    "durban-poison",
+    "trainwreck",
+    "bubba-kush",
+    "afghan-kush"
+  ]
+}

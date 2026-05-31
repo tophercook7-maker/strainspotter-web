@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "duckduckgo-image-search",
+      "name": "DuckDuckGo HTML Image Page",
+      "baseUrl": "https://duckduckgo.com",
+      "enabled": true,
+      "type": "search-url-template",
+      "sourceType": "images",
+      "allowedUse": "review-required",
+      "licenseNotes": "Disabled: normal DuckDuckGo image pages are JavaScript-rendered and do not expose usable image URLs to this scraper.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 2000,
+      "maxPagesPerRun": 25,
+      "searchUrlTemplate": "https://duckduckgo.com/?q={query}&iax=images&ia=images",
+      "selectors": {
+        "image": "img",
+        "imageUrls": "img"
+      },
+      "seedUrls": []
+    },
+    {
+      "id": "thevault-local-images",
+      "name": "TheVault Local Images",
+      "enabled": true,
+      "type": "local-folder",
+      "sourceType": "local-folder",
+      "allowedUse": "review-required",
+      "licenseNotes": "Topher-owned local dataset. Review required before training.",
+      "rateLimitMs": 0,
+      "maxPagesPerRun": 1000,
+      "localRoots": [
+        "/Volumes/TheVault/StrainSpotterData",
+        "/Volumes/Vault"
+      ]
+    },
+    {
+      "id": "brave-image-search-api",
+      "name": "Brave Search API Images",
+      "baseUrl": "https://api.search.brave.com",
+      "enabled": true,
+      "provider": "brave",
+      "type": "image-search-api",
+      "sourceType": "image-search-api",
+      "allowedUse": "review-required",
+      "licenseNotes": "Official Brave Search API endpoint. Requires API key. Review required before use.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 2000,
+      "maxPagesPerRun": 25,
+      "apiKeyEnv": "BRAVE_SEARCH_API_KEY",
+      "endpoint": "https://api.search.brave.com/res/v1/images/search?q={query}&count=20",
+      "headers": {
+        "Accept": "application/json",
+        "X-Subscription-Token": "{apiKey}"
+      }
+    },
+    {
+      "id": "bing-image-search-api",
+      "name": "Bing Image Search API",
+      "baseUrl": "https://api.bing.microsoft.com",
+      "enabled": false,
+      "type": "image-search-json",
+      "sourceType": "image-search-json",
+      "allowedUse": "review-required",
+      "licenseNotes": "Requires Bing Image Search API key and permission. Review required before use.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 2000,
+      "maxPagesPerRun": 25,
+      "apiKeyEnv": "BING_IMAGE_SEARCH_API_KEY",
+      "searchUrlTemplate": "https://api.bing.microsoft.com/v7.0/images/search?q={query}&count=20",
+      "headers": {
+        "Accept": "application/json",
+        "Ocp-Apim-Subscription-Key": "{apiKey}"
+      }
+    },
+    {
+      "id": "serpapi-google-images",
+      "name": "SerpAPI Google Images",
+      "baseUrl": "https://serpapi.com",
+      "enabled": false,
+      "type": "image-search-json",
+      "sourceType": "image-search-json",
+      "allowedUse": "review-required",
+      "licenseNotes": "Requires SerpAPI key and permission. Review required before use.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 2000,
+      "maxPagesPerRun": 25,
+      "apiKeyEnv": "SERPAPI_API_KEY",
+      "searchUrlTemplate": "https://serpapi.com/search.json?engine=google_images&q={query}&api_key={apiKey}"
+    },
+    {
+      "id": "google-programmable-search-json",
+      "name": "Google Programmable Search JSON API",
+      "baseUrl": "https://www.googleapis.com",
+      "enabled": false,
+      "type": "image-search-json",
+      "sourceType": "image-search-json",
+      "allowedUse": "review-required",
+      "licenseNotes": "Requires Google API key and search engine id. Review required before use.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 2000,
+      "maxPagesPerRun": 25,
+      "apiKeyEnv": "GOOGLE_SEARCH_API_KEY",
+      "cxEnv": "GOOGLE_SEARCH_CX",
+      "searchUrlTemplate": "https://www.googleapis.com/customsearch/v1?searchType=image&q={query}&key={apiKey}&cx={cx}"
+    },
+    {
+      "id": "starter-configured-pages",
+      "name": "Starter Configured Page Source",
+      "baseUrl": "https://example.com",
+      "enabled": false,
+      "type": "configured-pages",
+      "sourceType": "images",
+      "allowedUse": "review-required",
+      "licenseNotes": "Enable only if terms/permission allow collection. Review required.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 3000,
+      "maxPagesPerRun": 25,
+      "selectors": {
+        "imageUrls": "img"
+      },
+      "seedUrls": [
+        "https://example.com/strains/{strain}"
+      ]
+    },
+    {
+      "id": "starter-metadata-pages",
+      "name": "Starter Metadata Page Source",
+      "baseUrl": "https://example.com",
+      "enabled": false,
+      "type": "metadata-pages",
+      "sourceType": "images",
+      "allowedUse": "review-required",
+      "licenseNotes": "Enable only if terms/permission allow collection. Review required.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 3000,
+      "maxPagesPerRun": 25,
+      "selectors": {
+        "imageUrls": "img"
+      },
+      "seedUrls": []
+    },
+    {
+      "id": "starter-search-template",
+      "name": "Starter Search URL Template",
+      "baseUrl": "https://example.com",
+      "enabled": false,
+      "type": "search-url-template",
+      "sourceType": "images",
+      "allowedUse": "review-required",
+      "licenseNotes": "Enable only if terms/permission allow collection. Review required.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 3000,
+      "maxPagesPerRun": 25,
+      "searchUrlTemplate": "https://example.com/search?q={query}",
+      "selectors": {
+        "imageUrls": "img"
+      },
+      "seedUrls": []
+    },
+    {
+      "id": "starter-rss-feed",
+      "name": "Starter RSS Image Feed",
+      "baseUrl": "https://example.com",
+      "enabled": false,
+      "type": "rss-feed",
+      "sourceType": "images",
+      "allowedUse": "review-required",
+      "licenseNotes": "Enable only if terms/permission allow collection. Review required.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 3000,
+      "maxPagesPerRun": 25,
+      "selectors": {
+        "imageUrls": "img"
+      },
+      "seedUrls": [
+        "https://example.com/feed.xml"
+      ]
+    },
+    {
+      "id": "starter-direct-image-list",
+      "name": "Starter Direct Image List",
+      "baseUrl": "https://example.com",
+      "enabled": false,
+      "type": "direct-image-list",
+      "sourceType": "images",
+      "allowedUse": "review-required",
+      "licenseNotes": "Enable only if terms/permission allow collection. Review required.",
+      "robotsPolicy": "respect",
+      "rateLimitMs": 3000,
+      "maxPagesPerRun": 25,
+      "allowedImageHosts": [
+        "example.com"
+      ],
+      "imageUrls": [
+        "https://example.com/images/{strain}.jpg"
+      ]
+    }
+  ]
+}

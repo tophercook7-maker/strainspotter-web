@@ -1,0 +1,245 @@
+[
+  {
+    "slug": "blackberry",
+    "displayName": "Blackberry",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "purple-lookalike",
+    "notes": "Priority because current scanner confuses purple strains."
+  },
+  {
+    "slug": "purple-afghan",
+    "displayName": "Purple Afghan",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "purple-lookalike",
+    "notes": "Priority purple-family lookalike for separating dark flower structure and color cues."
+  },
+  {
+    "slug": "purple-punch",
+    "displayName": "Purple Punch",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "purple-lookalike",
+    "notes": "Priority dessert-purple cultivar with frequent visual overlap against other purple strains."
+  },
+  {
+    "slug": "purple-kush",
+    "displayName": "Purple Kush",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "purple-lookalike",
+    "notes": "Purple indica target for improving separation inside the purple lookalike cluster."
+  },
+  {
+    "slug": "granddaddy-purple",
+    "displayName": "Granddaddy Purple",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "purple-lookalike",
+    "notes": "High-priority purple reference strain for cluster calibration."
+  },
+  {
+    "slug": "grape-ape",
+    "displayName": "Grape Ape",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "purple-lookalike",
+    "notes": "Purple/grape cultivar that can visually overlap with Blackberry and Granddaddy Purple."
+  },
+  {
+    "slug": "white-widow",
+    "displayName": "White Widow",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "classic",
+    "notes": "Classic strain and recent confusion target; collect clear frosty bud examples."
+  },
+  {
+    "slug": "blue-dream",
+    "displayName": "Blue Dream",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "classic",
+    "notes": "Classic high-volume strain already represented, but needs stronger image coverage."
+  },
+  {
+    "slug": "og-kush",
+    "displayName": "OG Kush",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "og-family",
+    "notes": "Core OG-family anchor strain."
+  },
+  {
+    "slug": "sour-diesel",
+    "displayName": "Sour Diesel",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "sativa-leaning",
+    "notes": "Classic sativa-leaning reference strain."
+  },
+  {
+    "slug": "gelato",
+    "displayName": "Gelato",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "dessert",
+    "notes": "Dessert-family strain with broad user demand."
+  },
+  {
+    "slug": "wedding-cake",
+    "displayName": "Wedding Cake",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "dessert",
+    "notes": "Dessert-family strain for modern cultivar coverage."
+  },
+  {
+    "slug": "runtz",
+    "displayName": "Runtz",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "dessert",
+    "notes": "Modern dessert/candy-family target."
+  },
+  {
+    "slug": "gorilla-glue",
+    "displayName": "Gorilla Glue",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "classic",
+    "notes": "Popular modern classic with broad appearance variation."
+  },
+  {
+    "slug": "girl-scout-cookies",
+    "displayName": "Girl Scout Cookies",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "dessert",
+    "notes": "Important parent/reference cultivar for dessert-family strains."
+  },
+  {
+    "slug": "northern-lights",
+    "displayName": "Northern Lights",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "classic",
+    "notes": "Classic indica reference strain."
+  },
+  {
+    "slug": "jack-herer",
+    "displayName": "Jack Herer",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "sativa-leaning",
+    "notes": "Classic sativa-leaning reference strain."
+  },
+  {
+    "slug": "green-crack",
+    "displayName": "Green Crack",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "sativa-leaning",
+    "notes": "Sativa-leaning strain for bright green, high-contrast examples."
+  },
+  {
+    "slug": "pineapple-express",
+    "displayName": "Pineapple Express",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "sativa-leaning",
+    "notes": "Popular sativa-leaning hybrid target."
+  },
+  {
+    "slug": "zkittlez",
+    "displayName": "Zkittlez",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "dessert",
+    "notes": "Candy/dessert-family target for modern market coverage."
+  },
+  {
+    "slug": "apple-fritter",
+    "displayName": "Apple Fritter",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "dessert",
+    "notes": "Modern dessert-family cultivar."
+  },
+  {
+    "slug": "mac",
+    "displayName": "MAC",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "classic",
+    "notes": "Modern classic with distinctive frosty appearance when photographed well."
+  },
+  {
+    "slug": "ice-cream-cake",
+    "displayName": "Ice Cream Cake",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "dessert",
+    "notes": "Dessert-family strain with strong user demand."
+  },
+  {
+    "slug": "durban-poison",
+    "displayName": "Durban Poison",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "sativa-leaning",
+    "notes": "Classic sativa reference for non-purple separation."
+  },
+  {
+    "slug": "trainwreck",
+    "displayName": "Trainwreck",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "sativa-leaning",
+    "notes": "Classic hybrid target for sativa-leaning coverage."
+  },
+  {
+    "slug": "bubba-kush",
+    "displayName": "Bubba Kush",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "kush-family",
+    "notes": "Kush-family indica target."
+  },
+  {
+    "slug": "afghan-kush",
+    "displayName": "Afghan Kush",
+    "priority": 1,
+    "targetTrainingImages": 25,
+    "targetEvalImages": 5,
+    "cluster": "kush-family",
+    "notes": "Kush-family landrace-style reference target."
+  }
+]

@@ -1,0 +1,149 @@
+{
+  "generatedAt": "2026-04-21T23:07:54.306Z",
+  "model": "Xenova/clip-vit-base-patch32",
+  "datasetJsonPath": "data/embeddings/strain-embeddings.json",
+  "realRoot": "data/real",
+  "retrievalTopK": 12,
+  "totals": {
+    "imagesTested": 6,
+    "top1Correct": 2,
+    "top3Hits": 6,
+    "top1Accuracy": 0.3333,
+    "top3HitRate": 1
+  },
+  "datasetQuality": {
+    "strainCount": 3,
+    "strainsUnder5Images": 3,
+    "strainsUnder10Images": 3,
+    "strainsUnder20Images": 3,
+    "fewImageStrains": [
+      {
+        "strain": "blue-dream",
+        "imageCount": 2,
+        "band": "<5"
+      },
+      {
+        "strain": "og-kush",
+        "imageCount": 2,
+        "band": "<5"
+      },
+      {
+        "strain": "sour-diesel",
+        "imageCount": 2,
+        "band": "<5"
+      }
+    ],
+    "inconsistentImageCounts": []
+  },
+  "perStrain": [
+    {
+      "strain": "blue-dream",
+      "imagesTested": 2,
+      "top1Accuracy": 1,
+      "top3HitRate": 1,
+      "correctTop1": 2,
+      "top3Hits": 2
+    },
+    {
+      "strain": "og-kush",
+      "imagesTested": 2,
+      "top1Accuracy": 0,
+      "top3HitRate": 1,
+      "correctTop1": 0,
+      "top3Hits": 2
+    },
+    {
+      "strain": "sour-diesel",
+      "imagesTested": 2,
+      "top1Accuracy": 0,
+      "top3HitRate": 1,
+      "correctTop1": 0,
+      "top3Hits": 2
+    }
+  ],
+  "weakestStrains": [
+    {
+      "strain": "og-kush",
+      "imagesTested": 2,
+      "top1Accuracy": 0,
+      "top3HitRate": 1,
+      "correctTop1": 0,
+      "top3Hits": 2
+    },
+    {
+      "strain": "sour-diesel",
+      "imagesTested": 2,
+      "top1Accuracy": 0,
+      "top3HitRate": 1,
+      "correctTop1": 0,
+      "top3Hits": 2
+    },
+    {
+      "strain": "blue-dream",
+      "imagesTested": 2,
+      "top1Accuracy": 1,
+      "top3HitRate": 1,
+      "correctTop1": 2,
+      "top3Hits": 2
+    }
+  ],
+  "confusion": {
+    "casesSampled": 4,
+    "cases": [
+      {
+        "expected": "og-kush",
+        "predictedTop1": "blue-dream",
+        "predictedScore": 1,
+        "inTop3": true,
+        "imageRelative": "data/real/og-kush/a.png"
+      },
+      {
+        "expected": "og-kush",
+        "predictedTop1": "blue-dream",
+        "predictedScore": 1,
+        "inTop3": true,
+        "imageRelative": "data/real/og-kush/b.png"
+      },
+      {
+        "expected": "sour-diesel",
+        "predictedTop1": "blue-dream",
+        "predictedScore": 1,
+        "inTop3": true,
+        "imageRelative": "data/real/sour-diesel/a.png"
+      },
+      {
+        "expected": "sour-diesel",
+        "predictedTop1": "blue-dream",
+        "predictedScore": 1,
+        "inTop3": true,
+        "imageRelative": "data/real/sour-diesel/b.png"
+      }
+    ],
+    "frequentlyConfusedPairs": [
+      {
+        "expectedKey": "og-kush",
+        "predictedKey": "blue-dream",
+        "count": 2
+      },
+      {
+        "expectedKey": "sour-diesel",
+        "predictedKey": "blue-dream",
+        "count": 2
+      }
+    ],
+    "strainsWithMostConfusions": [
+      {
+        "strain": "og-kush",
+        "misclassifiedImages": 2
+      },
+      {
+        "strain": "sour-diesel",
+        "misclassifiedImages": 2
+      }
+    ]
+  },
+  "recommendations": [
+    "3 strains have fewer than 5 images in the JSON — add more angles/lighting per cultivar.",
+    "Review top confused pairs in frequentlyConfusedPairs — consider more discriminative photos or merging visually indistinguishable labels."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "capacitor.config.ts",
+    "src",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "supabase",
+    "__quarantine__",
+    "scripts",
+    "pipeline-control",
+    "tools",
+    "**/*.backup.*",
+    "**/*-backup.*",
+    "**/* 2.ts",
+    "**/* 2.tsx"
+  ]
+}

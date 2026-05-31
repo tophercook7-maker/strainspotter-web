@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "name": "Example Source",
+      "baseUrl": "https://example.com",
+      "enabled": false,
+      "licenseNotes": "Only use if permission/license allows downloading.",
+      "rateLimitMs": 3000,
+      "strainPages": [
+        {
+          "strainSlug": "blackberry",
+          "url": "https://example.com/blackberry"
+        }
+      ]
+    }
+  ]
+}
