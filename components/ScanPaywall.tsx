@@ -3,12 +3,18 @@
 import { apiUrl } from "@/lib/config/apiBase";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { useMembershipPlan } from "@/lib/auth/useMembershipPlan";
 import {
   getScansRemaining,
   MEMBERSHIP_TIERS,
   TOPUP_PACKS,
   FREE_SCAN_TOTAL,
 } from "@/lib/scanGating";
+import { WEB_VS_MOBILE_PAYWALL_FOOTNOTE } from "@/lib/scanner/webVsMobileMessaging";
+import MobileAppCtaLink from "@/components/MobileAppCtaLink";
+import SSBadge from "@/components/ui/SSBadge";
+import SSButton from "@/components/ui/SSButton";
+import SSCard from "@/components/ui/SSCard";
 
 interface ScanPaywallProps {
   onClose: () => void;
@@ -36,8 +42,15 @@ async function startCheckout(
   }
 }
 
+function planChipLabel(tier: string) {
+  if (tier === "pro") return "Pro";
+  if (tier === "member") return "Member";
+  return "Free";
+}
+
 export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
   const { user } = useAuth();
+  const mp = useMembershipPlan();
   const remaining = getScansRemaining();
   const [email, setEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -93,6 +106,29 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {user && (
+          <SSCard padding="10px 12px" style={{ textAlign: "center", marginBottom: 16, boxShadow: "none" }}>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.35)",
+                fontSize: 10,
+                textTransform: "uppercase",
+                letterSpacing: 1.2,
+                marginBottom: 4,
+              }}
+            >
+              Your account
+            </div>
+            <div style={{ color: "#fff", fontSize: 14, fontWeight: 800 }}>
+              {mp.entitlementsStatus === "loading" || mp.entitlementsStatus === "idle"
+                ? "Updating plan…"
+                : mp.entitlementsStatus === "error"
+                  ? "Plan unavailable (offline?)"
+                  : `Plan: ${planChipLabel(mp.membershipPlanTier)}`}
+            </div>
+          </SSCard>
+        )}
+
         {/* Header */}
         {mode === "locked" ? (
           <div style={{ textAlign: "center", marginBottom: "24px" }}>
@@ -100,10 +136,8 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
             <h2 style={{ color: "#fff", fontSize: "22px", fontWeight: 800, margin: "0 0 8px" }}>
               You&apos;ve Used All {FREE_SCAN_TOTAL} Free Scans
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
-              Your free trial is over — but the best is just getting started. 
-              Become a member to unlock unlimited AI-powered strain identification 
-              and every feature StrainSpotter has to offer.
+            <p style={{ color: "rgba(255,255,255,0.58)", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
+              Your free scans are used. Upgrade to keep scanning, save results, and unlock the Garden tools tied to your account.
             </p>
           </div>
         ) : (
@@ -112,12 +146,31 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
             <h2 style={{ color: "#FFB74D", fontSize: "20px", fontWeight: 800, margin: "0 0 8px" }}>
               {remaining === 1 ? "Last Scan Remaining!" : `Only ${remaining} Scans Left`}
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
-              You started with {FREE_SCAN_TOTAL} free scans. Once they&apos;re gone, you&apos;ll need 
-              a membership or top-up pack to keep scanning.
+            <p style={{ color: "rgba(255,255,255,0.58)", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
+              You started with {FREE_SCAN_TOTAL} free scans. Upgrade or add a top-up when you need more.
             </p>
           </div>
         )}
+
+        <div
+          style={{
+            textAlign: "center",
+            margin: "0 0 18px",
+            padding: "0 10px",
+          }}
+        >
+          <p
+            style={{
+              color: "rgba(255,255,255,0.38)",
+              fontSize: 12,
+              lineHeight: 1.55,
+              margin: "0 0 8px",
+            }}
+          >
+            {WEB_VS_MOBILE_PAYWALL_FOOTNOTE}
+          </p>
+          <MobileAppCtaLink fontSize={12} marginTop={0} />
+        </div>
 
         {/* Membership Tiers */}
         <div style={{ marginBottom: "16px" }}>
@@ -126,15 +179,7 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
           </p>
 
           {/* Member Tier */}
-          <div
-            style={{
-              background: "rgba(76,175,80,0.08)",
-              border: "1px solid rgba(76,175,80,0.25)",
-              borderRadius: "16px",
-              padding: "16px",
-              marginBottom: "10px",
-            }}
-          >
+          <SSCard tone="success" style={{ marginBottom: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
               <div>
                 <span style={{ color: "#66BB6A", fontSize: "16px", fontWeight: 800 }}>
@@ -152,38 +197,27 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
                 </li>
               ))}
             </ul>
-            <button
+            <SSButton
+              variant="primary"
+              fullWidth
               onClick={() => handleCheckout("member")}
               disabled={loading === "member"}
-              style={{
-                width: "100%",
-                marginTop: "12px",
-                padding: "12px",
-                borderRadius: "12px",
-                border: "none",
-                background: loading === "member" ? "#555" : "linear-gradient(135deg, #43A047, #2E7D32)",
-                color: "#fff",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: loading === "member" ? "wait" : "pointer",
-              }}
+              style={{ marginTop: 12, padding: 12, borderRadius: 12 }}
             >
               {loading === "member" ? "Loading..." : `Join as Member — ${MEMBERSHIP_TIERS.member.price}`}
-            </button>
-          </div>
+            </SSButton>
+          </SSCard>
 
           {/* Pro Tier */}
-          <div
+          <SSCard
+            tone="warning"
             style={{
-              background: "rgba(255,215,0,0.05)",
-              border: "1px solid rgba(255,215,0,0.2)",
-              borderRadius: "16px",
-              padding: "16px",
               marginBottom: "10px",
               position: "relative",
             }}
           >
-            <div
+            <SSBadge
+              tone="gold"
               style={{
                 position: "absolute",
                 top: "-8px",
@@ -191,15 +225,12 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
                 background: "linear-gradient(135deg, #FFD54F, #FF8F00)",
                 color: "#000",
                 fontSize: "9px",
-                fontWeight: 800,
                 padding: "3px 10px",
-                borderRadius: "99px",
-                textTransform: "uppercase",
                 letterSpacing: "1px",
               }}
             >
               Best Value
-            </div>
+            </SSBadge>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
               <span style={{ color: "#FFD54F", fontSize: "16px", fontWeight: 800 }}>
                 ⭐ {MEMBERSHIP_TIERS.pro.name}
@@ -215,59 +246,46 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
                 </li>
               ))}
             </ul>
-            <button
+            <SSButton
+              fullWidth
               onClick={() => handleCheckout("pro")}
               disabled={loading === "pro"}
               style={{
-                width: "100%",
                 marginTop: "12px",
                 padding: "12px",
                 borderRadius: "12px",
-                border: "none",
                 background: loading === "pro" ? "#555" : "linear-gradient(135deg, #FFD54F, #FF8F00)",
                 color: "#000",
-                fontSize: "14px",
-                fontWeight: 700,
-                cursor: loading === "pro" ? "wait" : "pointer",
               }}
             >
               {loading === "pro" ? "Loading..." : `Go Pro — ${MEMBERSHIP_TIERS.pro.price}`}
-            </button>
-          </div>
+            </SSButton>
+          </SSCard>
         </div>
 
         {/* Top-up section */}
         <div style={{ marginBottom: "16px" }}>
-          <button
+          <SSButton
+            variant="secondary"
+            fullWidth
             onClick={() => setShowTopups(!showTopups)}
             style={{
-              width: "100%",
               background: "none",
-              border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: "12px",
               padding: "12px",
               color: "rgba(255,255,255,0.5)",
               fontSize: "13px",
-              cursor: "pointer",
               textAlign: "center",
             }}
           >
             {showTopups ? "Hide" : "Just need a few more scans?"} {showTopups ? "▲" : "▼"}
-          </button>
+          </SSButton>
 
           {showTopups && (
             <div style={{ marginTop: "10px" }}>
               {/* Email gate for top-ups */}
               {!emailSubmitted && (
-                <div
-                  style={{
-                    background: "rgba(79,195,247,0.06)",
-                    border: "1px solid rgba(79,195,247,0.15)",
-                    borderRadius: "12px",
-                    padding: "14px",
-                    marginBottom: "10px",
-                  }}
-                >
+                <SSCard tone="info" padding={14} style={{ marginBottom: 10 }}>
                   <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px", margin: "0 0 8px", lineHeight: 1.5 }}>
                     Enter your email to unlock scan top-up packs and get strain spotting tips, new feature alerts, and exclusive deals.
                   </p>
@@ -289,41 +307,30 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
                         outline: "none",
                       }}
                     />
-                    <button
+                    <SSButton
+                      variant="info"
                       onClick={handleEmailSubmit}
-                      style={{
-                        background: "rgba(79,195,247,0.2)",
-                        border: "1px solid rgba(79,195,247,0.3)",
-                        borderRadius: "10px",
-                        padding: "10px 16px",
-                        color: "#4FC3F7",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                      }}
+                      style={{ borderRadius: 10, padding: "10px 16px", fontSize: 13, whiteSpace: "nowrap" }}
                     >
                       Unlock
-                    </button>
+                    </SSButton>
                   </div>
-                </div>
+                </SSCard>
               )}
 
               {emailSubmitted && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {TOPUP_PACKS.map((pack) => (
-                    <button
+                    <SSButton
+                      variant="secondary"
                       key={pack.id}
                       onClick={() => handleCheckout(pack.id)}
                       disabled={loading === pack.id}
                       style={{
-                        background: loading === pack.id ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: "12px",
                         padding: "14px 16px",
                         color: "#fff",
                         fontSize: "14px",
-                        cursor: loading === pack.id ? "wait" : "pointer",
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
@@ -333,7 +340,7 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
                       <span style={{ color: "#4FC3F7", fontWeight: 700 }}>
                         {loading === pack.id ? "Loading..." : pack.price}
                       </span>
-                    </button>
+                    </SSButton>
                   ))}
                 </div>
               )}
@@ -342,14 +349,7 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
         </div>
 
         {/* Why join section */}
-        <div
-          style={{
-            background: "rgba(255,255,255,0.02)",
-            borderRadius: "14px",
-            padding: "16px",
-            marginBottom: "16px",
-          }}
-        >
+        <SSCard padding={16} style={{ marginBottom: "16px", boxShadow: "none" }}>
           <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "2px", marginBottom: "10px", textAlign: "center" }}>
             Why Members Love StrainSpotter
           </p>
@@ -369,24 +369,22 @@ export default function ScanPaywall({ onClose, mode }: ScanPaywallProps) {
               </div>
             ))}
           </div>
-        </div>
+        </SSCard>
 
         {/* Dismiss for warnings */}
         {mode === "warning" && (
-          <button
+          <SSButton
+            variant="ghost"
+            fullWidth
             onClick={onClose}
             style={{
-              width: "100%",
-              background: "none",
-              border: "none",
               color: "rgba(255,255,255,0.3)",
               fontSize: "13px",
-              cursor: "pointer",
               padding: "8px",
             }}
           >
             Continue with free scan →
-          </button>
+          </SSButton>
         )}
       </div>
     </div>

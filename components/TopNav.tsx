@@ -23,6 +23,12 @@ export default function TopNav({
         </button>
       )}
 
+      <img
+        src="/brand/strainspotter-logo.png"
+        alt=""
+        className="h-8 w-8 rounded-full object-cover shadow-md shadow-green-500/20"
+      />
+
       <h1 className="text-white text-lg font-semibold tracking-tight">
         {title}
       </h1>

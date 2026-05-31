@@ -3,10 +3,11 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve, extname, basename } from "node:path";
 import { pipeline, RawImage } from "@xenova/transformers";
+import { DATA_PATHS } from "./data-paths.mjs";
 
 const MODEL_ID = "Xenova/clip-vit-base-patch32";
-const DEFAULT_DATASET_ROOT = "data/real";
-const DEFAULT_OUTPUT_PATH = "data/embeddings/strain-embeddings.json";
+const DEFAULT_DATASET_ROOT = DATA_PATHS.realDir();
+const DEFAULT_OUTPUT_PATH = DATA_PATHS.embeddingsPath();
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 
 function getArgValue(flag, fallback) {

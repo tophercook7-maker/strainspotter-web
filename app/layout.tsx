@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://strainspotter.app'),
   title: {
     default: 'StrainSpotter — AI Cannabis Identification',
     template: '%s | StrainSpotter',
@@ -27,16 +28,29 @@ export const metadata: Metadata = {
     url: 'https://strainspotter.app',
     siteName: 'StrainSpotter',
     type: 'website',
+    images: [
+      {
+        url: '/strainspotter-logo.png',
+        width: 1024,
+        height: 1024,
+        alt: 'StrainSpotter logo',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'StrainSpotter — AI Cannabis Identification',
     description:
       'Snap a photo. Get instant strain analysis with terpene profiles, effects, and grow coaching.',
+    images: ['/strainspotter-logo.png'],
   },
   robots: { index: true, follow: true },
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/favicon.png',
     apple: '/apple-touch-icon.png',
   },
 }

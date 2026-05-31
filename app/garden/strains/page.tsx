@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
-type StrainType = "Sativa" | "Indica" | "Hybrid";
+type StrainType = "Sativa" | "Indica" | "Hybrid" | "Unknown";
 
 interface Strain {
   id: string;
@@ -20,6 +20,8 @@ interface Strain {
   indica_percentage: number;
   sativa_percentage: number;
   popularity: number;
+  aliases?: string[];
+  sourceCount?: number;
 }
 
 interface APIResponse {
@@ -27,6 +29,8 @@ interface APIResponse {
   total: number;
   page: number;
   totalPages: number;
+  catalogSize?: number;
+  catalogSource?: string;
 }
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
@@ -34,6 +38,7 @@ const TYPE_COLORS: Record<StrainType, { bg: string; border: string; text: string
   Sativa:  { bg: "rgba(255,213,79,0.12)",  border: "#FFD54F", text: "#FFD54F" },
   Indica:  { bg: "rgba(149,117,205,0.12)", border: "#9575CD", text: "#9575CD" },
   Hybrid:  { bg: "rgba(102,187,106,0.12)", border: "#66BB6A", text: "#66BB6A" },
+  Unknown: { bg: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.24)", text: "rgba(255,255,255,0.7)" },
 };
 
 const EFFECT_ICONS: Record<string, string> = {
@@ -271,6 +276,8 @@ export default function StrainsPage() {
   const [typeFilter, setTypeFilter] = useState<StrainType | "">("");
   const [sort, setSort] = useState<"popular" | "name">("popular");
   const [selected, setSelected] = useState<Strain | null>(null);
+  const [catalogSize, setCatalogSize] = useState(0);
+  const [catalogSource, setCatalogSource] = useState("catalog");
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -290,6 +297,8 @@ export default function StrainsPage() {
         const data: APIResponse = await res.json();
         setStrains((prev) => (append ? [...prev, ...data.strains] : data.strains));
         setTotal(data.total);
+        setCatalogSize(data.catalogSize ?? data.total);
+        setCatalogSource(data.catalogSource ?? "catalog");
         setPage(data.page);
         setTotalPages(data.totalPages);
       } catch (err) {
@@ -339,11 +348,18 @@ export default function StrainsPage() {
             }}
           >‹</button>
           <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#66BB6A" }}>
-              🔬 Strain Database
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#66BB6A", letterSpacing: -0.4 }}>
+              Strain Catalog
             </div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
-              {loading ? "Loading…" : `${total.toLocaleString()} strains`}
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 4, lineHeight: 1.35 }}>
+              {loading
+                ? "Loading…"
+                : `${catalogSize.toLocaleString()} strains indexed${
+                    search || typeFilter ? ` · ${total.toLocaleString()} shown` : ""
+                  }`}
+            </div>
+            <div style={{ fontSize: 10, color: "rgba(159,255,208,0.62)", marginTop: 3, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+              {catalogSource === "normalized-catalog" ? "Large normalized catalog" : "Local catalog"}
             </div>
           </div>
           <div style={{ width: 32 }} />
@@ -357,7 +373,7 @@ export default function StrainsPage() {
           <span style={{ color: "rgba(255,255,255,0.3)", marginRight: 8, fontSize: 16 }}>🔍</span>
           <input
             type="text"
-            placeholder="Search strains…"
+            placeholder="Search strains or aliases…"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
             style={{
@@ -426,8 +442,10 @@ export default function StrainsPage() {
           ) : strains.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 0" }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
-              <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>No strains found</div>
-              <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, marginTop: 4 }}>Try a different search or filter</div>
+              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 15, fontWeight: 700 }}>No catalog matches</div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, marginTop: 6, lineHeight: 1.5 }}>
+                Try a shorter name, alternate spelling, or clear the type filter.
+              </div>
             </div>
           ) : (
             <>
@@ -441,7 +459,7 @@ export default function StrainsPage() {
               )}
               {page >= totalPages && strains.length > 0 && (
                 <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 11, padding: 16 }}>
-                  That's all {total.toLocaleString()} strains
+                  End of {total.toLocaleString()} matching strains
                 </div>
               )}
             </>

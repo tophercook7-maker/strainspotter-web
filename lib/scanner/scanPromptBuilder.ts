@@ -1,69 +1,24 @@
 /**
- * Vision scan prompts: compact strain catalog + system/user instructions for GPT-4o.
+ * Vision scan prompts: OpenAI extracts visual traits only.
+ * Catalog matching happens server-side against StrainSpotter's local database.
  */
-
-import strainDb from "@/lib/data/strains.json";
-import type { StrainEntry } from "@/lib/scanner/scanTypes";
-
-function buildStrainCatalog(): string {
-  const strains = strainDb as StrainEntry[];
-
-  const lines = strains.map((s) => {
-    const parts: string[] = [s.name];
-
-    if (s.type) parts.push(s.type);
-
-    const vp = s.visualProfile;
-    if (vp) {
-      const vis: string[] = [];
-      if (vp.budStructure) vis.push(`bud:${vp.budStructure}`);
-      if (vp.trichomeDensity) vis.push(`trich:${vp.trichomeDensity}`);
-      if (vp.pistilColor?.length) vis.push(`pistil:${vp.pistilColor.join("/")}`);
-      if (vp.leafShape) vis.push(`leaf:${vp.leafShape}`);
-      if (vp.colorProfile) vis.push(vp.colorProfile);
-      if (vis.length) parts.push(vis.join(", "));
-    }
-
-    if (s.terpeneProfile?.length) {
-      parts.push(`[${s.terpeneProfile.slice(0, 3).join(",")}]`);
-    }
-
-    return parts.join(" | ");
-  });
-
-  return lines.join("\n");
-}
-
-const STRAIN_CATALOG = buildStrainCatalog();
-const STRAIN_COUNT = (strainDb as StrainEntry[]).length;
 
 export function buildSystemPrompt(): string {
   return `You are StrainSpotter's cannabis visual analysis AI.
 
-You analyze cannabis photographs (flower, plant, or packaging) and return structured data. Visual identification is probabilistic — never imply certainty or lab confirmation.
-
-═══ STRAINSPOTTER DATABASE (${STRAIN_COUNT} cultivars) ═══
-Prefer names from this catalog when traits align. Only suggest non-catalog names if nothing fits.
-
-${STRAIN_CATALOG}
-
-═══ END DATABASE ═══
+You analyze cannabis photographs (flower, plant, or packaging) and return structured visual traits. The server will match traits against StrainSpotter's local catalog after your response.
 
 CORE RULES:
-- Always propose up to THREE plausible cultivar matches when any exist (ranked best → third).
-- Never claim "exact match", "100% identified", or guaranteed results.
-- Score honestly using the four buckets below (they must sum to at most 100 per candidate).
+- Do not identify, invent, or rank strain names.
+- Do not claim "exact match", "100% identified", or lab confirmation.
+- Extract visible facts: readable label text, colors, structure, trichomes, pistils, plant stage, and image quality.
 - If the image is extremely dark, blurry, or lacks cannabis subject matter, set imageSignals.usableVisualSignal to false and use an empty rankedMatches array.
+- Keep detectedText short and transcribe only visible text.
+- Keep notes short and avoid medical claims.
 
-SCORING BUCKETS (per candidate, sum ≤ 100):
-A. visualFlower (0–45): color profile, purple/orange/green, density, shape, trichomes, pistils, leaf-to-flower ratio
-B. structure (0–20): whole-plant architecture, silhouette, cluster shape, airy vs dense
-C. ocr (0–20): readable label text, brand cues, indica/sativa/hybrid words, strain fragments
-D. secondary (0–15): metadata consistency, database fit, weak supporting cues
+MULTI-IMAGE: If multiple images are provided, synthesize shared visual traits across angles.
 
-MULTI-IMAGE: If multiple images are provided, score each mentally; boost scores when the SAME catalog strain is supported across angles. Set appearsInMultipleImagesConsistent true when reinforcement applies.
-
-OCR: Set strongOcrAgreementWithVisualTopPick true only when label text clearly matches a database strain AND visual traits agree. Never claim 100% certainty.
+OCR: Set imageSignals.textDetected true when readable text is visible.
 
 PLANT ANALYSIS (same response — one unified scan):
 - Infer image content: packaged product, harvested flower, whole plant, leaf close-up, or mixed set.
@@ -87,8 +42,18 @@ export function buildUserPromptTemplate(imageCount: number): string {
     imageCount > 1 ? `these ${imageCount} images` : "this image"
   } (cannabis flower, plant, and/or packaging).
 
-Return ONLY valid JSON with this exact structure (rankedMatches: 0–3 items; prefer 3 when plausible):
+Return ONLY valid JSON with this exact structure (rankedMatches must stay empty because matching is done by the server):
 {
+  "detectedText": "short transcription of visible label/package text, or empty string",
+  "visualTraits": {
+    "dominantColors": ["green", "purple", "orange"],
+    "budStructure": "dense | airy | elongated | compact | unknown",
+    "trichomeDensity": "low | medium | high | unknown",
+    "pistilColor": "orange | amber | white | mixed | unknown",
+    "possibleType": "Indica | Sativa | Hybrid | Unknown",
+    "confidence": 0
+  },
+  "notes": ["brief visible-observation notes only"],
   "imageSignals": {
     "usableVisualSignal": true,
     "blurOrDarkness": "low | medium | high",
@@ -143,24 +108,17 @@ Return ONLY valid JSON with this exact structure (rankedMatches: 0–3 items; pr
       "tags": ["optional short tags"]
     }
   },
-  "rankedMatches": [
-    {
-      "strainName": "string — prefer database name",
-      "scoreBuckets": { "visualFlower": 0, "structure": 0, "ocr": 0, "secondary": 0 },
-      "reasons": ["2–4 short human-readable reasons"],
-      "appearsInMultipleImagesConsistent": false
-    }
-  ],
+  "rankedMatches": [],
   "identity": {
-    "strainName": "same as rankedMatches[0].strainName if present",
-    "confidence": 60,
-    "alternateMatches": [{"strainName": "string", "confidence": 50}]
+    "strainName": "Unknown Cultivar",
+    "confidence": 0,
+    "alternateMatches": []
   },
   "genetics": {
     "dominance": "Indica | Sativa | Hybrid",
-    "lineage": ["parent1", "parent2"],
-    "breederNotes": "string",
-    "confidenceNotes": "string | null"
+    "lineage": [],
+    "breederNotes": "Server-side catalog matching pending",
+    "confidenceNotes": "Visual trait extraction only"
   },
   "morphology": {
     "budStructure": "string",

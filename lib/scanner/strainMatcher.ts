@@ -5,7 +5,9 @@ import type { RetrievalCandidate } from "@/lib/scanner/retrievalTypes";
 
 interface StrainEntry {
   name: string;
+  aliases?: string[];
   type?: string;
+  dominantType?: string;
   visualProfile?: {
     colorProfile?: string;
     budStructure?: string;
@@ -13,6 +15,9 @@ interface StrainEntry {
     leafShape?: string;
     pistilColor?: string[];
   };
+  terpeneProfile?: string[];
+  commonTerpenes?: string[];
+  effects?: string[];
 }
 
 /** Damp metadata candidates (derived from GPT) so they cannot overpower retrieval. */
@@ -37,6 +42,33 @@ function scoreTextSimilarity(a: string, b: string) {
   }
 
   return matches / Math.max(aWords.length, 1);
+}
+
+function tokenize(text: string): string[] {
+  return normalize(text)
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word.length >= 3);
+}
+
+function textContainsName(text: string, strain: StrainEntry): boolean {
+  const hay = normalize(text);
+  const names = [strain.name, ...(strain.aliases ?? [])]
+    .map((name) => normalize(name).trim())
+    .filter(Boolean);
+
+  return names.some((name) => hay.includes(name));
+}
+
+function keywordOverlap(needles: string[], haystack: string): number {
+  const hay = new Set(tokenize(haystack));
+  if (!needles.length || !hay.size) return 0;
+
+  let hits = 0;
+  for (const needle of needles) {
+    if (hay.has(needle)) hits++;
+  }
+
+  return hits / Math.max(needles.length, 1);
 }
 
 /** Light boosts when GPT reason text aligns with catalog visualProfile (bounded). */
@@ -161,4 +193,112 @@ export function generateMetadataCandidates(
   }
 
   return results;
+}
+
+export function generateVisualTraitCandidates(
+  analysis: Record<string, unknown>
+): RetrievalCandidate[] {
+  const strains = strainDb as StrainEntry[];
+  const detectedText =
+    typeof analysis.detectedText === "string" ? analysis.detectedText : "";
+  const visualTraits =
+    analysis.visualTraits && typeof analysis.visualTraits === "object"
+      ? (analysis.visualTraits as Record<string, unknown>)
+      : {};
+
+  const dominantColors = Array.isArray(visualTraits.dominantColors)
+    ? visualTraits.dominantColors.filter(
+        (value): value is string => typeof value === "string"
+      )
+    : [];
+  const budStructure =
+    typeof visualTraits.budStructure === "string"
+      ? visualTraits.budStructure
+      : "";
+  const trichomeDensity =
+    typeof visualTraits.trichomeDensity === "string"
+      ? visualTraits.trichomeDensity
+      : "";
+  const pistilColor =
+    typeof visualTraits.pistilColor === "string" ? visualTraits.pistilColor : "";
+  const possibleType =
+    typeof visualTraits.possibleType === "string" ? visualTraits.possibleType : "";
+
+  const textTokens = tokenize(detectedText);
+  const visualHaystack = [
+    ...dominantColors,
+    budStructure,
+    trichomeDensity,
+    pistilColor,
+  ].join(" ");
+
+  const results: RetrievalCandidate[] = [];
+
+  for (const strain of strains) {
+    const reasons: string[] = [];
+    let score = 0;
+
+    if (detectedText && textContainsName(detectedText, strain)) {
+      score += 0.5;
+      reasons.push("Detected text matches a catalog strain name or alias");
+    } else if (detectedText) {
+      const nameOverlap = keywordOverlap(textTokens, strain.name);
+      if (nameOverlap > 0) {
+        score += Math.min(0.25, nameOverlap * 0.25);
+        reasons.push("Detected text partially overlaps the catalog name");
+      }
+    }
+
+    const type = normalize(strain.dominantType || strain.type || "");
+    if (
+      possibleType &&
+      normalize(possibleType) !== "unknown" &&
+      type &&
+      type.includes(normalize(possibleType))
+    ) {
+      score += 0.14;
+      reasons.push(`Type estimate aligns with ${strain.type || strain.dominantType}`);
+    }
+
+    const vp = strain.visualProfile;
+    if (vp) {
+      const catalogVisual = [
+        vp.colorProfile,
+        vp.budStructure,
+        vp.trichomeDensity,
+        vp.leafShape,
+        ...(vp.pistilColor ?? []),
+      ]
+        .filter((value): value is string => typeof value === "string")
+        .join(" ");
+      const visualOverlap = keywordOverlap(tokenize(visualHaystack), catalogVisual);
+
+      if (visualOverlap > 0) {
+        score += Math.min(0.24, visualOverlap * 0.24);
+        reasons.push("Visual traits overlap the catalog visual profile");
+      }
+    }
+
+    const effectsAndTerpenes = [
+      ...(strain.effects ?? []),
+      ...(strain.terpeneProfile ?? []),
+      ...(strain.commonTerpenes ?? []),
+    ].join(" ");
+    const secondaryOverlap = keywordOverlap(textTokens, effectsAndTerpenes);
+    if (secondaryOverlap > 0) {
+      score += Math.min(0.08, secondaryOverlap * 0.08);
+      reasons.push("Detected text overlaps known effects or terpene metadata");
+    }
+
+    if (score >= 0.18) {
+      results.push({
+        strainName: strain.name,
+        score: Math.min(1, score),
+        source: "metadata",
+        reasons,
+      });
+    }
+  }
+
+  return results.sort((a, b) => b.score - a.score).slice(0, 12);
 }

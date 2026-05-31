@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-04-26T02:10:33.467Z",
+  "phraseCounts": {
+    "blackberry": 1,
+    "purple afghan": 0,
+    "purple-afghan": 0,
+    "purple punch": 0,
+    "purple-punch": 0,
+    "purple kush": 0,
+    "purple-kush": 0,
+    "granddaddy purple": 0,
+    "granddaddy-purple": 0,
+    "gdp": 0,
+    "grape ape": 0,
+    "grape-ape": 0
+  },
+  "queuedForReview": 1,
+  "items": [
+    {
+      "filePath": "/Volumes/TheVault/StrainSpotter-Dataset/blackberry-punch/buds/96b079cfc4249b99.jpg",
+      "strainSlug": "blackberry",
+      "matchedPhrases": [
+        "blackberry"
+      ]
+    }
+  ]
+}

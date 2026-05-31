@@ -26,15 +26,23 @@ node_modules/
 # ===============================
 !app/
 !app/**
+!backend/
+!backend/services/
+!backend/services/openaiClient.js
+!backend/data/
+!backend/data/training-images/
+!backend/data/training-images/README.md
 !components/
 !components/**
 !styles/
 !styles/**
 !public/
+!public/**
 !next.config.*
 !package.json
 !package-lock.json
 !README.md
+!SCANNER_OPENAI_SETUP.md
 !vitest.config.ts
 !capacitor.config.ts
 !src-tauri/
@@ -43,6 +51,7 @@ node_modules/
 !postcss.config.js
 !tailwind.config.js
 !tailwind.config.ts
+!tsconfig.next.json
 !GLASS_UI*.md
 # ===============================
 # ALLOW DESKTOP APP
@@ -63,6 +72,37 @@ node_modules/
 !docs/scanner-dataset-workflow.md
 
 # ===============================
+# LOCAL DATASETS / SCRAPE OUTPUTS
+# ===============================
+data/inbox/**
+data/rejected/**
+data/glossy/**
+data/reviewed/**
+data/real/**
+data/eval/**
+data/vault-index/
+data/vault-index/**
+data/vault-index.json
+data/scrape-log.json
+data/scrape/*.json
+data/scrape/source-errors.json
+data/scrape/images/**
+data/scrape/downloads/**
+data/dataset-coverage-report.json
+data/prefilter-report.json
+data/review-manifest*.json
+!data/strain-targets.json
+!data/source-registry.json
+!data/source-allowlist.example.json
+!data/scrape-targets.json
+!data/review-manifest.example.json
+
+# Generated build/cache artifacts
+.next/
+tsconfig.tsbuildinfo
+**/.DS_Store
+
+# ===============================
 # ENVIRONMENT / SECRETS (never commit)
 # ===============================
 .env
@@ -70,8 +110,11 @@ node_modules/
 .env.dataset
 .env.pipeline.local
 .env.*.local
+env/.env.local
 
 # Example / template env files (safe to commit)
 !.env.example
 !.env.local.example
 !.env.dataset.example
+!env/
+!env/.env.local.example

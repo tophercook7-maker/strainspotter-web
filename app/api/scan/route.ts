@@ -11,6 +11,10 @@ import {
   buildSystemPrompt,
   buildUserPromptTemplate,
 } from "@/lib/scanner/scanPromptBuilder";
+import {
+  getOpenAIClient,
+  loadLocalBackendEnv,
+} from "@/backend/services/openaiClient.js";
 import { normalizeScanAnalysis } from "@/lib/scanner/scanResponseNormalizer";
 import {
   prepareScanInputs,
@@ -22,7 +26,10 @@ import {
   fuseHybridScanCandidates,
   type FusedCandidate,
 } from "@/lib/scanner/hybridFusion";
-import { generateMetadataCandidates } from "@/lib/scanner/strainMatcher";
+import {
+  generateMetadataCandidates,
+  generateVisualTraitCandidates,
+} from "@/lib/scanner/strainMatcher";
 import {
   findNearestStrainsFromImages,
   isEmbeddingDatasetAvailable,
@@ -43,24 +50,178 @@ import {
   clampLegacyIdentityConfidenceWhenUnusable,
 } from "@/lib/scanner/scanAnalysisSignals";
 import { retrieveEmbeddingsIfEligible } from "@/lib/scanner/retrieveEmbeddingsIfEligible";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 const OPENAI_SCAN_MODEL =
-  process.env.OPENAI_SCAN_MODEL ?? "gpt-4o-2024-11-20";
-
-/*
- * TODO: Production hardening (not implemented here):
- * - Rate limiting (per IP / per user / token bucket) to cap cost and abuse
- * - Bot / automation signals (User-Agent, Turnstile, etc.) if exposing anonymously
- */
+  process.env.OPENAI_SCAN_MODEL ?? "gpt-4o-mini";
 
 const ROUTE = "/api/scan";
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const DEFAULT_MAX_IMAGE_MB = 4;
+const DEFAULT_RATE_LIMIT_PER_MINUTE = 10;
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+
+type ScannerProvider = "openai" | "google" | "off";
+
+function scannerProvider(): ScannerProvider {
+  const value = (process.env.SCANNER_AI_PROVIDER ?? "openai").toLowerCase();
+  if (value === "google" || value === "off") return value;
+  return "openai";
+}
+
+function scannerMaxImageBytes(): number {
+  const configured = Number(process.env.SCANNER_MAX_IMAGE_MB);
+  const mb =
+    Number.isFinite(configured) && configured > 0
+      ? configured
+      : DEFAULT_MAX_IMAGE_MB;
+  return mb * 1024 * 1024;
+}
+
+function scannerRateLimitPerMinute(): number {
+  const configured = Number(process.env.SCANNER_RATE_LIMIT_PER_MINUTE);
+  return Number.isFinite(configured) && configured > 0
+    ? Math.floor(configured)
+    : DEFAULT_RATE_LIMIT_PER_MINUTE;
+}
+
+function requestIp(req: NextRequest): string {
+  const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return (
+    forwarded ||
+    req.headers.get("x-real-ip") ||
+    req.headers.get("cf-connecting-ip") ||
+    "unknown"
+  );
+}
+
+function checkRateLimit(req: NextRequest) {
+  const limit = scannerRateLimitPerMinute();
+  const now = Date.now();
+  const key = requestIp(req);
+  const current = rateLimitBuckets.get(key);
+
+  if (!current || current.resetAt <= now) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { ok: true as const, limit, remaining: Math.max(0, limit - 1) };
+  }
+
+  if (current.count >= limit) {
+    return {
+      ok: false as const,
+      limit,
+      retryAfterSeconds: Math.ceil((current.resetAt - now) / 1000),
+    };
+  }
+
+  current.count += 1;
+  return {
+    ok: true as const,
+    limit,
+    remaining: Math.max(0, limit - current.count),
+  };
+}
+
+function estimateImageBytes(image: string): number {
+  const base64 = image.includes(",") ? image.slice(image.indexOf(",") + 1) : image;
+  const normalized = base64.replace(/\s/g, "");
+  const padding = normalized.endsWith("==") ? 2 : normalized.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.floor((normalized.length * 3) / 4) - padding);
+}
+
+function imageByteStats(images: string[]) {
+  const sizes = images.map(estimateImageBytes);
+  return {
+    sizes,
+    totalBytes: sizes.reduce((sum, size) => sum + size, 0),
+    maxBytes: sizes.length ? Math.max(...sizes) : 0,
+  };
+}
+
+function logScanUsage(input: {
+  provider: ScannerProvider;
+  model: string;
+  imageBytes?: number;
+  imageCount?: number;
+  success: boolean;
+  stage: string;
+  message?: string;
+}) {
+  console.log({
+    timestamp: new Date().toISOString(),
+    route: ROUTE,
+    provider: input.provider,
+    model: input.model,
+    imageBytes: input.imageBytes ?? 0,
+    imageCount: input.imageCount ?? 0,
+    success: input.success,
+    stage: input.stage,
+    ...(input.message ? { message: input.message } : {}),
+  });
+}
+
+async function saveScanForTraining(input: {
+  userId: string | null;
+  scanId: string;
+  detectedText: unknown;
+  visualTraits: unknown;
+  topMatches: Array<{ strainName: string; confidence: number; reasons: string[] }>;
+  selectedMatch?: string | null;
+  provider: ScannerProvider;
+  model: string;
+}) {
+  if (!input.userId) return;
+
+  try {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.from("scans").insert({
+      user_id: input.userId,
+      result: {
+        schema: "scanner_training_v1",
+        scanId: input.scanId,
+        image_url: null,
+        detectedText:
+          typeof input.detectedText === "string" ? input.detectedText : "",
+        visualTraits:
+          input.visualTraits && typeof input.visualTraits === "object"
+            ? input.visualTraits
+            : {},
+        topMatches: input.topMatches,
+        selectedMatch: input.selectedMatch ?? null,
+        provider: input.provider,
+        model: input.model,
+      },
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.warn({
+        route: ROUTE,
+        stage: "save_scan_training",
+        message: "Scan training save skipped",
+        error: error.message,
+      });
+    }
+  } catch (error) {
+    console.warn({
+      route: ROUTE,
+      stage: "save_scan_training",
+      message: "Scan training save skipped",
+      error: String(error),
+    });
+  }
+}
 
 /** Fused score (0–100) below this triggers “uncertain” handling and honest low confidence. */
 const UNCERTAINTY_FUSED_SCORE_THRESHOLD = 40;
 /** Embedding channel (0–1) below this is treated as weak evidence for the top match. */
 const WEAK_EMBEDDING_EVIDENCE = 0.28;
+/** Top-1 vs top-2 fused scores closer than this ⇒ visually ambiguous cluster (purple look-alikes, etc.). */
+const TIGHT_FUSED_CLUSTER_GAP = 6.5;
+/** If #1 and #2 embedding supports are within this cosine gap, treat as a tight embedding race. */
+const TIGHT_EMBEDDING_SIM_GAP = 0.048;
 
 /** Cap rows logged per candidate list to keep server logs readable. */
 const MAX_DEBUG_CANDIDATES = 16;
@@ -81,6 +242,34 @@ function bestEmbeddingScoreForStrain(
     best = Math.max(best, Math.max(0, Math.min(1, Number(c.score) || 0)));
   }
   return best;
+}
+
+function topTwoFusedScoreGap(fused: FusedCandidate[]): number | null {
+  if (fused.length < 2) return null;
+  return fused[0]!.score - fused[1]!.score;
+}
+
+function tightEmbeddingRaceForTopTwo(
+  fused: FusedCandidate[],
+  emb: RetrievalCandidate[]
+): boolean {
+  if (fused.length < 2) return false;
+  if (strainMergeKey(fused[0]!.strainName) === strainMergeKey(fused[1]!.strainName)) {
+    return false;
+  }
+  const a = bestEmbeddingScoreForStrain(fused[0]!.strainName, emb);
+  const b = bestEmbeddingScoreForStrain(fused[1]!.strainName, emb);
+  if (a < 0.17 || b < 0.17) return false;
+  return Math.abs(a - b) <= TIGHT_EMBEDDING_SIM_GAP;
+}
+
+function detectCloseVisualCluster(
+  fused: FusedCandidate[],
+  emb: RetrievalCandidate[]
+): boolean {
+  const gap = topTwoFusedScoreGap(fused);
+  const tightFused = gap != null && gap < TIGHT_FUSED_CLUSTER_GAP;
+  return tightFused || tightEmbeddingRaceForTopTwo(fused, emb);
 }
 
 function sourcesAreGptOnly(sources: RetrievalSource[]): boolean {
@@ -129,10 +318,27 @@ function logScanFailure(
   });
 }
 
+export async function GET() {
+  loadLocalBackendEnv();
+  const provider = scannerProvider();
+  return NextResponse.json({
+    ok: true,
+    route: ROUTE,
+    provider,
+    model: provider === "openai" ? OPENAI_SCAN_MODEL : null,
+    maxImageMb: scannerMaxImageBytes() / 1024 / 1024,
+    rateLimitPerMinute: scannerRateLimitPerMinute(),
+    openAiKeyConfigured: Boolean(process.env.OPENAI_API_KEY),
+  });
+}
+
 export async function POST(req: NextRequest) {
+  loadLocalBackendEnv();
   const routeStart = Date.now();
   let openAiMs = 0;
   let embeddingMs = 0;
+  const provider = scannerProvider();
+  const model = provider === "openai" ? OPENAI_SCAN_MODEL : provider;
 
   let authenticated = false;
   let scanTier: ScanTier | undefined;
@@ -140,6 +346,52 @@ export async function POST(req: NextRequest) {
   let authUser: Awaited<ReturnType<typeof getUserFromBearerRequest>> = null;
 
   try {
+    const rateLimit = checkRateLimit(req);
+    if (rateLimit.ok === false) {
+      logScanUsage({
+        provider,
+        model,
+        success: false,
+        stage: "rate_limit",
+        message: "Rate limit exceeded",
+      });
+      return NextResponse.json(
+        { error: "Too many scan requests. Please try again shortly." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        }
+      );
+    }
+
+    if (provider === "off") {
+      logScanUsage({
+        provider,
+        model,
+        success: false,
+        stage: "provider_disabled",
+        message: "Scanner AI provider is disabled.",
+      });
+      return NextResponse.json(
+        { error: "Scanner AI provider is disabled." },
+        { status: 503 }
+      );
+    }
+
+    if (provider === "google") {
+      logScanUsage({
+        provider,
+        model,
+        success: false,
+        stage: "provider_unavailable",
+        message: "Google Vision scanner path is not configured.",
+      });
+      return NextResponse.json(
+        { error: "Google Vision scanner path is not configured." },
+        { status: 501 }
+      );
+    }
+
     const body = await req.json();
     const { images, clientPrepDiagnostics } = body as {
       images?: unknown;
@@ -165,6 +417,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "No images provided" },
         { status: 400 }
+      );
+    }
+
+    const imageStats = imageByteStats(images);
+    const maxImageBytes = scannerMaxImageBytes();
+    if (imageStats.maxBytes > maxImageBytes) {
+      logScanUsage({
+        provider,
+        model,
+        imageBytes: imageStats.maxBytes,
+        imageCount: images.length,
+        success: false,
+        stage: "image_size",
+        message: "Image exceeds configured size limit",
+      });
+      return NextResponse.json(
+        {
+          error: `Image exceeds scanner limit of ${Math.round(
+            maxImageBytes / 1024 / 1024
+          )} MB`,
+        },
+        { status: 413 }
       );
     }
 
@@ -203,15 +477,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      logScanFailure("config", "OpenAI API key not configured", undefined, {
+    let openai;
+    try {
+      openai = getOpenAIClient();
+    } catch (configErr) {
+      logScanFailure("config", "OpenAI API key not configured", configErr, {
         authenticated,
         ...(scanTier !== undefined ? { scanTier } : {}),
         ...(canScanBefore !== undefined ? { canScan: canScanBefore } : {}),
       });
+      logScanUsage({
+        provider,
+        model,
+        imageBytes: imageStats.totalBytes,
+        imageCount: images.length,
+        success: false,
+        stage: "config",
+        message: "OpenAI API key not configured",
+      });
       return NextResponse.json(
-        { error: "OpenAI API key not configured" },
+        {
+          error:
+            "OPENAI_API_KEY is missing. Run npm run setup:openai or add it to env/.env.local.",
+        },
         { status: 500 }
       );
     }
@@ -237,7 +525,7 @@ export async function POST(req: NextRequest) {
 
       content.push({
         type: "image_url",
-        image_url: { url: dataUrl, detail: "high" },
+        image_url: { url: dataUrl, detail: "low" },
       });
     }
 
@@ -249,34 +537,43 @@ export async function POST(req: NextRequest) {
     const openAiStart = Date.now();
     const openAiAbort = new AbortController();
     const openAiAbortTimer = setTimeout(() => openAiAbort.abort(), 55_000);
-    let response: Response;
+    let data: {
+      model?: string;
+      usage?: unknown;
+      choices?: Array<{ message?: { content?: string | null } }>;
+    };
     try {
-      response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      data = await openai.chat.completions.create(
+        {
           model: OPENAI_SCAN_MODEL,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content },
           ],
-          max_tokens: 4096,
-          temperature: 0.3,
+          max_tokens: 1600,
+          temperature: 0.2,
           response_format: { type: "json_object" },
-        }),
-        signal: openAiAbort.signal,
-      });
+        },
+        { signal: openAiAbort.signal }
+      );
     } catch (upstreamErr) {
       clearTimeout(openAiAbortTimer);
       openAiMs = Date.now() - openAiStart;
+      const maybeStatus =
+        upstreamErr &&
+        typeof upstreamErr === "object" &&
+        "status" in upstreamErr
+          ? Number((upstreamErr as { status?: unknown }).status)
+          : undefined;
       const aborted =
         upstreamErr instanceof Error && upstreamErr.name === "AbortError";
       logScanFailure(
         "openai_upstream",
-        aborted ? "OpenAI request timed out" : "OpenAI fetch failed",
+        aborted
+          ? "OpenAI request timed out"
+          : maybeStatus
+            ? `HTTP ${maybeStatus}`
+            : "OpenAI request failed",
         upstreamErr,
         {
           authenticated,
@@ -284,41 +581,25 @@ export async function POST(req: NextRequest) {
           ...(canScanBefore !== undefined ? { canScan: canScanBefore } : {}),
         }
       );
+      logScanUsage({
+        provider,
+        model,
+        imageBytes: imageStats.totalBytes,
+        imageCount: images.length,
+        success: false,
+        stage: "openai_upstream",
+        message: aborted ? "OpenAI request timed out" : "OpenAI request failed",
+      });
       return NextResponse.json(
         {
           error: aborted
             ? "AI analysis timed out — try fewer or smaller images"
-            : "AI analysis failed (network)",
+            : "AI analysis failed (upstream)",
         },
-        { status: 504 }
+        { status: aborted ? 504 : 502 }
       );
     }
     clearTimeout(openAiAbortTimer);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      openAiMs = Date.now() - openAiStart;
-      logScanFailure(
-        "openai_upstream",
-        `HTTP ${response.status}`,
-        errorText.slice(0, 500),
-        {
-          authenticated,
-          ...(scanTier !== undefined ? { scanTier } : {}),
-          ...(canScanBefore !== undefined ? { canScan: canScanBefore } : {}),
-        }
-      );
-      console.error("OpenAI API error:", response.status, errorText);
-      return NextResponse.json(
-        {
-          error: `AI analysis failed (upstream ${response.status})`,
-          detail: errorText.slice(0, 500),
-        },
-        { status: 502 }
-      );
-    }
-
-    const data = await response.json();
     openAiMs = Date.now() - openAiStart;
     const analysisText = data.choices?.[0]?.message?.content;
 
@@ -327,6 +608,15 @@ export async function POST(req: NextRequest) {
         authenticated,
         ...(scanTier !== undefined ? { scanTier } : {}),
         ...(canScanBefore !== undefined ? { canScan: canScanBefore } : {}),
+      });
+      logScanUsage({
+        provider,
+        model,
+        imageBytes: imageStats.totalBytes,
+        imageCount: images.length,
+        success: false,
+        stage: "openai_response",
+        message: "No analysis content in completion",
       });
       return NextResponse.json(
         { error: "No analysis returned from AI" },
@@ -342,6 +632,15 @@ export async function POST(req: NextRequest) {
         authenticated,
         ...(scanTier !== undefined ? { scanTier } : {}),
         ...(canScanBefore !== undefined ? { canScan: canScanBefore } : {}),
+      });
+      logScanUsage({
+        provider,
+        model,
+        imageBytes: imageStats.totalBytes,
+        imageCount: images.length,
+        success: false,
+        stage: "parse_analysis_json",
+        message: "Failed to parse AI JSON",
       });
       console.error("Failed to parse AI response:", analysisText);
       return NextResponse.json(
@@ -392,9 +691,14 @@ export async function POST(req: NextRequest) {
         ? (analysis as Record<string, unknown>).rankedMatches
         : undefined;
 
+    // OpenAI extracts traits only; strain ranking is constrained to local data.
     const gptCandidates = convertGptMatchesToCandidates(rankedMatchesRaw);
+    const visualTraitCandidates = generateVisualTraitCandidates(analysis);
 
-    const metadataCandidates = generateMetadataCandidates(gptCandidates);
+    const metadataCandidates = [
+      ...visualTraitCandidates,
+      ...generateMetadataCandidates(gptCandidates),
+    ];
 
     const fusedCandidates = fuseHybridScanCandidates([
       ...fusionContext.retrievalCandidates,
@@ -403,7 +707,12 @@ export async function POST(req: NextRequest) {
       ...gptCandidates,
     ]);
 
-    const fusedMatches = fusedCandidates.slice(0, 3).map((c, idx) => {
+    const closeVisualCluster = detectCloseVisualCluster(
+      fusedCandidates,
+      embeddingCandidates
+    );
+
+    const fusedMatches = fusedCandidates.slice(0, 5).map((c, idx) => {
       const sourceCount = Array.isArray(c.sources) ? c.sources.length : 0;
       let agreementBoost = Math.min(6, Math.max(0, (sourceCount - 1) * 3));
 
@@ -441,6 +750,13 @@ export async function POST(req: NextRequest) {
       adjustedConfidence = Math.max(0, Math.min(100, adjustedConfidence));
 
       const reasons = [...(c.reasons ?? [])];
+      if (idx === 0 && closeVisualCluster) {
+        adjustedConfidence = Math.round(adjustedConfidence * 0.86);
+        adjustedConfidence = Math.max(0, Math.min(100, adjustedConfidence));
+        reasons.push(
+          "Tight match cluster: several cultivars score similarly (common with purple / dense bud look-alikes). Treat as best-effort, not a definitive ID."
+        );
+      }
       if (
         idx === 0 &&
         (rowEmb < 0.3 || c.score < UNCERTAINTY_FUSED_SCORE_THRESHOLD)
@@ -477,9 +793,13 @@ export async function POST(req: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore - intentional override while keeping legacy contract
       unifiedPayload.matches = fusedMatches;
-      if (lowConfidenceOutcome && unifiedPayload.matches[0]) {
-        const n = unifiedPayload.matches[0].strainName;
+      const m0 = unifiedPayload.matches[0];
+      const m1 = unifiedPayload.matches[1];
+      if (lowConfidenceOutcome && m0) {
+        const n = m0.strainName;
         unifiedPayload.summary = `Uncertain visual match: ${n}. Treat as a suggestion — similarity signals were weak.`;
+      } else if (closeVisualCluster && m0 && m1) {
+        unifiedPayload.summary = `Close visual cluster: ${m0.strainName} edged out ${m1.strainName} and similar look-alikes. Best-effort label — confirm with packaging or lab if it matters.`;
       }
     }
 
@@ -505,7 +825,8 @@ export async function POST(req: NextRequest) {
     const usedFusion = fusedCandidates.length > 0;
 
     const topMatch = fusedMatches[0];
-    const top3MatchNames = fusedMatches.slice(0, 3).map((m) => m.strainName);
+    const topMatchNames = fusedMatches.slice(0, 5).map((m) => m.strainName);
+    const scanId = crypto.randomUUID();
 
     let consumedFrom: string | undefined;
     if (authUser) {
@@ -524,8 +845,24 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    await saveScanForTraining({
+      userId: authUser?.id ?? null,
+      scanId,
+      detectedText: analysis.detectedText,
+      visualTraits: analysis.visualTraits,
+      topMatches: fusedMatches,
+      selectedMatch: null,
+      provider,
+      model: data.model ?? OPENAI_SCAN_MODEL,
+    });
+
     console.log({
+      timestamp: new Date().toISOString(),
       route: ROUTE,
+      provider,
+      model: data.model ?? OPENAI_SCAN_MODEL,
+      imageBytes: imageStats.totalBytes,
+      success: true,
       openAiModel: OPENAI_SCAN_MODEL,
       clientPrepDiagnostics:
         clientPrepDiagnostics &&
@@ -543,6 +880,7 @@ export async function POST(req: NextRequest) {
       topEmbeddingScore,
       topFusedScore,
       lowConfidenceOutcome,
+      closeVisualCluster,
       usedOnlyGptSupport,
       totalMs: Date.now() - routeStart,
       openAiMs,
@@ -555,8 +893,9 @@ export async function POST(req: NextRequest) {
       ...(consumedFrom !== undefined ? { consumedFrom } : {}),
       topMatchName: topMatch?.strainName,
       topMatchConfidence: topMatch?.confidence,
-      top3MatchNames,
+      topMatchNames,
       gptCandidates: compactRetrievalCandidatesForLog(gptCandidates),
+      visualTraitCandidates: compactRetrievalCandidatesForLog(visualTraitCandidates),
       metadataCandidates: compactRetrievalCandidatesForLog(metadataCandidates),
       embeddingCandidates: compactRetrievalCandidatesForLog(embeddingCandidates),
       fusedCandidates: compactFusedCandidatesForLog(fusedCandidates),
@@ -564,6 +903,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      scanId,
       status: unifiedPayload.status,
       resultType: unifiedPayload.resultType,
       summary: unifiedPayload.summary,
@@ -588,6 +928,13 @@ export async function POST(req: NextRequest) {
       authenticated,
       ...(scanTier !== undefined ? { scanTier } : {}),
       ...(canScanBefore !== undefined ? { canScan: canScanBefore } : {}),
+    });
+    logScanUsage({
+      provider,
+      model,
+      success: false,
+      stage,
+      message: "Scanner request failed",
     });
     return NextResponse.json(
       { error: "Internal scanner error", detail: String(error).slice(0, 500) },

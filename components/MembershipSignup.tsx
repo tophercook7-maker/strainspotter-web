@@ -3,6 +3,7 @@
 import { apiUrl } from "@/lib/config/apiBase";
 import { useState } from "react";
 import { useOptionalAuth } from "@/lib/auth/AuthProvider";
+import { useMembershipPlan } from "@/lib/auth/useMembershipPlan";
 
 interface MembershipSignupProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ export default function MembershipSignup({
   defaultPlan = "member",
 }: MembershipSignupProps) {
   const auth = useOptionalAuth();
+  const { membershipPlanTier } = useMembershipPlan();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -114,6 +116,19 @@ export default function MembershipSignup({
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, margin: 0 }}>
             Unlock The Garden and all features
           </p>
+          {auth?.user && (
+            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, margin: "10px 0 0", lineHeight: 1.5 }}>
+              Signed in — current plan:{" "}
+              <strong style={{ color: "rgba(255,255,255,0.55)" }}>
+                {membershipPlanTier === "pro"
+                  ? "Pro"
+                  : membershipPlanTier === "member"
+                    ? "Member"
+                    : "Free"}
+              </strong>
+              .
+            </p>
+          )}
         </div>
 
         {/* Plan Toggle */}

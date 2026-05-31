@@ -1,5 +1,44 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment variables
+
+Copy `.env.example` to `.env.local` and fill in values.
+
+| Variable | Where | Purpose |
+|----------|--------|---------|
+| `OPENAI_API_KEY` | Server | Required for strain vision scans (`/api/scan`). |
+| `OPENAI_SCAN_MODEL` | Server | OpenAI chat model id for scans. Defaults to `gpt-4o-2024-11-20` if unset. |
+| `NEXT_PUBLIC_SCANNER_CENTER_CROP` | Client | When not `"false"`, center-crops very wide/tall photos toward 4:3 or 3:4 before JPEG resize in the scanner prep step. |
+| `NEXT_PUBLIC_API_BASE_URL` | Client | Optional API origin (no trailing slash). **Empty** = same-origin `/api/*` (Vercel web). Set to `https://strainspotter.com` for Capacitor / Tauri builds where the WebView origin is not the API host. |
+
+Scan prep also sends `clientPrepDiagnostics.exposureLiftGains` (per image) on each `/api/scan` request; the route logs them for debugging alongside `openAiModel`.
+
+## Native shells (Capacitor + Tauri)
+
+Production web app: **https://strainspotter.com** (Vercel). Native wrappers reuse the same UI and APIs.
+
+### Capacitor (iOS + Android)
+
+1. `npm install`
+2. `npm run cap:prep` — creates `out/index.html` (required `webDir` for Capacitor).
+3. `npx cap add ios` and `npx cap add android` once per machine (generates `ios/` and `android/`; not tracked in git with the current ignore rules — regenerate anytime).
+4. `npm run cap:sync` — copy web assets + sync plugins.
+5. `npm run cap:ios` / `npm run cap:android` — open Xcode / Android Studio.
+
+`capacitor.config.ts` uses **`server.url` → `https://strainspotter.com`** so the shell loads the live site (easy to switch later to a bundled static `out/` export by removing `server` and shipping a Next static build into `webDir`).
+
+### Tauri (desktop)
+
+1. Install [Rust](https://rustup.rs/) on the build machine.
+2. `npm install`
+3. `npm run cap:prep` (provides `out/` for `frontendDist` fallback).
+4. `npm run tauri:dev` — loads `http://localhost:3000` (run `npm run dev` in another terminal).
+5. `npm run tauri:build` — platform installers (macOS / Windows / Linux) on the host OS.
+
+### Scanner golden tests
+
+`npm test` includes **geometry golden** checks in `lib/scanner/scannerGoldenGeometry.test.ts` (stable crop + scale fingerprints). Update those strings only when intentionally changing prep rules.
+
 ## Getting Started
 
 First, run the development server:

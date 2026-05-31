@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import AuthScreen from "@/components/AuthScreen";
+import { useMembershipPlan } from "@/lib/auth/useMembershipPlan";
 
 /* ─── try to use real auth, fall back to localStorage tier ─── */
 let useOptionalAuth: () => any;
@@ -12,15 +13,6 @@ try {
   useOptionalAuth = require("@/lib/auth/AuthProvider").useOptionalAuth;
 } catch {
   useOptionalAuth = () => null;
-}
-
-function getLocalTier(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return localStorage.getItem("ss_membership_tier");
-  } catch {
-    return null;
-  }
 }
 
 /* ─── Strain of the Day component ─── */
@@ -264,7 +256,7 @@ const FEATURES: FeatureItem[] = [
   { href: "/garden/strains", icon: "🔬", label: "Strains", desc: "Browse strain database" },
   { href: "/garden/ecosystem", icon: "🧬", label: "Discovery", desc: "Find strains by effect or terpene" },
   { href: "/garden/terpenes", icon: "🧪", label: "Terpenes", desc: "Aroma deep dives + community photos" },
-  { href: "/garden/compare", icon: "⚖️", label: "Compare", desc: "Compare strains side by side" },
+  { href: "/garden/scans/compare", icon: "⚖️", label: "Compare", desc: "Compare saved scan results" },
   { href: "/garden/grow-coach", icon: "🌱", label: "Grow Coach", desc: "Track & improve your grows" },
   { href: "/garden/dispensaries", icon: "📍", label: "Directory", desc: "Dispensaries & licensed growers" },
   { href: "/garden/seed-vendors", icon: "🌰", label: "Seed Vendors", desc: "Trusted seed sources" },
@@ -304,11 +296,11 @@ function tierColor(t: string): string {
 export default function GardenPage() {
   const router = useRouter();
   const auth = useOptionalAuth();
+  const { membershipPlanTier: tier } = useMembershipPlan();
   const [showAuth, setShowAuth] = useState(false);
 
   const isLoggedIn = !!auth?.user;
   const displayName = auth?.profile?.display_name || auth?.user?.email?.split("@")[0] || null;
-  const tier = auth?.tier || getLocalTier() || "free";
 
   return (
     <>
@@ -336,8 +328,8 @@ export default function GardenPage() {
             ‹ Scanner
           </button>
 
-          <h1 style={{ color: "white", fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em", margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
-            <img src="/brand/cannabis-icon.png" width={20} height={20} alt="" style={{ display: 'inline-block', flexShrink: 0, verticalAlign: 'middle', borderRadius: '50%' }} /> The Garden
+          <h1 style={{ color: "white", fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <img src="/brand/strainspotter-logo.png" width={24} height={24} alt="" style={{ display: 'inline-block', flexShrink: 0, verticalAlign: 'middle', borderRadius: '50%', objectFit: 'cover' }} /> The Garden
           </h1>
 
           {/* Login / Profile */}
@@ -380,6 +372,44 @@ export default function GardenPage() {
         </div>
 
         <div className="mx-auto w-full max-w-[720px] px-4 py-6 space-y-8">
+          <section
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              borderRadius: 24,
+              border: "1px solid rgba(129,199,132,0.28)",
+              background:
+                "linear-gradient(135deg, rgba(0,0,0,0.72), rgba(18,43,22,0.58))",
+              padding: "28px 22px",
+              textAlign: "center",
+              boxShadow: "0 22px 70px rgba(0,0,0,0.36)",
+            }}
+          >
+            <img
+              src="/brand/strainspotter-logo.png"
+              width={156}
+              height={156}
+              alt="StrainSpotter"
+              style={{
+                width: 156,
+                height: 156,
+                borderRadius: "50%",
+                objectFit: "cover",
+                margin: "0 auto 18px",
+                boxShadow: "0 0 44px rgba(129,199,132,0.22)",
+              }}
+            />
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, color: "#9fffd0", textTransform: "uppercase" }}>
+              Know Your Strain
+            </div>
+            <h2 style={{ margin: "8px 0 6px", fontSize: 32, lineHeight: 1, fontWeight: 900 }}>
+              StrainSpotter Garden
+            </h2>
+            <p style={{ margin: "0 auto", maxWidth: 440, color: "rgba(255,255,255,0.64)", fontSize: 14, lineHeight: 1.6 }}>
+              Scan, save, compare, and grow with your strain intelligence hub.
+            </p>
+          </section>
+
           {/* Scanner Shortcut */}
           <button
             onClick={() => router.push("/garden/scanner")}

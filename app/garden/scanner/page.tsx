@@ -15,17 +15,30 @@ import {
 } from "./HybridScanResultSections";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
+import MobileAppCtaLink from "@/components/MobileAppCtaLink";
 import type { ScanEntitlements } from "@/lib/scanner/scanEntitlements";
 import {
   getScansRemaining,
   bumpAnonymousScanUsage,
-  fetchScanEntitlements,
   FREE_SCAN_TOTAL,
   canScanAnonymousLocal,
 } from "@/lib/scanGating";
 import { persistUnifiedScan } from "@/lib/growlog/persistUnifiedScan";
 import { buildUnifiedScanUiForPersist } from "@/lib/scanner/savedScanMappers";
 import { savedScanResultsPath } from "@/lib/scanner/savedScanNav";
+import { useMembershipPlan } from "@/lib/auth/useMembershipPlan";
+import {
+  WEB_VS_MOBILE_HARD_MATCH_CALLOUT,
+  WEB_VS_MOBILE_NEEDS_BETTER_IMAGES_SUFFIX,
+  WEB_VS_MOBILE_PRESCAN_BULLET,
+  WEB_VS_MOBILE_PRESCAN_CALLOUT,
+  WEB_VS_MOBILE_PWA_INSTALL_LINE,
+  WEB_VS_MOBILE_UNRESOLVED_SUFFIX,
+} from "@/lib/scanner/webVsMobileMessaging";
+import SSBadge from "@/components/ui/SSBadge";
+import SSButton from "@/components/ui/SSButton";
+import SSCard from "@/components/ui/SSCard";
+import SSNotice from "@/components/ui/SSNotice";
 
 /* ─── try to use real auth, fall back gracefully ─── */
 let useOptionalAuth: () => any;
@@ -34,13 +47,20 @@ try {
 } catch {
   useOptionalAuth = () => null;
 }
-
-function getLocalTier(): string | null {
-  if (typeof window === "undefined") return null;
-  try { return localStorage.getItem("ss_membership_tier"); } catch { return null; }
-}
 function tierLabel(t: string) { return t === "pro" ? "Pro" : t === "member" ? "Member" : "Free"; }
 function tierColor(t: string) { return t === "pro" ? "#FFD700" : t === "member" ? "#4CAF50" : "rgba(255,255,255,0.35)"; }
+
+function isCloseClusterScan(
+  summary: string | null,
+  hybrid: HybridScanPresentation | null
+): boolean {
+  if (summary && /Close visual cluster/i.test(summary)) return true;
+  const reasons = hybrid?.matches?.[0]?.reasons;
+  if (!reasons?.length) return false;
+  return reasons.some(
+    (x) => typeof x === "string" && x.includes("Tight match cluster")
+  );
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    StrainSpotter Scanner — Clean Visual Redesign
@@ -98,28 +118,22 @@ function SimilarStrains({ result }: { result: SimpleResult }) {
         {strains.map((s) => {
           const pill = TYPE_PILL[s.type] || TYPE_PILL.Hybrid;
           return (
-            <div
+            <SSCard
               key={s.id}
               onClick={() => router.push(`/garden/strains?q=${encodeURIComponent(s.name)}`)}
+              padding="12px 12px"
               style={{
                 flexShrink: 0, width: 160,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.09)",
                 borderTop: `3px solid ${pill.color}`,
-                borderRadius: 14, padding: "12px 12px",
                 cursor: "pointer",
               }}
             >
               <div style={{ fontWeight: 700, fontSize: 13, color: "#fff", lineHeight: 1.3, marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {s.name}
               </div>
-              <div style={{
-                display: "inline-block", padding: "2px 8px", borderRadius: 6,
-                fontSize: 10, fontWeight: 700, background: pill.bg, color: pill.color,
-                marginBottom: 8,
-              }}>
+              <SSBadge style={{ padding: "4px 8px", fontSize: 10, background: pill.bg, color: pill.color, marginBottom: 8 }}>
                 {s.type}
-              </div>
+              </SSBadge>
               {s.thc != null && s.thc > 0 && (
                 <div style={{ fontSize: 11, color: "#66BB6A", fontWeight: 700, marginBottom: 6 }}>
                   THC {s.thc}%
@@ -127,16 +141,12 @@ function SimilarStrains({ result }: { result: SimpleResult }) {
               )}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                 {s.effects.slice(0, 3).map((e) => (
-                  <span key={e} style={{
-                    padding: "2px 6px", borderRadius: 5, fontSize: 10,
-                    background: "rgba(102,187,106,0.1)", color: "#81C784",
-                    border: "1px solid rgba(102,187,106,0.15)",
-                  }}>
+                  <SSBadge key={e} tone="success" style={{ padding: "4px 7px", fontSize: 10 }}>
                     {e.charAt(0).toUpperCase() + e.slice(1)}
-                  </span>
+                  </SSBadge>
                 ))}
               </div>
-            </div>
+            </SSCard>
           );
         })}
       </div>
@@ -185,13 +195,7 @@ function InstallBanner() {
   if (dismissed || (!prompt && !showIOSTip)) return null;
 
   return (
-    <div style={{
-      margin: "0 0 12px",
-      background: "linear-gradient(135deg, rgba(76,175,80,0.12), rgba(56,142,60,0.06))",
-      border: "1px solid rgba(76,175,80,0.25)",
-      borderRadius: 14, padding: "12px 14px",
-      display: "flex", alignItems: "flex-start", gap: 12,
-    }}>
+    <SSCard tone="success" padding="12px 14px" style={{ margin: "0 0 12px", display: "flex", alignItems: "flex-start", gap: 12 }}>
       <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>📲</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ color: "#81C784", fontWeight: 700, fontSize: 13, marginBottom: 3 }}>
@@ -201,33 +205,41 @@ function InstallBanner() {
           <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, lineHeight: 1.5 }}>
             Tap <strong style={{ color: "rgba(255,255,255,0.8)" }}>Share</strong> then{" "}
             <strong style={{ color: "rgba(255,255,255,0.8)" }}>Add to Home Screen</strong> for the full app experience.
+            <span style={{ display: "block", marginTop: 8, color: "rgba(255,255,255,0.45)" }}>
+              {WEB_VS_MOBILE_PWA_INSTALL_LINE}
+            </span>
+            <MobileAppCtaLink fontSize={11} marginTop={8} />
           </div>
         ) : (
           <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, lineHeight: 1.5 }}>
             Add to your home screen for instant access and a native app feel.
+            <span style={{ display: "block", marginTop: 8, color: "rgba(255,255,255,0.45)" }}>
+              {WEB_VS_MOBILE_PWA_INSTALL_LINE}
+            </span>
+            <MobileAppCtaLink fontSize={11} marginTop={8} />
           </div>
         )}
         {prompt && (
-          <button
+          <SSButton
             onClick={install}
+            variant="success"
             style={{
               marginTop: 8, padding: "5px 14px", borderRadius: 8,
-              background: "rgba(76,175,80,0.3)", border: "1px solid rgba(76,175,80,0.5)",
-              color: "#81C784", fontSize: 12, fontWeight: 700, cursor: "pointer",
+              fontSize: 12,
             }}
           >
             Install
-          </button>
+          </SSButton>
         )}
       </div>
-      <button
+      <SSButton
         onClick={dismiss}
+        variant="ghost"
         style={{
-          background: "none", border: "none", color: "rgba(255,255,255,0.3)",
-          fontSize: 18, cursor: "pointer", padding: 0, flexShrink: 0, lineHeight: 1,
+          fontSize: 18, padding: 0, flexShrink: 0, lineHeight: 1,
         }}
-      >✕</button>
-    </div>
+      >✕</SSButton>
+    </SSCard>
   );
 }
 
@@ -411,8 +423,6 @@ export default function ScannerPage() {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "medical" | "grower" | "breeder" | "dispensary">("overview");
   const [creditEarned, setCreditEarned] = useState(false);
-  const [serverEntitlements, setServerEntitlements] =
-    useState<ScanEntitlements | null>(null);
   const [anonRemaining, setAnonRemaining] = useState(0);
   const [apiScanSummary, setApiScanSummary] = useState<string | null>(null);
   const [saveHistoryState, setSaveHistoryState] = useState<
@@ -473,26 +483,23 @@ export default function ScannerPage() {
   const MAX_IMAGES = 5;
 
   const auth = useOptionalAuth();
+  const mp = useMembershipPlan();
   const isLoggedIn = !!auth?.user;
   const displayName = auth?.profile?.display_name || auth?.user?.email?.split("@")[0] || null;
-  const tier = (auth?.profile != null ? auth.tier : (getLocalTier() || auth?.tier || "free")) as "free" | "member" | "pro";
 
-  useEffect(() => {
-    const token = auth?.session?.access_token;
-    if (!token) {
-      setServerEntitlements(null);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const r = await fetchScanEntitlements(token);
-      if (!cancelled && r.ok) setServerEntitlements(r.entitlements);
-      if (!cancelled && !r.ok) setServerEntitlements(null);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [auth?.session?.access_token]);
+  const entitlementsStatus = mp.entitlementsStatus;
+  const serverEntitlements = mp.scanEntitlements;
+  const scannerPlanTier = mp.membershipPlanTier;
+  const effectiveForEntitlements = mp.effectiveMembershipTier;
+
+  const scanPlanMismatch =
+    isLoggedIn &&
+    entitlementsStatus === "ok" &&
+    serverEntitlements != null &&
+    serverEntitlements.tier !== effectiveForEntitlements;
+
+  const entitlementsLoadFailed =
+    isLoggedIn && entitlementsStatus === "error";
 
   const addImages = useCallback((files: FileList | File[]) => {
     const fileArr = Array.from(files).filter(f => f.type.startsWith("image/"));
@@ -548,6 +555,16 @@ export default function ScannerPage() {
     if (images.length === 0 || scanState === "scanning") return;
 
     if (isLoggedIn && auth?.session?.access_token) {
+      if (entitlementsStatus === "loading") {
+        setError("Loading scan allowance…");
+        return;
+      }
+      if (entitlementsStatus === "error") {
+        setError(
+          "Couldn’t load your account scan allowance. Check your connection and try again."
+        );
+        return;
+      }
       if (!serverEntitlements) {
         setError("Loading scan allowance…");
         return;
@@ -696,11 +713,8 @@ export default function ScannerPage() {
       setResult(simple);
       setScanState("done");
 
-      if (isLoggedIn && auth?.session?.access_token) {
-        const ent = await fetchScanEntitlements(auth.session.access_token);
-        if (ent.ok) {
-          setServerEntitlements(ent.entitlements);
-        }
+      if (isLoggedIn && mp.refreshScanEntitlements) {
+        void mp.refreshScanEntitlements();
       } else {
         bumpAnonymousScanUsage();
         setAnonRemaining(getScansRemaining());
@@ -748,6 +762,11 @@ export default function ScannerPage() {
     result && scanState === "done"
       ? isWeakScanResult(scanPayloadFlags, hybridPresentation, result.confidence)
       : false;
+
+  const closeClusterScan =
+    !!result &&
+    scanState === "done" &&
+    isCloseClusterScan(apiScanSummary, hybridPresentation);
 
   const handleSaveToHistory = async () => {
     if (!result || scanState !== "done") return;
@@ -800,7 +819,8 @@ export default function ScannerPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #0a0f0a 0%, #0d1a0d 40%, #0a0f0a 100%)",
+      background:
+        "linear-gradient(180deg, #0a0f0a 0%, #0d1a0d 40%, #0a0f0a 100%)",
       color: "#fff",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     }}>
@@ -824,7 +844,14 @@ export default function ScannerPage() {
         }}>
           🌿 Garden
         </Link>
-        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0.5 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 700, letterSpacing: 0.5 }}>
+          <img
+            src="/brand/strainspotter-logo.png"
+            width={28}
+            height={28}
+            alt=""
+            style={{ borderRadius: "50%", objectFit: "cover", boxShadow: "0 0 20px rgba(129,199,132,0.24)" }}
+          />
           Scanner
         </span>
         {isLoggedIn ? (
@@ -840,7 +867,17 @@ export default function ScannerPage() {
               padding: 0,
             }}
           >
-            {isLoggedIn && serverEntitlements && !serverEntitlements.isUnlimited && (
+            {isLoggedIn && entitlementsStatus === "loading" && (
+              <span style={{
+                fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
+                color: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 5, padding: "2px 6px",
+              }}>
+                Plan…
+              </span>
+            )}
+            {isLoggedIn && entitlementsStatus === "ok" && serverEntitlements && !serverEntitlements.isUnlimited && (
               <span style={{
                 fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
                 color: "#66BB6A", background: "rgba(102,187,106,0.15)",
@@ -869,12 +906,14 @@ export default function ScannerPage() {
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: 0.5,
-              color: tierColor(tier),
-              background: `${tierColor(tier)}18`,
-              border: `1px solid ${tierColor(tier)}44`,
+              color: tierColor(scannerPlanTier),
+              background: `${tierColor(scannerPlanTier)}18`,
+              border: `1px solid ${tierColor(scannerPlanTier)}44`,
               borderRadius: 5,
               padding: "2px 6px",
-            }}>{tierLabel(tier)}</span>
+            }}>
+              {tierLabel(scannerPlanTier)}
+            </span>
             <div style={{
               width: 26,
               height: 26,
@@ -909,7 +948,63 @@ export default function ScannerPage() {
         )}
       </div>
 
+      {scanPlanMismatch && (
+        <div
+          style={{
+            padding: "10px 20px",
+            background: "rgba(255,213,79,0.08)",
+            borderBottom: "1px solid rgba(255,213,79,0.22)",
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: "rgba(255,255,255,0.78)",
+          }}
+        >
+          <strong style={{ color: "rgba(255,224,130,0.95)" }}>Scans follow your account:</strong>{" "}
+          this bar uses <strong>{tierLabel(serverEntitlements!.tier)}</strong> limits. If another screen
+          still shows <strong>{tierLabel(effectiveForEntitlements)}</strong> briefly, refresh after checkout
+          while billing syncs.
+        </div>
+      )}
+
+      {entitlementsLoadFailed && (
+        <div
+          style={{
+            padding: "10px 20px",
+            background: "rgba(255,183,77,0.08)",
+            borderBottom: "1px solid rgba(255,183,77,0.22)",
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: "rgba(255,255,255,0.78)",
+          }}
+        >
+          Couldn&apos;t load scan allowance from the server. Refresh the page or check your connection before scanning.
+        </div>
+      )}
+
       <div style={{ padding: "0 20px 100px", maxWidth: 480, margin: "0 auto" }}>
+
+        <section style={{
+          padding: "26px 0 4px",
+          textAlign: "center",
+        }}>
+          <img
+            src="/brand/strainspotter-logo.png"
+            width={132}
+            height={132}
+            alt="StrainSpotter"
+            style={{
+              width: 132,
+              height: 132,
+              borderRadius: "50%",
+              objectFit: "cover",
+              margin: "0 auto 14px",
+              boxShadow: "0 0 46px rgba(129,199,132,0.24)",
+            }}
+          />
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#9fffd0", textTransform: "uppercase" }}>
+            Know Your Strain
+          </div>
+        </section>
 
         {/* ── PWA Install Banner ── */}
         <div style={{ paddingTop: 16 }}>
@@ -1054,8 +1149,9 @@ export default function ScannerPage() {
               flexWrap: "wrap",
             }}
           >
-            <button
+            <SSButton
               type="button"
+              variant="success"
               onClick={(e) => {
                 e.stopPropagation();
                 cameraFileRef.current?.click();
@@ -1063,18 +1159,14 @@ export default function ScannerPage() {
               style={{
                 padding: "8px 14px",
                 borderRadius: 999,
-                border: "1px solid rgba(76,175,80,0.45)",
-                background: "rgba(76,175,80,0.12)",
-                color: "#A5D6A7",
                 fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
               }}
             >
               Use camera
-            </button>
-            <button
+            </SSButton>
+            <SSButton
               type="button"
+              variant="secondary"
               onClick={(e) => {
                 e.stopPropagation();
                 fileRef.current?.click();
@@ -1082,17 +1174,32 @@ export default function ScannerPage() {
               style={{
                 padding: "8px 14px",
                 borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(255,255,255,0.05)",
-                color: "rgba(255,255,255,0.65)",
                 fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
               }}
             >
               Choose photos
-            </button>
+            </SSButton>
           </div>
+        )}
+
+        {scanState !== "done" && scanState !== "scanning" && (
+          <SSNotice
+            title="Best capture wins"
+            tone="info"
+            style={{ marginTop: 16, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12,
+                lineHeight: 1.55,
+                color: "rgba(255,255,255,0.55)",
+              }}
+            >
+              Web scans work. For hard look-alike strains, the mobile app usually gives cleaner close-ups, steadier framing, and more consistent image quality.
+            </p>
+            <MobileAppCtaLink fontSize={12} marginTop={10} />
+          </SSNotice>
         )}
 
         {/* ── THUMBNAIL STRIP ── */}
@@ -1207,6 +1314,7 @@ export default function ScannerPage() {
                   Multiple angles help—include a macro trichome shot if anything looks blurry at arm&apos;s length.
                 </li>
               )}
+              <li>{WEB_VS_MOBILE_PRESCAN_BULLET}</li>
             </ul>
           </div>
         )}
@@ -1253,7 +1361,7 @@ export default function ScannerPage() {
         {/* ── RESULT CARD ── */}
         {result && scanState === "done" && (
           <div style={{ marginTop: 12 }}>
-            {apiScanSummary && (
+            {(apiScanSummary || weakResult || closeClusterScan) && (
               <div
                 style={{
                   marginBottom: 16,
@@ -1261,10 +1369,14 @@ export default function ScannerPage() {
                   borderRadius: 14,
                   background: weakResult
                     ? "rgba(255,183,77,0.07)"
-                    : "rgba(76,175,80,0.1)",
+                    : closeClusterScan
+                      ? "rgba(129,212,250,0.08)"
+                      : "rgba(76,175,80,0.1)",
                   border: weakResult
                     ? "1px solid rgba(255,183,77,0.28)"
-                    : "1px solid rgba(76,175,80,0.32)",
+                    : closeClusterScan
+                      ? "1px solid rgba(79,195,247,0.3)"
+                      : "1px solid rgba(76,175,80,0.32)",
                 }}
               >
                 <div
@@ -1274,24 +1386,62 @@ export default function ScannerPage() {
                     letterSpacing: 1.2,
                     color: weakResult
                       ? "rgba(255,183,77,0.95)"
-                      : "rgba(165,214,167,0.95)",
+                      : closeClusterScan
+                        ? "rgba(179,229,252,0.95)"
+                        : "rgba(165,214,167,0.95)",
                     marginBottom: 8,
                     textTransform: "uppercase",
                   }}
                 >
-                  Scan summary
+                  {closeClusterScan && !weakResult
+                    ? "Look-alike strains"
+                    : !apiScanSummary && (weakResult || closeClusterScan)
+                      ? "Scan note"
+                      : "Scan summary"}
                 </div>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 15,
-                    lineHeight: 1.55,
-                    color: "rgba(255,255,255,0.92)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {apiScanSummary}
-                </p>
+                {apiScanSummary ? (
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 15,
+                      lineHeight: 1.55,
+                      color: "rgba(255,255,255,0.92)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {apiScanSummary}
+                  </p>
+                ) : (
+                  (weakResult || closeClusterScan) && (
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 14,
+                        lineHeight: 1.55,
+                        color: "rgba(255,255,255,0.78)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      This scan looks visually close to multiple strains—treat the top match as a suggestion until you can confirm with packaging or lab results.
+                    </p>
+                  )
+                )}
+                {(weakResult || closeClusterScan) && (
+                  <p
+                    style={{
+                      margin: "10px 0 0",
+                      fontSize: 13,
+                      lineHeight: 1.55,
+                      color: "rgba(255,255,255,0.52)",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {WEB_VS_MOBILE_HARD_MATCH_CALLOUT}
+                  </p>
+                )}
+                {(weakResult || closeClusterScan) && (
+                  <MobileAppCtaLink fontSize={11} marginTop={6} />
+                )}
               </div>
             )}
             {scanPayloadFlags?.status === "needs_better_images" && (
@@ -1317,6 +1467,7 @@ export default function ScannerPage() {
                 </div>
                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "rgba(255,255,255,0.88)" }}>
                   For more reliable strain matching, use <strong style={{ color: "rgba(255,255,255,0.95)" }}>brighter, even lighting</strong>, keep the subject <strong style={{ color: "rgba(255,255,255,0.95)" }}>in sharp focus</strong>, let the flower <strong style={{ color: "rgba(255,255,255,0.95)" }}>fill more of the frame</strong>, and add <strong style={{ color: "rgba(255,255,255,0.95)" }}>2–5 angles</strong> (top, side, trichomes) when you can.
+                  {WEB_VS_MOBILE_NEEDS_BETTER_IMAGES_SUFFIX}
                 </p>
               </div>
             )}
@@ -1343,6 +1494,7 @@ export default function ScannerPage() {
                 </div>
                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "rgba(255,255,255,0.72)" }}>
                   We don&apos;t have a strong cultivar match from this scan yet—the results below are best-effort. Try sharper, well-lit photos or a different angle if you want a clearer ID.
+                  {WEB_VS_MOBILE_UNRESOLVED_SUFFIX}
                 </p>
               </div>
             )}
@@ -2321,29 +2473,36 @@ export default function ScannerPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 18 }}>
                 {([
-                  { icon: "🔬", title: "Strain Library", body: "35K+ strains with full genetics & effects" },
-                  { icon: "🧬", title: "Discovery", body: "Filter by effect, terpene, and experience" },
-                  { icon: "🧪", title: "Terpenes", body: "Deep dives + community photos" },
-                  { icon: "⚖️", title: "Compare", body: "Side-by-side strain comparison" },
-                  { icon: "🌱", title: "Grow Coach", body: "AI analysis on every journal entry" },
-                  { icon: "📍", title: "Directory", body: "Dispensaries & licensed growers nearby" },
-                  { icon: "🌰", title: "Seed Vendors", body: "Trusted seed sources worldwide" },
-                  { icon: "❤️", title: "Favorites", body: "Your personal strain collection" },
-                  { icon: "📓", title: "Journal", body: "Log sessions & track mood over time" },
-                  { icon: "👤", title: "Profile", body: "Your stats, personality type & history" },
-                  { icon: "🕑", title: "Scan History", body: "Every ID saved and searchable forever" },
-                  { icon: "💬", title: "Community", body: "Connect with growers & dispensaries" },
-                ] as Array<{ icon: string; title: string; body: string }>).map((f, i) => (
-                  <div key={i} style={{
-                    padding: "10px 10px",
-                    borderRadius: 10,
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.05)",
-                  }}>
+                  { href: "/garden/strains", icon: "🔬", title: "Strain Library", body: "35K+ strains with full genetics & effects" },
+                  { href: "/garden/ecosystem", icon: "🧬", title: "Discovery", body: "Filter by effect, terpene, and experience" },
+                  { href: "/garden/ecosystem", icon: "🧪", title: "Terpenes", body: "Deep dives + community photos" },
+                  { href: "/garden/scans/compare", icon: "⚖️", title: "Compare", body: "Side-by-side strain comparison" },
+                  { href: "/garden/grow-coach", icon: "🌱", title: "Grow Coach", body: "AI analysis on every journal entry" },
+                  { href: "/garden/dispensaries", icon: "📍", title: "Directory", body: "Dispensaries & licensed growers nearby" },
+                  { href: "/garden/seed-vendors", icon: "🌰", title: "Seed Vendors", body: "Trusted seed sources worldwide" },
+                  { href: "/garden/favorites", icon: "❤️", title: "Favorites", body: "Your personal strain collection" },
+                  { href: "/garden/grow-log", icon: "📓", title: "Journal", body: "Log sessions & track mood over time" },
+                  { href: "/garden/settings", icon: "👤", title: "Profile", body: "Your stats, personality type & history" },
+                  { href: "/garden/history", icon: "🕑", title: "Scan History", body: "Every ID saved and searchable forever" },
+                  { href: "/garden", icon: "💬", title: "Community", body: "Connect with growers & dispensaries" },
+                ] as Array<{ href: string; icon: string; title: string; body: string }>).map((f, i) => (
+                  <Link
+                    key={i}
+                    href={f.href}
+                    style={{
+                      display: "block",
+                      padding: "10px 10px",
+                      borderRadius: 10,
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
                     <div style={{ fontSize: 15, marginBottom: 3 }}>{f.icon}</div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>{f.title}</div>
                     <div style={{ fontSize: 9, color: "rgba(255,255,255,0.28)", lineHeight: 1.35 }}>{f.body}</div>
-                  </div>
+                  </Link>
                 ))}
               </div>
 

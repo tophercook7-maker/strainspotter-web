@@ -4,6 +4,7 @@ import { apiUrl } from "@/lib/config/apiBase";
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { markCheckoutTierPromotion } from "@/lib/auth/effectiveTier";
 
 /**
  * After Stripe redirects back with ?checkout=success&session_id=...
@@ -66,6 +67,7 @@ export default function CheckoutReturn() {
       // Step 2: Set localStorage tier immediately (fallback)
       if (tier === "member" || tier === "pro") {
         localStorage.setItem("ss_membership_tier", tier);
+        markCheckoutTierPromotion();
         localStorage.setItem(
           "ss_member_info",
           JSON.stringify({
@@ -181,6 +183,9 @@ export default function CheckoutReturn() {
           const signup = JSON.parse(raw);
           if (signup.plan) {
             localStorage.setItem("ss_membership_tier", signup.plan);
+            if (signup.plan === "member" || signup.plan === "pro") {
+              markCheckoutTierPromotion();
+            }
             setTierName(signup.plan === "pro" ? "Pro" : "Member");
             setStatus("success");
             localStorage.removeItem("ss_signup_info");

@@ -1,13 +1,12 @@
-import { readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { DATA_PATHS } from "./data-paths.mjs";
 
-const ROOT = process.cwd();
-const DATA_DIR = join(ROOT, "data");
-const REAL_DIR = join(DATA_DIR, "real");
-const EVAL_DIR = join(DATA_DIR, "eval");
-const TARGETS_PATH = join(DATA_DIR, "strain-targets.json");
-const REPORT_PATH = join(DATA_DIR, "dataset-coverage-report.json");
+const REAL_DIR = DATA_PATHS.realDir();
+const EVAL_DIR = DATA_PATHS.evalDir();
+const TARGETS_PATH = DATA_PATHS.strainTargetsPath();
+const REPORT_PATH = DATA_PATHS.coverageReportPath();
 
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 
@@ -195,6 +194,7 @@ async function main() {
     byStrain,
   };
 
+  await mkdir(dirname(REPORT_PATH), { recursive: true });
   await writeFile(REPORT_PATH, JSON.stringify(report, null, 2) + "\n", "utf8");
 
   console.log("Scanner dataset coverage");
@@ -207,7 +207,7 @@ async function main() {
   console.log(`Fewer than 10 training images: ${strainsWithFewerThan10Images.length}`);
   console.log(`Fewer than 25 training images: ${strainsWithFewerThan25Images.length}`);
   console.log(`Missing eval data: ${strainsMissingEvalData.length}`);
-  console.log(`Report written: data/dataset-coverage-report.json`);
+  console.log(`Report written: ${REPORT_PATH}`);
 
   if (top10BestCoveredStrains.length) {
     console.log("\nTop 10 best-covered strains:");

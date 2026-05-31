@@ -1,30 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MembershipSignup from "@/components/MembershipSignup";
 import AuthScreen from "@/components/AuthScreen";
-
-/* ── try to use real auth, fall back to localStorage ── */
-let useOptionalAuth: () => any;
-try {
-  useOptionalAuth = require("@/lib/auth/AuthProvider").useOptionalAuth;
-} catch {
-  useOptionalAuth = () => null;
-}
-
-const MEMBER_KEY = "ss_membership_tier";
-
-function getLocalTier(): "free" | "member" | "pro" {
-  if (typeof window === "undefined") return "free";
-  try {
-    const raw = localStorage.getItem(MEMBER_KEY);
-    if (raw === "member" || raw === "pro") return raw;
-    return "free";
-  } catch {
-    return "free";
-  }
-}
+import { useMembershipPlan } from "@/lib/auth/useMembershipPlan";
+import SSButton from "@/components/ui/SSButton";
+import SSCard from "@/components/ui/SSCard";
+import SSEmptyState from "@/components/ui/SSEmptyState";
+import SSNotice from "@/components/ui/SSNotice";
 
 interface MemberGateProps {
   children: React.ReactNode;
@@ -42,38 +26,67 @@ export default function MemberGate({
   featureIcon = "🔒",
 }: MemberGateProps) {
   const router = useRouter();
-  const auth = useOptionalAuth();
-  const [localTier, setLocalTier] = useState<"free" | "member" | "pro" | null>(null);
+  const mp = useMembershipPlan();
   const [showSignup, setShowSignup] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
 
+  const authLoading = mp.authLoading;
+  const tier = mp.membershipPlanTier;
+  const hasMembership = tier === "member" || tier === "pro";
+  const es = mp.entitlementsStatus;
+
   useEffect(() => {
-    setLocalTier(getLocalTier());
-  }, []);
+    if (process.env.NODE_ENV !== "development") return;
+    if (!mp.user || hasMembership) return;
+    if (es !== "error" && es !== "loading") return;
+    if (es === "loading" && mp.effectiveMembershipTier !== "free") return;
+    console.debug("[MemberGate] transitional / verify state", {
+      entitlementsStatus: es,
+      membershipPlanTier: tier,
+      effectiveMembershipTier: mp.effectiveMembershipTier,
+    });
+  }, [
+    mp.user?.id,
+    mp.effectiveMembershipTier,
+    es,
+    hasMembership,
+    tier,
+  ]);
 
-  // Check auth context tier (from Supabase profile)
-  const authTier = auth?.tier;
-  const authLoading = auth?.loading ?? false;
-
-  // Still loading
-  if (localTier === null || authLoading) {
+  if (authLoading && !mp.user) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>Loading...</div>
+        <SSEmptyState title="Loading..." style={{ width: "min(320px, 100%)" }} />
       </div>
     );
   }
 
-  // Grant access if EITHER auth context OR localStorage says member/pro
-  const hasMembership =
-    authTier === "member" || authTier === "pro" ||
-    localTier === "member" || localTier === "pro";
+  if (mp.user && !hasMembership && (es === "loading" || es === "idle")) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <SSEmptyState
+          title="Updating your access..."
+          description="Checking your plan with the server."
+          style={{ width: "min(340px, 100%)" }}
+        />
+      </div>
+    );
+  }
 
   if (hasMembership) {
     return <>{children}</>;
   }
 
-  // Free user — show lock screen with BOTH signup and login options
+  const signedIn = !!mp.user;
+  const verifyFailed = signedIn && es === "error";
+
+  const headline = signedIn
+    ? `${featureName} is a member perk`
+    : featureName;
+  const body = signedIn
+    ? `You’re signed in, but this account is on the free plan. Upgrade to unlock ${featureName.toLowerCase()} and the rest of The Garden.`
+    : `Sign in if you already joined, or become a member to unlock ${featureName.toLowerCase()} and everything in The Garden.`;
+
   return (
     <>
       <div style={{
@@ -81,6 +94,13 @@ export default function MemberGate({
         alignItems: "center", justifyContent: "center",
         padding: "40px 24px", textAlign: "center",
       }}>
+        <SSCard padding="28px 24px" style={{ width: "min(390px, 100%)", textAlign: "center" }}>
+        {verifyFailed && (
+          <SSNotice tone="warning" style={{ maxWidth: 360, marginBottom: 20 }}>
+            We couldn&apos;t verify your plan from the server. Check your connection and refresh the page, then try again.
+          </SSNotice>
+        )}
+
         {/* Feature icon */}
         <div style={{
           width: 80, height: 80, borderRadius: 24,
@@ -101,71 +121,63 @@ export default function MemberGate({
         </div>
 
         <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 8px" }}>
-          {featureName}
+          {headline}
         </h2>
         <p style={{
-          color: "rgba(255,255,255,0.45)", fontSize: 14,
-          lineHeight: 1.6, maxWidth: 300, margin: "0 0 24px",
+          color: "rgba(255,255,255,0.58)", fontSize: 14,
+          lineHeight: 1.6, maxWidth: 340, margin: "0 0 24px",
         }}>
-          This feature is available to StrainSpotter members. Join to unlock{" "}
-          {featureName.toLowerCase()} and everything in The Garden.
+          {body}
         </p>
 
-        {/* Become a Member */}
-        <button
-          onClick={() => setShowSignup(true)}
-          style={{
-            background: "linear-gradient(135deg, #43A047, #2E7D32)",
-            border: "none", borderRadius: 14,
-            padding: "14px 32px", color: "#fff",
-            fontSize: 15, fontWeight: 700, cursor: "pointer",
-            marginBottom: 12, width: 260,
-          }}
-        >
-          Become a Member
-        </button>
+        {signedIn ? (
+          <SSButton
+            fullWidth
+            onClick={() => setShowSignup(true)}
+            style={{ marginBottom: 12, width: 260 }}
+          >
+            Upgrade to unlock
+          </SSButton>
+        ) : (
+          <SSButton
+            fullWidth
+            onClick={() => setShowSignup(true)}
+            style={{ marginBottom: 12, width: 260 }}
+          >
+            Become a Member
+          </SSButton>
+        )}
 
-        {/* Already a member? Sign In */}
-        <button
+        <SSButton
+          variant="secondary"
+          fullWidth
           onClick={() => setShowLogin(true)}
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 14,
-            padding: "14px 32px", color: "#fff",
-            fontSize: 14, fontWeight: 600, cursor: "pointer",
-            marginBottom: 12, width: 260,
-          }}
+          style={{ marginBottom: 12, width: 260 }}
         >
-          Already a member? Sign In
-        </button>
+          {signedIn ? "Switch account" : "Already a member? Sign In"}
+        </SSButton>
 
         {/* Back */}
-        <button
+        <SSButton
+          variant="ghost"
           onClick={() => router.push("/garden/scanner")}
-          style={{
-            background: "none", border: "none",
-            color: "rgba(255,255,255,0.35)", fontSize: 13,
-            cursor: "pointer", padding: "8px 16px",
-          }}
+          style={{ padding: "8px 16px", fontSize: 13 }}
         >
           ← Back to Scanner
-        </button>
+        </SSButton>
+        </SSCard>
       </div>
 
-      {/* Signup / Payment overlay */}
       {showSignup && (
         <MembershipSignup onClose={() => setShowSignup(false)} />
       )}
 
-      {/* Login overlay */}
       {showLogin && (
         <AuthScreen
           defaultMode="signin"
           onClose={() => setShowLogin(false)}
           onSuccess={() => {
             setShowLogin(false);
-            // Reload to pick up auth state + tier
             window.location.reload();
           }}
         />

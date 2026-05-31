@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import ScanPaywall from "@/components/ScanPaywall";
 import FeedbackForm from "@/components/FeedbackForm";
 import AuthScreen from "@/components/AuthScreen";
+import { useMembershipPlan } from "@/lib/auth/useMembershipPlan";
+import SSBadge from "@/components/ui/SSBadge";
+import SSButton from "@/components/ui/SSButton";
+import SSCard from "@/components/ui/SSCard";
+import SSNotice from "@/components/ui/SSNotice";
 
 /* ─── try real auth, fall back gracefully ─── */
 let useOptionalAuth: () => any;
@@ -53,13 +58,6 @@ function savePrefs(prefs: LocalPrefs) {
   if (typeof window === "undefined") return;
   localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
 }
-
-// ─── Style helpers — HIGH CONTRAST ──────────────────────────────────────────
-const card: React.CSSProperties = {
-  background: "rgba(255,255,255,0.10)",
-  border: "1px solid rgba(255,255,255,0.20)",
-  borderRadius: 16,
-};
 
 function SectionHeader({ icon, title }: { icon: string; title: string }) {
   return (
@@ -142,6 +140,8 @@ function Toggle({
 }) {
   return (
     <button
+      type="button"
+      aria-label={checked ? "Turn setting off" : "Turn setting on"}
       onClick={() => onChange(!checked)}
       style={{
         width: 48,
@@ -174,14 +174,12 @@ function Toggle({
 // ─── Tier helpers ────────────────────────────────────────────────────────────
 function tierLabel(t: string): string {
   if (t === "pro") return "Pro";
-  if (t === "member" || t === "garden" || t === "standard" || t === "elite")
-    return "Member";
+  if (t === "member") return "Member";
   return "Free";
 }
 function tierBadgeColor(t: string): string {
   if (t === "pro") return "#FFD54F";
-  if (t === "member" || t === "garden" || t === "standard" || t === "elite")
-    return "#66BB6A";
+  if (t === "member") return "#66BB6A";
   return "rgba(255,255,255,0.6)";
 }
 
@@ -191,6 +189,11 @@ function tierBadgeColor(t: string): string {
 export default function SettingsPage() {
   const router = useRouter();
   const auth = useOptionalAuth();
+  const {
+    membershipPlanTier: planTier,
+    entitlementsStatus,
+    scanEntitlements,
+  } = useMembershipPlan();
 
   const [prefs, setPrefs] = useState<LocalPrefs>(DEFAULT_PREFS);
   const [displayName, setDisplayName] = useState("");
@@ -205,7 +208,45 @@ export default function SettingsPage() {
   const profile = auth?.profile;
   const email = auth?.user?.email || "";
   const scansRemaining = profile?.scans_remaining ?? null;
-  const tier = auth?.tier || "free";
+
+  const scansRow =
+    isLoggedIn && entitlementsStatus === "ok" && scanEntitlements
+      ? {
+          label:
+            scanEntitlements.tier === "free"
+              ? "Free scans remaining"
+              : scanEntitlements.isUnlimited
+                ? "Plan scans"
+                : "Scans this period",
+          value: scanEntitlements.tier === "free"
+            ? String(scanEntitlements.freeScansRemaining)
+            : scanEntitlements.isUnlimited
+              ? "∞"
+              : String(scanEntitlements.memberScansRemaining),
+          hint:
+            scanEntitlements.tier !== "free" &&
+            !scanEntitlements.isUnlimited &&
+            scanEntitlements.topupScansAvailable > 0
+              ? `${scanEntitlements.topupScansAvailable} top-up available`
+              : null,
+        }
+      : isLoggedIn && scansRemaining !== null
+        ? {
+            label: "Scans remaining",
+            value: scansRemaining === -1 ? "∞" : String(scansRemaining),
+            hint: null as string | null,
+          }
+        : null;
+
+  const scansValueColor = (() => {
+    if (!scansRow) return "#66BB6A";
+    if (scansRow.value === "∞") return "#66BB6A";
+    const n = Number(scansRow.value);
+    if (!Number.isFinite(n)) return "#fff";
+    if (n > 10) return "#66BB6A";
+    if (n > 0) return "#FFB74D";
+    return "#EF5350";
+  })();
 
   useEffect(() => {
     setPrefs(loadPrefs());
@@ -375,26 +416,21 @@ export default function SettingsPage() {
         >
           {/* Save indicator */}
           {saved && (
-            <div
+            <SSNotice
+              tone="success"
               style={{
                 position: "fixed",
                 top: 80,
                 right: 20,
-                padding: "10px 18px",
-                borderRadius: 10,
-                background: "#43A047",
-                color: "white",
-                fontSize: 14,
-                fontWeight: 700,
                 zIndex: 999,
               }}
             >
               ✓ Saved
-            </div>
+            </SSNotice>
           )}
 
           {/* ═══ Account / Profile ═══ */}
-          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+          <SSCard padding={20} style={{ marginBottom: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}>
             <SectionHeader icon="👤" title="Account" />
 
             {isLoggedIn ? (
@@ -462,57 +498,35 @@ export default function SettingsPage() {
                   Sign in to sync your profile, track scans, and manage your
                   membership.
                 </div>
-                <button
+                <SSButton
                   onClick={() => setShowAuth(true)}
-                  style={{
-                    background: "linear-gradient(135deg, #43A047, #2E7D32)",
-                    border: "none",
-                    borderRadius: 12,
-                    padding: "14px 32px",
-                    color: "#fff",
-                    fontSize: 15,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
+                  style={{ borderRadius: 12, padding: "14px 32px", fontSize: 15 }}
                 >
                   Sign In
-                </button>
+                </SSButton>
               </div>
             )}
-          </div>
+          </SSCard>
 
           {/* ═══ Membership ═══ */}
-          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+          <SSCard padding={20} style={{ marginBottom: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}>
             <SectionHeader icon="🏅" title="Membership" />
-            <div
+            <SSCard
+              tone={planTier === "free" ? "warning" : "success"}
+              padding={16}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: 16,
                 borderRadius: 12,
-                background:
-                  tier === "free"
-                    ? "rgba(255,213,79,0.12)"
-                    : "rgba(76,175,80,0.12)",
-                border: `1px solid ${
-                  tier === "free"
-                    ? "rgba(255,213,79,0.30)"
-                    : "rgba(76,175,80,0.30)"
-                }`,
+                boxShadow: "none",
               }}
             >
               <div>
-                <div
-                  style={{
-                    color: tierBadgeColor(tier),
-                    fontSize: 17,
-                    fontWeight: 800,
-                  }}
-                >
-                  {tierLabel(tier)}
-                  {tier !== "free" && " ✓"}
-                </div>
+                <SSBadge tone={planTier === "free" ? "gold" : "success"} style={{ color: tierBadgeColor(planTier), fontSize: 13 }}>
+                  {tierLabel(planTier)}
+                  {planTier !== "free" && " ✓"}
+                </SSBadge>
                 <div
                   style={{
                     color: "rgba(255,255,255,0.7)",
@@ -520,68 +534,90 @@ export default function SettingsPage() {
                     marginTop: 3,
                   }}
                 >
-                  {tier === "free"
+                  {planTier === "free"
                     ? "Scanner + basic features"
-                    : tier === "pro"
+                    : planTier === "pro"
                     ? "Unlimited scans + all features"
                     : "Full Garden access + scans"}
                 </div>
+                {isLoggedIn &&
+                  (entitlementsStatus === "loading" ||
+                    entitlementsStatus === "idle") && (
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.45)",
+                      fontSize: 12,
+                      marginTop: 6,
+                    }}
+                  >
+                    Checking plan with server…
+                  </div>
+                )}
               </div>
-              {tier === "free" && (
-                <button
+              {planTier === "free" && (
+                <SSButton
+                  variant="warning"
                   onClick={() => setShowPaywall(true)}
-                  style={{
-                    padding: "8px 18px",
-                    borderRadius: 99,
-                    background: "rgba(255,213,79,0.20)",
-                    color: "#FFD54F",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    border: "1px solid rgba(255,213,79,0.40)",
-                    cursor: "pointer",
-                  }}
+                  style={{ padding: "8px 18px", borderRadius: 99, fontSize: 13 }}
                 >
                   Upgrade
-                </button>
+                </SSButton>
               )}
-            </div>
+            </SSCard>
 
-            {isLoggedIn && scansRemaining !== null && (
-              <div
+            {scansRow && (
+              <SSCard
+                padding="14px 16px"
                 style={{
                   marginTop: 12,
-                  padding: "14px 16px",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.10)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  gap: 12,
+                  boxShadow: "none",
                 }}
               >
-                <span style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>
-                  Scans Remaining
-                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span
+                    style={{
+                      color: "#fff",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      display: "block",
+                    }}
+                  >
+                    {scansRow.label}
+                  </span>
+                  {scansRow.hint && (
+                    <span
+                      style={{
+                        color: "rgba(255,255,255,0.45)",
+                        fontSize: 12,
+                        display: "block",
+                        marginTop: 4,
+                      }}
+                    >
+                      {scansRow.hint}
+                    </span>
+                  )}
+                </div>
                 <span
                   style={{
-                    color:
-                      scansRemaining > 10
-                        ? "#66BB6A"
-                        : scansRemaining > 0
-                        ? "#FFB74D"
-                        : "#EF5350",
+                    color: scansValueColor,
                     fontSize: 18,
                     fontWeight: 800,
+                    flexShrink: 0,
                   }}
                 >
-                  {scansRemaining === -1 ? "∞" : scansRemaining}
+                  {scansRow.value}
                 </span>
-              </div>
+              </SSCard>
             )}
-          </div>
+          </SSCard>
 
           {/* ═══ Scanner ═══ */}
-          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+          <SSCard padding={20} style={{ marginBottom: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}>
             <SectionHeader icon="📷" title="Scanner" />
             <SettingRow
               label="Scan Quality"
@@ -589,15 +625,14 @@ export default function SettingsPage() {
             >
               <div style={{ display: "flex", gap: 6 }}>
                 {(["standard", "high"] as const).map((q) => (
-                  <button
+                  <SSButton
                     key={q}
+                    variant={prefs.scanQuality === q ? "secondary" : "ghost"}
                     onClick={() => updatePrefs({ scanQuality: q })}
                     style={{
                       padding: "6px 14px",
                       borderRadius: 99,
                       fontSize: 13,
-                      fontWeight: 700,
-                      cursor: "pointer",
                       textTransform: "capitalize",
                       background:
                         prefs.scanQuality === q
@@ -615,14 +650,14 @@ export default function SettingsPage() {
                     }}
                   >
                     {q}
-                  </button>
+                  </SSButton>
                 ))}
               </div>
             </SettingRow>
-          </div>
+          </SSCard>
 
           {/* ═══ Notifications ═══ */}
-          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+          <SSCard padding={20} style={{ marginBottom: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}>
             <SectionHeader icon="🔔" title="Notifications" />
             <SettingRow
               label="Grow Reminders"
@@ -651,23 +686,22 @@ export default function SettingsPage() {
                 onChange={(v) => updateNotification("weeklyDigest", v)}
               />
             </SettingRow>
-          </div>
+          </SSCard>
 
           {/* ═══ Preferences ═══ */}
-          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+          <SSCard padding={20} style={{ marginBottom: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}>
             <SectionHeader icon="🎨" title="Preferences" />
             <SettingRow label="Units">
               <div style={{ display: "flex", gap: 6 }}>
                 {(["imperial", "metric"] as const).map((u) => (
-                  <button
+                  <SSButton
                     key={u}
+                    variant={prefs.units === u ? "secondary" : "ghost"}
                     onClick={() => updatePrefs({ units: u })}
                     style={{
                       padding: "6px 14px",
                       borderRadius: 99,
                       fontSize: 13,
-                      fontWeight: 700,
-                      cursor: "pointer",
                       background:
                         prefs.units === u
                           ? "rgba(100,181,246,0.25)"
@@ -684,22 +718,21 @@ export default function SettingsPage() {
                     }}
                   >
                     {u === "imperial" ? "°F / in" : "°C / cm"}
-                  </button>
+                  </SSButton>
                 ))}
               </div>
             </SettingRow>
             <SettingRow label="Theme">
               <div style={{ display: "flex", gap: 6 }}>
                 {(["dark", "auto"] as const).map((t) => (
-                  <button
+                  <SSButton
                     key={t}
+                    variant={prefs.theme === t ? "secondary" : "ghost"}
                     onClick={() => updatePrefs({ theme: t })}
                     style={{
                       padding: "6px 14px",
                       borderRadius: 99,
                       fontSize: 13,
-                      fontWeight: 700,
-                      cursor: "pointer",
                       textTransform: "capitalize",
                       background:
                         prefs.theme === t
@@ -717,14 +750,14 @@ export default function SettingsPage() {
                     }}
                   >
                     {t}
-                  </button>
+                  </SSButton>
                 ))}
               </div>
             </SettingRow>
-          </div>
+          </SSCard>
 
           {/* ═══ Data & Storage ═══ */}
-          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+          <SSCard padding={20} style={{ marginBottom: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}>
             <SectionHeader icon="💾" title="Data & Storage" />
             <SettingRow label="Local Storage Used">
               <span
@@ -738,51 +771,43 @@ export default function SettingsPage() {
               </span>
             </SettingRow>
             <div style={{ marginTop: 14 }}>
-              <button
+              <SSButton
+                variant="danger"
                 onClick={handleClearData}
                 style={{
                   padding: "10px 18px",
                   borderRadius: 10,
-                  background: "rgba(244,67,54,0.15)",
-                  color: "#EF5350",
                   fontSize: 14,
-                  fontWeight: 700,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  border: "1px solid rgba(244,67,54,0.30)",
-                  cursor: "pointer",
                 }}
               >
                 🗑️ Clear All Local Data
-              </button>
+              </SSButton>
             </div>
-          </div>
+          </SSCard>
 
           {/* ═══ Sign Out (only if logged in) ═══ */}
           {isLoggedIn && (
-            <div style={{ ...card, padding: 20, marginBottom: 16 }}>
-              <button
+            <SSCard padding={20} style={{ marginBottom: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}>
+              <SSButton
+                variant="danger"
+                fullWidth
                 onClick={handleSignOut}
                 style={{
-                  width: "100%",
                   padding: "16px 0",
                   borderRadius: 12,
-                  background: "rgba(244,67,54,0.12)",
-                  border: "1px solid rgba(244,67,54,0.30)",
-                  color: "#EF5350",
                   fontSize: 16,
-                  fontWeight: 700,
-                  cursor: "pointer",
                 }}
               >
                 Sign Out
-              </button>
-            </div>
+              </SSButton>
+            </SSCard>
           )}
 
           {/* ═══ About ═══ */}
-          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+          <SSCard padding={20} style={{ marginBottom: 16, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.20)" }}>
             <SectionHeader icon="ℹ️" title="About" />
             <SettingRow label="Version">
               <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 600 }}>
@@ -794,7 +819,7 @@ export default function SettingsPage() {
                 Pre-Launch
               </span>
             </SettingRow>
-          </div>
+          </SSCard>
 
           {/* ═══ Feedback ═══ */}
           <div style={{ marginTop: 24, marginBottom: 16 }}>

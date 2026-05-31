@@ -6,6 +6,11 @@ import {
   primaryStrainLabelFromStoredResult,
   topConfidenceFromStoredResult,
 } from "@/lib/scanner/savedScanMappers";
+import SSBadge from "@/components/ui/SSBadge";
+import SSCard from "@/components/ui/SSCard";
+import SSEmptyState from "@/components/ui/SSEmptyState";
+import SSNotice from "@/components/ui/SSNotice";
+import SSSectionHeader from "@/components/ui/SSSectionHeader";
 
 type HistoryListRow = {
   id: string;
@@ -66,8 +71,15 @@ export default async function HistoryPage({
       <TopNav title="History" showBack />
       <main className="min-h-screen bg-black text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
+          <SSSectionHeader
+            eyebrow="Scan memory"
+            title="History"
+            description="Reopen saved IDs, compare look-alike results, and track how confidence changes across photos."
+            style={{ marginBottom: 20 }}
+          />
           {strainFilter && (
-            <div className="mb-4 rounded-lg border border-white/15 bg-white/10 p-3 flex items-center justify-between">
+            <SSNotice tone="info" style={{ marginBottom: 16 }}>
+              <div className="flex items-center justify-between gap-3">
               <span className="text-white/80 text-sm">
                 Filtered by: <span className="font-semibold text-white">{strainFilter}</span>
               </span>
@@ -77,27 +89,37 @@ export default async function HistoryPage({
               >
                 Clear
               </Link>
-            </div>
+              </div>
+            </SSNotice>
           )}
           {scans.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-white/70 text-lg">
-                {strainFilter ? `No scans found for "${strainFilter}"` : "No scans yet"}
-              </p>
-              <p className="text-white/50 text-sm mt-2">
-                {strainFilter
+            <SSEmptyState
+              title={strainFilter ? `No scans found for "${strainFilter}"` : "No scans yet"}
+              description={
+                strainFilter
                   ? "Try a different strain or clear the filter"
-                  : "Your scan history will appear here"}
-              </p>
-            </div>
+                  : "Scan a flower photo and save the result to build your personal strain memory."
+              }
+              action={
+                !strainFilter ? (
+                <Link
+                  href="/garden/scanner"
+                  className="mt-5 inline-flex rounded-full bg-green-600 px-5 py-2 text-sm font-bold text-white hover:bg-green-500"
+                >
+                  Start a scan
+                </Link>
+                ) : null
+              }
+            />
           ) : (
             <div className="space-y-3">
               {scans.map((scan) => (
                 <Link
                   key={scan.id}
                   href={`/garden/history/${scan.id}`}
-                  className="block rounded-lg border border-white/10 bg-white/5 p-4 hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer"
+                  className="block cursor-pointer text-inherit no-underline transition-opacity hover:opacity-90"
                 >
+                  <SSCard padding={16} style={{ boxShadow: "none" }}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg">
@@ -109,9 +131,9 @@ export default async function HistoryPage({
                         </p>
                       )}
                       {scan.confidence !== null && (
-                        <p className="text-white/70 text-sm mt-1">
+                        <SSBadge tone="success" style={{ marginTop: 8 }}>
                           {Math.round(scan.confidence)}% confidence
-                        </p>
+                        </SSBadge>
                       )}
                     </div>
                     {scan.created_at && (
@@ -120,6 +142,7 @@ export default async function HistoryPage({
                       </p>
                     )}
                   </div>
+                  </SSCard>
                 </Link>
               ))}
             </div>

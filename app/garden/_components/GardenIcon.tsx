@@ -4,9 +4,10 @@ export type GardenIconSize = "sm" | "md" | "lg";
 
 interface GardenIconProps {
   label: string;
-  icon: string;
+  icon?: string;
   onClick?: () => void;
   size?: GardenIconSize;
+  useBrandIcon?: boolean;
 }
 
 const sizeClasses: Record<GardenIconSize, string> = {
@@ -26,6 +27,7 @@ export default function GardenIcon({
   icon,
   onClick,
   size = "md",
+  useBrandIcon = false,
 }: GardenIconProps) {
   return (
     <button
@@ -33,7 +35,15 @@ export default function GardenIcon({
       onClick={onClick}
       className={`flex flex-col items-center justify-center rounded-full backdrop-blur-xl bg-white/80 shadow-xl transition-transform duration-200 hover:scale-110 ${sizeClasses[size]}`}
     >
-      <div className={`select-none ${iconSizeClasses[size]}`}>{icon}</div>
+      {useBrandIcon ? (
+        <img
+          src="/brand/strainspotter-logo.png"
+          alt=""
+          className="mb-2 h-10 w-10 rounded-full object-cover shadow-md shadow-green-500/20"
+        />
+      ) : (
+        <div className={`select-none ${iconSizeClasses[size]}`}>{icon}</div>
+      )}
       <div className="text-sm font-semibold tracking-wide opacity-90">
         {label}
       </div>

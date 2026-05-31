@@ -5,10 +5,12 @@ const nextConfig: NextConfig = {
   turbopack: {},
   outputFileTracingIncludes: {
     "/api/scan": ["./data/embeddings/strain-embeddings.json"],
+    "/api/strains": ["./data/normalized-strain-catalog.json", "./lib/data/strains.json"],
   },
 
   typescript: {
     ignoreBuildErrors: false,
+    tsconfigPath: "tsconfig.next.json",
   },
 
   webpack: (config) => {

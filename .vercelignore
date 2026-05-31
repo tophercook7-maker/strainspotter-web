@@ -17,6 +17,21 @@ __quarantine__/
 .vscode/
 logs/
 archive/
+node_modules/
+.next/
+
+# Local datasets / scrape output
+data/inbox/
+data/rejected/
+data/glossy/
+data/reviewed/
+data/real/
+data/eval/
+data/vault-index.json
+data/scrape-log.json
+data/scrape/source-errors.json
+data/scrape/images/
+data/scrape/downloads/
 
 !app/lib/**
 # --- Allow Supabase server client ---

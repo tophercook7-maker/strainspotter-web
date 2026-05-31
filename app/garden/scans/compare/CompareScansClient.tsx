@@ -14,6 +14,12 @@ import { compareSavedScans, formatScanDate } from "@/lib/scanner/compareSavedSca
 import { savedScanResultsPath } from "@/lib/scanner/savedScanNav";
 import { isServerBackedSavedScanId } from "@/lib/scanner/savedScanId";
 import type { SavedUnifiedScan } from "@/lib/scanner/savedScanTypes";
+import SSBadge from "@/components/ui/SSBadge";
+import SSButton from "@/components/ui/SSButton";
+import SSCard from "@/components/ui/SSCard";
+import SSEmptyState from "@/components/ui/SSEmptyState";
+import SSNotice from "@/components/ui/SSNotice";
+import SSSectionHeader from "@/components/ui/SSSectionHeader";
 
 async function loadSavedScanUnified(id: string): Promise<SavedUnifiedScan | null> {
   const trimmed = id.trim();
@@ -133,13 +139,15 @@ export default function CompareScansClient() {
       <>
         <TopNav title="Compare scans" showBack />
         <main className="min-h-screen bg-black text-white px-4 py-8 max-w-lg mx-auto">
-          <p className="text-white/70">Open a saved scan and choose “Compare with another scan”, or add</p>
-          <code className="text-green-400 text-sm mt-2 block">?a=SCAN_ID</code>
-          <p className="text-white/45 text-sm mt-4">
-            <Link href="/garden/history" className="text-green-400 underline">
-              Scan history
-            </Link>
-          </p>
+          <SSEmptyState
+            title="Pick a starting scan"
+            description="Open any saved scan and choose “Compare with another scan” to see confidence, alternatives, and capture notes side by side."
+            action={
+              <Link href="/garden/history" className="text-green-400 underline">
+                Open scan history
+              </Link>
+            }
+          />
         </main>
       </>
     );
@@ -150,7 +158,7 @@ export default function CompareScansClient() {
       <>
         <TopNav title="Compare scans" showBack />
         <main className="min-h-screen bg-black text-white px-4 py-8">
-          <p className="text-white/50 text-sm">Loading scans…</p>
+          <SSEmptyState title="Loading scans..." style={{ maxWidth: 420, margin: "0 auto" }} />
         </main>
       </>
     );
@@ -161,10 +169,14 @@ export default function CompareScansClient() {
       <>
         <TopNav title="Compare scans" showBack />
         <main className="min-h-screen bg-black text-white px-4 py-8 max-w-lg mx-auto text-center">
-          <p className="text-white/80">{loadError ?? "Scan not found."}</p>
-          <Link href="/garden/history" className="text-green-400 mt-6 inline-block">
-            Back to history
-          </Link>
+          <SSEmptyState
+            title={loadError ?? "Scan not found."}
+            action={
+              <Link href="/garden/history" className="text-green-400 underline">
+                Back to history
+              </Link>
+            }
+          />
         </main>
       </>
     );
@@ -176,28 +188,42 @@ export default function CompareScansClient() {
         <TopNav title="Pick a scan" showBack />
         <main className="min-h-screen bg-black text-white">
           <div className="mx-auto w-full max-w-[560px] px-4 py-6">
-            <p className="text-white/80 text-sm mb-2">
-              Comparing from <span className="text-white font-semibold">scan A</span> — choose another
-              save:
-            </p>
+            <SSSectionHeader
+              eyebrow="Choose comparison"
+              title="Pick scan B"
+              description={
+                <>
+                  Start with <span className="text-white font-semibold">scan A</span>, then choose another saved scan to compare.
+                </>
+              }
+              style={{ marginBottom: 8 }}
+            />
             <p className="text-white/45 text-xs mb-4 line-clamp-2">
               {scanA.matches[0]?.name ?? scanA.topStrainName ?? "Scan"} ·{" "}
               {formatScanDate(scanA.createdAt)}
             </p>
             {pickerLoading ? (
-              <p className="text-white/50 text-sm">Loading your saves…</p>
+              <SSEmptyState title="Loading your saves..." />
             ) : pickerRows.length === 0 ? (
-              <p className="text-white/60 text-sm">
-                No other saved scans found. Save another scan from the scanner first.
-              </p>
+              <SSEmptyState
+                title="No other saved scans found"
+                description="Save another scan from the scanner first."
+                action={
+                  <Link href="/garden/scanner" className="inline-flex rounded-full bg-green-600 px-4 py-2 text-sm font-bold text-white">
+                    Scan another photo
+                  </Link>
+                }
+              />
             ) : (
               <ul className="space-y-2">
                 {pickerRows.map((row) => (
                   <li key={row.id}>
-                    <button
+                    <SSButton
                       type="button"
+                      variant="secondary"
                       onClick={() => pickB(row.id)}
-                      className="w-full text-left rounded-lg border border-white/10 bg-white/5 px-4 py-3 hover:bg-white/10 hover:border-white/20 transition-colors"
+                      className="w-full text-left"
+                      style={{ borderRadius: 12, padding: "12px 16px" }}
                     >
                       <div className="font-semibold text-white truncate">{row.title}</div>
                       {row.createdAt && (
@@ -205,7 +231,7 @@ export default function CompareScansClient() {
                           {formatScanDate(row.createdAt)}
                         </div>
                       )}
-                    </button>
+                    </SSButton>
                   </li>
                 ))}
               </ul>
@@ -227,36 +253,33 @@ export default function CompareScansClient() {
       <>
         <TopNav title="Compare scans" showBack />
         <main className="min-h-screen bg-black text-white px-4 py-8 max-w-lg mx-auto">
-          <p className="text-white/70">Could not load the second scan.</p>
-          <button
+          <SSNotice tone="warning" title="Second scan unavailable">
+            Could not load the second scan.
+          </SSNotice>
+          <SSButton
             type="button"
+            variant="ghost"
             onClick={() => router.push(`/garden/scans/compare?a=${encodeURIComponent(scanAId)}`)}
-            className="mt-4 text-green-400 underline text-sm"
+            style={{ marginTop: 16, padding: "8px 0", color: "#4ade80" }}
           >
             Pick a different scan
-          </button>
+          </SSButton>
         </main>
       </>
     );
   }
 
   const renderScanCard = (label: string, s: SavedUnifiedScan, variant: "earlier" | "later") => (
-    <div
-      className={`rounded-xl border p-4 ${
-        variant === "earlier"
-          ? "border-blue-500/25 bg-blue-500/5"
-          : "border-green-500/25 bg-green-500/5"
-      }`}
-    >
+    <SSCard tone={variant === "earlier" ? "info" : "success"} padding={16}>
       <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">{label}</div>
       <div className="text-xs text-white/50 mb-3">{formatScanDate(s.createdAt)}</div>
       <div className="text-lg font-bold text-white mb-1">
         {s.matches[0]?.name ?? s.topStrainName ?? "—"}
       </div>
       {s.matches[0]?.confidence != null && (
-        <div className="text-sm text-white/70 mb-3">
+        <SSBadge tone={variant === "earlier" ? "info" : "success"} style={{ marginBottom: 12 }}>
           Top match ~{Math.round(s.matches[0].confidence)}% · {s.matches[0].confidenceLabel}
-        </div>
+        </SSBadge>
       )}
       {s.apiScanSummary?.trim() && (
         <div className="mb-3">
@@ -296,7 +319,7 @@ export default function CompareScansClient() {
       >
         Open this scan
       </Link>
-    </div>
+    </SSCard>
   );
 
   const ta = new Date(scanA.createdAt).getTime();
@@ -315,10 +338,7 @@ export default function CompareScansClient() {
             the <strong>earlier</strong> one.
           </p>
 
-          <section className="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-4">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-amber-200/90 mb-3">
-              What changed
-            </h2>
+          <SSNotice tone="warning" title="What changed" style={{ marginBottom: 32 }}>
             <ul className="space-y-2 text-sm text-white/85 leading-relaxed">
               {cmp.notes.map((n, i) => (
                 <li key={i} className="flex gap-2">
@@ -327,7 +347,7 @@ export default function CompareScansClient() {
                 </li>
               ))}
             </ul>
-          </section>
+          </SSNotice>
 
           <div className="grid gap-6 md:grid-cols-2">
             {renderScanCard("Earlier save", earlier, "earlier")}
@@ -335,15 +355,16 @@ export default function CompareScansClient() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <button
+            <SSButton
               type="button"
+              variant="ghost"
               onClick={() =>
                 router.push(`/garden/scans/compare?a=${encodeURIComponent(scanAId)}`)
               }
-              className="text-sm font-semibold text-white/80 underline"
+              style={{ padding: "8px 0", color: "rgba(255,255,255,0.8)" }}
             >
               Compare A with a different scan
-            </button>
+            </SSButton>
             <Link href="/garden/history" className="text-sm font-semibold text-green-400/90 underline">
               Scan history
             </Link>

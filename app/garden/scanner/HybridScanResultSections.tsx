@@ -1,8 +1,20 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import type { HybridScanPresentation } from "@/lib/scanner/scanOrchestrator";
 import { SCAN_DISPLAY_HIGH_CONFIDENCE_MIN } from "@/lib/scanner/scanUiConfidence";
+import SSBadge from "@/components/ui/SSBadge";
+import SSCard from "@/components/ui/SSCard";
+import SSNotice from "@/components/ui/SSNotice";
+
+function topMatchHasClusterReason(hybrid: HybridScanPresentation | null): boolean {
+  const reasons = hybrid?.matches?.[0]?.reasons;
+  if (!reasons?.length) return false;
+  return reasons.some(
+    (x) => typeof x === "string" && x.includes("Tight match cluster")
+  );
+}
 
 /** Display tiers for 0–100 confidence — neutral, not overclaiming. */
 export function matchConfidenceTier(
@@ -39,19 +51,9 @@ function Card({
   emphasized?: boolean;
 }) {
   return (
-    <div
-      style={{
-        padding: "16px 18px",
-        borderRadius: 14,
-        background: emphasized ? "rgba(76,175,80,0.08)" : "rgba(255,255,255,0.04)",
-        border: emphasized
-          ? "1px solid rgba(76,175,80,0.28)"
-          : "1px solid rgba(255,255,255,0.08)",
-        marginBottom: 12,
-      }}
-    >
+    <SSCard tone={emphasized ? "success" : "default"} padding="16px 18px" style={{ marginBottom: 12 }}>
       {children}
-    </div>
+    </SSCard>
   );
 }
 
@@ -264,6 +266,30 @@ function GrowCoachCard({ growCoach }: { growCoach: unknown }) {
       {list("Suggestions", suggestions, "default")}
       {list("Watch for", watchFor, "default")}
       {list("Cautions", cautions, "warn")}
+      <div style={{ marginTop: 16 }}>
+        <Link
+          href="/garden/grow-coach"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            padding: "10px 14px",
+            borderRadius: 12,
+            background: "rgba(76,175,80,0.18)",
+            border: "1px solid rgba(129,199,132,0.45)",
+            color: "#C8E6C9",
+            fontSize: 13,
+            fontWeight: 800,
+            textDecoration: "none",
+          }}
+        >
+          Open Grow Coach →
+        </Link>
+        <p style={{ margin: "8px 0 0", fontSize: 11, color: "rgba(255,255,255,0.38)", lineHeight: 1.45 }}>
+          Member feature — you&apos;ll see upgrade options if your plan doesn&apos;t include it yet.
+        </p>
+      </div>
     </Card>
   );
 }
@@ -279,29 +305,21 @@ export function HybridScanLeadSections({ hybrid }: { hybrid: HybridScanPresentat
   return (
     <div style={{ marginBottom: 16 }}>
       {warnings && (
-        <div
-          style={{
-            padding: "12px 14px",
-            borderRadius: 12,
-            background: "rgba(255,183,77,0.07)",
-            border: "1px solid rgba(255,183,77,0.28)",
-            marginBottom: 14,
-          }}
-        >
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: "rgba(255,183,77,0.9)", marginBottom: 8 }}>
-            Scan warnings
-          </div>
+        <SSNotice title="Scan warnings" tone="warning" style={{ marginBottom: 14 }}>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>
             {warnings.map((w, i) => (
               <li key={i}>{w}</li>
             ))}
           </ul>
-        </div>
+        </SSNotice>
       )}
 
       {top.length > 0 && (
         <div style={{ marginBottom: 0 }}>
-          <SectionTitle>Top matches</SectionTitle>
+          <SectionTitle>Best-effort matches</SectionTitle>
+          <p style={{ margin: "-4px 0 12px", fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.52)" }}>
+            Treat the first result as the strongest current read, not a guaranteed ID. Compare the alternatives when scores are close.
+          </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {top.map((m, idx) => {
               const rank = idx + 1;
@@ -309,16 +327,10 @@ export function HybridScanLeadSections({ hybrid }: { hybrid: HybridScanPresentat
               const tier = matchConfidenceTier(m.confidence);
               const emphasized = rank === 1;
               return (
-                <div
+                <SSCard
                   key={`${m.strainName}-${idx}`}
-                  style={{
-                    padding: "14px 16px",
-                    borderRadius: 14,
-                    background: emphasized ? "rgba(76,175,80,0.1)" : "rgba(255,255,255,0.04)",
-                    border: emphasized
-                      ? "1px solid rgba(76,175,80,0.35)"
-                      : "1px solid rgba(255,255,255,0.08)",
-                  }}
+                  tone={emphasized ? "success" : "default"}
+                  padding="14px 16px"
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                     <div
@@ -349,10 +361,15 @@ export function HybridScanLeadSections({ hybrid }: { hybrid: HybridScanPresentat
                       >
                         {m.strainName}
                       </div>
-                      <div style={{ marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
-                        <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{pct}%</span>
-                        <span style={{ margin: "0 8px", opacity: 0.35 }}>·</span>
-                        <span>{tier}</span>
+                      <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <SSBadge tone={tier === "High confidence" ? "success" : "warning"}>
+                          {pct}% · {tier}
+                        </SSBadge>
+                        {emphasized && (
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: 700 }}>
+                            strongest current match
+                          </span>
+                        )}
                       </div>
                       {m.reasons && m.reasons.length > 0 && (
                         <ul
@@ -371,7 +388,7 @@ export function HybridScanLeadSections({ hybrid }: { hybrid: HybridScanPresentat
                       )}
                     </div>
                   </div>
-                </div>
+                </SSCard>
               );
             })}
           </div>
@@ -387,8 +404,10 @@ export function HybridScanDetailSections({ hybrid }: { hybrid: HybridScanPresent
 
   const poor = hybrid.poorImageMessage;
   const tips = hybrid.improveTips?.length ? hybrid.improveTips : null;
+  const clusterHint = topMatchHasClusterReason(hybrid);
 
   const hasAnything =
+    clusterHint ||
     poor ||
     hybrid.plantAnalysis != null ||
     hybrid.growCoach != null ||
@@ -398,21 +417,22 @@ export function HybridScanDetailSections({ hybrid }: { hybrid: HybridScanPresent
 
   return (
     <div style={{ marginBottom: 18 }}>
+      {clusterHint && (
+        <SSNotice title="Look-alike strains" tone="info" style={{ marginBottom: 14 }}>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "rgba(255,255,255,0.78)" }}>
+            Several similar cultivars scored close together. Use the top match as a{" "}
+            <strong style={{ color: "rgba(255,255,255,0.92)" }}>best-effort lead</strong>, then compare the
+            top 3 alternatives and add a sharper close-up if you need more certainty.
+          </p>
+        </SSNotice>
+      )}
       {poor && (
-        <div
-          style={{
-            padding: "14px 16px",
-            borderRadius: 14,
-            background: "rgba(255,152,0,0.09)",
-            border: "1px solid rgba(255,152,0,0.35)",
-            marginBottom: 14,
-          }}
-        >
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: "rgba(255,193,7,0.95)", marginBottom: 8 }}>
-            Image quality
-          </div>
+        <SSNotice title="Image quality" tone="warning" style={{ marginBottom: 14 }}>
           <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "rgba(255,255,255,0.88)" }}>{poor}</p>
-        </div>
+          <p style={{ margin: "8px 0 0", fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.58)" }}>
+            Better capture usually means one sharp macro, one full bud angle, and one side angle in even light.
+          </p>
+        </SSNotice>
       )}
 
       {hybrid.plantAnalysis != null && <PlantAnalysisCard plantAnalysis={hybrid.plantAnalysis} />}

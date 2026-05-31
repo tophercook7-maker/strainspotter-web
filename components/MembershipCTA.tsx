@@ -3,6 +3,7 @@
 import { getScansRemaining, FREE_SCAN_TOTAL, MEMBERSHIP_TIERS } from "@/lib/scanGating";
 import { useEffect, useState } from "react";
 import ScanPaywall from "@/components/ScanPaywall";
+import { useMembershipPlan } from "@/lib/auth/useMembershipPlan";
 
 interface MembershipCTAProps {
   variant?: "banner" | "inline" | "scanner-status";
@@ -11,6 +12,7 @@ interface MembershipCTAProps {
 export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps) {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const { membershipPlanTier } = useMembershipPlan();
 
   useEffect(() => {
     setRemaining(getScansRemaining());
@@ -19,6 +21,9 @@ export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps
   if (remaining === null) return null;
 
   if (variant === "scanner-status") {
+    if (membershipPlanTier === "member" || membershipPlanTier === "pro") {
+      return null;
+    }
     const pct = (remaining / FREE_SCAN_TOTAL) * 100;
     const barColor = remaining <= 1 ? "#EF5350" : remaining <= 2 ? "#FFB74D" : "#66BB6A";
     return (

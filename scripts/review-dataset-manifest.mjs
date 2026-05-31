@@ -1,21 +1,31 @@
-import { mkdir, readFile, rename } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rename } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join, parse } from "node:path";
+import { isAbsolute, join, parse } from "node:path";
+import { DATA_PATHS, PROJECT_ROOT } from "./data-paths.mjs";
 
-const ROOT = process.cwd();
-const DATA_DIR = join(ROOT, "data");
-const INBOX_DIR = join(DATA_DIR, "inbox");
-const REAL_DIR = join(DATA_DIR, "real");
-const EVAL_DIR = join(DATA_DIR, "eval");
-const REJECTED_DIR = join(DATA_DIR, "rejected");
-const REVIEWED_DIR = join(DATA_DIR, "reviewed");
+const INBOX_DIR = DATA_PATHS.inboxDir();
+const REAL_DIR = DATA_PATHS.realDir();
+const EVAL_DIR = DATA_PATHS.evalDir();
+const REJECTED_DIR = DATA_PATHS.rejectedDir();
+const GLOSSY_DIR = DATA_PATHS.glossyDir();
+const REVIEWED_DIR = DATA_PATHS.reviewedDir();
+const VAULT_INDEX_PATH = DATA_PATHS.vaultIndexPath();
+const GLOSSY_REJECT_REASONS = new Set([
+  "glossy catalog image",
+  "studio lighting",
+  "overprocessed / filtered",
+  "generic frosty stock photo",
+]);
 
 function getManifestPath() {
   const index = process.argv.indexOf("--manifest");
   if (index === -1 || !process.argv[index + 1]) {
     throw new Error("Usage: node scripts/review-dataset-manifest.mjs --manifest data/review-manifest.json");
   }
-  return join(ROOT, process.argv[index + 1]);
+  const value = process.argv[index + 1];
+  if (isAbsolute(value)) return value;
+  if (value.startsWith("data/")) return join(DATA_PATHS.dataRoot(), value.replace(/^data\//, ""));
+  return join(PROJECT_ROOT, value);
 }
 
 function toStrainSlug(strainName) {
@@ -33,6 +43,7 @@ async function ensureDatasetFolders() {
   await mkdir(REAL_DIR, { recursive: true });
   await mkdir(EVAL_DIR, { recursive: true });
   await mkdir(REJECTED_DIR, { recursive: true });
+  await mkdir(GLOSSY_DIR, { recursive: true });
   await mkdir(REVIEWED_DIR, { recursive: true });
 }
 
@@ -50,6 +61,13 @@ async function uniqueDestinationPath(directory, fileName) {
   return destinationPath;
 }
 
+async function readVaultIndex() {
+  if (!existsSync(VAULT_INDEX_PATH)) return new Map();
+  const index = JSON.parse(await readFile(VAULT_INDEX_PATH, "utf8"));
+  const rows = Array.isArray(index.items) ? index.items : [];
+  return new Map(rows.map((item) => [item.filePath, item]));
+}
+
 function destinationForItem(item) {
   if (item.approvedForTraining === true) {
     const strainSlug = toStrainSlug(item.strainSlug);
@@ -63,7 +81,19 @@ function destinationForItem(item) {
     return join(EVAL_DIR, strainSlug);
   }
 
+  if (GLOSSY_REJECT_REASONS.has(String(item.rejectReason ?? "").toLowerCase())) {
+    return GLOSSY_DIR;
+  }
+
   return REJECTED_DIR;
+}
+
+function safeFileName(fileName) {
+  return String(fileName ?? "")
+    .replace(/[\\/]/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 async function main() {
@@ -74,27 +104,32 @@ async function main() {
   if (!Array.isArray(manifest.items)) {
     throw new Error("Review manifest must include an items array");
   }
+  const vaultIndex = await readVaultIndex();
 
   const summary = {
     training: 0,
     eval: 0,
     rejected: 0,
+    glossy: 0,
     missing: 0,
   };
   const missing = [];
 
   for (const item of manifest.items) {
-    const fileName = String(item.fileName ?? "");
+    const rawFileName = String(item.fileName ?? "");
+    const fileName = safeFileName(rawFileName);
     if (!fileName || fileName.includes("/") || fileName.includes("\\")) {
-      console.warn(`Skipping invalid fileName in manifest: ${fileName}`);
+      console.warn(`Skipping invalid fileName in manifest: ${rawFileName}`);
       summary.missing += 1;
-      missing.push(fileName || "(blank)");
+      missing.push(rawFileName || "(blank)");
       continue;
     }
 
-    const sourcePath = join(INBOX_DIR, fileName);
+    const vaultPath = typeof item.filePath === "string" ? item.filePath : null;
+    const indexEntry = vaultPath ? vaultIndex.get(vaultPath) : null;
+    const sourcePath = vaultPath && (indexEntry || existsSync(vaultPath)) ? vaultPath : join(INBOX_DIR, fileName);
     if (!existsSync(sourcePath)) {
-      console.warn(`Missing inbox file: ${fileName}`);
+      console.warn(`Missing source file: ${sourcePath}`);
       summary.missing += 1;
       missing.push(fileName);
       continue;
@@ -103,10 +138,15 @@ async function main() {
     const destinationDir = destinationForItem(item);
     await mkdir(destinationDir, { recursive: true });
     const destinationPath = await uniqueDestinationPath(destinationDir, fileName);
-    await rename(sourcePath, destinationPath);
+    if (vaultPath) {
+      await copyFile(sourcePath, destinationPath);
+    } else {
+      await rename(sourcePath, destinationPath);
+    }
 
     if (item.approvedForTraining === true) summary.training += 1;
     else if (item.approvedForEval === true) summary.eval += 1;
+    else if (destinationDir === GLOSSY_DIR) summary.glossy += 1;
     else summary.rejected += 1;
   }
 
@@ -114,6 +154,7 @@ async function main() {
   console.log("=======================");
   console.log(`Moved to training: ${summary.training}`);
   console.log(`Moved to eval: ${summary.eval}`);
+  console.log(`Moved to glossy quarantine: ${summary.glossy}`);
   console.log(`Rejected: ${summary.rejected}`);
   console.log(`Missing: ${summary.missing}`);
 

@@ -8,7 +8,8 @@ export default function GardenLayout({ children }: { children: ReactNode }) {
       <div
         className="relative min-h-screen w-full text-white"
         style={{
-          backgroundImage: "url(/strainspotter-bg.jpeg)",
+          backgroundImage:
+            "linear-gradient(180deg, rgba(3,8,5,0.94), rgba(7,20,10,0.96))",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
