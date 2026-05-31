@@ -15,6 +15,7 @@
 // to Pro before they hit the wall. Cheap; should be cached client-side.
 
 import { NextRequest, NextResponse } from "next/server";
+import { membershipToTier } from "@/lib/billing/membership";
 
 export const runtime = "edge";
 
@@ -88,15 +89,8 @@ export async function GET(req: NextRequest) {
   const profile = rows?.[0];
   const membership = profile?.membership ?? "free";
 
-  // Map db membership to tier
-  const tier: "free" | "member" | "pro" =
-    membership === "pro" || membership === "elite"
-      ? "pro"
-      : membership === "garden" ||
-          membership === "standard" ||
-          membership === "member"
-        ? "member"
-        : "free";
+  // Map db membership to tier via the canonical collapse helper.
+  const tier = membershipToTier(membership);
 
   // Tier → monthly cap
   // Member: 100/mo. Pro/elite: "unlimited" (capped at 5,000/mo as fair use).

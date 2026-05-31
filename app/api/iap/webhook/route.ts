@@ -29,7 +29,7 @@ import { logger } from "@/lib/observability/log";
 
 const RC_WEBHOOK_SECRET = process.env.REVENUECAT_WEBHOOK_AUTH_SECRET || "";
 
-type Membership = "free" | "garden" | "pro" | "elite";
+import type { Membership } from "@/lib/billing/membership";
 
 /**
  * RevenueCat webhook event envelope (simplified — only the fields we use).

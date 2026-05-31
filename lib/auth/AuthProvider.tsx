@@ -12,6 +12,7 @@ import { getSupabase } from "../supabase/client";
 import type { MembershipTier } from "@/lib/auth/effectiveTier";
 import type { ScanEntitlements } from "@/lib/scanner/scanEntitlements";
 import type { User, Session } from "@supabase/supabase-js";
+import { membershipToTier } from "@/lib/billing/membership";
 
 interface Profile {
   id: string;
@@ -124,17 +125,15 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
           const p = await fetchProfile(currentSession.user.id);
           setProfile(p);
 
-          // Sync tier to localStorage for components that still use it
+          // Sync tier to localStorage for components that still use it.
+          // Canonical helper: elite (founder) collapses to "pro" — earlier
+          // code mapped it to "member" which capped founders at the
+          // Member tier rate-limit.
           if (p) {
-            const tier =
-              p.membership === "pro"
-                ? "pro"
-                : p.membership === "garden" ||
-                  p.membership === "standard" ||
-                  p.membership === "elite"
-                ? "member"
-                : "free";
-            localStorage.setItem("ss_membership_tier", tier);
+            localStorage.setItem(
+              "ss_membership_tier",
+              membershipToTier(p.membership)
+            );
           }
         }
       } catch (err) {
@@ -157,17 +156,12 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         const p = await fetchProfile(newSession.user.id);
         setProfile(p);
 
-        // Sync tier to localStorage
+        // Sync tier to localStorage via the canonical helper.
         if (p) {
-          const tier =
-            p.membership === "pro"
-              ? "pro"
-              : p.membership === "garden" ||
-                p.membership === "standard" ||
-                p.membership === "elite"
-              ? "member"
-              : "free";
-          localStorage.setItem("ss_membership_tier", tier);
+          localStorage.setItem(
+            "ss_membership_tier",
+            membershipToTier(p.membership)
+          );
         }
       } else {
         setProfile(null);

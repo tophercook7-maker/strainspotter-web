@@ -342,7 +342,7 @@ export async function POST(req: NextRequest) {
           metadataUserId,
           customerEmail
         );
-        if (!resolved.ok) {
+        if (resolved.ok === false) {
           log.warn("webhook_checkout_user_unresolved", {
             req: reqId,
             reason: resolved.reason,

@@ -9,6 +9,7 @@
 // expensive OpenAI Vision calls behind an active paid subscription.
 
 import { NextResponse } from "next/server";
+import { membershipToTier } from "@/lib/billing/membership";
 
 export type GateResult =
   | { ok: true; userId: string; tier: "member" | "pro" }
@@ -95,22 +96,11 @@ export async function requireSubscription(req: Request): Promise<GateResult> {
     return failure(500, "Subscription check failed.", "profile_network");
   }
 
-  // 5. Tier check.
-  // The database column 'profiles.membership' uses the historical labels
-  // 'garden' (Member tier), 'standard' (legacy Member-equivalent),
-  // 'elite' (legacy Pro-equivalent), and 'pro'. The client-side
-  // AuthProvider already collapses these into "member" | "pro"; we do
-  // the same translation here so all paid tiers resolve correctly.
-  let tier: "member" | "pro";
-  if (membership === "pro" || membership === "elite") {
-    tier = "pro";
-  } else if (
-    membership === "member" ||
-    membership === "garden" ||
-    membership === "standard"
-  ) {
-    tier = "member";
-  } else {
+  // 5. Tier check via the canonical collapse helper.
+  // Anything that isn't 'member' or 'pro' (i.e. 'free' or null) is
+  // refused at the gate — this endpoint only serves paid users.
+  const collapsedTier = membershipToTier(membership);
+  if (collapsedTier === "free") {
     return failure(
       402,
       "Active subscription required.",
@@ -118,7 +108,7 @@ export async function requireSubscription(req: Request): Promise<GateResult> {
     );
   }
 
-  return { ok: true, userId, tier };
+  return { ok: true, userId, tier: collapsedTier };
 }
 
 function failure(
