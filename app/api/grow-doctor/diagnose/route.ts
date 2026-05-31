@@ -16,7 +16,9 @@ import { requireSubscription } from "@/lib/auth/serverGate";
 import { logger } from "@/lib/observability/log";
 import { checkRateLimit } from "@/lib/observability/rateLimit";
 
-export const runtime = "edge";
+// Runs on Fluid Compute Node.js. Edge's 25s cap is too tight for
+// multi-image Vision diagnostics and the rate-limit/idempotency layer
+// now needs Supabase (Node).
 
 const STAGES = [
   "sourcing",
@@ -217,10 +219,11 @@ export async function POST(req: NextRequest) {
     }
     // Per-user rate limit — diagnostics burn the same dollars as scans.
     // Pro: 20/min, Member: 6/min.
-    const rl = checkRateLimit(
-      `diagnose:${gate.userId}`,
+    const rl = await checkRateLimit(
+      gate.userId,
       gate.tier === "pro" ? 20 : 6,
-      60
+      60,
+      "diagnose:1m"
     );
     if (rl.ok === false) {
       log.warn("diagnose_rate_limited", {

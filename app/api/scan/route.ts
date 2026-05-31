@@ -13,15 +13,19 @@
 //   3. No medical claims. "Users commonly report …" framing, not "treats X".
 //   4. The catalog is just a guide — the model is allowed to say "uncertain".
 //
-// Edge runtime — GPT-4o Vision can take 15-30s, Vercel Hobby serverless caps at 10s.
+// Runs on Fluid Compute Node.js (not Edge): the in-memory rate-limit
+// fallback was bypassable across regions, so we now hit Supabase for
+// rate-limit + quota — and supabase-js needs Node. maxDuration:60 (set
+// in vercel.json) actually applies here, where it was silently ignored
+// on Edge's 25s cap.
 
 import { NextRequest, NextResponse } from "next/server";
 import strainDb from "@/lib/data/strains.json";
 import { requireSubscription } from "@/lib/auth/serverGate";
 import { logger } from "@/lib/observability/log";
 import { checkRateLimit } from "@/lib/observability/rateLimit";
-
-export const runtime = "edge";
+import { runIdempotent } from "@/lib/observability/idempotency";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /* ─────────────────────────────────────────────────────────────────
  *  Catalog → compact textual reference for the system prompt
@@ -460,12 +464,27 @@ function normalizeAnalysis(
 type ScanRequestBody = {
   images: string[];
   sellersClaim?: string;
+  /**
+   * Optional client-generated UUID. When provided, a duplicate request
+   * (same userId + requestId) within ~60s is served from a cached result
+   * rather than re-billing the OpenAI call. Protects against double-tap
+   * on flaky mobile networks.
+   */
+  requestId?: string;
 };
 
 export async function POST(req: NextRequest) {
   const log = logger.child({ route: "/api/scan" });
   const reqId = log.requestId();
   const t0 = Date.now();
+
+  // Refund bookkeeping. Set inside the try block once consume_scan
+  // succeeds; the outer catch reads these to refund on unhandled errors
+  // so the user doesn't lose a scan slot to an OpenAI / network failure.
+  let needsRefund = false;
+  let refundUserId: string | null = null;
+  let refundFromTopup = false;
+
   try {
     // ── Subscription gate (Apple-safe, money-protection layer) ──
     // Anyone hitting this endpoint must have a valid Supabase session AND
@@ -475,12 +494,15 @@ export async function POST(req: NextRequest) {
       log.warn("scan_gate_blocked", { req: reqId });
       return gate.response;
     }
-    // Per-user rate limit — Pro: 30/min, Member: 10/min. In-memory
-    // soft cap; the Stripe-side monthly cap is the hard ceiling.
-    const rl = checkRateLimit(
-      `scan:${gate.userId}`,
+    // Per-user burst rate limit — Pro: 30/min, Member: 10/min. Backed
+    // by Supabase (public.check_rate_limit) so it works across all
+    // regions and cold starts. consume_scan() below is the authoritative
+    // monthly-cap enforcer; this is the abuse smoother.
+    const rl = await checkRateLimit(
+      gate.userId,
       gate.tier === "pro" ? 30 : 10,
-      60
+      60,
+      "scan:1m"
     );
     if (rl.ok === false) {
       log.warn("scan_rate_limited", {
@@ -497,10 +519,141 @@ export async function POST(req: NextRequest) {
         }
       );
     }
-    log.info("scan_start", { req: reqId, user: gate.userId, tier: gate.tier });
+
+    // Pro/Elite "unlimited" fair-use ceilings — protects against scripted
+    // abuse without affecting any realistic human usage pattern.
+    //   - Daily:    500 / day  (no human scans 500 plants a day)
+    //   - Monthly:  5,000 / mo (catches sustained automation)
+    // Member tier monthly cap is enforced by consume_scan() — see below.
+    if (gate.tier === "pro") {
+      const rlDay = await checkRateLimit(
+        gate.userId,
+        500,
+        86_400,
+        "scan:1d_pro"
+      );
+      if (rlDay.ok === false) {
+        log.warn("scan_pro_daily_cap", {
+          req: reqId,
+          user: gate.userId,
+          retryAfter: rlDay.retryAfterSec,
+        });
+        return NextResponse.json(
+          {
+            error:
+              "You've hit today's fair-use scan limit (500/day). " +
+              "Plenty of capacity tomorrow. If this is a real workflow that needs more, email support@strainspotter.app.",
+            code: "fair_use_daily",
+          },
+          {
+            status: 429,
+            headers: { "Retry-After": String(rlDay.retryAfterSec) },
+          }
+        );
+      }
+      const rlMonth = await checkRateLimit(
+        gate.userId,
+        5_000,
+        2_592_000,
+        "scan:1mo_pro"
+      );
+      if (rlMonth.ok === false) {
+        log.warn("scan_pro_monthly_cap", {
+          req: reqId,
+          user: gate.userId,
+          retryAfter: rlMonth.retryAfterSec,
+        });
+        return NextResponse.json(
+          {
+            error:
+              "You've hit this month's fair-use scan limit (5,000/mo). " +
+              "Email support@strainspotter.app if you have a real workflow that needs more.",
+            code: "fair_use_monthly",
+          },
+          {
+            status: 429,
+            headers: { "Retry-After": String(rlMonth.retryAfterSec) },
+          }
+        );
+      }
+    }
+
+    // ── Atomic quota check + counter increment ──
+    // consume_scan() locks profiles.id row, validates membership tier,
+    // enforces monthly cap (Member: 100/mo), and increments the right
+    // counter. Member who's exhausted their 100 falls back to topup
+    // credits if any remain. Returns allowed=false when out of both.
+    // We call it BEFORE the OpenAI request so a refused user never burns
+    // OpenAI cost; if OpenAI later fails we refund_scan() to make the
+    // user whole.
+    const sb = getSupabaseAdmin();
+    const quotaRpc = await sb.rpc("consume_scan", { p_user_id: gate.userId });
+    if (quotaRpc.error) {
+      log.error("scan_quota_rpc_error", {
+        req: reqId,
+        user: gate.userId,
+        err: quotaRpc.error.message,
+      });
+      return NextResponse.json(
+        { error: "Couldn't verify scan quota. Try again in a moment." },
+        { status: 503 }
+      );
+    }
+    const quota = quotaRpc.data as
+      | {
+          allowed: boolean;
+          reason?: string;
+          from_topup?: boolean;
+          monthly_used?: number;
+          monthly_cap?: number | null;
+          monthly_remaining?: number | null;
+          topup_remaining?: number;
+          unlimited?: boolean;
+        }
+      | null;
+
+    if (!quota || quota.allowed !== true) {
+      const reason = quota?.reason ?? "quota_exceeded";
+      const msg =
+        reason === "no_subscription"
+          ? "Active subscription required."
+          : reason === "monthly_cap_reached"
+            ? "You've used all 100 Member scans this month. Buy a top-up or upgrade to Pro for unlimited."
+            : reason === "user_not_found"
+              ? "Profile not found. Sign out and back in."
+              : "Scan quota exceeded.";
+      const status = reason === "no_subscription" ? 402 : 429;
+      log.warn("scan_quota_blocked", {
+        req: reqId,
+        user: gate.userId,
+        tier: gate.tier,
+        reason,
+      });
+      return NextResponse.json(
+        { error: msg, code: reason, quota },
+        { status }
+      );
+    }
+
+    // From here on, a slot has been spent. Any failure path must refund.
+    needsRefund = true;
+    refundUserId = gate.userId;
+    refundFromTopup = quota.from_topup === true;
+
+    log.info("scan_start", {
+      req: reqId,
+      user: gate.userId,
+      tier: gate.tier,
+      monthly_used: quota.monthly_used,
+      topup_remaining: quota.topup_remaining,
+    });
 
     const body = (await req.json()) as ScanRequestBody;
     const images = body.images;
+    const clientRequestId =
+      typeof body.requestId === "string" && body.requestId.trim()
+        ? body.requestId.trim().slice(0, 128)
+        : undefined;
     const sellersClaim =
       typeof body.sellersClaim === "string" && body.sellersClaim.trim()
         ? body.sellersClaim.trim().slice(0, 80)
@@ -541,70 +694,115 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.2,
-        max_tokens: 1800,
-      }),
-    });
+    // Wrap the expensive OpenAI call in idempotency: a duplicate
+    // request_id from the same user within ~60s returns the original
+    // result without re-billing the OpenAI call. No requestId → runs
+    // every time.
+    const { result: outcome, cached } = await runIdempotent(
+      gate.userId,
+      clientRequestId,
+      async () => {
+        const aiRes = await fetch(
+          "https://api.openai.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              messages: [
+                { role: "system", content: SYSTEM_PROMPT },
+                { role: "user", content },
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.2,
+              max_tokens: 1800,
+            }),
+          }
+        );
 
-    if (!aiRes.ok) {
-      const errText = await aiRes.text().catch(() => "");
-      return NextResponse.json(
-        {
-          error: `OpenAI request failed (${aiRes.status})`,
-          detail: errText.slice(0, 500),
-        },
-        { status: 502 }
+        if (!aiRes.ok) {
+          const errText = await aiRes.text().catch(() => "");
+          return {
+            ok: false as const,
+            status: 502,
+            payload: {
+              error: `OpenAI request failed (${aiRes.status})`,
+              detail: errText.slice(0, 500),
+            },
+          };
+        }
+
+        const aiJson = (await aiRes.json()) as Record<string, unknown>;
+        const choices = aiJson.choices as
+          | Array<Record<string, unknown>>
+          | undefined;
+        const messageContent = choices?.[0]?.message
+          ? ((choices[0].message as Record<string, unknown>).content as string)
+          : "";
+
+        let parsed: Record<string, unknown> = {};
+        try {
+          parsed = JSON.parse(messageContent);
+        } catch {
+          const m = messageContent.match(/\{[\s\S]*\}/);
+          if (m) {
+            try {
+              parsed = JSON.parse(m[0]);
+            } catch {
+              /* fall through */
+            }
+          }
+        }
+
+        const normalized = normalizeAnalysis(parsed, sellersClaim);
+        return {
+          ok: true as const,
+          normalized,
+          usage: aiJson.usage ?? null,
+        };
+      }
+    );
+
+    if (outcome.ok === false) {
+      // OpenAI returned non-2xx — refund the slot so the user can retry.
+      await refundScan(sb, refundUserId, refundFromTopup).catch((e) =>
+        log.warn("scan_refund_failed", { req: reqId, err: String(e) })
+      );
+      needsRefund = false;
+      return NextResponse.json(outcome.payload, { status: outcome.status });
+    }
+
+    if (cached) {
+      // Double-tap with the same requestId. The original request already
+      // spent a slot; refund this second spend so we don't charge twice.
+      await refundScan(sb, refundUserId, refundFromTopup).catch((e) =>
+        log.warn("scan_refund_cached_failed", {
+          req: reqId,
+          err: String(e),
+        })
       );
     }
 
-    const aiJson = (await aiRes.json()) as Record<string, unknown>;
-    const choices = aiJson.choices as Array<Record<string, unknown>> | undefined;
-    const messageContent = choices?.[0]?.message
-      ? ((choices[0].message as Record<string, unknown>).content as string)
-      : "";
-
-    let parsed: Record<string, unknown> = {};
-    try {
-      parsed = JSON.parse(messageContent);
-    } catch {
-      // Attempt to extract a JSON object from the response if model wrapped it
-      const m = messageContent.match(/\{[\s\S]*\}/);
-      if (m) {
-        try {
-          parsed = JSON.parse(m[0]);
-        } catch {
-          /* fall through */
-        }
-      }
-    }
-
-    const normalized = normalizeAnalysis(parsed, sellersClaim);
+    // Success path — keep the spend.
+    needsRefund = false;
 
     log.info("scan_done", {
       req: reqId,
       ms: Date.now() - t0,
-      candidates: Array.isArray((normalized as any)?.candidates)
-        ? (normalized as any).candidates.length
+      cached,
+      candidates: Array.isArray((outcome.normalized as any)?.candidates)
+        ? (outcome.normalized as any).candidates.length
         : 0,
     });
     return NextResponse.json({
       ok: true,
       model: "gpt-4o",
-      result: normalized,
-      usage: aiJson.usage ?? null,
+      result: outcome.normalized,
+      usage: outcome.usage,
+      cached,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -613,9 +811,31 @@ export async function POST(req: NextRequest) {
       ms: Date.now() - t0,
       message,
     });
+    if (needsRefund && refundUserId) {
+      try {
+        await refundScan(getSupabaseAdmin(), refundUserId, refundFromTopup);
+      } catch (refundErr) {
+        log.warn("scan_refund_catch_failed", {
+          req: reqId,
+          err: String(refundErr),
+        });
+      }
+    }
     return NextResponse.json(
       { error: "Scan failed", detail: message },
       { status: 500 }
     );
   }
+}
+
+async function refundScan(
+  sb: ReturnType<typeof getSupabaseAdmin>,
+  userId: string,
+  fromTopup: boolean
+): Promise<void> {
+  const { error } = await sb.rpc("refund_scan", {
+    p_user_id: userId,
+    p_from_topup: fromTopup,
+  });
+  if (error) throw new Error(error.message);
 }

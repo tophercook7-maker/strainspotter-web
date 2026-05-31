@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limit — 5 submissions per minute per user (well above legitimate
   // need; below abuse threshold).
-  const rl = checkRateLimit(`strain-sub:${gate.userId}`, 5, 60);
+  const rl = await checkRateLimit(gate.userId, 5, 60, "strain-sub");
   if (rl.ok === false) {
     log.warn("submission_rate_limited", {
       req: reqId,

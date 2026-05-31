@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { STRIPE_PRICES } from "@/lib/stripe/config";
+import { STRIPE_PRICES, SCAN_CREDIT_GRANTS } from "@/lib/stripe/config";
 import { logger } from "@/lib/observability/log";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
-type Membership = "free" | "garden" | "pro";
+type Membership = "free" | "garden" | "pro" | "elite";
 
 /**
  * Map a checkout-time priceKey (set by /api/stripe/checkout via metadata)
- * to a Membership value. priceKey is one of "member" | "pro" | "topup_*".
+ * to a Membership value. priceKey is one of:
+ *   "member" | "member_annual" | "pro" | "pro_annual" |
+ *   "founder_lifetime" | "topup_10" | "topup_25" | "topup_100"
  *
  * Database column 'profiles.membership' is constrained to free | garden |
  * standard | pro | elite. The client AuthProvider collapses garden/standard
  * to "member" — we write 'garden' here to match historical convention.
+ *
+ * Founder lifetime is mapped to 'elite' (the existing unlimited tier) so
+ * that all serverGate / quota logic just works. The one-time payment is
+ * captured as a flag in profile.founder_purchase_at for ops visibility.
  */
 function membershipFromPriceKey(
   priceKey: string | undefined
 ): Membership | null {
-  if (priceKey === "member") return "garden";
-  if (priceKey === "pro") return "pro";
+  if (priceKey === "member" || priceKey === "member_annual") return "garden";
+  if (priceKey === "pro" || priceKey === "pro_annual") return "pro";
+  if (priceKey === "founder_lifetime") return "elite";
   return null;
 }
 
@@ -30,9 +37,26 @@ function membershipFromPriceKey(
  */
 function membershipFromPriceId(priceId: string | undefined): Membership | null {
   if (!priceId) return null;
-  if (priceId === STRIPE_PRICES.pro) return "pro";
-  if (priceId === STRIPE_PRICES.member) return "garden";
+  if (priceId === STRIPE_PRICES.pro || priceId === STRIPE_PRICES.pro_annual)
+    return "pro";
+  if (
+    priceId === STRIPE_PRICES.member ||
+    priceId === STRIPE_PRICES.member_annual
+  )
+    return "garden";
+  if (priceId === STRIPE_PRICES.founder_lifetime) return "elite";
   return null;
+}
+
+/** True if the priceKey is a top-up SKU (one-time scan credit grant). */
+function isTopupPriceKey(
+  priceKey: string | undefined
+): priceKey is "topup_10" | "topup_25" | "topup_100" {
+  return (
+    priceKey === "topup_10" ||
+    priceKey === "topup_25" ||
+    priceKey === "topup_100"
+  );
 }
 
 async function findUserByEmail(
@@ -182,7 +206,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
   } else {
-    // Dev fallback — only used when STRIPE_WEBHOOK_SECRET is unset.
+    // No STRIPE_WEBHOOK_SECRET configured. In production this is a
+    // CRITICAL misconfiguration: without signature verification, anyone
+    // who learns the endpoint URL can POST a forged
+    // checkout.session.completed event and self-grant any tier. Refuse
+    // to serve until the env var is set.
+    if (process.env.NODE_ENV === "production") {
+      log.error("webhook_secret_missing_in_production", { req: reqId });
+      return NextResponse.json(
+        { error: "Webhook misconfigured" },
+        { status: 503 }
+      );
+    }
+    // Dev / preview only: accept unsigned events so local Stripe-CLI
+    // forwarding works without a secret. Loud warning so this can't
+    // silently leak into prod.
     try {
       event = JSON.parse(body) as Stripe.Event;
     } catch {
@@ -226,21 +264,32 @@ export async function POST(req: NextRequest) {
           break;
         }
 
-        // Subscription path
+        // Subscription / lifetime path (upgrades membership tier)
         const membership = membershipFromPriceKey(priceKey);
         if (membership) {
-          await updateProfileByEmail(
-            customerEmail,
-            { membership, stripe_customer_id: customerId },
-            log,
-            reqId
-          );
+          const updates: Record<string, unknown> = {
+            membership,
+            stripe_customer_id: customerId,
+          };
+          // Founder is a one-time purchase; mark the purchase date for ops.
+          if (priceKey === "founder_lifetime") {
+            updates.founder_purchase_at = new Date().toISOString();
+          }
+          await updateProfileByEmail(customerEmail, updates, log, reqId);
           break;
         }
 
-        // Top-up path
-        if (priceKey === "topup_10" || priceKey === "topup_25") {
-          const scansToAdd = priceKey === "topup_10" ? 10 : 25;
+        // Top-up path (grants scan credits without changing membership)
+        if (isTopupPriceKey(priceKey)) {
+          const scansToAdd = SCAN_CREDIT_GRANTS[priceKey] ?? 0;
+          if (scansToAdd <= 0) {
+            log.warn("webhook_topup_zero_grant", {
+              req: reqId,
+              priceKey,
+              email: customerEmail,
+            });
+            break;
+          }
           const supabase = await loadAdmin();
           const user = await findUserByEmail(supabase, customerEmail);
           if (!user) {
@@ -267,6 +316,7 @@ export async function POST(req: NextRequest) {
           log.info("webhook_topup_applied", {
             req: reqId,
             email: customerEmail,
+            priceKey,
             scansToAdd,
             scansAfter: next,
           });
