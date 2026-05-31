@@ -37,6 +37,8 @@ export type SavedUnifiedScan = {
   growCoach: GrowCoachPayload;
   improveTips: string[];
   poorImageMessage?: string;
+  /** Same narrative as `/api/scan` top-level `summary` when saved from the scanner. */
+  apiScanSummary?: string;
   topStrainName?: string;
   scanStatus?: "ok" | "poor_image";
   /** Grow Log entry ids linked from this scan (client registry; mirrored when possible) */

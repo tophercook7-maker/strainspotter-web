@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { STRIPE_PRICES, SCAN_CREDIT_GRANTS } from "@/lib/stripe/config";
 import { logger } from "@/lib/observability/log";
+import type { Membership } from "@/lib/billing/membership";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
-
-type Membership = "free" | "garden" | "pro" | "elite";
 
 /**
  * Map a checkout-time priceKey (set by /api/stripe/checkout via metadata)
@@ -74,6 +73,78 @@ async function findUserByEmail(
   return (
     users.find((u) => u.email?.toLowerCase() === email.toLowerCase()) || null
   );
+}
+
+/**
+ * Resolve a Stripe webhook event to a Supabase user id.
+ *
+ * Prefers the userId we set in metadata.userId at checkout creation (stable,
+ * can't be spoofed by changing the email mid-checkout). Falls back to
+ * email-based lookup for legacy sessions or webhooks where metadata is
+ * absent. The fallback also catches "user pasted their friend's email"
+ * cases but those are still resolved to the matching Supabase user — if
+ * the email is unknown, we refuse the upgrade.
+ *
+ * Returns the user, plus a flag indicating which path succeeded (for
+ * telemetry and to optionally verify email matches when known).
+ */
+async function resolveStripeUser(
+  supabase: Awaited<ReturnType<typeof loadAdmin>>,
+  metadataUserId: string | undefined,
+  fallbackEmail: string | undefined
+): Promise<
+  | { ok: true; user: { id: string; email?: string }; via: "metadata" | "email" }
+  | { ok: false; reason: "no_userid_no_email" | "metadata_user_missing" | "email_user_missing" }
+> {
+  if (metadataUserId) {
+    const { data: u, error } = await supabase.auth.admin.getUserById(
+      metadataUserId
+    );
+    if (!error && u?.user) {
+      return {
+        ok: true,
+        user: { id: u.user.id, email: u.user.email ?? undefined },
+        via: "metadata",
+      };
+    }
+    // metadata.userId pointed at a deleted/invalid user — fall through to
+    // email lookup if we have one.
+  }
+  if (fallbackEmail) {
+    const user = await findUserByEmail(supabase, fallbackEmail);
+    if (user) return { ok: true, user, via: "email" };
+    return { ok: false, reason: "email_user_missing" };
+  }
+  if (metadataUserId) return { ok: false, reason: "metadata_user_missing" };
+  return { ok: false, reason: "no_userid_no_email" };
+}
+
+/**
+ * Look up a Supabase user id by the stripe_customer_id we recorded at
+ * checkout time. This is the stable identity link for portal-triggered
+ * subscription updates / deletes (where the only thing Stripe gives us
+ * is the customer id, and the email can have been changed in the portal).
+ */
+async function findUserByStripeCustomerId(
+  supabase: Awaited<ReturnType<typeof loadAdmin>>,
+  customerId: string,
+  log: ReturnType<typeof logger.child>,
+  reqId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  if (error) {
+    log.warn("webhook_stripe_customer_lookup_error", {
+      req: reqId,
+      customerId,
+      message: error.message,
+    });
+    return null;
+  }
+  return (data as { id: string } | null)?.id ?? null;
 }
 
 async function loadAdmin() {
@@ -254,15 +325,39 @@ export async function POST(req: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const priceKey = session.metadata?.priceKey;
+        const metadataUserId = session.metadata?.userId || undefined;
         const customerEmail =
-          session.customer_details?.email || session.customer_email;
+          session.customer_details?.email ||
+          session.customer_email ||
+          undefined;
         const customerId =
           typeof session.customer === "string" ? session.customer : null;
 
-        if (!customerEmail) {
-          log.warn("webhook_checkout_no_email", { req: reqId });
+        // Resolve the Supabase user. Prefer metadata.userId (stable across
+        // email changes at checkout); fall back to email lookup for legacy
+        // sessions. Refuse to grant entitlements if neither resolves.
+        const supabase = await loadAdmin();
+        const resolved = await resolveStripeUser(
+          supabase,
+          metadataUserId,
+          customerEmail
+        );
+        if (!resolved.ok) {
+          log.warn("webhook_checkout_user_unresolved", {
+            req: reqId,
+            reason: resolved.reason,
+            hasMetadataUserId: !!metadataUserId,
+            hasEmail: !!customerEmail,
+          });
           break;
         }
+        const userId = resolved.user.id;
+        log.info("webhook_checkout_user_resolved", {
+          req: reqId,
+          userId,
+          via: resolved.via,
+          priceKey,
+        });
 
         // Subscription / lifetime path (upgrades membership tier)
         const membership = membershipFromPriceKey(priceKey);
@@ -275,7 +370,24 @@ export async function POST(req: NextRequest) {
           if (priceKey === "founder_lifetime") {
             updates.founder_purchase_at = new Date().toISOString();
           }
-          await updateProfileByEmail(customerEmail, updates, log, reqId);
+          const { error } = await supabase
+            .from("profiles")
+            .update(updates)
+            .eq("id", userId);
+          if (error) {
+            log.error("webhook_profile_update_failed", {
+              req: reqId,
+              userId,
+              message: error.message,
+            });
+          } else {
+            log.info("webhook_membership_upgraded", {
+              req: reqId,
+              userId,
+              membership,
+              priceKey,
+            });
+          }
           break;
         }
 
@@ -286,23 +398,14 @@ export async function POST(req: NextRequest) {
             log.warn("webhook_topup_zero_grant", {
               req: reqId,
               priceKey,
-              email: customerEmail,
-            });
-            break;
-          }
-          const supabase = await loadAdmin();
-          const user = await findUserByEmail(supabase, customerEmail);
-          if (!user) {
-            log.warn("webhook_topup_user_not_found", {
-              req: reqId,
-              email: customerEmail,
+              userId,
             });
             break;
           }
           const { data: profile } = await supabase
             .from("profiles")
             .select("scans_remaining")
-            .eq("id", user.id)
+            .eq("id", userId)
             .single();
           const current = profile?.scans_remaining || 0;
           const next = current + scansToAdd;
@@ -312,10 +415,10 @@ export async function POST(req: NextRequest) {
               scans_remaining: next,
               stripe_customer_id: customerId,
             })
-            .eq("id", user.id);
+            .eq("id", userId);
           log.info("webhook_topup_applied", {
             req: reqId,
-            email: customerEmail,
+            userId,
             priceKey,
             scansToAdd,
             scansAfter: next,
@@ -326,7 +429,7 @@ export async function POST(req: NextRequest) {
         log.warn("webhook_checkout_unknown_priceKey", {
           req: reqId,
           priceKey,
-          email: customerEmail,
+          userId,
         });
         break;
       }
@@ -339,15 +442,51 @@ export async function POST(req: NextRequest) {
           typeof sub.customer === "string" ? sub.customer : null;
         if (!customerId) break;
 
-        const customer = await stripe.customers.retrieve(customerId);
-        if (
-          customer.deleted ||
-          !("email" in customer) ||
-          !customer.email
-        ) {
-          break;
+        // Resolve the user by stripe_customer_id (saved at checkout).
+        // This is the only stable link Stripe provides for portal-triggered
+        // updates — emails can change in the portal and would otherwise
+        // re-route entitlements to a different Supabase account.
+        const supabase = await loadAdmin();
+        const userId = await findUserByStripeCustomerId(
+          supabase,
+          customerId,
+          log,
+          reqId
+        );
+        if (!userId) {
+          // Fall back to email-from-Stripe-customer for accounts that
+          // pre-date the stripe_customer_id linkage.
+          const customer = await stripe.customers.retrieve(customerId);
+          if (
+            customer.deleted ||
+            !("email" in customer) ||
+            !customer.email
+          ) {
+            log.warn("webhook_subscription_no_user_no_email", {
+              req: reqId,
+              customerId,
+            });
+            break;
+          }
+          const fallback = await findUserByEmail(supabase, customer.email);
+          if (!fallback) {
+            log.warn("webhook_subscription_email_user_not_found", {
+              req: reqId,
+              customerId,
+              email: customer.email,
+            });
+            break;
+          }
+          // Backfill the link so next time we hit the fast path.
+          await supabase
+            .from("profiles")
+            .update({ stripe_customer_id: customerId })
+            .eq("id", fallback.id);
         }
-        const email = customer.email;
+        const resolvedUserId =
+          userId ??
+          (await findUserByStripeCustomerId(supabase, customerId, log, reqId));
+        if (!resolvedUserId) break;
 
         const isActive =
           sub.status === "active" || sub.status === "trialing";
@@ -357,7 +496,7 @@ export async function POST(req: NextRequest) {
           // Stripe will fire subscription.deleted when retries exhaust.
           log.info("webhook_subscription_inactive_status", {
             req: reqId,
-            email,
+            userId: resolvedUserId,
             status: sub.status,
           });
           break;
@@ -368,18 +507,21 @@ export async function POST(req: NextRequest) {
         if (!membership) {
           log.warn("webhook_subscription_unknown_price", {
             req: reqId,
-            email,
+            userId: resolvedUserId,
             priceId,
           });
           break;
         }
 
-        await updateProfileByEmail(
-          email,
-          { membership, stripe_customer_id: customerId },
-          log,
-          reqId
-        );
+        await supabase
+          .from("profiles")
+          .update({ membership, stripe_customer_id: customerId })
+          .eq("id", resolvedUserId);
+        log.info("webhook_subscription_updated", {
+          req: reqId,
+          userId: resolvedUserId,
+          membership,
+        });
         break;
       }
 
@@ -390,20 +532,44 @@ export async function POST(req: NextRequest) {
           typeof sub.customer === "string" ? sub.customer : null;
         if (!customerId) break;
 
-        const customer = await stripe.customers.retrieve(customerId);
-        if (
-          customer.deleted ||
-          !("email" in customer) ||
-          !customer.email
-        ) {
-          break;
-        }
-        await updateProfileByEmail(
-          customer.email,
-          { membership: "free" satisfies Membership },
+        const supabase = await loadAdmin();
+        const userId = await findUserByStripeCustomerId(
+          supabase,
+          customerId,
           log,
           reqId
         );
+        if (!userId) {
+          // Fallback: email lookup. Don't backfill here — the user has
+          // cancelled, no need to optimize for a "next time."
+          const customer = await stripe.customers.retrieve(customerId);
+          if (
+            customer.deleted ||
+            !("email" in customer) ||
+            !customer.email
+          ) {
+            log.warn("webhook_subscription_delete_no_user", {
+              req: reqId,
+              customerId,
+            });
+            break;
+          }
+          const fallback = await findUserByEmail(supabase, customer.email);
+          if (!fallback) break;
+          await supabase
+            .from("profiles")
+            .update({ membership: "free" satisfies Membership })
+            .eq("id", fallback.id);
+          break;
+        }
+        await supabase
+          .from("profiles")
+          .update({ membership: "free" satisfies Membership })
+          .eq("id", userId);
+        log.info("webhook_subscription_deleted_downgraded", {
+          req: reqId,
+          userId,
+        });
         break;
       }
 

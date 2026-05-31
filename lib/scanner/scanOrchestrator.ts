@@ -11,6 +11,19 @@
 import type { ScannerViewModel } from "./viewModel";
 import type { ScanResult, WikiSynthesis } from "./types";
 
+/**
+ * Lightweight presentation shape consumed by the hybrid scanner result UI.
+ * Ported from the data-engine line so HybridScanResultSections compiles.
+ */
+export interface HybridScanPresentation {
+  matches?: Array<{ strainName: string; confidence: number; reasons?: string[] }>;
+  plantAnalysis?: unknown;
+  growCoach?: unknown;
+  improveTips?: string[];
+  poorImageMessage?: string;
+  scanWarnings?: string[];
+}
+
 export interface OrchestratedScanResult {
   displayName: string;
   confidencePercent: number;

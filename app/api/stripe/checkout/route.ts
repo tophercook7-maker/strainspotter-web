@@ -22,7 +22,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isSubscription = priceKey === "member" || priceKey === "pro";
+    // Subscription SKUs (monthly and annual). Founder lifetime + topups are
+    // one-time payments. Treat anything that's not in the subscription
+    // allowlist as a one-time payment.
+    const SUBSCRIPTION_PRICE_KEYS = new Set([
+      "member",
+      "member_annual",
+      "pro",
+      "pro_annual",
+    ]);
+    const isSubscription = SUBSCRIPTION_PRICE_KEYS.has(priceKey);
     const origin = req.headers.get("origin") || "https://strainspotter.app";
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {

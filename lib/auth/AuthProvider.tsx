@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { getSupabase } from "../supabase/client";
+import type { MembershipTier } from "@/lib/auth/effectiveTier";
+import type { ScanEntitlements } from "@/lib/scanner/scanEntitlements";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface Profile {
@@ -43,6 +45,16 @@ interface AuthContextValue {
   refreshProfile: () => Promise<void>;
   needsOnboarding: boolean;
   tier: "free" | "member" | "pro";
+  /**
+   * Optional entitlements/membership fields supplied by the data-engine line.
+   * Consumers (e.g. useMembershipPlan) read these defensively with fallbacks,
+   * so they are optional until the provider is wired to populate them.
+   */
+  effectiveMembershipTier?: MembershipTier;
+  membershipPlanTier?: MembershipTier;
+  entitlementsStatus?: "idle" | "loading" | "ok" | "error";
+  scanEntitlements?: ScanEntitlements | null;
+  refreshScanEntitlements?: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);

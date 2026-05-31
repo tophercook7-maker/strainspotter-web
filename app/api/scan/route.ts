@@ -578,14 +578,130 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Body parse + payload validation BEFORE consume_scan ──
+    // Reject bad payloads early so they don't burn a quota slot.
+
+    // 1. Content-Length pre-check. Each base64 image inflates ~33%, so
+    //    6 images × ~2 MB raw = ~16 MB encoded. We cap at 10 MB total to
+    //    block someone uploading 6 enormous photos as a cost-amplification
+    //    attack against OpenAI billing.
+    const MAX_REQUEST_BYTES = 10 * 1024 * 1024;
+    const contentLengthHeader = req.headers.get("content-length");
+    if (contentLengthHeader) {
+      const contentLength = Number(contentLengthHeader);
+      if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+        log.warn("scan_payload_too_large", {
+          req: reqId,
+          user: gate.userId,
+          contentLength,
+        });
+        return NextResponse.json(
+          {
+            error:
+              "Request too large. Total image payload must be under 10 MB.",
+            code: "payload_too_large",
+          },
+          { status: 413 }
+        );
+      }
+    }
+
+    const body = (await req.json()) as ScanRequestBody;
+    const images = body.images;
+    const clientRequestId =
+      typeof body.requestId === "string" && body.requestId.trim()
+        ? body.requestId.trim().slice(0, 128)
+        : undefined;
+    const sellersClaim =
+      typeof body.sellersClaim === "string" && body.sellersClaim.trim()
+        ? body.sellersClaim.trim().slice(0, 80)
+        : undefined;
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return NextResponse.json(
+        { error: "No images provided" },
+        { status: 400 }
+      );
+    }
+    if (images.length > 6) {
+      return NextResponse.json(
+        { error: "Too many images (max 6)" },
+        { status: 400 }
+      );
+    }
+
+    // 2. Per-image MIME allowlist + per-image size cap. OpenAI's Vision
+    //    API accepts jpeg/png/webp/gif; HEIC is iOS-camera default and
+    //    we accept it because Capacitor wraps the iOS app (HEIC images
+    //    are sent through the same path). Per-image cap at 2 MB raw,
+    //    ~2.7 MB as a data: URL — keeps any single image realistic.
+    const ALLOWED_MIME = new Set([
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/heic",
+      "image/heif",
+    ]);
+    const MAX_IMAGE_BYTES = 2_800_000;
+    const validatedImages: string[] = [];
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i];
+      if (typeof img !== "string") {
+        return NextResponse.json(
+          { error: `Image at index ${i} is not a string`, code: "invalid_image" },
+          { status: 400 }
+        );
+      }
+      if (!img.startsWith("data:")) {
+        return NextResponse.json(
+          {
+            error: `Image at index ${i} must be a data: URL`,
+            code: "invalid_image_format",
+          },
+          { status: 400 }
+        );
+      }
+      const semicolon = img.indexOf(";");
+      const mime = semicolon > 5 ? img.slice(5, semicolon).toLowerCase() : "";
+      if (!ALLOWED_MIME.has(mime)) {
+        return NextResponse.json(
+          {
+            error: `Image at index ${i} has unsupported MIME type: ${mime}`,
+            code: "unsupported_image_type",
+            allowed: Array.from(ALLOWED_MIME),
+          },
+          { status: 415 }
+        );
+      }
+      if (img.length > MAX_IMAGE_BYTES) {
+        return NextResponse.json(
+          {
+            error: `Image at index ${i} is too large. Max ~2 MB per image.`,
+            code: "image_too_large",
+          },
+          { status: 413 }
+        );
+      }
+      validatedImages.push(img);
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "OpenAI API key not configured" },
+        { status: 500 }
+      );
+    }
+
     // ── Atomic quota check + counter increment ──
     // consume_scan() locks profiles.id row, validates membership tier,
     // enforces monthly cap (Member: 100/mo), and increments the right
     // counter. Member who's exhausted their 100 falls back to topup
     // credits if any remain. Returns allowed=false when out of both.
-    // We call it BEFORE the OpenAI request so a refused user never burns
-    // OpenAI cost; if OpenAI later fails we refund_scan() to make the
-    // user whole.
+    // We call it AFTER body validation so bad requests don't burn a slot,
+    // and BEFORE the OpenAI call so a refused user never burns OpenAI
+    // cost; if OpenAI later fails we refund_scan() to make the user whole.
     const sb = getSupabaseAdmin();
     const quotaRpc = await sb.rpc("consume_scan", { p_user_id: gate.userId });
     if (quotaRpc.error) {
@@ -648,46 +764,17 @@ export async function POST(req: NextRequest) {
       topup_remaining: quota.topup_remaining,
     });
 
-    const body = (await req.json()) as ScanRequestBody;
-    const images = body.images;
-    const clientRequestId =
-      typeof body.requestId === "string" && body.requestId.trim()
-        ? body.requestId.trim().slice(0, 128)
-        : undefined;
-    const sellersClaim =
-      typeof body.sellersClaim === "string" && body.sellersClaim.trim()
-        ? body.sellersClaim.trim().slice(0, 80)
-        : undefined;
-
-    if (!images || !Array.isArray(images) || images.length === 0) {
-      return NextResponse.json(
-        { error: "No images provided" },
-        { status: 400 }
-      );
-    }
-    if (images.length > 6) {
-      return NextResponse.json(
-        { error: "Too many images (max 6)" },
-        { status: 400 }
-      );
-    }
-
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "OpenAI API key not configured" },
-        { status: 500 }
-      );
-    }
-
-    // Build multimodal content
+    // Build multimodal content from the already-validated images.
     const content: Array<
       | { type: "text"; text: string }
       | { type: "image_url"; image_url: { url: string; detail: string } }
-    > = [{ type: "text", text: buildUserPrompt(images.length, sellersClaim) }];
-
-    for (const img of images) {
-      if (typeof img !== "string" || !img.startsWith("data:image/")) continue;
+    > = [
+      {
+        type: "text",
+        text: buildUserPrompt(validatedImages.length, sellersClaim),
+      },
+    ];
+    for (const img of validatedImages) {
       content.push({
         type: "image_url",
         image_url: { url: img, detail: "high" },

@@ -89,11 +89,49 @@ async function updateProfile(
   reqId: string
 ): Promise<boolean> {
   const supabase = await loadAdmin();
+
+  // Defense-in-depth: when this update tries to bind an
+  // apple_original_transaction_id, first check the transaction isn't
+  // already claimed by a DIFFERENT user. If it is, refuse the update —
+  // a single Apple transaction must map to exactly one Supabase account.
+  // The UNIQUE constraint (migration 2026_05_31_iap_transaction_uniqueness)
+  // is the authoritative guard; this check is a clearer error path.
+  const txnId = updates.apple_original_transaction_id;
+  if (typeof txnId === "string" && txnId.length > 0) {
+    const existing = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("apple_original_transaction_id", txnId)
+      .maybeSingle();
+    const owner = (existing.data as { id: string } | null)?.id;
+    if (owner && owner !== userId) {
+      log.warn("iap_webhook_transaction_collision", {
+        req: reqId,
+        userId,
+        owner,
+        apple_original_transaction_id: txnId,
+      });
+      return false;
+    }
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update(updates)
     .eq("id", userId);
   if (error) {
+    // Postgres unique_violation = '23505'. If we hit it on this path it
+    // means a parallel webhook for the same transaction beat us to it —
+    // treat as a soft failure, not a 500.
+    const code = (error as { code?: string }).code;
+    if (code === "23505") {
+      log.warn("iap_webhook_transaction_uniqueness_violation", {
+        req: reqId,
+        userId,
+        message: error.message,
+      });
+      return false;
+    }
     log.error("iap_webhook_profile_update_failed", {
       req: reqId,
       userId,
