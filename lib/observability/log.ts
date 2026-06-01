@@ -77,3 +77,55 @@ function makeLogger(base: LogContext = {}): Logger {
 }
 
 export const logger: Logger = makeLogger();
+
+/**
+ * Best-effort POST to a generic alert webhook (Slack, Discord, Zapier,
+ * etc.). If ALERT_WEBHOOK_URL is unset this is a no-op.
+ *
+ * Payload shape works as-is for Slack (text), Discord (content) and any
+ * "send me the JSON body" webhook (the whole payload). Errors during
+ * the POST are swallowed — alerting must NEVER cause the calling
+ * request to fail.
+ *
+ * Usage from critical paths (cron route on leak, webhook on signature
+ * failure, etc.):
+ *   await captureAlert("anon_leak_detected", { tables: [...] });
+ */
+export async function captureAlert(
+  event: string,
+  ctx?: LogContext
+): Promise<void> {
+  const url = process.env.ALERT_WEBHOOK_URL;
+  if (!url) return;
+  const summary = `🚨 [StrainSpotter] ${event}`;
+  const body = {
+    // Slack: shows `text`. Discord: shows `content`. Both ignore the
+    // other; arbitrary webhook receivers can pick whichever they want
+    // or the structured `event` + `ctx` below.
+    text: summary,
+    content: summary,
+    event,
+    ctx: ctx || {},
+    env: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+    ts: new Date().toISOString(),
+  };
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      // Tight timeout — alerting must never block a request.
+      signal: AbortSignal.timeout(2_000),
+    });
+  } catch (err) {
+    // Don't recurse into captureAlert — that's how alert storms happen.
+    console.error(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        level: "warn",
+        event: "alert_webhook_failed",
+        message: err instanceof Error ? err.message : String(err),
+      })
+    );
+  }
+}

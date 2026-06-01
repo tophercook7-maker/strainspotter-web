@@ -7,6 +7,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://strainspotter.app'),
   title: {
     default: 'StrainSpotter — Scan, Analyze, and Grow Cannabis',
     template: '%s | StrainSpotter',

@@ -16,6 +16,7 @@
 // surface in the project's notification feed.
 
 import { NextResponse } from "next/server";
+import { captureAlert } from "@/lib/observability/log";
 
 // Tables that should NEVER return rows to an anonymous caller.
 // Adding a new sensitive table? Add it here.
@@ -114,6 +115,17 @@ export async function GET(req: Request) {
       "[leak-check] RLS REGRESSION — sensitive tables visible to anon:",
       leaks
     );
+    // Notify the external alert webhook (Slack/Discord/Zapier) when set.
+    // Don't await — alerting must not gate the response. The 500 itself
+    // also surfaces in Vercel's cron retry / notification feed as a
+    // second redundant signal.
+    void captureAlert("anon_leak_detected", {
+      leak_count: leaks.length,
+      tables: leaks.map((l) => ({
+        table: l.table,
+        visible: l.visibleCount,
+      })),
+    });
     return NextResponse.json(
       {
         ok: false,
