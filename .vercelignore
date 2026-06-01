@@ -4,11 +4,13 @@ src-tauri/
 *.rs
 
 # Capacitor iOS shell — ~113 MB; only the web bundle goes to Vercel
-ios/
-capacitor/
+/ios/
+/capacitor/
 
-# Local data files referenced only by scripts/, never at request time
-data/
+# Local data files referenced only by scripts/, never at request time.
+# MUST be leading-slash anchored — otherwise the pattern also matches
+# lib/data/ which contains strains.json (the live scan-route catalog).
+/data/
 
 # Supabase edge / functions (root only — not lib/supabase/)
 /supabase/
