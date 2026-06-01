@@ -3,6 +3,13 @@ pipeline-control/
 src-tauri/
 *.rs
 
+# Capacitor iOS shell — ~113 MB; only the web bundle goes to Vercel
+ios/
+capacitor/
+
+# Local data files referenced only by scripts/, never at request time
+data/
+
 # Supabase edge / functions (root only — not lib/supabase/)
 /supabase/
 scripts/

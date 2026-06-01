@@ -3,6 +3,21 @@
   "functions": {
     "app/api/scan/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/grow-doctor/diagnose/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/stripe/webhook/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/iap/webhook/route.ts": {
+      "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/health/anon-leak-check",
+      "schedule": "0 7 * * *"
+    }
+  ]
 }
