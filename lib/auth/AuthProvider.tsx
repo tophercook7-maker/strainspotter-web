@@ -60,6 +60,40 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/**
+ * Persist display_name on the new user's profile row. The Supabase
+ * auth-create-profile trigger fires asynchronously, so the row may
+ * not exist for the first few hundred ms after signUp. Retry a small
+ * number of times with brief backoff. Non-blocking: caller fires
+ * and forgets via `void persistDisplayName(...)`.
+ */
+async function persistDisplayName(
+  supabase: ReturnType<typeof getSupabase>,
+  userId: string,
+  displayName: string
+): Promise<void> {
+  const MAX_ATTEMPTS = 6;
+  const BACKOFF_MS = 250;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ display_name: displayName })
+      .eq("id", userId)
+      .select("id");
+    // `data` is an array of updated rows; non-empty means the trigger
+    // had already created the row and we successfully wrote display_name.
+    if (!error && Array.isArray(data) && data.length > 0) return;
+    // Either the row doesn't exist yet (trigger not fired) or a transient
+    // error. Wait and retry; bail silently after MAX_ATTEMPTS so the user
+    // signup flow never fails on this side-effect.
+    await new Promise((res) => setTimeout(res, BACKOFF_MS));
+  }
+  console.warn(
+    `[auth] display_name persist failed after ${MAX_ATTEMPTS} attempts ` +
+      `for user ${userId}`
+  );
+}
+
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be inside AuthProvider");
@@ -178,7 +212,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     displayName: string
   ) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -187,19 +221,15 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) return { error: error.message };
 
-    // Update profile with display name after trigger creates it
-    // Small delay to let the trigger fire
-    setTimeout(async () => {
-      const {
-        data: { user: newUser },
-      } = await supabase.auth.getUser();
-      if (newUser) {
-        await supabase
-          .from("profiles")
-          .update({ display_name: displayName })
-          .eq("id", newUser.id);
-      }
-    }, 1000);
+    // Persist the display_name on profiles once the row exists. The
+    // Supabase auth signUp returns the new user directly — we use that
+    // id rather than rely on a setTimeout race against the create-profile
+    // trigger. Retry a few times in case the trigger hasn't fired yet
+    // (it's typically <100ms, but cold trigger paths can lag).
+    const newUserId = data.user?.id;
+    if (newUserId && displayName) {
+      void persistDisplayName(supabase, newUserId, displayName);
+    }
 
     return { error: null };
   };
