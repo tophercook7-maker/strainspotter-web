@@ -20,7 +20,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
  * that all serverGate / quota logic just works. The one-time payment is
  * captured as a flag in profile.founder_purchase_at for ops visibility.
  */
-function membershipFromPriceKey(
+export function membershipFromPriceKey(
   priceKey: string | undefined
 ): Membership | null {
   if (priceKey === "member" || priceKey === "member_annual") return "garden";
@@ -34,7 +34,7 @@ function membershipFromPriceKey(
  * (upgrades / downgrades / renewals from the customer portal) where there
  * is no metadata.priceKey to lean on.
  */
-function membershipFromPriceId(priceId: string | undefined): Membership | null {
+export function membershipFromPriceId(priceId: string | undefined): Membership | null {
   if (!priceId) return null;
   if (priceId === STRIPE_PRICES.pro || priceId === STRIPE_PRICES.pro_annual)
     return "pro";
@@ -48,7 +48,7 @@ function membershipFromPriceId(priceId: string | undefined): Membership | null {
 }
 
 /** True if the priceKey is a top-up SKU (one-time scan credit grant). */
-function isTopupPriceKey(
+export function isTopupPriceKey(
   priceKey: string | undefined
 ): priceKey is "topup_10" | "topup_25" | "topup_100" {
   return (

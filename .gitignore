@@ -102,3 +102,6 @@ node_modules/
 !.env.example
 !.env.local.example
 !.env.dataset.example
+# Build artifacts (stop tracking — regenerated locally/CI)
+!tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo

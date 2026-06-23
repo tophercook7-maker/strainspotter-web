@@ -12,7 +12,10 @@ const nextConfig: NextConfig = {
   // in scanner/monetization files pre-date the auth system.
   // Clean these up incrementally; don't block deploys.
   typescript: {
-    ignoreBuildErrors: true,
+    // Type errors now fail the build. The repo currently typechecks clean under
+    // the existing tsconfig (`tsc --noEmit` → 0 errors); CI also runs typecheck.
+    // Next step: tighten tsconfig toward `strict: true` incrementally.
+    ignoreBuildErrors: false,
   },
 
   webpack: (config) => {
