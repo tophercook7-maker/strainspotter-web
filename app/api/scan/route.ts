@@ -46,7 +46,7 @@ interface StrainEntry {
   indicaSativaRatio?: { indica?: number; sativa?: number };
 }
 
-function slugify(name: string): string {
+export function slugify(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -81,7 +81,7 @@ const STRAIN_COUNT = (strainDb as StrainEntry[]).length;
  *  System prompt — honest, OCR-first, multi-candidate
  * ───────────────────────────────────────────────────────────────── */
 
-const SYSTEM_PROMPT = `You are StrainSpotter's cannabis identification assistant.
+export const SYSTEM_PROMPT = `You are StrainSpotter's cannabis identification assistant.
 
 Your job is to analyze cannabis flower or packaging images and return a structured, HONEST identification. You have access to a catalog of ${STRAIN_COUNT} cultivars; use it as a reference guide, not a constraint.
 
@@ -190,7 +190,7 @@ When the user supplies a "sellersClaim" string in their request, additionally fi
  *  User-prompt builder
  * ───────────────────────────────────────────────────────────────── */
 
-function buildUserPrompt(imageCount: number, sellersClaim?: string): string {
+export function buildUserPrompt(imageCount: number, sellersClaim?: string): string {
   const claim = sellersClaim?.trim();
   const lines: string[] = [];
   lines.push(
@@ -281,7 +281,7 @@ function asStringArray(v: unknown, max = 12): string[] {
     .slice(0, max);
 }
 
-function normalizeAnalysis(
+export function normalizeAnalysis(
   raw: Record<string, unknown>,
   sellersClaim: string | undefined
 ): Record<string, unknown> {
