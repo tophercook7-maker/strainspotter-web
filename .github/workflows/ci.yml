@@ -1,0 +1,28 @@
+name: CI
+
+# Quality gate for StrainSpotter. Runs on every PR and on pushes to main so
+# broken/untyped code can't reach a deploy. (Full `next build` is intentionally
+# omitted here because it needs runtime secrets; add it once CI secrets exist.)
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Lint (non-blocking until backlog cleared)
+        run: npm run lint
+        continue-on-error: true
