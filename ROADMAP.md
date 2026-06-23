@@ -27,13 +27,13 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 
 ## Phase 0 — Foundation & cleanup  🟡
 *Make the codebase safe to change before changing it.*
-- 🟡 Consolidate to one repo: merge `recovery/docs-unique-work` into `main`; archive duplicates.
-- 🟡 Add CI quality gate: `npm ci` → lint → `tsc --noEmit` → `vitest run` on PRs.
-- 🟡 Add `test` and `typecheck` npm scripts.
-- ⬜ Remove `typescript.ignoreBuildErrors: true` (after fixing legacy type errors); move toward `strict: true`.
-- ⬜ Add tests for the money/auth paths (Stripe + IAP webhooks, `serverGate`, scan quota).
+- ✅ Add CI quality gate (`.github/workflows/ci.yml`): typecheck + `vitest` block; lint non-blocking.
+- ✅ Add `typecheck` / `test` / `test:watch` / `lint` npm scripts.
+- ✅ Remove `typescript.ignoreBuildErrors` (now `false`; `tsc --noEmit` = 0 errors; `next build` validated). `strict: true` deferred — surfaces 57 errors to fix incrementally.
+- 🟡 Money/auth-path tests: ✅ scan-gate entitlement, ✅ membership tier-collapse, ✅ `serverGate` subscription gate, ✅ Stripe price→tier mappers. ⬜ webhook **DB idempotency** (`stripe_webhook_events`) + IAP webhook.
+- 🟡 Consolidate to one repo: **decided** — cherry-pick the `recovery/docs-unique-work` embedding commits during Phase 1 (a bulk-merge would re-add deleted dead code + 2.25M lines + conflicts). ⬜ archive duplicate folders after the port.
 - ⬜ Reconcile/condense the ~28 root markdown docs into `docs/`; quarantine dead code.
-- ⬜ Repo hygiene: gitignore/untrack `tsconfig.tsbuildinfo`, `.next/`, temp files.
+- ⬜ Repo hygiene: stop tracking `tsconfig.tsbuildinfo`; iCloud "* 2.*" duplicate detritus (Desktop is iCloud-synced) keeps polluting local `.next` typechecks.
 
 ## Phase 1 — Identification engine (core differentiator)  ⬜
 *Turn "honest guess" into measured, grounded accuracy.*
