@@ -31,14 +31,14 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 - ✅ Add `typecheck` / `test` / `test:watch` / `lint` npm scripts.
 - ✅ Remove `typescript.ignoreBuildErrors` (now `false`; `tsc --noEmit` = 0 errors; `next build` validated). `strict: true` deferred — surfaces 57 errors to fix incrementally.
 - 🟡 Money/auth-path tests: ✅ scan-gate entitlement, ✅ membership tier-collapse, ✅ `serverGate` subscription gate, ✅ Stripe price→tier mappers. ⬜ webhook **DB idempotency** (`stripe_webhook_events`) + IAP webhook.
-- 🟡 Consolidate to one repo: **decided** — cherry-pick the `recovery/docs-unique-work` embedding commits during Phase 1 (a bulk-merge would re-add deleted dead code + 2.25M lines + conflicts). ⬜ archive duplicate folders after the port.
+- ✅ Consolidate: **no cherry-pick needed** — verified `main` already contains the embedding scanner code (`embeddingService`/`strainMatcher`/`hybridFusion`/`finalDecisionEngine`/`scanFusion`); it's just disconnected from `/api/scan`. The `recovery/docs-unique-work` branch is redundant for the core ID work. ⬜ archive the duplicate folders + recovery branch.
 - ⬜ Reconcile/condense the ~28 root markdown docs into `docs/`; quarantine dead code.
 - ⬜ Repo hygiene: stop tracking `tsconfig.tsbuildinfo`; iCloud "* 2.*" duplicate detritus (Desktop is iCloud-synced) keeps polluting local `.next` typechecks.
 
 ## Phase 1 — Identification engine (core differentiator)  ⬜
 *Turn "honest guess" into measured, grounded accuracy.*
 - ⬜ Build an eval harness + labeled holdout (≥30 strains × ≥20 photos); baseline the production model. Gate accuracy in CI.
-- ⬜ Wire image-retrieval grounding into `/api/scan`: embed upload → pgvector ANN in Supabase → feed top-K reference **images + names** into the VLM call. (Connect the already-written `lib/scanner/{embeddingService,strainMatcher,hybridFusion}.ts`.)
+- ⬜ Wire image-retrieval grounding into `/api/scan`: embed upload → ANN over reference embeddings → feed top-K reference **images + names** into the VLM call. The code already exists in `main` (`lib/scanner/{embeddingService,strainMatcher,hybridFusion,finalDecisionEngine}.ts`) but is disconnected — this is a *wiring* task. Start in-memory over `data/embeddings/strain-embeddings.json` (52 strains), move to **pgvector** as the reference library grows.
 - ⬜ Two-stage retrieve-then-rerank; drop the full catalog from the prompt.
 - ⬜ Calibrate confidence empirically (isotonic/Platt); remove fabricated range / indica-sativa ratio / "consensus strength".
 - ⬜ Fix feedback persistence → Supabase (currently local `.jsonl`, lost on serverless); activate the learned re-ranker + reward flywheel.
