@@ -1,0 +1,218 @@
+{
+  "ranAt": "2026-06-24T13:55:28.186Z",
+  "queries": 11,
+  "topK": 4,
+  "pct": {
+    "ungroundedTop1": 0.091,
+    "ungroundedTop3": 0.091,
+    "groundedTop1": 0.091,
+    "groundedTop3": 0.273
+  },
+  "rows": [
+    {
+      "strain": "afghan-kush",
+      "refsShown": [
+        "bubba-kush",
+        "afghan-kush",
+        "girl-scout-cookies",
+        "banana-kush"
+      ],
+      "ungrounded": [],
+      "grounded": [
+        "afghan-kush"
+      ],
+      "u1": false,
+      "g1": true
+    },
+    {
+      "strain": "ak-47",
+      "refsShown": [
+        "bubba-kush",
+        "banana-kush",
+        "chemdawg",
+        "cereal-milk"
+      ],
+      "ungrounded": [
+        "white-widow",
+        "white-widow-auto"
+      ],
+      "grounded": [
+        "cereal-milk",
+        "bubba-kush"
+      ],
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "apple-fritter",
+      "refsShown": [
+        "girl-scout-cookies",
+        "chemdawg",
+        "gorilla-glue-4",
+        "apple-fritter"
+      ],
+      "ungrounded": [
+        "amnesia-haze",
+        "lemon-haze"
+      ],
+      "grounded": [
+        "gorilla-glue-4",
+        "apple-fritter"
+      ],
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "bacio-gelato",
+      "refsShown": [
+        "chemdawg",
+        "girl-scout-cookies",
+        "gorilla-glue-4",
+        "blue-dream"
+      ],
+      "ungrounded": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "grounded": [
+        "gorilla-glue-4",
+        "chemdawg"
+      ],
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "banana-kush",
+      "refsShown": [
+        "bubba-kush",
+        "girl-scout-cookies",
+        "banana-kush",
+        "apple-fritter"
+      ],
+      "ungrounded": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "grounded": [
+        "amnesia-haze",
+        "durban-poison"
+      ],
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "blue-dream",
+      "refsShown": [
+        "cereal-milk",
+        "chemdawg",
+        "girl-scout-cookies",
+        "gary-payton"
+      ],
+      "ungrounded": [
+        "gelato",
+        "wedding-cake"
+      ],
+      "grounded": [
+        "cereal-milk",
+        "gary-payton"
+      ],
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "bubba-kush",
+      "refsShown": [
+        "cereal-milk",
+        "gary-payton",
+        "apple-fritter",
+        "chemdawg"
+      ],
+      "ungrounded": [
+        "og-kush",
+        "grease-monkey"
+      ],
+      "grounded": [
+        "chemdawg",
+        "gary-payton"
+      ],
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "cereal-milk",
+      "refsShown": [
+        "gary-payton",
+        "chemdawg",
+        "girl-scout-cookies",
+        "bacio-gelato"
+      ],
+      "ungrounded": [
+        "purple-kush",
+        "granddaddy-purple"
+      ],
+      "grounded": [
+        "gary-payton",
+        "girl-scout-cookies"
+      ],
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "chemdawg",
+      "refsShown": [
+        "chemdawg",
+        "bubba-kush",
+        "gary-payton",
+        "girl-scout-cookies"
+      ],
+      "ungrounded": [
+        "white-widow",
+        "gorilla-glue-4"
+      ],
+      "grounded": [
+        "girl-scout-cookies",
+        "chemdawg"
+      ],
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "durban-poison",
+      "refsShown": [
+        "bubba-kush",
+        "banana-kush",
+        "girl-scout-cookies",
+        "blue-dream"
+      ],
+      "ungrounded": [
+        "durban-poison",
+        "green-crack"
+      ],
+      "grounded": [
+        "blue-dream",
+        "banana-kush"
+      ],
+      "u1": true,
+      "g1": false
+    },
+    {
+      "strain": "gary-payton",
+      "refsShown": [
+        "chemdawg",
+        "gary-payton",
+        "girl-scout-cookies",
+        "bacio-gelato"
+      ],
+      "ungrounded": [
+        "white-widow",
+        "wedding-cake"
+      ],
+      "grounded": [
+        "girl-scout-cookies",
+        "bacio-gelato"
+      ],
+      "u1": false,
+      "g1": false
+    }
+  ]
+}
