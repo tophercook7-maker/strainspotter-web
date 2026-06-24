@@ -62,7 +62,7 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 
 ## Phase 3 — Monetization (make it transact)  ⬜
 - ⬜ Replace placeholder Stripe price IDs (annual, Founder, top-up-100); set `STRIPE_WEBHOOK_SECRET` + RevenueCat secrets.
-- ⬜ Fix Founder lifetime oversell race condition (per-customer lock).
+- ✅ Founder oversell race fixed — `/api/stripe/checkout` enforces the 1,000 cap with a LIVE count (`lib/billing/founder.ts`, fail-closed on DB error so it can't oversell); counter route refactored to share it; 4 tests. (Residual: ~concurrent buyers at the very last slot — acceptable; true zero-race needs a DB reservation.)
 - ⬜ Post-checkout auto-login / account sync.
 - ⬜ Apple IAP products (App Store Connect + RevenueCat); **Google Play Billing**.
 
