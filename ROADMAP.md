@@ -37,7 +37,7 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 
 ## Phase 1 — Identification engine (core differentiator)  ⬜
 *Turn "honest guess" into measured, grounded accuracy.*
-- ⬜ Build an eval harness + labeled holdout (≥30 strains × ≥20 photos); baseline the production model. Gate accuracy in CI.
+- 🟡 Eval harness built (`lib/scanner/scanAccuracy.eval.test.ts`, gated by `RUN_SCAN_EVAL`, paced + incremental for low-tier rate limits). **BASELINE (text-only GPT-4o, n=50 curated reference images / 27 strains): top-1 10%, top-3 14%.** Confidence uncalibrated (~59% stated even on wrong answers); over-predicts popular strains (white-widow/og-kush/gdp/gelato). Snapshot: `data/eval/baseline-textonly-2026-06-23.json`. ⬜ still need a clean held-out *user-photo* set + CI gate. **This 10% is the number Phase 1 must beat.**
 - ⬜ Wire image-retrieval grounding into `/api/scan`: embed upload → ANN over reference embeddings → feed top-K reference **images + names** into the VLM call. The code already exists in `main` (`lib/scanner/{embeddingService,strainMatcher,hybridFusion,finalDecisionEngine}.ts`) but is disconnected — this is a *wiring* task. Start in-memory over `data/embeddings/strain-embeddings.json` (52 strains), move to **pgvector** as the reference library grows.
 - ⬜ Two-stage retrieve-then-rerank; drop the full catalog from the prompt.
 - ⬜ Calibrate confidence empirically (isotonic/Platt); remove fabricated range / indica-sativa ratio / "consensus strength".
