@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "next lint",
+    "catalog:build-10k": "node scripts/build-10k-catalog.mjs",
     "setup:openai": "node scripts/setup-openai-key.js",
     "setup:supabase": "node scripts/setup-supabase-anon-key.js",
     "setup:straincompass": "node scripts/setup-straincompass-key.js",
