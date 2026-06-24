@@ -187,6 +187,19 @@ When the user supplies a "sellersClaim" string in their request, additionally fi
 
 `;
 
+/**
+ * Free-naming variant: drop the inlined ${STRAIN_COUNT}-cultivar catalog and let
+ * the model name ANY cultivar (mapped to the catalog afterward via
+ * resolveStrain). Accuracy-neutral vs the constrained prompt
+ * (data/eval/free-naming-ab-*.json) but removes ~10k tokens/scan (≈half the
+ * cost), eases rate limits, and recognizes 10k+ strains. Toggle with env
+ * SCANNER_FREE_NAMING=1 (default off = current constrained behavior).
+ */
+export const FREE_SYSTEM_PROMPT = SYSTEM_PROMPT
+  .replace(/═══ STRAINSPOTTER CATALOG[\s\S]*?═══ END CATALOG ═══/, "You may name ANY cannabis cultivar you recognize — you are NOT limited to a fixed list. Use your full knowledge of cannabis strains.")
+  .replace(/from the catalog \(or "Unknown"\)/, 'from your full knowledge of cultivars (or "Unknown")')
+  .replace(/string — from catalog when possible/, "string — the cultivar name");
+
 /* ─────────────────────────────────────────────────────────────────
  *  User-prompt builder
  * ───────────────────────────────────────────────────────────────── */
@@ -801,7 +814,10 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify({
               model: "gpt-4o",
               messages: [
-                { role: "system", content: SYSTEM_PROMPT },
+                {
+                  role: "system",
+                  content: process.env.SCANNER_FREE_NAMING === "1" ? FREE_SYSTEM_PROMPT : SYSTEM_PROMPT,
+                },
                 { role: "user", content },
               ],
               response_format: { type: "json_object" },

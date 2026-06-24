@@ -16,18 +16,15 @@ import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import dotenv from "dotenv";
-import { SYSTEM_PROMPT, buildUserPrompt, normalizeAnalysis, slugify } from "@/app/api/scan/route";
+import { SYSTEM_PROMPT, FREE_SYSTEM_PROMPT, buildUserPrompt, normalizeAnalysis, slugify } from "@/app/api/scan/route";
 import { resolveStrain } from "@/lib/data/catalog10k";
 import strainDb from "@/lib/data/strains.json";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
 
-// Free-naming variant: drop the inlined catalog, allow any cultivar.
-const FREE_PROMPT = SYSTEM_PROMPT
-  .replace(/═══ STRAINSPOTTER CATALOG[\s\S]*?═══ END CATALOG ═══/, "You may name ANY cannabis cultivar you recognize — you are NOT limited to a fixed list. Use your full knowledge of cannabis strains.")
-  .replace(/from the catalog \(or "Unknown"\)/, 'from your full knowledge of cultivars (or "Unknown")')
-  .replace(/string — from catalog when possible/, "string — the cultivar name");
+// Test the real production free-naming prompt.
+const FREE_PROMPT = FREE_SYSTEM_PROMPT;
 
 const CACHE = path.resolve("data/strain-reference-images/cache");
 const REPORT_DIR = path.resolve("data/eval");
