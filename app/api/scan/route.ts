@@ -26,6 +26,7 @@ import { logger } from "@/lib/observability/log";
 import { checkRateLimit } from "@/lib/observability/rateLimit";
 import { runIdempotent } from "@/lib/observability/idempotency";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { resolveStrain } from "@/lib/data/catalog10k";
 
 /* ─────────────────────────────────────────────────────────────────
  *  Catalog → compact textual reference for the system prompt
@@ -884,10 +885,19 @@ export async function POST(req: NextRequest) {
         ? (outcome.normalized as any).candidates.length
         : 0,
     });
+    // Resolve each candidate against the 10k catalog so the client can link a
+    // result to its library page and names are canonicalized. Additive only.
+    const result = outcome.normalized as Record<string, unknown>;
+    if (Array.isArray(result.candidates)) {
+      result.candidates = (result.candidates as Record<string, unknown>[]).map((c) => {
+        const match = resolveStrain((c.strainName as string) ?? (c.slug as string));
+        return { ...c, catalogSlug: match?.slug ?? null, inCatalog: Boolean(match) };
+      });
+    }
     return NextResponse.json({
       ok: true,
       model: "gpt-4o",
-      result: outcome.normalized,
+      result,
       usage: outcome.usage,
       cached,
     });
