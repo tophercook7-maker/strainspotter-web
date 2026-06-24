@@ -52,7 +52,8 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 *Defensible, rights-cleared data.*
 - ⬜ Resolve image licensing: quarantine scraped images to training-only; add user-contribution license grant to ToS.
 - ⬜ User-contributed data flywheel (confirm/correct UX + rewards) → owned labeled images at scale.
-- ⬜ Depth over breadth: fully verify the top ~500 commercial cultivars (lineage, terpenes, THC/CBD, human review); mark the 35k long tail as candidate.
+- ✅ **10,000-strain catalog built** (`data/strains-10k.json`, quality-ranked from the 35k via `scripts/build-10k-catalog.mjs` / `npm run catalog:build-10k`; 46% known type, 29% effects, curated 314 included). Typed loader + `resolveStrain()` in `lib/data/catalog10k.ts` (the bridge: maps a model's free-text answer → catalog entry, so the scanner can recognize 10k strains WITHOUT inlining them in the prompt). ⬜ wire `resolveStrain` into `/api/scan` + point the strain library/search at the 10k.
+- ⬜ Depth over breadth: fully verify the top ~500 commercial cultivars (lineage, terpenes, THC/CBD, human review); mark the rest as candidate. **Reminder: 10k *names* ≠ 10k *identifiable* — identification still needs reference images per strain (the recall bottleneck from Phase 1).**
 - ⬜ Canonical strain resolution (collapse variant-name sprawl via alias graph).
 - ⬜ Harden storage/provenance: finish Supabase mirror (off the `/Volumes/TheVault` single drive); immutable source/license/consent per row.
 - ⬜ Explore data partnerships / licensed datasets.
