@@ -61,11 +61,11 @@ for (const s of picked) {
   out.push(rest);
 }
 
-writeFileSync("data/strains-10k.json", JSON.stringify(out, null, 0));
+writeFileSync("lib/data/strains-10k.json", JSON.stringify(out, null, 0));
 
 const withType = out.filter((s) => s.type !== "unknown").length;
 const withEffects = out.filter((s) => s.effects.length).length;
-console.log(`Built data/strains-10k.json: ${out.length} strains`);
+console.log(`Built lib/data/strains-10k.json: ${out.length} strains`);
 console.log(`  curated (from 314): ${out.filter((s) => s.curated).length}`);
 console.log(`  with known type: ${withType} (${Math.round((withType / out.length) * 100)}%)`);
 console.log(`  with effects: ${withEffects} (${Math.round((withEffects / out.length) * 100)}%)`);

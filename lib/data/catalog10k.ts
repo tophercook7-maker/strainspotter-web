@@ -6,7 +6,7 @@
 // known strain — so the scanner can recognize 10k strains without inlining them
 // into the prompt (the prompt only ever sees the top-K retrieved candidates).
 
-import catalog from "@/data/strains-10k.json";
+import catalog from "@/lib/data/strains-10k.json";
 
 export type CatalogStrain = {
   slug: string;
