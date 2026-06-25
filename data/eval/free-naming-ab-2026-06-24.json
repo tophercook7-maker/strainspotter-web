@@ -1,0 +1,264 @@
+{
+  "ranAt": "2026-06-24T17:07:14.761Z",
+  "queries": 20,
+  "pct": {
+    "constrainedTop1": 0.05,
+    "constrainedTop3": 0.05,
+    "freeTop1": 0.05,
+    "freeTop3": 0.05
+  },
+  "rows": [
+    {
+      "strain": "afghan-kush",
+      "constrained": [],
+      "free": [
+        "haze",
+        "sour-diesel"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "ak-47",
+      "constrained": [
+        "white-widow",
+        "wifi-og"
+      ],
+      "free": [
+        "white-widow",
+        "frosty-gelato"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "apple-fritter",
+      "constrained": [
+        "ak-47",
+        "amnesia-haze"
+      ],
+      "free": [
+        "white-widow",
+        "girl-scout-cookies"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "bacio-gelato",
+      "constrained": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "free": [
+        "og-kush",
+        "girl-scout-cookies"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "banana-kush",
+      "constrained": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "free": [
+        "haze",
+        "sour-diesel"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "blue-dream",
+      "constrained": [
+        "gelato",
+        "wedding-cake"
+      ],
+      "free": [
+        "gorilla-glue-4",
+        "girl-scout-cookies"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "bubba-kush",
+      "constrained": [
+        "og-kush",
+        "grease-monkey"
+      ],
+      "free": [
+        "og-kush",
+        "girl-scout-cookies"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "cereal-milk",
+      "constrained": [
+        "purple-kush",
+        "granddaddy-purple"
+      ],
+      "free": [
+        "purple-haze",
+        "granddaddy-purple"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "chemdawg",
+      "constrained": [
+        "white-widow",
+        "wifi-og"
+      ],
+      "free": [
+        "white-widow",
+        "frosty-gelato"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "durban-poison",
+      "constrained": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "free": [
+        "jack-herer",
+        "super-silver-haze"
+      ],
+      "c1": true,
+      "f1": false
+    },
+    {
+      "strain": "east-coast-sour-diesel",
+      "constrained": [
+        "ak-47",
+        "chemdawg"
+      ],
+      "free": [
+        "og-kush",
+        "sour-diesel"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "gary-payton",
+      "constrained": [
+        "white-widow",
+        "wifi-og"
+      ],
+      "free": [
+        "white-widow",
+        "frosted-flakes"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "gelato",
+      "constrained": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "free": [
+        "og-kush",
+        "girl-scout-cookies"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "gelato-41",
+      "constrained": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "free": [
+        "blue-dream",
+        "girl-scout-cookies"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "gelato-45",
+      "constrained": [
+        "ak-47",
+        "gorilla-glue-4",
+        "girl-scout-cookies"
+      ],
+      "free": [
+        "og-kush",
+        "girl-scout-cookies"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "girl-scout-cookies",
+      "constrained": [
+        "wedding-cake",
+        "gelato"
+      ],
+      "free": [
+        "gorilla-glue-4",
+        "white-widow"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "gmo-cookies",
+      "constrained": [
+        "ice-cream-cake",
+        "purple-punch"
+      ],
+      "free": [
+        "granddaddy-purple",
+        "purple-punch",
+        "grape-ape"
+      ],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "gorilla-glue-4",
+      "constrained": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "free": [],
+      "c1": false,
+      "f1": false
+    },
+    {
+      "strain": "granddaddy-purple",
+      "constrained": [
+        "sundae-driver",
+        "runtz"
+      ],
+      "free": [
+        "granddaddy-purple",
+        "purple-punch"
+      ],
+      "c1": false,
+      "f1": true
+    },
+    {
+      "strain": "green-crack",
+      "constrained": [],
+      "free": [
+        "unknown"
+      ],
+      "c1": false,
+      "f1": false
+    }
+  ]
+}

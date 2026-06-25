@@ -37,8 +37,11 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 
 ## Phase 1 — Identification engine (core differentiator)  ⬜
 *Turn "honest guess" into measured, grounded accuracy.*
-- ⬜ Build an eval harness + labeled holdout (≥30 strains × ≥20 photos); baseline the production model. Gate accuracy in CI.
-- ⬜ Wire image-retrieval grounding into `/api/scan`: embed upload → ANN over reference embeddings → feed top-K reference **images + names** into the VLM call. The code already exists in `main` (`lib/scanner/{embeddingService,strainMatcher,hybridFusion,finalDecisionEngine}.ts`) but is disconnected — this is a *wiring* task. Start in-memory over `data/embeddings/strain-embeddings.json` (52 strains), move to **pgvector** as the reference library grows.
+- 🟡 Eval harness built (`lib/scanner/scanAccuracy.eval.test.ts`, gated by `RUN_SCAN_EVAL`, paced + incremental for low-tier rate limits). **BASELINE (text-only GPT-4o, n=50 curated reference images / 27 strains): top-1 10%, top-3 14%.** Confidence uncalibrated (~59% stated even on wrong answers); over-predicts popular strains (white-widow/og-kush/gdp/gelato). Snapshot: `data/eval/baseline-textonly-2026-06-23.json`. ⬜ still need a clean held-out *user-photo* set + CI gate. **This 10% is the number Phase 1 must beat.**
+- 🟡 Image-retrieval grounding — **A/B run, did NOT beat baseline** (leave-one-out, n=20: retrieval-only top1 0%/top3 20%; ungrounded top1 5%; grounded top1 0%/top3 20% — grounding even broke `durban-poison`). Snapshot: `data/eval/grounding-ab-2026-06-24.json`, harness `lib/scanner/retrievalGrounding.eval.test.ts`. **Finding: the bottleneck is retrieval quality (CLIP-base = 0% top-1 over noisy web refs), not the wiring.** Feeding a weak shortlist anchors the VLM to wrong candidates.
+- ✅ Experiment #1 — **feed reference images** (query high-detail, refs low-detail), A/B n=11 (`data/eval/image-grounding-ab-2026-06-24.json`, harness `lib/scanner/imageGrounding.eval.test.ts`): **top-3 9%→27%, top-1 flat (9%).** Helped (unlike name-grounding) and visually rescued cases (e.g. afghan-kush), BUT **capped by retrieval recall — the correct strain was only in the top-K shortlist 45% of the time.** Image grounding is worth keeping; it can't lift top-1 until retrieval recall improves.
+- ⬜ **THE lever (now evidence-backed): retrieval recall.** Top-1 is gated by whether the right strain is even in the shortlist (45% today). Fix, in order: (1) stronger embedding model — SigLIP / larger or fine-tuned CLIP / OpenAI image embeddings (raise recall); (2) more + cleaner reference images per strain = **Phase 2 data moat**; (3) keep image grounding on top. Re-run the A/B after each. Move to **pgvector** once recall is worth scaling.
+- Three-experiment summary: baseline (text, n=50) 10%/14% · name-grounded (n=20) 0%/20% · image-grounded (n=11) 9%/27%.
 - ⬜ Two-stage retrieve-then-rerank; drop the full catalog from the prompt.
 - ⬜ Calibrate confidence empirically (isotonic/Platt); remove fabricated range / indica-sativa ratio / "consensus strength".
 - ⬜ Fix feedback persistence → Supabase (currently local `.jsonl`, lost on serverless); activate the learned re-ranker + reward flywheel.
@@ -49,14 +52,17 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 *Defensible, rights-cleared data.*
 - ⬜ Resolve image licensing: quarantine scraped images to training-only; add user-contribution license grant to ToS.
 - ⬜ User-contributed data flywheel (confirm/correct UX + rewards) → owned labeled images at scale.
-- ⬜ Depth over breadth: fully verify the top ~500 commercial cultivars (lineage, terpenes, THC/CBD, human review); mark the 35k long tail as candidate.
+- ✅ **10,000-strain catalog built** (`data/strains-10k.json`, quality-ranked from the 35k via `scripts/build-10k-catalog.mjs` / `npm run catalog:build-10k`; 46% known type, 29% effects, curated 314 included). Typed loader + `resolveStrain()` in `lib/data/catalog10k.ts`. ✅ `resolveStrain` **wired into `/api/scan`** — candidates now carry `catalogSlug`/`inCatalog` (links a scan result to the library page; canonicalizes names). ✅ **Library/search already has 35,796 strains** in the Supabase `strains` table (rich schema: type/THC/CBD/effects/lineage/breeder/images) — the "314" was only the scanner's *prompt* catalog, never the library, so no seeding was needed.
+- 🟡 **Free-naming A/B** (`data/eval/free-naming-ab-2026-06-24.json`): dropping the 314 catalog from the prompt + resolving the model's free answer to the 10k = **accuracy-neutral (5%/5% both, n=20)** BUT removes ~10k tokens/scan (≈half the cost), eases rate limits, and lets the scanner name 10k+ strains. **Recommended adoption** (cost/coverage win, neutral accuracy) — behind a flag, then make default. ⬜ wire it into `/api/scan`.
+- ⬜ Depth over breadth: fully verify the top ~500 commercial cultivars (lineage, terpenes, THC/CBD, human review); mark the rest as candidate. **Reminder: 10k *names* ≠ 10k *identifiable* — identification still needs reference images per strain (the recall bottleneck from Phase 1).**
+- **4-experiment summary (all paid evals, ~$3.50 of $20):** baseline text-only 10%/14% (n=50) · name-grounded 0%/20% (n=20) · image-grounded 9%/27% (n=11) · free-naming 5%/5% = constrained (n=20). **Consistent conclusion: prompt/wiring changes don't move top-1; the lever is retrieval recall + reference-image data.**
 - ⬜ Canonical strain resolution (collapse variant-name sprawl via alias graph).
 - ⬜ Harden storage/provenance: finish Supabase mirror (off the `/Volumes/TheVault` single drive); immutable source/license/consent per row.
 - ⬜ Explore data partnerships / licensed datasets.
 
 ## Phase 3 — Monetization (make it transact)  ⬜
 - ⬜ Replace placeholder Stripe price IDs (annual, Founder, top-up-100); set `STRIPE_WEBHOOK_SECRET` + RevenueCat secrets.
-- ⬜ Fix Founder lifetime oversell race condition (per-customer lock).
+- ✅ Founder oversell race fixed — `/api/stripe/checkout` enforces the 1,000 cap with a LIVE count (`lib/billing/founder.ts`, fail-closed on DB error so it can't oversell); counter route refactored to share it; 4 tests. (Residual: ~concurrent buyers at the very last slot — acceptable; true zero-race needs a DB reservation.)
 - ⬜ Post-checkout auto-login / account sync.
 - ⬜ Apple IAP products (App Store Connect + RevenueCat); **Google Play Billing**.
 

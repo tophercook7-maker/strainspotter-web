@@ -1,0 +1,404 @@
+{
+  "ranAt": "2026-06-24T03:33:39.665Z",
+  "queries": 20,
+  "topK": 5,
+  "pct": {
+    "retrievalTop1": 0,
+    "retrievalTop3": 0.2,
+    "ungroundedTop1": 0.05,
+    "ungroundedTop3": 0.05,
+    "groundedTop1": 0,
+    "groundedTop3": 0.2
+  },
+  "rows": [
+    {
+      "strain": "afghan-kush",
+      "retrievalTop": [
+        "bubba-kush",
+        "afghan-kush",
+        "jealousy"
+      ],
+      "ungrounded": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "grounded": [
+        "bubba-kush",
+        "afghan-kush",
+        "jealousy"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "ak-47",
+      "retrievalTop": [
+        "bubba-kush",
+        "jealousy",
+        "banana-kush"
+      ],
+      "ungrounded": [
+        "white-widow",
+        "wifi-og"
+      ],
+      "grounded": [
+        "bubba-kush",
+        "jealousy",
+        "cereal-milk"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "apple-fritter",
+      "retrievalTop": [
+        "girl-scout-cookies",
+        "jealousy",
+        "granddaddy-purple"
+      ],
+      "ungrounded": [
+        "amnesia-haze",
+        "jack-herer"
+      ],
+      "grounded": [
+        "girl-scout-cookies",
+        "jealousy",
+        "gorilla-glue-4"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "bacio-gelato",
+      "retrievalTop": [
+        "chemdawg",
+        "jealousy",
+        "green-crack"
+      ],
+      "ungrounded": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "grounded": [
+        "chemdawg",
+        "jealousy",
+        "green-crack"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "banana-kush",
+      "retrievalTop": [
+        "bubba-kush",
+        "jealousy",
+        "girl-scout-cookies"
+      ],
+      "ungrounded": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "grounded": [
+        "amnesia-haze",
+        "durban-poison"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "blue-dream",
+      "retrievalTop": [
+        "jealousy",
+        "cereal-milk",
+        "chemdawg"
+      ],
+      "ungrounded": [
+        "gelato",
+        "wedding-cake"
+      ],
+      "grounded": [
+        "jealousy",
+        "cereal-milk",
+        "girl-scout-cookies"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "bubba-kush",
+      "retrievalTop": [
+        "cereal-milk",
+        "gary-payton",
+        "apple-fritter"
+      ],
+      "ungrounded": [
+        "og-kush",
+        "grease-monkey",
+        "gorilla-glue-4"
+      ],
+      "grounded": [
+        "cereal-milk",
+        "gary-payton",
+        "apple-fritter"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "cereal-milk",
+      "retrievalTop": [
+        "gary-payton",
+        "jealousy",
+        "granddaddy-purple"
+      ],
+      "ungrounded": [],
+      "grounded": [
+        "jealousy",
+        "granddaddy-purple",
+        "gary-payton"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "chemdawg",
+      "retrievalTop": [
+        "jealousy",
+        "chemdawg",
+        "bubba-kush"
+      ],
+      "ungrounded": [
+        "white-widow",
+        "gorilla-glue-4"
+      ],
+      "grounded": [
+        "jealousy",
+        "gary-payton",
+        "granddaddy-purple"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "durban-poison",
+      "retrievalTop": [
+        "bubba-kush",
+        "jealousy",
+        "banana-kush"
+      ],
+      "ungrounded": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "grounded": [
+        "blue-dream",
+        "jealousy"
+      ],
+      "r1": false,
+      "u1": true,
+      "g1": false
+    },
+    {
+      "strain": "gary-payton",
+      "retrievalTop": [
+        "chemdawg",
+        "jealousy",
+        "granddaddy-purple"
+      ],
+      "ungrounded": [
+        "white-widow",
+        "white-widow-auto"
+      ],
+      "grounded": [
+        "jealousy",
+        "chemdawg"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "gelato",
+      "retrievalTop": [
+        "jealousy",
+        "girl-scout-cookies",
+        "chemdawg"
+      ],
+      "ungrounded": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "grounded": [
+        "girl-scout-cookies",
+        "jealousy",
+        "chemdawg"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "girl-scout-cookies",
+      "retrievalTop": [
+        "jealousy",
+        "bubba-kush",
+        "girl-scout-cookies"
+      ],
+      "ungrounded": [
+        "gelato",
+        "wedding-cake"
+      ],
+      "grounded": [
+        "jealousy",
+        "bubba-kush",
+        "girl-scout-cookies"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "gmo-cookies",
+      "retrievalTop": [
+        "jealousy",
+        "gary-payton",
+        "granddaddy-purple"
+      ],
+      "ungrounded": [
+        "ice-cream-cake",
+        "purple-punch",
+        "slurricane"
+      ],
+      "grounded": [
+        "jealousy",
+        "gary-payton",
+        "granddaddy-purple"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "gorilla-glue-4",
+      "retrievalTop": [
+        "bubba-kush",
+        "banana-kush",
+        "apple-fritter"
+      ],
+      "ungrounded": [],
+      "grounded": [
+        "bubba-kush",
+        "banana-kush"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "granddaddy-purple",
+      "retrievalTop": [
+        "jealousy",
+        "granddaddy-purple",
+        "girl-scout-cookies"
+      ],
+      "ungrounded": [
+        "cereal-milk",
+        "gelato"
+      ],
+      "grounded": [
+        "jealousy",
+        "granddaddy-purple",
+        "girl-scout-cookies"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "green-crack",
+      "retrievalTop": [
+        "granddaddy-purple",
+        "girl-scout-cookies",
+        "jack-herer"
+      ],
+      "ungrounded": [
+        "unknown"
+      ],
+      "grounded": [
+        "jack-herer",
+        "durban-poison"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "ice-cream-cake",
+      "retrievalTop": [
+        "bubba-kush",
+        "banana-kush",
+        "jealousy"
+      ],
+      "ungrounded": [
+        "granddaddy-purple",
+        "purple-punch",
+        "grape-ape"
+      ],
+      "grounded": [
+        "bubba-kush",
+        "jealousy"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "jack-herer",
+      "retrievalTop": [
+        "jealousy",
+        "girl-scout-cookies",
+        "granddaddy-purple"
+      ],
+      "ungrounded": [
+        "white-widow",
+        "white-widow-auto"
+      ],
+      "grounded": [
+        "jealousy",
+        "girl-scout-cookies"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    },
+    {
+      "strain": "jealousy",
+      "retrievalTop": [
+        "gary-payton",
+        "girl-scout-cookies",
+        "chemdawg"
+      ],
+      "ungrounded": [
+        "gelato",
+        "wedding-cake"
+      ],
+      "grounded": [
+        "gary-payton",
+        "girl-scout-cookies",
+        "jealousy"
+      ],
+      "r1": false,
+      "u1": false,
+      "g1": false
+    }
+  ]
+}

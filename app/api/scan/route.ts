@@ -26,6 +26,7 @@ import { logger } from "@/lib/observability/log";
 import { checkRateLimit } from "@/lib/observability/rateLimit";
 import { runIdempotent } from "@/lib/observability/idempotency";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { resolveStrain } from "@/lib/data/catalog10k";
 
 /* ─────────────────────────────────────────────────────────────────
  *  Catalog → compact textual reference for the system prompt
@@ -46,7 +47,7 @@ interface StrainEntry {
   indicaSativaRatio?: { indica?: number; sativa?: number };
 }
 
-function slugify(name: string): string {
+export function slugify(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -81,7 +82,7 @@ const STRAIN_COUNT = (strainDb as StrainEntry[]).length;
  *  System prompt — honest, OCR-first, multi-candidate
  * ───────────────────────────────────────────────────────────────── */
 
-const SYSTEM_PROMPT = `You are StrainSpotter's cannabis identification assistant.
+export const SYSTEM_PROMPT = `You are StrainSpotter's cannabis identification assistant.
 
 Your job is to analyze cannabis flower or packaging images and return a structured, HONEST identification. You have access to a catalog of ${STRAIN_COUNT} cultivars; use it as a reference guide, not a constraint.
 
@@ -186,11 +187,24 @@ When the user supplies a "sellersClaim" string in their request, additionally fi
 
 `;
 
+/**
+ * Free-naming variant: drop the inlined ${STRAIN_COUNT}-cultivar catalog and let
+ * the model name ANY cultivar (mapped to the catalog afterward via
+ * resolveStrain). Accuracy-neutral vs the constrained prompt
+ * (data/eval/free-naming-ab-*.json) but removes ~10k tokens/scan (≈half the
+ * cost), eases rate limits, and recognizes 10k+ strains. Toggle with env
+ * SCANNER_FREE_NAMING=1 (default off = current constrained behavior).
+ */
+export const FREE_SYSTEM_PROMPT = SYSTEM_PROMPT
+  .replace(/═══ STRAINSPOTTER CATALOG[\s\S]*?═══ END CATALOG ═══/, "You may name ANY cannabis cultivar you recognize — you are NOT limited to a fixed list. Use your full knowledge of cannabis strains.")
+  .replace(/from the catalog \(or "Unknown"\)/, 'from your full knowledge of cultivars (or "Unknown")')
+  .replace(/string — from catalog when possible/, "string — the cultivar name");
+
 /* ─────────────────────────────────────────────────────────────────
  *  User-prompt builder
  * ───────────────────────────────────────────────────────────────── */
 
-function buildUserPrompt(imageCount: number, sellersClaim?: string): string {
+export function buildUserPrompt(imageCount: number, sellersClaim?: string): string {
   const claim = sellersClaim?.trim();
   const lines: string[] = [];
   lines.push(
@@ -281,7 +295,7 @@ function asStringArray(v: unknown, max = 12): string[] {
     .slice(0, max);
 }
 
-function normalizeAnalysis(
+export function normalizeAnalysis(
   raw: Record<string, unknown>,
   sellersClaim: string | undefined
 ): Record<string, unknown> {
@@ -800,7 +814,10 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify({
               model: "gpt-4o",
               messages: [
-                { role: "system", content: SYSTEM_PROMPT },
+                {
+                  role: "system",
+                  content: process.env.SCANNER_FREE_NAMING === "1" ? FREE_SYSTEM_PROMPT : SYSTEM_PROMPT,
+                },
                 { role: "user", content },
               ],
               response_format: { type: "json_object" },
@@ -884,10 +901,19 @@ export async function POST(req: NextRequest) {
         ? (outcome.normalized as any).candidates.length
         : 0,
     });
+    // Resolve each candidate against the 10k catalog so the client can link a
+    // result to its library page and names are canonicalized. Additive only.
+    const result = outcome.normalized as Record<string, unknown>;
+    if (Array.isArray(result.candidates)) {
+      result.candidates = (result.candidates as Record<string, unknown>[]).map((c) => {
+        const match = resolveStrain((c.strainName as string) ?? (c.slug as string));
+        return { ...c, catalogSlug: match?.slug ?? null, inCatalog: Boolean(match) };
+      });
+    }
     return NextResponse.json({
       ok: true,
       model: "gpt-4o",
-      result: outcome.normalized,
+      result,
       usage: outcome.usage,
       cached,
     });

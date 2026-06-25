@@ -1,0 +1,564 @@
+{
+  "ranAt": "2026-06-23T23:15:17.914Z",
+  "model": "gpt-4o",
+  "dataset": "cache",
+  "filterCatalog": true,
+  "perStrain": 2,
+  "requested": 50,
+  "images": 50,
+  "stoppedEarly": false,
+  "strains": 27,
+  "top1Accuracy": 0.1,
+  "top3Accuracy": 0.14,
+  "estimatedCostUsd": 1,
+  "rows": [
+    {
+      "file": "0a8e640592a001ff243c3cd0a067b09a790006075ad387ecfa348acf5b7582d6.webp",
+      "expected": "afghan-kush",
+      "top": [],
+      "conf": 0,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "0bb5faf80ab44ea704dc5f0141247a26812d61e6c814f117bdd01d2e5f1590c5.webp",
+      "expected": "afghan-kush",
+      "top": [
+        "white-widow",
+        "white-widow-auto"
+      ],
+      "conf": 60,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "153844aa88863d8f4bc6a385b6b684caf4968d0d838614db2da78e9f0bdef0c7.webp",
+      "expected": "ak-47",
+      "top": [
+        "white-widow",
+        "white-widow-auto",
+        "wifi-og"
+      ],
+      "conf": 50,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "2e856747af4acc095802fbf644d8315db2b6dd34465e3135ec72629ea37f01fc.webp",
+      "expected": "ak-47",
+      "top": [
+        "white-widow",
+        "gorilla-glue-4"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "03a50707ae245446820d668c8ccb358a348481f9df98cbe837daa35ac9cf74eb.webp",
+      "expected": "apple-fritter",
+      "top": [
+        "ak-47",
+        "gorilla-glue-4"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "2cae12b3b3841abadae803de48370f7a333d86c5b3ed3e93049183c8ef74bd94.webp",
+      "expected": "apple-fritter",
+      "top": [
+        "white-widow",
+        "ice-cream-cake"
+      ],
+      "conf": 50,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "3bd7bcb5f04fee88d8e952fd2eaf1c7b282100a912f50d724bda215e39b7308b.jpg",
+      "expected": "bacio-gelato",
+      "top": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "56495cd53140b919ffbaa105077ded4e0c52808a3a3bc02fcb1bc77da8495d7f.webp",
+      "expected": "bacio-gelato",
+      "top": [
+        "granddaddy-purple",
+        "purple-punch"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "01ac90d33cc3859c0d31cecde05c00b5e07d3bfab03936921267b9a2091c79d8.webp",
+      "expected": "banana-kush",
+      "top": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "05e9bf5b859038b4b0a4c84d4dd399a89abc9f26cb899068adbb1e0e81949d45.webp",
+      "expected": "banana-kush",
+      "top": [
+        "wedding-cake",
+        "gelato"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "0dc1eaf087b12034c9b46a2019ec8c3b8f3d32df95f8b9cf8b4d0d0126006b18.jpg",
+      "expected": "blue-dream",
+      "top": [
+        "gelato",
+        "wedding-cake"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "1096cd8c7f68d7e65532b37ef991cde7983abc3eed1ec25e47c62390966a0e44.webp",
+      "expected": "blue-dream",
+      "top": [
+        "blue-dream"
+      ],
+      "conf": 80,
+      "hit1": true,
+      "hit3": true
+    },
+    {
+      "file": "4377f6bac525f28a26bef352cc78062b18f19ce178dd17e1c27a1e5657f84b2f.jpg",
+      "expected": "bubba-kush",
+      "top": [
+        "og-kush",
+        "gorilla-glue-4",
+        "girl-scout-cookies"
+      ],
+      "conf": 55,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "892b6a5ffc26759f51c54014d92c46248a7d983dcb2def24405beb5e3ba21d81.webp",
+      "expected": "bubba-kush",
+      "top": [
+        "granddaddy-purple",
+        "purple-punch"
+      ],
+      "conf": 40,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "03bcbaeafb5ff28440aba47740aa828154a50e7dc061a8f9df8d68c366d3d5f8.jpg",
+      "expected": "cereal-milk",
+      "top": [
+        "granddaddy-purple",
+        "purple-punch"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "762f3c49fd0a1c3a7405d92d9cca04bd6af5547707c9c1d95f579a2ca99eb9cb.png",
+      "expected": "cereal-milk",
+      "top": [
+        "purple-punch",
+        "granddaddy-purple",
+        "grape-ape"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "0ce25477420efb5f51edef6d9262b0f1d68bc5df6f6e2faf12d38d8f91178524.webp",
+      "expected": "chemdawg",
+      "top": [
+        "white-widow",
+        "gorilla-glue-4"
+      ],
+      "conf": 70,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "23a3f27a3945452307d9dacf4f8bc9831f897b0263ccaa2687a14cb61cafa06b.jpg",
+      "expected": "chemdawg",
+      "top": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "4c045b2b88a735954a73c7f26b4fca00ec562ddf7423276d243a8156f08c6d1f.webp",
+      "expected": "durban-poison",
+      "top": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "conf": 65,
+      "hit1": true,
+      "hit3": true
+    },
+    {
+      "file": "5a0476489b3e8b77e0e5be758775739c8d6f005748662af0cd6036668c0b7335.webp",
+      "expected": "durban-poison",
+      "top": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "conf": 65,
+      "hit1": true,
+      "hit3": true
+    },
+    {
+      "file": "d4055e3941fbef6a9d09a165ff0eeb40b4353272d9119a754cec64f9ca7305b6.jpg",
+      "expected": "east-coast-sour-diesel",
+      "top": [
+        "ak-47",
+        "gorilla-glue-4"
+      ],
+      "conf": 50,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "30a51feefd73141c9c787b627549cd59b7861b09a42d5ac92f6b1bc1f59fd653.jpg",
+      "expected": "gary-payton",
+      "top": [
+        "white-widow",
+        "gorilla-glue-4"
+      ],
+      "conf": 70,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "8ede8808caa0802d423fe221ff796e4bab7b9eb194b824dfb2f103c45b8c5721.webp",
+      "expected": "gary-payton",
+      "top": [
+        "granddaddy-purple",
+        "purple-punch"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "0e8a39a3f5e5fe5ec65b75061510567e2adcf4aa77689bea0638de2cc5a9b49f.jpg",
+      "expected": "gelato",
+      "top": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "1fde9a3cdaf551a91f4f2370de1bb103ae66d3a34528cc13bc4e25e5f71e6d49.webp",
+      "expected": "gelato",
+      "top": [
+        "wedding-cake",
+        "gelato"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": true
+    },
+    {
+      "file": "982f7ed5d31ac32060d90f14551359596a53ba5bc16244afcea900a8aaa1bee2.webp",
+      "expected": "gelato-41",
+      "top": [
+        "grease-monkey",
+        "gorilla-glue-4"
+      ],
+      "conf": 50,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "dca0f8f50f45954553cbe7f3c80dc0ce3a3fb14c2821e54c39dfe8daee48e24b.webp",
+      "expected": "gelato-45",
+      "top": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "205f7e54091a78b18f388e60072397dc2c92dacbfbfae627cca2187c71426e61.webp",
+      "expected": "girl-scout-cookies",
+      "top": [
+        "girl-scout-cookies",
+        "wedding-cake"
+      ],
+      "conf": 50,
+      "hit1": true,
+      "hit3": true
+    },
+    {
+      "file": "261c42611ca96579595db67466011f45f8ac4d7fcc84b4a2f463c70accb8df0b.webp",
+      "expected": "girl-scout-cookies",
+      "top": [
+        "purple-haze",
+        "granddaddy-purple"
+      ],
+      "conf": 40,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "013a48c093c1384575b8b27c71a16d92b723faa9d15767f6fff076c9e6931895.png",
+      "expected": "gmo-cookies",
+      "top": [
+        "ice-cream-cake",
+        "slurricane",
+        "purple-punch"
+      ],
+      "conf": 75,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "22083bb709556e255881595beb0b7e24c6e3822ec8a93989d8b16a281702877d.webp",
+      "expected": "gmo-cookies",
+      "top": [
+        "wedding-cake",
+        "ice-cream-cake"
+      ],
+      "conf": 75,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "04aaf50e9bc7179f472fc49da884391084b95f750bdd007e77aa1206c7d33221.webp",
+      "expected": "gorilla-glue-4",
+      "top": [],
+      "conf": 0,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "08005846b5ae72134c834db548d15a8f8fa21e45af1dc148fbcaddfd08f332d3.jpg",
+      "expected": "gorilla-glue-4",
+      "top": [
+        "wedding-cake",
+        "gelato"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "11e7981dc96db2cc554c8c48de4818e785ad7c080185309bc891262ecb6124b5.webp",
+      "expected": "granddaddy-purple",
+      "top": [
+        "gelato",
+        "sundae-driver"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "20ed17c8cbe6b8654c13ae193f6ba2225d8ad2ee95b3b263a43623ee997ccc0e.webp",
+      "expected": "granddaddy-purple",
+      "top": [
+        "og-kush",
+        "gorilla-glue-4"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "21a26acb501acbfce10bc00b7d0b23512bc2329e7f44f6db85d14d1419b17ba7.jpg",
+      "expected": "green-crack",
+      "top": [
+        "amnesia-haze",
+        "jack-herer"
+      ],
+      "conf": 50,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "2dd9dc5ceaa8dd7bd6305741b94b36dd3c73dd60c933a464339b79f5892e2a33.jpg",
+      "expected": "green-crack",
+      "top": [
+        "og-kush",
+        "gorilla-glue-4",
+        "grease-monkey"
+      ],
+      "conf": 50,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "0a241723c450cfa4b1a0bb7156eedee850c4bb71d0c73aa23048ab9871edbb37.webp",
+      "expected": "ice-cream-cake",
+      "top": [
+        "granddaddy-purple",
+        "purple-punch",
+        "grape-ape"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "0f063788afbaaecd082d4f243c3059c8d30c363bf20aa9a329fd27f94872c601.webp",
+      "expected": "ice-cream-cake",
+      "top": [
+        "granddaddy-purple",
+        "purple-punch"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "056d6088904432c959b9261c072a148fce86d2b81793872169dc06f5e3342104.webp",
+      "expected": "jack-herer",
+      "top": [
+        "white-widow",
+        "white-widow-auto"
+      ],
+      "conf": 60,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "122f23fd593ed34fda983252e885940bfcd7bc9d9effe434a2fe1b06c78ec60d.webp",
+      "expected": "jack-herer",
+      "top": [
+        "durban-poison",
+        "jack-herer"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": true
+    },
+    {
+      "file": "35791d4382561c5468bb656cae23d5c5f207743d73724ff27fb766b35c014dd7.webp",
+      "expected": "jealousy",
+      "top": [
+        "gelato",
+        "wedding-cake"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "3c357087c7c89b00d2554a56abbd426d98fb21e37b6a1c2d8b2b3a59887d52d4.webp",
+      "expected": "jealousy",
+      "top": [
+        "jack-herer",
+        "durban-poison"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "1d9f4480a4bfeb374ec72504cb48b0a83d3a6c25290db9a1d95f780fb5006c36.jpg",
+      "expected": "kush-mints",
+      "top": [
+        "gelato",
+        "runtz"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "2b61d81d81904d5938fa4246594bf26273212c9dcf9d460914c914db7c795b41.jpg",
+      "expected": "kush-mints",
+      "top": [
+        "purple-punch",
+        "granddaddy-purple"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "075f0ce5f4875b0f979ed148fc02de4b00544e932dd4108b4e4ae29a69e89d19.webp",
+      "expected": "mac-1",
+      "top": [
+        "gelato",
+        "sundae-driver"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "3f653fe467bbbaff07d25a76273101548aa0569a58ec45a71cde708b4fef3db5.jpg",
+      "expected": "mac-1",
+      "top": [
+        "white-widow",
+        "gorilla-glue-4"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "1990c05ae99c653b6daaf22e1b8bf54831fbfc826dbdb1b609d1f10b0b649fb2.webp",
+      "expected": "mimosa",
+      "top": [
+        "lemon-haze",
+        "green-crack"
+      ],
+      "conf": 65,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "2afc28f6fdf1bcd2ee778f74713f2a43a7fcf4fae81015fdc2a8ec8673983cca.webp",
+      "expected": "mimosa",
+      "top": [
+        "white-widow",
+        "wifi-og"
+      ],
+      "conf": 60,
+      "hit1": false,
+      "hit3": false
+    },
+    {
+      "file": "00d461ed9db9fdf904c07621ed9a0f3315f949d7298d42f19c6e5526a3156132.webp",
+      "expected": "northern-lights",
+      "top": [
+        "northern-lights"
+      ],
+      "conf": 80,
+      "hit1": true,
+      "hit3": true
+    }
+  ]
+}
