@@ -76,6 +76,15 @@ export default function PrivacyPage() {
             unless you explicitly choose to save the scan to your history
             or favorites.
           </Bullet>
+          <Bullet label="Training contributions (opt-in, off by default)">
+            Only if you turn on &ldquo;help improve StrainSpotter&rdquo; when
+            confirming or correcting a scan, we store that photo with its
+            confirmed strain label to improve identification (as a labeled
+            reference example and for evaluation). It&rsquo;s off unless you
+            choose it, you can disable it any time in Settings, and you can
+            request deletion by emailing{" "}
+            <a href="mailto:legal@strainspotter.app">legal@strainspotter.app</a>.
+          </Bullet>
           <Bullet label="Locally-stored garden data">
             Your grow logs, plants, sessions, favorites, and journal
             entries are stored on your device&rsquo;s localStorage. They

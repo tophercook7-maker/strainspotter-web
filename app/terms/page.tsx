@@ -124,14 +124,24 @@ export default function TermsPage() {
             worldwide, royalty-free license to process it for the
             purposes of providing the Service to you (sending photos to
             our AI provider for analysis, displaying your scan history
-            back to you, etc.). We do not claim ownership of your content
-            and we do not use it to train AI models.
+            back to you, etc.). We do not claim ownership of your content,
+            and we do not retain your photos to train or improve our
+            identification models unless you explicitly opt in (below).
           </p>
           <p>
-            If you opt in to community photo contribution, you grant an
-            additional license to display the contributed image on
-            relevant strain or terpene reference pages within the
-            Service. You can revoke that consent at any time.
+            <strong>Optional training contribution (opt-in, off by default).</strong>{" "}
+            If you choose to opt in — for example, by confirming or correcting a
+            scan with the &ldquo;help improve StrainSpotter&rdquo; option enabled —
+            you grant us an additional worldwide, royalty-free license to store the
+            contributed photo together with its confirmed strain label and to use it
+            to operate and improve StrainSpotter&rsquo;s identification: as a labeled
+            reference example for matching, for model evaluation, and for display on
+            relevant strain or terpene reference pages within the Service. This is
+            voluntary; you can turn it off any time in Settings, and you can request
+            deletion of previously contributed photos by emailing{" "}
+            <a href="mailto:legal@strainspotter.app">legal@strainspotter.app</a>.
+            Please don&rsquo;t contribute photos containing other people, personal
+            information, or anything you don&rsquo;t have the right to share.
           </p>
         </Section>
 
