@@ -7,7 +7,7 @@
 --
 -- Apply: Supabase SQL editor, or `supabase db push` (needs the DB password).
 
-create table if not exists public.scan_feedback (
+create table if not exists public.scan_corrections (
   id                   uuid primary key default gen_random_uuid(),
   created_at           timestamptz not null default now(),
   user_id              text,
@@ -26,9 +26,9 @@ create table if not exists public.scan_feedback (
   provider             text
 );
 
-create index if not exists scan_feedback_strain_idx on public.scan_feedback (correct_strain_slug);
-create index if not exists scan_feedback_scan_idx   on public.scan_feedback (scan_id);
+create index if not exists scan_corrections_strain_idx on public.scan_corrections (correct_strain_slug);
+create index if not exists scan_corrections_scan_idx   on public.scan_corrections (scan_id);
 
 -- Lock down: RLS on with NO policies → only the service role (server) reads/writes.
 -- (Consistent with the repo's RLS-lockdown posture + the nightly anon-leak-check.)
-alter table public.scan_feedback enable row level security;
+alter table public.scan_corrections enable row level security;
