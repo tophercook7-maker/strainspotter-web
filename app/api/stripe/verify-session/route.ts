@@ -33,39 +33,38 @@ export async function GET(req: NextRequest) {
       priceKey === "pro" ? "pro" : priceKey === "member" ? "member" : null;
 
     // Best-effort: sync to Supabase profile if user exists
+    // Generate a magic-link to AUTO-SIGN-IN the buyer and sync their membership.
+    // admin.generateLink returns the user (O(1) — no listUsers page-1 scan bug)
+    // plus an action_link the success page can redirect to. All non-blocking:
+    // the Stripe webhook is the canonical grant, so any failure here just falls
+    // back to manual sign-in.
+    let signInLink: string | null = null;
     if (email && tier) {
       try {
         const { getSupabaseAdmin } = await import("@/lib/supabase/server");
         const supabase = getSupabaseAdmin();
-        const listRes = await supabase.auth.admin.listUsers();
-        if (listRes.error) {
-          throw listRes.error;
-        }
-        // TS can't narrow the discriminated union; cast to success-branch shape.
-        const users = (
-          listRes.data as { users: { id: string; email?: string }[] }
-        ).users;
-        const user = users.find(
-          (u) => u.email?.toLowerCase() === email.toLowerCase()
-        );
-
-        if (user) {
-          const membership = tier === "pro" ? "pro" : "garden";
-          await supabase
-            .from("profiles")
-            .update({
-              membership,
-              stripe_customer_id: customerId,
-            })
-            .eq("id", user.id);
+        const origin = req.headers.get("origin") || req.nextUrl.origin;
+        const { data, error } = await supabase.auth.admin.generateLink({
+          type: "magiclink",
+          email,
+          options: { redirectTo: `${origin}/garden/scanner?welcome=1` },
+        });
+        if (!error && data) {
+          signInLink = (data.properties as { action_link?: string } | null)?.action_link ?? null;
+          const uid = (data.user as { id?: string } | null)?.id;
+          if (uid) {
+            await supabase
+              .from("profiles")
+              .update({ membership: tier === "pro" ? "pro" : "garden", stripe_customer_id: customerId })
+              .eq("id", uid);
+          }
         }
       } catch (e) {
-        // Non-blocking — localStorage handles the client side
-        console.warn("Supabase sync in verify-session failed:", e);
+        console.warn("Supabase sync/auto-login in verify-session failed:", e);
       }
     }
 
-    return NextResponse.json({ tier, email, name });
+    return NextResponse.json({ tier, email, name, signInLink });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Verify session error:", message);
