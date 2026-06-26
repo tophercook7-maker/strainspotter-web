@@ -190,6 +190,33 @@ export async function POST(req: NextRequest) {
   await fs.mkdir(path.dirname(FEEDBACK_PATH), { recursive: true });
   await fs.appendFile(FEEDBACK_PATH, `${JSON.stringify(feedback)}\n`, "utf8");
 
+  // Durable capture to Supabase — the local JSONL above is ephemeral on
+  // serverless, so this is the real source of truth for the training flywheel.
+  // Non-blocking: a DB hiccup must never fail the user's feedback submission.
+  try {
+    const { getSupabaseAdmin } = await import("@/lib/supabase/server");
+    await getSupabaseAdmin()
+      .from("scan_feedback")
+      .insert({
+        user_id: userId,
+        scan_id: feedback.scanId,
+        correct_strain_slug: feedback.correctStrainSlug,
+        correct_strain_name: feedback.correctStrainName,
+        selected_match_slug: feedback.selectedMatchSlug,
+        none_of_these: feedback.noneOfThese,
+        wrong_top_match_slug: feedback.wrongTopMatchSlug,
+        previous_rank: feedback.previousRank,
+        previous_confidence: feedback.previousConfidence,
+        predicted_top_matches: feedback.predictedTopMatches,
+        visual_traits: feedback.visualTraits,
+        notes: feedback.notes,
+        model: feedback.model,
+        provider: feedback.provider,
+      });
+  } catch (e) {
+    console.warn("scan_feedback Supabase insert failed (non-blocking):", e);
+  }
+
   let trainingWarnings: string[] = [];
   let imageSaved = false;
 
