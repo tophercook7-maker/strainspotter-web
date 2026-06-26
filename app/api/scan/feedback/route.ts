@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
   try {
     const { getSupabaseAdmin } = await import("@/lib/supabase/server");
     await getSupabaseAdmin()
-      .from("scan_feedback")
+      .from("scan_corrections")
       .insert({
         user_id: userId,
         scan_id: feedback.scanId,
