@@ -2395,7 +2395,39 @@ export default function ScannerPage() {
             </div>
 
             <button
-              onClick={() => {
+              onClick={async () => {
+                // Contribute the confirmed label + photo to the training flywheel.
+                // Clicking "Yes — Contribute" IS the explicit per-scan consent, so
+                // we send photoConsent:true → /api/scan/feedback persists the label
+                // to scan_corrections and the photo to the training-images bucket.
+                try {
+                  const slug = (s: string) =>
+                    s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+                  const img = previews[0] || null;
+                  const ct = img?.match(/^data:([^;]+);/)?.[1] || "image/jpeg";
+                  await fetch("/api/scan/feedback", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      selectedMatchSlug: slug(result.strainName),
+                      selectedMatchName: result.strainName,
+                      predictedTopMatches: result.v2Candidates.map((c, i) => ({
+                        slug: slug(c.strainName),
+                        strainName: c.strainName,
+                        rank: i + 1,
+                        confidence: c.confidence,
+                      })),
+                      photoConsent: true,
+                      trainingImageBase64: img,
+                      trainingImageContentType: ct,
+                      provider: "openai",
+                      model: "gpt-4o",
+                    }),
+                  });
+                  setPhotoContributed("saved");
+                } catch {
+                  /* non-blocking — local credit still awarded below */
+                }
                 // Award credit + mark consent
                 addPhotoCredit();
                 setPhotoCredits(getPhotoCredits());
