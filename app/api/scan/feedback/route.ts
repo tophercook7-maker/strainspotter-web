@@ -214,7 +214,37 @@ export async function POST(req: NextRequest) {
         provider: feedback.provider,
       });
   } catch (e) {
-    console.warn("scan_feedback Supabase insert failed (non-blocking):", e);
+    console.warn("scan_corrections Supabase insert failed (non-blocking):", e);
+  }
+
+  // Consent-gated durable photo storage — the IMAGE side of the flywheel. Only
+  // when the user opted in (photoConsent) AND a strain is confirmed. Stored in
+  // the private training-images bucket, foldered by strain slug so contributions
+  // are reference-ready. Non-blocking.
+  if (
+    body.photoConsent === true &&
+    typeof body.trainingImageBase64 === "string" &&
+    feedback.correctStrainSlug &&
+    shouldPersistConfirmedTraining(feedback)
+  ) {
+    try {
+      const ct =
+        typeof body.trainingImageContentType === "string"
+          ? body.trainingImageContentType
+          : "image/jpeg";
+      const ext = ct.includes("png") ? "png" : ct.includes("webp") ? "webp" : "jpg";
+      const buf = Buffer.from(
+        body.trainingImageBase64.replace(/^data:[^;]+;base64,/, ""),
+        "base64"
+      );
+      const key = `${feedback.correctStrainSlug}/${feedback.scanId || crypto.randomUUID()}.${ext}`;
+      const { getSupabaseAdmin } = await import("@/lib/supabase/server");
+      await getSupabaseAdmin()
+        .storage.from("training-images")
+        .upload(key, buf, { contentType: ct, upsert: true });
+    } catch (e) {
+      console.warn("training-images upload failed (non-blocking):", e);
+    }
   }
 
   let trainingWarnings: string[] = [];
