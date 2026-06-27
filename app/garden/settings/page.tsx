@@ -24,6 +24,8 @@ interface LocalPrefs {
   };
   theme: "dark" | "auto";
   scanQuality: "standard" | "high";
+  /** Opt-in: contribute confirmed scan photos as labeled training data. */
+  trainingContribution: boolean;
 }
 
 const DEFAULT_PREFS: LocalPrefs = {
@@ -35,6 +37,7 @@ const DEFAULT_PREFS: LocalPrefs = {
   },
   theme: "dark",
   scanQuality: "standard",
+  trainingContribution: false,
 };
 
 const PREFS_KEY = "strainspotter_settings";
@@ -702,6 +705,20 @@ export default function SettingsPage() {
               <Toggle
                 checked={prefs.notifications.weeklyDigest}
                 onChange={(v) => updateNotification("weeklyDigest", v)}
+              />
+            </SettingRow>
+          </div>
+
+          {/* ═══ Privacy & improvement ═══ */}
+          <div style={{ ...card, padding: 20, marginBottom: 16 }}>
+            <SectionHeader icon="🔬" title="Privacy & improvement" />
+            <SettingRow
+              label="Help improve StrainSpotter"
+              description="Contribute your confirmed or corrected scan photos as labeled training data so identification gets better over time. Off by default — see our Privacy Policy. You can turn this off anytime."
+            >
+              <Toggle
+                checked={prefs.trainingContribution}
+                onChange={(v) => updatePrefs({ trainingContribution: v })}
               />
             </SettingRow>
           </div>
