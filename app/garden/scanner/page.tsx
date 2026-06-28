@@ -464,8 +464,8 @@ export default function ScannerPage() {
           <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
             {previews.map((src, i) => (
               <div key={i} style={{ position: "relative" }}>
-                <img src={src} alt="" style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
-                <button onClick={(e) => { e.stopPropagation(); removeImage(i); }} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "rgba(0,0,0,0.8)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", lineHeight: 1 }}>✕</button>
+                <img src={src} alt={`Selected photo ${i + 1}`} style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
+                <button aria-label={`Remove selected photo ${i + 1}`} onClick={(e) => { e.stopPropagation(); removeImage(i); }} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "rgba(0,0,0,0.8)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", lineHeight: 1 }}>✕</button>
               </div>
             ))}
           </div>
