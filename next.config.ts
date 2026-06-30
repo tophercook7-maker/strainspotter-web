@@ -8,14 +8,24 @@ const nextConfig: NextConfig = {
   // Pin tracing to this app so server code resolving `data/` sees the real repo.
   outputFileTracingRoot: path.join(__dirname),
 
-  // The data-engine API routes are local-only (they 404 in production) but do
-  // broad readdir/readFile over the committed `data/` tree (~170MB of reference
-  // images, embeddings, catalog). Next's file tracing would otherwise bundle
-  // that data into their serverless functions, blowing past Vercel's 250MB
-  // uncompressed limit (api/data-engine/image hit 334MB). Production reads
-  // references from Supabase, not these files, so exclude them from tracing.
+  // The data-engine API routes are local-only (they 404 in production) but
+  // transitively pull in the heavy ML/vision stack (@xenova/transformers,
+  // onnxruntime, tesseract, sharp ≈ 310MB) plus the committed data/ tree.
+  // Next's file tracing bundled all of that into their serverless functions,
+  // pushing api/data-engine/image to 331MB — past Vercel's 250MB uncompressed
+  // limit. Since these routes 404 in prod and never run the ML path, exclude
+  // those packages and the data tree from their tracing.
   outputFileTracingExcludes: {
-    "/api/data-engine/**": ["./data/**"],
+    "/api/data-engine/**": [
+      "./data/**",
+      "./node_modules/@xenova/**",
+      "./node_modules/onnxruntime-node/**",
+      "./node_modules/onnxruntime-web/**",
+      "./node_modules/tesseract.js/**",
+      "./node_modules/tesseract.js-core/**",
+      "./node_modules/sharp/**",
+      "./node_modules/protobufjs/**",
+    ],
   },
 
   // Skip TypeScript errors during build — legacy type mismatches
