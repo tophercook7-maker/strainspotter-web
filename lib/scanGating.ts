@@ -72,20 +72,6 @@ export const MEMBERSHIP_TIERS = {
       "Scan history, favorites, journal — fully personalized",
     ],
   },
-  member_annual: {
-    name: "Member · Annual",
-    price: "$39/yr",
-    effectivePerMonth: "$3.25/mo",
-    period: "yearly" as const,
-    scans: "100 scans/month",
-    savingsLabel: "Save 35% — 2 months free",
-    tagline: "Same Member plan. Pay yearly, save a third.",
-    features: [
-      "Everything in Member",
-      "Effective $3.25/mo — 35% less than monthly",
-      "One charge per year, no monthly surprises",
-    ],
-  },
   pro: {
     name: "Pro",
     price: "$9.99/mo",
@@ -102,74 +88,42 @@ export const MEMBERSHIP_TIERS = {
     footnote:
       "*Fair-use rate limits apply — 500/day, 5,000/month. Plenty for any real human; designed to block scripted abuse.",
   },
-  pro_annual: {
-    name: "Pro · Annual",
-    price: "$79/yr",
-    effectivePerMonth: "$6.58/mo",
-    period: "yearly" as const,
-    scans: "Unlimited scans*",
-    savingsLabel: "Save 34% — 2 months free",
-    tagline: "All the Pro features, one yearly charge.",
-    features: [
-      "Everything in Pro",
-      "Effective $6.58/mo — 34% less than monthly",
-      "One charge per year, no monthly surprises",
-    ],
-  },
-  founder_lifetime: {
-    name: "Founder",
-    price: "$99 once",
-    period: "lifetime" as const,
-    scans: "Unlimited scans, forever*",
-    badge: "Limited — first 1,000 only",
-    tagline: "Pay once. Use forever. Locked-in launch price.",
-    features: [
-      "Everything in Pro — for life",
-      "No monthly bill, no annual renewal",
-      "Founder badge on your profile",
-      "Direct line to feature requests",
-      "Locked in before public price hikes",
-    ],
-    footnote: "*Same fair-use rate limits as Pro.",
-  },
 } as const;
 
 /**
  * Top-up packs — one-time scan credit purchases for the user who doesn't
  * want a subscription but needs a few more scans.
  *
- * Pricing rebalanced May 25 2026:
- *   - Old: $1.99/10 ($0.20/scan) + $3.99/25 ($0.16/scan) — 3-4× the sub rate.
- *   - New: $0.99/10 + $2.49/25 + $8.99/100 (~$0.10/scan, ~2× the sub rate).
- *
- * Per-scan economics (subscriber gets ~$0.05/scan); the topup is still a
- * premium for the convenience of not subscribing, but no longer feels
- * like a rip-off. The 100-pack is genuinely good value and gets a badge.
+ * Pricing (Jun 2026): $2.99/10 + $4.99/20 + $9.99/50.
+ * Deliberately priced ABOVE the subscription per-scan rate (Member is
+ * $4.99/100 = $0.05/scan) so packs read as premium convenience and the
+ * monthly plans stay the obvious value. The 50-pack is best value and
+ * gets a badge; bigger packs carry a real volume discount.
  */
 export const TOPUP_PACKS = [
   {
     id: "topup_10" as const,
     scans: 10,
-    price: "$0.99",
-    perScan: 0.099,
+    price: "$2.99",
+    perScan: 0.299,
     label: "10 scans",
-    sublabel: "$0.10 per scan",
+    sublabel: "$0.30 per scan",
   },
   {
-    id: "topup_25" as const,
-    scans: 25,
-    price: "$2.49",
-    perScan: 0.0996,
-    label: "25 scans",
-    sublabel: "$0.10 per scan",
+    id: "topup_20" as const,
+    scans: 20,
+    price: "$4.99",
+    perScan: 0.2495,
+    label: "20 scans",
+    sublabel: "$0.25 per scan",
   },
   {
-    id: "topup_100" as const,
-    scans: 100,
-    price: "$8.99",
-    perScan: 0.0899,
-    label: "100 scans",
-    sublabel: "$0.09 per scan — best value",
+    id: "topup_50" as const,
+    scans: 50,
+    price: "$9.99",
+    perScan: 0.1998,
+    label: "50 scans",
+    sublabel: "$0.20 per scan — best value",
     badge: "Best value",
   },
 ] as const;

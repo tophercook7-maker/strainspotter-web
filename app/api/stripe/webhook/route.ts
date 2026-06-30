@@ -9,23 +9,21 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 /**
  * Map a checkout-time priceKey (set by /api/stripe/checkout via metadata)
  * to a Membership value. priceKey is one of:
- *   "member" | "member_annual" | "pro" | "pro_annual" |
- *   "founder_lifetime" | "topup_10" | "topup_25" | "topup_100"
+ *   "member" | "pro" | "topup_10" | "topup_20" | "topup_50"
  *
  * Database column 'profiles.membership' is constrained to free | garden |
  * standard | pro | elite. The client AuthProvider collapses garden/standard
  * to "member" — we write 'garden' here to match historical convention.
  *
- * Founder lifetime is mapped to 'elite' (the existing unlimited tier) so
- * that all serverGate / quota logic just works. The one-time payment is
- * captured as a flag in profile.founder_purchase_at for ops visibility.
+ * (Annual plans and the Founder Lifetime SKU were discontinued Jun 2026.
+ * Existing Founder customers keep 'elite' via membership resolution / IAP
+ * restore; we just no longer sell those SKUs.)
  */
 export function membershipFromPriceKey(
   priceKey: string | undefined
 ): Membership | null {
-  if (priceKey === "member" || priceKey === "member_annual") return "garden";
-  if (priceKey === "pro" || priceKey === "pro_annual") return "pro";
-  if (priceKey === "founder_lifetime") return "elite";
+  if (priceKey === "member") return "garden";
+  if (priceKey === "pro") return "pro";
   return null;
 }
 
@@ -36,25 +34,19 @@ export function membershipFromPriceKey(
  */
 export function membershipFromPriceId(priceId: string | undefined): Membership | null {
   if (!priceId) return null;
-  if (priceId === STRIPE_PRICES.pro || priceId === STRIPE_PRICES.pro_annual)
-    return "pro";
-  if (
-    priceId === STRIPE_PRICES.member ||
-    priceId === STRIPE_PRICES.member_annual
-  )
-    return "garden";
-  if (priceId === STRIPE_PRICES.founder_lifetime) return "elite";
+  if (priceId === STRIPE_PRICES.pro) return "pro";
+  if (priceId === STRIPE_PRICES.member) return "garden";
   return null;
 }
 
 /** True if the priceKey is a top-up SKU (one-time scan credit grant). */
 export function isTopupPriceKey(
   priceKey: string | undefined
-): priceKey is "topup_10" | "topup_25" | "topup_100" {
+): priceKey is "topup_10" | "topup_20" | "topup_50" {
   return (
     priceKey === "topup_10" ||
-    priceKey === "topup_25" ||
-    priceKey === "topup_100"
+    priceKey === "topup_20" ||
+    priceKey === "topup_50"
   );
 }
 
@@ -366,10 +358,6 @@ export async function POST(req: NextRequest) {
             membership,
             stripe_customer_id: customerId,
           };
-          // Founder is a one-time purchase; mark the purchase date for ops.
-          if (priceKey === "founder_lifetime") {
-            updates.founder_purchase_at = new Date().toISOString();
-          }
           const { error } = await supabase
             .from("profiles")
             .update(updates)

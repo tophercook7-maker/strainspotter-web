@@ -23,11 +23,11 @@ import { MEMBERSHIP_TIERS, TOPUP_PACKS } from "@/lib/scanGating";
 export const metadata: Metadata = {
   title: "Pricing — StrainSpotter",
   description:
-    "Honest pricing for honest AI strain identification. Member from $4.99/mo, Pro from $9.99/mo, Founder lifetime $99 (first 1,000 only). Top-ups available from $0.99.",
+    "Honest pricing for honest AI strain identification. Member $4.99/mo, Pro $9.99/mo. One-time scan top-up packs from $2.99.",
   openGraph: {
     title: "StrainSpotter — Pricing",
     description:
-      "Honest AI cannabis identification. Member $4.99/mo, Pro $9.99/mo, Founder $99 lifetime.",
+      "Honest AI cannabis identification. Member $4.99/mo, Pro $9.99/mo. Scan top-ups from $2.99.",
     type: "website",
     url: "https://strainspotter.app/pricing",
   },
@@ -39,10 +39,7 @@ const sans =
 
 export default function PricingPage() {
   const member = MEMBERSHIP_TIERS.member;
-  const memberAnnual = MEMBERSHIP_TIERS.member_annual;
   const pro = MEMBERSHIP_TIERS.pro;
-  const proAnnual = MEMBERSHIP_TIERS.pro_annual;
-  const founder = MEMBERSHIP_TIERS.founder_lifetime;
 
   return (
     <main
@@ -151,9 +148,6 @@ export default function PricingPage() {
               accent="#66BB6A"
               badge="🌿 Member"
               monthlyPrice={member.price}
-              annualPrice={memberAnnual.price}
-              annualEffective={memberAnnual.effectivePerMonth}
-              annualSavings={memberAnnual.savingsLabel}
               tagline={member.tagline}
               features={[...member.features]}
             />
@@ -163,9 +157,6 @@ export default function PricingPage() {
               accent="#FFB74D"
               badge="⭐ Pro"
               monthlyPrice={pro.price}
-              annualPrice={proAnnual.price}
-              annualEffective={proAnnual.effectivePerMonth}
-              annualSavings={proAnnual.savingsLabel}
               tagline={pro.tagline}
               features={[...pro.features]}
               footnote={pro.footnote}
@@ -173,116 +164,6 @@ export default function PricingPage() {
             />
           </div>
 
-          {/* Founder lifetime — full-width below */}
-          <div
-            style={{
-              position: "relative",
-              background:
-                "linear-gradient(135deg, rgba(186,104,200,0.12), rgba(255,183,77,0.08))",
-              border: "1px solid rgba(186,104,200,0.30)",
-              borderRadius: 20,
-              padding: "26px 28px 22px",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: -12,
-                left: 24,
-                padding: "5px 14px",
-                background: "#BA68C8",
-                color: "#0a0f0a",
-                borderRadius: 999,
-                fontSize: 11,
-                fontWeight: 900,
-                letterSpacing: 1.2,
-                textTransform: "uppercase",
-              }}
-            >
-              {founder.badge}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                flexWrap: "wrap",
-                gap: 16,
-                marginBottom: 14,
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    color: "#CE93D8",
-                    fontSize: 24,
-                    fontWeight: 900,
-                    marginBottom: 6,
-                  }}
-                >
-                  👑 {founder.name}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.78)",
-                    fontSize: 14,
-                    lineHeight: 1.55,
-                    maxWidth: 540,
-                  }}
-                >
-                  {founder.tagline}
-                </div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div
-                  style={{
-                    color: "#CE93D8",
-                    fontSize: 32,
-                    fontWeight: 900,
-                    lineHeight: 1,
-                  }}
-                >
-                  {founder.price}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.55)",
-                    fontSize: 12,
-                    marginTop: 4,
-                  }}
-                >
-                  one-time payment
-                </div>
-              </div>
-            </div>
-            <ul
-              style={{
-                margin: 0,
-                padding: "0 0 0 20px",
-                fontSize: 13,
-                color: "rgba(255,255,255,0.78)",
-                lineHeight: 1.7,
-                columns: 2,
-                columnGap: 24,
-              }}
-            >
-              {founder.features.map((f, i) => (
-                <li key={i}>{f}</li>
-              ))}
-            </ul>
-            {founder.footnote && (
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "rgba(255,255,255,0.40)",
-                  marginTop: 12,
-                  lineHeight: 1.5,
-                }}
-              >
-                {founder.footnote}
-              </div>
-            )}
-          </div>
         </section>
 
         {/* ─── Top-ups ─── */}
@@ -415,10 +296,6 @@ export default function PricingPage() {
               a="It will sometimes — visual strain ID from an unlabeled bud photo is genuinely hard. We calibrate confidence honestly and rank multiple candidates rather than picking one with fake certainty."
             />
             <Faq
-              q="How is Founder different from Pro?"
-              a="Founder is a one-time $99 payment that grants Pro-tier access for life. Limited to the first 1,000 buyers. You also get a founder badge and direct line to feature requests."
-            />
-            <Faq
               q="Is my data shared?"
               a="No. Photos are sent to our AI provider for analysis and then discarded — never retained unless you explicitly opt in to help us improve. We don't sell user data."
             />
@@ -523,9 +400,6 @@ function PlanColumn({
   accent,
   badge,
   monthlyPrice,
-  annualPrice,
-  annualEffective,
-  annualSavings,
   tagline,
   features,
   footnote,
@@ -534,9 +408,6 @@ function PlanColumn({
   accent: string;
   badge: string;
   monthlyPrice: string;
-  annualPrice: string;
-  annualEffective: string;
-  annualSavings: string;
   tagline: string;
   features: string[];
   footnote?: string;
@@ -595,31 +466,6 @@ function PlanColumn({
           }}
         >
           {monthlyPrice}
-        </div>
-        <div
-          style={{
-            color: "rgba(255,255,255,0.50)",
-            fontSize: 11,
-            marginTop: 6,
-          }}
-        >
-          or {annualPrice} ({annualEffective})
-        </div>
-        <div
-          style={{
-            display: "inline-block",
-            padding: "3px 9px",
-            background: "rgba(76,175,80,0.18)",
-            color: "#81C784",
-            borderRadius: 999,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 0.3,
-            textTransform: "uppercase",
-            marginTop: 8,
-          }}
-        >
-          {annualSavings}
         </div>
       </div>
 

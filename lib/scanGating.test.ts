@@ -98,15 +98,18 @@ describe("scanGating — pricing integrity (guards accidental edits)", () => {
     }
   });
 
-  it("keeps the Founder scarcity lever and lifetime framing", () => {
-    expect(MEMBERSHIP_TIERS.founder_lifetime.period).toBe("lifetime");
-    expect(MEMBERSHIP_TIERS.founder_lifetime.badge).toMatch(/1,000/);
+  it("offers exactly three top-up packs at 10/20/50 scans", () => {
+    expect(TOPUP_PACKS.map((p) => p.scans)).toEqual([10, 20, 50]);
+    expect(TOPUP_PACKS.map((p) => p.id)).toEqual([
+      "topup_10",
+      "topup_20",
+      "topup_50",
+    ]);
   });
 
-  it("exposes monthly + annual for both member and pro", () => {
+  it("exposes monthly-only Member and Pro (annual + lifetime discontinued)", () => {
     expect(MEMBERSHIP_TIERS.member.period).toBe("monthly");
-    expect(MEMBERSHIP_TIERS.member_annual.period).toBe("yearly");
     expect(MEMBERSHIP_TIERS.pro.period).toBe("monthly");
-    expect(MEMBERSHIP_TIERS.pro_annual.period).toBe("yearly");
+    expect(Object.keys(MEMBERSHIP_TIERS)).toEqual(["member", "pro"]);
   });
 });
