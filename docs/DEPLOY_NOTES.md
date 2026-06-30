@@ -89,18 +89,21 @@ unsigned body returns 400.
 
 ## Stripe price IDs (current live)
 
-Subscriptions are hardcoded in `lib/stripe/config.ts`. Top-up prices changed
-(Jun 2026) so they need NEW Stripe price IDs supplied via env
-(`STRIPE_PRICE_TOPUP_10/20/50`) — the old IDs encoded the old amounts and
-must not be reused. Annual plans and Founder Lifetime were discontinued.
+All hardcoded as fallbacks in `lib/stripe/config.ts` and overridable via env
+(`STRIPE_PRICE_*`). Top-up prices/IDs changed Jun 2026 (new live prices);
+annual plans and Founder Lifetime were discontinued.
 
 ```
 member:    price_1TK7uf2LVfewrTUsnHCdPsR9   ($4.99/mo · 100 scans)
 pro:       price_1TK7uf2LVfewrTUsU1IO9cfL   ($9.99/mo · unlimited)
-topup_10:  $2.99 · +10 scans   → set STRIPE_PRICE_TOPUP_10 (new Stripe price)
-topup_20:  $4.99 · +20 scans   → set STRIPE_PRICE_TOPUP_20 (new Stripe price)
-topup_50:  $9.99 · +50 scans   → set STRIPE_PRICE_TOPUP_50 (new Stripe price)
+topup_10:  price_1To5042LVfewrTUsoPHlH7Pm   ($2.99 · +10 scans)   env: STRIPE_PRICE_TOPUP_10
+topup_20:  price_1To5042LVfewrTUspnPhyPOT   ($4.99 · +20 scans)   env: STRIPE_PRICE_TOPUP_20
+topup_50:  price_1To5042LVfewrTUsGQoBSV27   ($9.99 · +50 scans)   env: STRIPE_PRICE_TOPUP_50
 ```
+
+Vercel env vars STRIPE_PRICE_TOPUP_10/20/50 are set for Production + Development.
+Preview relies on the code fallback (CLI 54.6.1 can't add to "all preview
+branches" non-interactively; add per-branch later if needed).
 
 ---
 

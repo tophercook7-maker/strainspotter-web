@@ -18,10 +18,10 @@ export const STRIPE_PRICES = {
   pro: process.env.STRIPE_PRICE_PRO || "price_1TK7uf2LVfewrTUsU1IO9cfL",
 
   // ── Top-up packs (one-time scan credit grants) ────────────────────
-  // $2.99 / $4.99 / $9.99 — set via env once the new Stripe prices exist.
-  topup_10: process.env.STRIPE_PRICE_TOPUP_10 || "price_topup_10_PLACEHOLDER",
-  topup_20: process.env.STRIPE_PRICE_TOPUP_20 || "price_topup_20_PLACEHOLDER",
-  topup_50: process.env.STRIPE_PRICE_TOPUP_50 || "price_topup_50_PLACEHOLDER",
+  // $2.99 / $4.99 / $9.99 — live Stripe prices created Jun 2026.
+  topup_10: process.env.STRIPE_PRICE_TOPUP_10 || "price_1To5042LVfewrTUsoPHlH7Pm",
+  topup_20: process.env.STRIPE_PRICE_TOPUP_20 || "price_1To5042LVfewrTUspnPhyPOT",
+  topup_50: process.env.STRIPE_PRICE_TOPUP_50 || "price_1To5042LVfewrTUsGQoBSV27",
 } as const;
 
 export const STRIPE_PORTAL_CONFIG = "bpc_1TK7uy2LVfewrTUsmCNg4qJq";
