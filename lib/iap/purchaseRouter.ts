@@ -25,8 +25,8 @@ export type PurchaseOutcome =
   | { ok: false; via: "stripe" | "apple_iap"; error: string };
 
 interface StartPurchaseArgs {
-  /** Internal SKU key — "member" | "member_annual" | "pro" | "pro_annual" |
-   *  "founder_lifetime" | "topup_10" | "topup_25" | "topup_100" */
+  /** Internal SKU key — "member" | "pro" |
+   *  "topup_10" | "topup_20" | "topup_50" */
   priceKey: string;
   /** Supabase auth user id. Required on iOS for RevenueCat aliasing. */
   userId?: string | null;

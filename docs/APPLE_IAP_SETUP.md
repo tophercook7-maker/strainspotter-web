@@ -16,7 +16,7 @@ code is already shipped (this session); these are the App Store Connect
 ## 1. Apple App Store Connect — create the products
 
 Go to **My Apps → StrainSpotter → Monetization → In-App Purchases**.
-Create EIGHT products. Product IDs must EXACTLY match what's in
+Create FIVE products. Product IDs must EXACTLY match what's in
 `lib/iap/products.ts`:
 
 ### Subscriptions (Auto-Renewable)
@@ -27,23 +27,19 @@ Then add each as an auto-renewable subscription within that group:
 | Product ID                                            | Display Name        | Duration | Price (USD) |
 | ----------------------------------------------------- | ------------------- | -------- | ----------- |
 | `com.mixedmakershop.strainspotter.member.monthly`     | Member (Monthly)    | 1 month  | $4.99       |
-| `com.mixedmakershop.strainspotter.member.annual`      | Member (Annual)     | 1 year   | $39.00      |
 | `com.mixedmakershop.strainspotter.pro.monthly`        | Pro (Monthly)       | 1 month  | $9.99       |
-| `com.mixedmakershop.strainspotter.pro.annual`         | Pro (Annual)        | 1 year   | $79.00      |
 
-### One-Time (Non-Consumable)
-
-| Product ID                                            | Display Name | Price (USD) |
-| ----------------------------------------------------- | ------------ | ----------- |
-| `com.mixedmakershop.strainspotter.founder.lifetime`   | Founder      | $99.00      |
+_Annual plans and the Founder Lifetime product were discontinued (Jun 2026).
+Existing Founder customers keep access via the `founder` entitlement restore
+path; the product is no longer offered for sale._
 
 ### Topups (Consumable)
 
 | Product ID                                            | Display Name | Price (USD) |
 | ----------------------------------------------------- | ------------ | ----------- |
-| `com.mixedmakershop.strainspotter.topup.10`           | 10 Scans     | $0.99       |
-| `com.mixedmakershop.strainspotter.topup.25`           | 25 Scans     | $2.49       |
-| `com.mixedmakershop.strainspotter.topup.100`          | 100 Scans    | $8.99       |
+| `com.mixedmakershop.strainspotter.topup.10`           | 10 Scans     | $2.99       |
+| `com.mixedmakershop.strainspotter.topup.20`           | 20 Scans     | $4.99       |
+| `com.mixedmakershop.strainspotter.topup.50`           | 50 Scans     | $9.99       |
 
 For each product: fill out **Review Information** with screenshots and
 a brief description. Apple holds purchases until each product is reviewed
@@ -74,25 +70,19 @@ Entitlements → New Entitlement. Create three:
 
 | Entitlement ID | Products Attached                                                                                  |
 | -------------- | -------------------------------------------------------------------------------------------------- |
-| `member`       | member.monthly, member.annual                                                                       |
-| `pro`          | pro.monthly, pro.annual, founder.lifetime *(founder grants pro entitlement)*                       |
-| `founder`      | founder.lifetime *(separate entitlement so we can show the badge / count remaining inventory)*     |
-
-Note that founder is attached to BOTH `pro` and `founder` — granting
-both entitlements at once. The webhook handler picks the highest tier.
+| `member`       | member.monthly                                                                                      |
+| `pro`          | pro.monthly                                                                                         |
+| `founder`      | _legacy — existing Founder customers only (restore path). No product sold; keep so past buyers retain elite._ |
 
 ### Create an Offering
 
 Offerings → New Offering → "Default Offering". Add **Packages** within it:
 
 - Member Monthly → member.monthly
-- Member Annual → member.annual
 - Pro Monthly → pro.monthly
-- Pro Annual → pro.annual
-- Founder → founder.lifetime
 - Topup 10 → topup.10
-- Topup 25 → topup.25
-- Topup 100 → topup.100
+- Topup 20 → topup.20
+- Topup 50 → topup.50
 
 Mark this offering as **Current**.
 

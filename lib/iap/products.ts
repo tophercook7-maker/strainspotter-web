@@ -18,19 +18,14 @@
 /* ─── App Store Connect product IDs ─────────────────────────────── */
 
 export const APPLE_PRODUCT_IDS = {
-  // Auto-renewable subscriptions
+  // Auto-renewable subscriptions (monthly only)
   member_monthly: "com.mixedmakershop.strainspotter.member.monthly",
-  member_annual:  "com.mixedmakershop.strainspotter.member.annual",
   pro_monthly:    "com.mixedmakershop.strainspotter.pro.monthly",
-  pro_annual:     "com.mixedmakershop.strainspotter.pro.annual",
-
-  // Non-consumable (one-time, lifetime, restorable)
-  founder_lifetime: "com.mixedmakershop.strainspotter.founder.lifetime",
 
   // Consumables (top-up scan packs)
   topup_10:  "com.mixedmakershop.strainspotter.topup.10",
-  topup_25:  "com.mixedmakershop.strainspotter.topup.25",
-  topup_100: "com.mixedmakershop.strainspotter.topup.100",
+  topup_20:  "com.mixedmakershop.strainspotter.topup.20",
+  topup_50:  "com.mixedmakershop.strainspotter.topup.50",
 } as const;
 
 export type AppleProductKey = keyof typeof APPLE_PRODUCT_IDS;
@@ -49,9 +44,9 @@ export type AppleProductKey = keyof typeof APPLE_PRODUCT_IDS;
 // same tier both grant the same entitlement.
 
 export const REVENUECAT_ENTITLEMENTS = {
-  member:  "member",   // → granted by member_monthly OR member_annual
-  pro:     "pro",      // → granted by pro_monthly, pro_annual, OR founder_lifetime
-  founder: "founder",  // → granted by founder_lifetime ONLY (for badge / cohort tracking)
+  member:  "member",   // → granted by member_monthly
+  pro:     "pro",      // → granted by pro_monthly
+  founder: "founder",  // → legacy: existing Founder customers only (restore path). Not sold.
 } as const;
 
 export type EntitlementId =
@@ -60,18 +55,15 @@ export type EntitlementId =
 /* ─── Internal SKU key ↔ Apple product ID mapping ───────────────── */
 //
 // The rest of the codebase uses our internal SKU keys ("member",
-// "pro_annual", "topup_10", etc). The IAP layer translates between
+// "pro", "topup_10", etc). The IAP layer translates between
 // those and the Apple product strings above.
 
 export const SKU_TO_APPLE: Record<string, string> = {
-  member:           APPLE_PRODUCT_IDS.member_monthly,
-  member_annual:    APPLE_PRODUCT_IDS.member_annual,
-  pro:              APPLE_PRODUCT_IDS.pro_monthly,
-  pro_annual:       APPLE_PRODUCT_IDS.pro_annual,
-  founder_lifetime: APPLE_PRODUCT_IDS.founder_lifetime,
-  topup_10:         APPLE_PRODUCT_IDS.topup_10,
-  topup_25:         APPLE_PRODUCT_IDS.topup_25,
-  topup_100:        APPLE_PRODUCT_IDS.topup_100,
+  member:    APPLE_PRODUCT_IDS.member_monthly,
+  pro:       APPLE_PRODUCT_IDS.pro_monthly,
+  topup_10:  APPLE_PRODUCT_IDS.topup_10,
+  topup_20:  APPLE_PRODUCT_IDS.topup_20,
+  topup_50:  APPLE_PRODUCT_IDS.topup_50,
 };
 
 /** Reverse map for parsing webhook payloads. */
@@ -82,9 +74,9 @@ export const APPLE_TO_SKU: Record<string, string> = Object.fromEntries(
 /* ─── Consumable scan grants (mirrors lib/stripe/config.ts) ─────── */
 
 export const APPLE_TOPUP_GRANTS: Record<string, number> = {
-  [APPLE_PRODUCT_IDS.topup_10]:  10,
-  [APPLE_PRODUCT_IDS.topup_25]:  25,
-  [APPLE_PRODUCT_IDS.topup_100]: 100,
+  [APPLE_PRODUCT_IDS.topup_10]: 10,
+  [APPLE_PRODUCT_IDS.topup_20]: 20,
+  [APPLE_PRODUCT_IDS.topup_50]: 50,
 };
 
 /** True if the Apple product ID is a one-time topup (consumable). */

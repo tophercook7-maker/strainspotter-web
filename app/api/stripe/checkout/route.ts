@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { STRIPE_PRICES } from "@/lib/stripe/config";
-import { isFounderSoldOut } from "@/lib/billing/founder";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,31 +22,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Enforce the Founder "first 1,000" cap at purchase time (live count, not
-    // the cached counter). Fail CLOSED on error so a transient DB hiccup can't
-    // let us oversell the scarcity promise.
-    if (priceKey === "founder_lifetime") {
-      try {
-        if (await isFounderSoldOut()) {
-          return NextResponse.json({ error: "The Founder edition is sold out." }, { status: 409 });
-        }
-      } catch {
-        return NextResponse.json(
-          { error: "Couldn't verify Founder availability — please try again." },
-          { status: 503 }
-        );
-      }
-    }
-
-    // Subscription SKUs (monthly and annual). Founder lifetime + topups are
-    // one-time payments. Treat anything that's not in the subscription
-    // allowlist as a one-time payment.
-    const SUBSCRIPTION_PRICE_KEYS = new Set([
-      "member",
-      "member_annual",
-      "pro",
-      "pro_annual",
-    ]);
+    // Subscription SKUs are the monthly Member/Pro plans. Top-ups are one-time
+    // payments — anything not in this allowlist is treated as one-time.
+    const SUBSCRIPTION_PRICE_KEYS = new Set(["member", "pro"]);
     const isSubscription = SUBSCRIPTION_PRICE_KEYS.has(priceKey);
     const origin = req.headers.get("origin") || "https://strainspotter.app";
 

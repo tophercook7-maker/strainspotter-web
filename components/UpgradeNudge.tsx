@@ -195,7 +195,7 @@ export default function UpgradeNudge({
           {/* Top-up alternative */}
           <button
             disabled={purchasing !== null}
-            onClick={() => handlePurchase("topup_25")}
+            onClick={() => handlePurchase("topup_20")}
             style={{
               width: "100%",
               padding: "12px 0",
@@ -209,15 +209,15 @@ export default function UpgradeNudge({
               marginBottom: 10,
             }}
           >
-            {purchasing === "topup_25"
+            {purchasing === "topup_20"
               ? "Loading…"
-              : "Or: 25 scans for $2.49 — keep my Member plan"}
+              : "Or: 20 scans for $4.99 — keep my Member plan"}
           </button>
 
           {/* Best-value top-up alternative */}
           <button
             disabled={purchasing !== null}
-            onClick={() => handlePurchase("topup_100")}
+            onClick={() => handlePurchase("topup_50")}
             style={{
               width: "100%",
               padding: "10px 0",
@@ -231,9 +231,9 @@ export default function UpgradeNudge({
               marginBottom: 12,
             }}
           >
-            {purchasing === "topup_100"
+            {purchasing === "topup_50"
               ? "Loading…"
-              : "100 scans for $8.99 (best value)"}
+              : "50 scans for $9.99 (best value)"}
           </button>
 
           <div
