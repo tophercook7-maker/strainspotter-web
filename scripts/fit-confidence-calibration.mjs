@@ -27,7 +27,7 @@
 // Usage:
 //   node scripts/fit-confidence-calibration.mjs [snapshot.json ...]
 // Defaults to data/eval/baseline-textonly-2026-06-23.json.
-// Output: data/scanner/calibration.json
+// Output: lib/scanner/calibrationTable.json
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
@@ -171,9 +171,11 @@ function main() {
     tierThresholds: { high: 70, moderate: 40, low: 20 },
   };
 
-  const outDir = path.join(root, "data", "scanner");
+  // Written under lib/ (not root /data/, which .vercelignore excludes from the
+  // deploy) so the scan route can import it at request time.
+  const outDir = path.join(root, "lib", "scanner");
   mkdirSync(outDir, { recursive: true });
-  const outPath = path.join(outDir, "calibration.json");
+  const outPath = path.join(outDir, "calibrationTable.json");
   writeFileSync(outPath, JSON.stringify(table, null, 2) + "\n");
 
   console.log(`\nfit visualOnly (n=${visualOnly.n}, overall top1=${(visualOnly.overallTop1 * 100).toFixed(0)}%):`);
