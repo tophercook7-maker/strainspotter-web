@@ -8,25 +8,14 @@ const nextConfig: NextConfig = {
   // Pin tracing to this app so server code resolving `data/` sees the real repo.
   outputFileTracingRoot: path.join(__dirname),
 
-  // The data-engine API routes are local-only (they 404 in production) but
-  // transitively pull in the heavy ML/vision stack (@xenova/transformers,
-  // onnxruntime, tesseract, sharp ≈ 310MB) plus the committed data/ tree.
-  // Next's file tracing bundled all of that into their serverless functions,
-  // pushing api/data-engine/image to 331MB — past Vercel's 250MB uncompressed
-  // limit. Since these routes 404 in prod and never run the ML path, exclude
-  // those packages and the data tree from their tracing.
-  outputFileTracingExcludes: {
-    "/api/data-engine/**": [
-      "./data/**",
-      "./node_modules/@xenova/**",
-      "./node_modules/onnxruntime-node/**",
-      "./node_modules/onnxruntime-web/**",
-      "./node_modules/tesseract.js/**",
-      "./node_modules/tesseract.js-core/**",
-      "./node_modules/sharp/**",
-      "./node_modules/protobufjs/**",
-    ],
-  },
+  // NOTE: the api/data-engine/* routes are local-only (they 404 in production)
+  // but Turbopack's serverless-function output is large (~331MB uncompressed),
+  // over Vercel's default 250MB limit. `outputFileTracingExcludes` does NOT help
+  // here — Turbopack (`next build --turbo`) ignores it. The deploy is unblocked
+  // via VERCEL_SUPPORT_LARGE_FUNCTIONS=1 (set on the Vercel project); the
+  // oversized function is never invoked in prod, so this is harmless. Proper
+  // long-term fix: stop shipping these local-only routes / slim the bundle.
+  // See docs/DEPLOY_NOTES.md.
 
   // Skip TypeScript errors during build — legacy type mismatches
   // in scanner/monetization files pre-date the auth system.

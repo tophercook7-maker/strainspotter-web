@@ -150,3 +150,18 @@ See `docs/PRIVACY_MANIFEST_NOTES.md` for the iOS Capacitor wrap path.
 
 The web app is ready to ship; the iOS binary is gated on the Capacitor
 wrap step which has not been done yet.
+
+---
+
+## Large functions / data-engine routes
+
+Production deploys require `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` (set on the Vercel
+project, all environments). The `api/data-engine/*` routes are local-only (they
+return 404 in production) but Turbopack emits a ~331MB serverless bundle for
+them, over Vercel's default 250MB uncompressed limit. `outputFileTracingExcludes`
+does not help — Turbopack ignores it. The oversized function is never invoked in
+prod, so the flag is a safe unblock.
+
+Proper cleanup (future): stop deploying the local-only data-engine routes, and
+get the ~170MB committed `data/` tree (reference images, embeddings, catalog)
+out of the repo — production reads references from Supabase, not these files.
