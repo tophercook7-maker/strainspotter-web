@@ -1664,9 +1664,7 @@ export default function WikiStyleResultPanel({
             </div>
           ) : (
             <p className="text-2xl md:text-3xl text-green-400 font-semibold">
-              {viewModel.confidenceRange
-                ? `${viewModel.confidenceRange.min}–${viewModel.confidenceRange.max}%`
-                : `${viewModel.confidence}%`}
+              {viewModel.confidence}%
             </p>
           )}
 
@@ -2450,9 +2448,7 @@ export default function WikiStyleResultPanel({
                     {viewModel.confidenceTier.label}
                   </span>
                   <span className="text-sm text-white/60">
-                    {viewModel.confidenceRange
-                      ? `${viewModel.confidenceRange.min}–${viewModel.confidenceRange.max}%`
-                      : `${viewModel.confidence}%`}
+                    {viewModel.confidence}%
                   </span>
                 </div>
                 <p className="text-sm text-white/70">

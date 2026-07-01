@@ -27,6 +27,7 @@ import { checkRateLimit } from "@/lib/observability/rateLimit";
 import { runIdempotent } from "@/lib/observability/idempotency";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { resolveStrain } from "@/lib/data/catalog10k";
+import { calibrateConfidence, calibratedTier } from "@/lib/scanner/calibration";
 
 /* ─────────────────────────────────────────────────────────────────
  *  Catalog → compact textual reference for the system prompt
@@ -472,6 +473,54 @@ export function normalizeAnalysis(
 }
 
 /* ─────────────────────────────────────────────────────────────────
+ *  Confidence calibration (presentation transform)
+ *
+ *  The model's raw self-confidence is badly miscalibrated (see
+ *  docs/scanner-calibration.md). When SCANNER_CALIBRATION=1, replace each
+ *  candidate's displayed `confidence` with an honest, evidence-anchored
+ *  estimate of P(correct), preserving the raw number as `modelConfidence`
+ *  for audit. Kept OUT of normalizeAnalysis on purpose so the eval harnesses
+ *  keep measuring raw model behavior. Default off = today's behavior.
+ * ───────────────────────────────────────────────────────────────── */
+
+export function applyConfidenceCalibration(
+  result: Record<string, unknown>
+): Record<string, unknown> {
+  const candidatesRaw = Array.isArray(result.candidates) ? result.candidates : [];
+  const candidates = (candidatesRaw as Record<string, unknown>[])
+    .map((c) => {
+      const raw = clampInt(c.confidence, 0, 100, 0);
+      const ms = (c.matchSignals as Record<string, unknown>) || {};
+      const cal = calibrateConfidence(raw, { nameInImage: ms.nameInImage === true });
+      return {
+        ...c,
+        confidence: cal.calibrated,
+        modelConfidence: raw,
+        confidenceBasis: cal.basis,
+      } as Record<string, unknown>;
+    })
+    // Re-order by the honest number so candidates[0] is genuinely the most
+    // likely (an OCR-label match can now outrank a higher-raw visual guess).
+    .sort((a, b) => (b.confidence as number) - (a.confidence as number));
+
+  const summary = { ...((result.summary as Record<string, unknown>) || {}) };
+  const top = candidates[0];
+  const topConf = (top?.confidence as number) ?? 0;
+  summary.confidenceTier = calibratedTier(topConf);
+  // Only surface a single "primary" answer when calibrated confidence clears the
+  // moderate bar; otherwise the UI should present a ranked shortlist, not a pick.
+  summary.primaryCandidateSlug =
+    topConf >= 40 && top ? ((top.slug as string) ?? null) : null;
+
+  return {
+    ...result,
+    candidates,
+    summary,
+    calibration: { applied: true, version: 1 },
+  };
+}
+
+/* ─────────────────────────────────────────────────────────────────
  *  POST handler
  * ───────────────────────────────────────────────────────────────── */
 
@@ -847,9 +896,16 @@ export async function POST(req: NextRequest) {
         ? (outcome.normalized as any).candidates.length
         : 0,
     });
+    // Honest confidence: replace raw model self-confidence with the calibrated
+    // estimate (flag-gated; raw preserved as modelConfidence). Runs before the
+    // catalog resolve so candidate ordering settles on the calibrated number.
+    let result = outcome.normalized as Record<string, unknown>;
+    if (process.env.SCANNER_CALIBRATION === "1") {
+      result = applyConfidenceCalibration(result);
+    }
+
     // Resolve each candidate against the 10k catalog so the client can link a
     // result to its library page and names are canonicalized. Additive only.
-    const result = outcome.normalized as Record<string, unknown>;
     if (Array.isArray(result.candidates)) {
       result.candidates = (result.candidates as Record<string, unknown>[]).map((c) => {
         const match = resolveStrain((c.strainName as string) ?? (c.slug as string));
@@ -862,6 +918,7 @@ export async function POST(req: NextRequest) {
       result,
       usage: outcome.usage,
       cached,
+      calibrated: process.env.SCANNER_CALIBRATION === "1",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

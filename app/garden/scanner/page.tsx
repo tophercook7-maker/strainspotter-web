@@ -219,6 +219,11 @@ interface SimpleResult {
   strainName: string;
   confidence: number;
   confidenceLabel: string;
+  /** Calibrated tier from /api/scan (honest P(correct) band). */
+  confidenceTier: "high" | "moderate" | "low" | "uncertain";
+  /** True only when calibrated confidence clears the bar for a single answer;
+   *  false → present a shortlist, not a definitive identification. */
+  hasPrimaryPick: boolean;
   type: "Indica" | "Sativa" | "Hybrid" | "Unknown";
   lineage: string;
   effects: string[];
@@ -236,8 +241,6 @@ interface SimpleResult {
   // Chemistry + genetics
   thc: string;
   cbd: string;
-  indicaPct: number;
-  sativaPct: number;
   // Visual analysis
   visualTraits: string[];
   budStructure: string;
@@ -312,6 +315,9 @@ interface SimpleResult {
   v2Candidates: Array<{
     strainName: string;
     confidence: number;
+    /** Raw model self-confidence (present when calibration is on). */
+    modelConfidence?: number;
+    confidenceBasis?: "fit" | "prior";
     matchReasoning: string;
     matchSignals: {
       nameInImage: boolean;
@@ -513,7 +519,6 @@ export default function ScannerPage() {
 
       const vm_chem = (vm as any).chemistry || {};
       const vm_exp = (vm as any).experience || {};
-      const vm_ratio = (vm as any).ratio || {};
       const vm_medical = (vm as any).medicalRaw || {};
       const vm_grower = (vm as any).growerRaw || {};
       const vm_breeder = (vm as any).breederRaw || {};
@@ -521,8 +526,6 @@ export default function ScannerPage() {
       const cannabinoids = vm_chem.cannabinoids || {};
       const thcVal = cannabinoids.THC || vm_chem.cannabinoidRange || "";
       const cbdVal = cannabinoids.CBD || "";
-      const indicaPct = typeof vm_ratio.indica === "number" ? vm_ratio.indica : 50;
-      const sativaPct = typeof vm_ratio.sativa === "number" ? vm_ratio.sativa : 50;
       const allEffects = [...(vm.effectsLong || []), ...(vm.effectsShort || [])].filter(Boolean);
       const uniqueEffects = Array.from(new Set(allEffects)).slice(0, 8);
 
@@ -550,8 +553,6 @@ export default function ScannerPage() {
         // Chemistry + genetics
         thc: thcVal,
         cbd: cbdVal,
-        indicaPct,
-        sativaPct,
         // Visual analysis
         visualTraits: Array.isArray(vm.growthTraits) ? vm.growthTraits.slice(0, 6) : [],
         budStructure: vm.flowerStructureAnalysis || "",
@@ -617,9 +618,15 @@ export default function ScannerPage() {
         advisoryNote: vm.v2?.summary.advisoryNote ?? null,
         imageType: vm.v2?.observation.imageType || "unclear",
         claimValidation: vm.v2?.claimValidation ?? null,
+        // Calibrated confidence framing: the honest tier + whether we have a
+        // confident enough single answer to present (vs. a shortlist).
+        confidenceTier: vm.v2?.summary.confidenceTier ?? "low",
+        hasPrimaryPick: Boolean(vm.v2?.summary.primaryCandidateSlug),
         v2Candidates: Array.isArray(vm.v2?.candidates) ? vm.v2.candidates.slice(0, 4).map((c: any) => ({
           strainName: c.strainName,
           confidence: typeof c.confidence === "number" ? c.confidence : 0,
+          modelConfidence: typeof c.modelConfidence === "number" ? c.modelConfidence : undefined,
+          confidenceBasis: c.confidenceBasis === "prior" || c.confidenceBasis === "fit" ? c.confidenceBasis : undefined,
           matchReasoning: c.matchReasoning || "",
           matchSignals: {
             nameInImage: !!c.matchSignals?.nameInImage,
@@ -1368,10 +1375,27 @@ export default function ScannerPage() {
               padding: "32px 0 20px",
             }}>
               <span style={{ fontSize: 40 }}>{typeEmoji(result.type)}</span>
+
+              {/* Honest framing: when calibrated confidence doesn't clear the
+                  bar for a single answer, present the strain as a best guess,
+                  not a definitive identification. */}
+              {!result.hasPrimaryPick && (
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.4,
+                  textTransform: "uppercase" as const,
+                  color: "rgba(255,255,255,0.4)",
+                  marginTop: 10,
+                }}>
+                  Closest guess · not a confident match
+                </div>
+              )}
+
               <h1 style={{
                 fontSize: 32,
                 fontWeight: 800,
-                margin: "12px 0 0",
+                margin: result.hasPrimaryPick ? "12px 0 0" : "6px 0 0",
                 letterSpacing: -0.5,
                 lineHeight: 1.1,
               }}>
@@ -1397,17 +1421,38 @@ export default function ScannerPage() {
                 }}>
                   {result.type}
                 </span>
-                <span style={{
-                  background: "rgba(255,255,255,0.08)",
-                  padding: "5px 14px",
-                  borderRadius: 20,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "rgba(255,255,255,0.7)",
-                }}>
-                  {result.confidenceLabel}
-                </span>
+                {(() => {
+                  const uncertain = !result.hasPrimaryPick || result.confidenceTier === "uncertain";
+                  return (
+                    <span style={{
+                      background: uncertain ? "rgba(255,255,255,0.06)" : "rgba(76,175,80,0.14)",
+                      border: uncertain ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(76,175,80,0.30)",
+                      padding: "5px 14px",
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: uncertain ? "rgba(255,255,255,0.7)" : "#a5e0ab",
+                    }}>
+                      {uncertain ? "Uncertain" : result.confidenceLabel} · {Math.round(result.confidence)}%
+                    </span>
+                  );
+                })()}
               </div>
+
+              {!result.hasPrimaryPick && (
+                <p style={{
+                  color: "rgba(255,255,255,0.55)",
+                  fontSize: 13,
+                  marginTop: 12,
+                  lineHeight: 1.5,
+                  maxWidth: 340,
+                  marginLeft: "auto",
+                  marginRight: "auto",
+                }}>
+                  No confident single match from this photo — here are the closest
+                  candidates. Specific strain ID from an unlabeled bud is genuinely hard.
+                </p>
+              )}
 
               {result.tagline && (
                 <p style={{
@@ -1760,7 +1805,17 @@ export default function ScannerPage() {
                         }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
                             <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{c.strainName}</span>
-                            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.78)", fontWeight: 600 }}>{Math.round(c.confidence)}%</span>
+                            <span style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                              {typeof c.modelConfidence === "number" && c.modelConfidence !== Math.round(c.confidence) && (
+                                <span
+                                  title="What the model said before calibration"
+                                  style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", textDecoration: "line-through", fontWeight: 600 }}
+                                >
+                                  {Math.round(c.modelConfidence)}%
+                                </span>
+                              )}
+                              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.78)", fontWeight: 600 }}>{Math.round(c.confidence)}%</span>
+                            </span>
                           </div>
                           {c.matchReasoning && (
                             <p style={{ fontSize: 12, lineHeight: 1.55, color: "rgba(255,255,255,0.65)", margin: "4px 0 8px" }}>
@@ -1789,9 +1844,11 @@ export default function ScannerPage() {
                         margin: "8px 4px 0",
                         lineHeight: 1.5,
                       }}>
-                        Confidence is calibrated — a 50% result means roughly half of similar
-                        scans turned out to be this strain. Specific strain ID from an
-                        unlabeled photo is genuinely hard.
+                        These numbers are calibrated against real outcomes — a 50% result
+                        means roughly half of similar scans turned out to be this strain.
+                        A struck-through number is what the model claimed before calibration;
+                        we correct that inflation because a specific ID from an unlabeled bud
+                        is genuinely hard.
                       </p>
                     </div>
                   </details>

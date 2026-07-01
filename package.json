@@ -53,6 +53,7 @@
     "scanner:training:dedupe": "node scripts/dedupe-confirmed-scans.js",
     "scanner:flywheel": "npm run scanner:training:pull && npm run scanner:training:dedupe && npm run scanner:training:promote && npm run scanner:recalibrate",
     "scanner:recalibrate": "node scripts/recalibrate-scanner.js",
+    "scanner:calibrate": "node scripts/fit-confidence-calibration.mjs",
     "scanner:health": "node scripts/scanner-health-report.js",
     "scanner:recommend": "node scripts/recommend-reference-expansion.js",
     "scanner:auto-feed": "node scripts/auto-feed-scanner-references.js",

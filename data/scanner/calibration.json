@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "fitFrom": [
+    "data/eval/baseline-textonly-2026-06-23.json"
+  ],
+  "method": "bayesian-shrunk empirical accuracy + PAVA monotone pooling",
+  "strata": {
+    "visualOnly": {
+      "n": 50,
+      "overallTop1": 0.1,
+      "priorMean": 0.1,
+      "shrinkK": 5,
+      "bins": [
+        {
+          "rawMin": 0,
+          "rawMax": 39,
+          "n": 2,
+          "empirical": 0,
+          "calibrated": 7
+        },
+        {
+          "rawMin": 40,
+          "rawMax": 49,
+          "n": 2,
+          "empirical": 0,
+          "calibrated": 7
+        },
+        {
+          "rawMin": 50,
+          "rawMax": 59,
+          "n": 8,
+          "empirical": 0.125,
+          "calibrated": 8
+        },
+        {
+          "rawMin": 60,
+          "rawMax": 69,
+          "n": 32,
+          "empirical": 0.0625,
+          "calibrated": 8
+        },
+        {
+          "rawMin": 70,
+          "rawMax": 79,
+          "n": 4,
+          "empirical": 0,
+          "calibrated": 8
+        },
+        {
+          "rawMin": 80,
+          "rawMax": 100,
+          "n": 2,
+          "empirical": 1,
+          "calibrated": 36
+        }
+      ]
+    },
+    "nameInImage": {
+      "source": "prior",
+      "note": "No eval labels yet for OCR-name-in-image cases; conservative declared prior pending flywheel (scan_corrections). Re-fit will replace this once labeled OCR cases exist.",
+      "bins": [
+        {
+          "rawMin": 0,
+          "rawMax": 59,
+          "calibrated": 55,
+          "n": 0,
+          "empirical": null
+        },
+        {
+          "rawMin": 60,
+          "rawMax": 79,
+          "calibrated": 70,
+          "n": 0,
+          "empirical": null
+        },
+        {
+          "rawMin": 80,
+          "rawMax": 100,
+          "calibrated": 85,
+          "n": 0,
+          "empirical": null
+        }
+      ]
+    }
+  },
+  "tierThresholds": {
+    "high": 70,
+    "moderate": 40,
+    "low": 20
+  }
+}
