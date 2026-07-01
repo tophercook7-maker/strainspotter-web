@@ -23,8 +23,8 @@
  *   - free      → no subscription. Cannot scan.
  *   - garden    → Member tier (the historical label for Member).
  *   - standard  → Member tier (legacy synonym for 'garden').
- *   - pro       → Pro tier (recurring subscription, unlimited).
- *   - elite     → Founder lifetime (also unlimited; surfaces a UI badge).
+ *   - pro       → Pro tier (recurring subscription; 300 scans/period).
+ *   - elite     → Founder lifetime (legacy; surfaces a UI badge).
  */
 export type Membership = "free" | "garden" | "standard" | "pro" | "elite";
 

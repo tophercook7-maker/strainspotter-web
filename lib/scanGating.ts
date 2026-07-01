@@ -76,17 +76,17 @@ export const MEMBERSHIP_TIERS = {
     name: "Pro",
     price: "$9.99/mo",
     period: "monthly" as const,
-    scans: "Unlimited scans*",
+    scans: "300 scans/month",
     tagline: "For growers who scan every harvest.",
     features: [
       "Everything in Member",
-      "Unlimited scans + diagnostics",
+      "300 scans/month + diagnostics",
       "Priority scan processing",
       "Advanced analytics on every scan",
       "Early access to new features",
     ],
     footnote:
-      "*Fair-use rate limits apply — 500/day, 5,000/month. Plenty for any real human; designed to block scripted abuse.",
+      "Need more than 300 in a month? One-time top-up packs stack on top and never expire.",
   },
 } as const;
 

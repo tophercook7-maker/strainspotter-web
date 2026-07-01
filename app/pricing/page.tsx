@@ -284,8 +284,8 @@ export default function PricingPage() {
               a="Subscription scans reset monthly. Top-up scans never expire — they stack with your subscription allocation and get used last."
             />
             <Faq
-              q="What does 'unlimited' Pro actually mean?"
-              a="Pro has generous fair-use limits — 500 scans/day, 5,000/month. No real human hits these. The cap exists to block scripted abuse and protect everyone's pricing."
+              q="How many scans does Pro include?"
+              a="Pro includes 300 scans per month — plenty for scanning every harvest. If you ever need more in a single month, one-time top-up packs stack on top and never expire."
             />
             <Faq
               q="Can I cancel?"

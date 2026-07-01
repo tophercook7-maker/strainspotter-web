@@ -529,7 +529,7 @@ export default function SettingsPage() {
                   {tier === "free"
                     ? "Scanner + basic features"
                     : tier === "pro"
-                    ? "Unlimited scans + all features"
+                    ? "300 scans/month + all features"
                     : "Full Garden access + scans"}
                 </div>
               </div>

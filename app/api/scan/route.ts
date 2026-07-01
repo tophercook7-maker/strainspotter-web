@@ -534,63 +534,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Pro/Elite "unlimited" fair-use ceilings — protects against scripted
-    // abuse without affecting any realistic human usage pattern.
-    //   - Daily:    500 / day  (no human scans 500 plants a day)
-    //   - Monthly:  5,000 / mo (catches sustained automation)
-    // Member tier monthly cap is enforced by consume_scan() — see below.
-    if (gate.tier === "pro") {
-      const rlDay = await checkRateLimit(
-        gate.userId,
-        500,
-        86_400,
-        "scan:1d_pro"
-      );
-      if (rlDay.ok === false) {
-        log.warn("scan_pro_daily_cap", {
-          req: reqId,
-          user: gate.userId,
-          retryAfter: rlDay.retryAfterSec,
-        });
-        return NextResponse.json(
-          {
-            error:
-              "You've hit today's fair-use scan limit (500/day). " +
-              "Plenty of capacity tomorrow. If this is a real workflow that needs more, email support@strainspotter.app.",
-            code: "fair_use_daily",
-          },
-          {
-            status: 429,
-            headers: { "Retry-After": String(rlDay.retryAfterSec) },
-          }
-        );
-      }
-      const rlMonth = await checkRateLimit(
-        gate.userId,
-        5_000,
-        2_592_000,
-        "scan:1mo_pro"
-      );
-      if (rlMonth.ok === false) {
-        log.warn("scan_pro_monthly_cap", {
-          req: reqId,
-          user: gate.userId,
-          retryAfter: rlMonth.retryAfterSec,
-        });
-        return NextResponse.json(
-          {
-            error:
-              "You've hit this month's fair-use scan limit (5,000/mo). " +
-              "Email support@strainspotter.app if you have a real workflow that needs more.",
-            code: "fair_use_monthly",
-          },
-          {
-            status: 429,
-            headers: { "Retry-After": String(rlMonth.retryAfterSec) },
-          }
-        );
-      }
-    }
+    // Monthly caps for all paid tiers (Member 100, Pro 300) are enforced
+    // atomically by consume_scan() below; the per-minute limiter above covers
+    // burst abuse. No separate Pro fair-use ceiling needed.
 
     // ── Body parse + payload validation BEFORE consume_scan ──
     // Reject bad payloads early so they don't burn a quota slot.
@@ -748,7 +694,7 @@ export async function POST(req: NextRequest) {
         reason === "no_subscription"
           ? "Active subscription required."
           : reason === "monthly_cap_reached"
-            ? "You've used all 100 Member scans this month. Buy a top-up or upgrade to Pro for unlimited."
+            ? "You've used all your scans this month. Buy a top-up pack, or upgrade to Pro for 300 scans/month."
             : reason === "user_not_found"
               ? "Profile not found. Sign out and back in."
               : "Scan quota exceeded.";

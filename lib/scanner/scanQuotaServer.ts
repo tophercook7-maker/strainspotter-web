@@ -93,12 +93,10 @@ export async function consumeOneScanForUser(userId: string): Promise<
   let working = loaded.profile;
   const tier = normalizeTier(working.membership as string | null | undefined);
 
-  if (tier === "pro") {
-    const entitlements = entitlementsFromProfileRow(working, now);
-    return { ok: true as const, entitlements, consumedFrom: "pro" };
-  }
-
-  if (tier === "member") {
+  // Pro and Member are both capped, period-based tiers (Pro just has a larger
+  // included allowance). They share the member_scans_used counter + scan_period
+  // window, so both roll their period and decrement the same way.
+  if (tier === "member" || tier === "pro") {
     const needsReset = memberPeriodNeedsReset(
       now,
       working.scan_period_started_at as string | null | undefined,
@@ -181,7 +179,7 @@ export async function consumeOneScanForUser(userId: string): Promise<
       if (upErr) {
         return { ok: false as const, error: upErr.message };
       }
-      consumedFrom = "member";
+      consumedFrom = tier === "pro" ? "pro" : "member";
     } else if (beforeConsume.topupScansAvailable > 0) {
       const nextTop = Number(working.topup_scans_available ?? 0) - 1;
       const { error: upErr } = await supabase

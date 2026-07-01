@@ -159,7 +159,7 @@ export default function MembershipSignup({
           {plan === "member" ? (
             <>✅ 100 scans/mo &nbsp; ✅ All features &nbsp; ✅ Strain browser &nbsp; ✅ Grow coach</>
           ) : (
-            <>✅ 500 scans/mo &nbsp; ✅ Everything in Member &nbsp; ✅ Analytics &nbsp; ✅ Lab data</>
+            <>✅ 300 scans/mo &nbsp; ✅ Everything in Member &nbsp; ✅ Analytics &nbsp; ✅ Lab data</>
           )}
         </div>
 

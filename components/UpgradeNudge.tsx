@@ -6,7 +6,7 @@
 // monthly scan cap. Three states:
 //
 //   1. "Approaching" — Member with ≤20% scans left (~20/100 by default).
-//      Soft inline banner: "Running low. Upgrade to Pro for unlimited."
+//      Soft inline banner: "Running low. Upgrade to Pro for 300 scans/mo."
 //
 //   2. "At limit" — Member with 0 remaining and no topups.
 //      Modal overlay with two clear paths:
@@ -189,7 +189,7 @@ export default function UpgradeNudge({
           >
             {purchasing === "pro"
               ? "Loading…"
-              : "⭐ Upgrade to Pro — $9.99/mo · unlimited scans"}
+              : "⭐ Upgrade to Pro — $9.99/mo · 300 scans/month"}
           </button>
 
           {/* Top-up alternative */}
@@ -284,7 +284,7 @@ export default function UpgradeNudge({
             lineHeight: 1.4,
           }}
         >
-          Upgrade to Pro for unlimited — $9.99/mo.
+          Upgrade to Pro — 300 scans/month for $9.99/mo.
         </div>
       </div>
       <button

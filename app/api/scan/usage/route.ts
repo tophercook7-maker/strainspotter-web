@@ -92,11 +92,10 @@ export async function GET(req: NextRequest) {
   // Map db membership to tier via the canonical collapse helper.
   const tier = membershipToTier(membership);
 
-  // Tier → monthly cap
-  // Member: 100/mo. Pro/elite: "unlimited" (capped at 5,000/mo as fair use).
-  // Free: 0 (subscribe-or-pay-wall).
+  // Tier → monthly cap. Member: 100/mo. Pro: 300/mo. Free: 0 (paywall).
+  // (Legacy Founder/elite is unlimited but normalizes to "member" here.)
   const monthlyCap =
-    tier === "pro" ? null : tier === "member" ? 100 : 0;
+    tier === "pro" ? 300 : tier === "member" ? 100 : 0;
 
   const monthlyUsed = profile?.id_scans_used ?? 0;
   const topupRemaining = Math.max(0, profile?.scans_remaining ?? 0);
@@ -111,8 +110,10 @@ export async function GET(req: NextRequest) {
 
   // "Approaching limit" — fires the nudge UI. Use 20% remaining as the
   // canonical threshold; for Member that's 20 scans left.
+  const isCappedTier = tier === "member" || tier === "pro";
+
   const approachingLimit =
-    tier === "member" &&
+    isCappedTier &&
     monthlyRemaining !== null &&
     monthlyCap !== null &&
     monthlyRemaining > 0 &&
@@ -120,7 +121,7 @@ export async function GET(req: NextRequest) {
     topupRemaining === 0;
 
   const atLimit =
-    tier === "member" &&
+    isCappedTier &&
     monthlyRemaining === 0 &&
     topupRemaining === 0;
 

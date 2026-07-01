@@ -23,8 +23,19 @@ export interface ScanEntitlements {
 /** Lifetime free trial allowance (never resets monthly). */
 export const FREE_LIFETIME_SCANS = 3;
 
-/** Included garden (member) scans per active billing period. */
-export const MEMBER_INCLUDED_SCANS_PER_PERIOD = 75;
+/**
+ * Included garden (member) scans per active billing period. Matches the
+ * authoritative DB cap in consume_scan() (100/month) and the pricing copy.
+ */
+export const MEMBER_INCLUDED_SCANS_PER_PERIOD = 100;
+
+/**
+ * Included Pro scans per active billing period. Pro is a capped tier (not
+ * unlimited): the cap keeps per-user AI cost bounded and profitable. Overflow
+ * is covered by top-up packs, same as Member. Uses the same member_scans_used
+ * counter + scan_period window as Member.
+ */
+export const PRO_INCLUDED_SCANS_PER_PERIOD = 300;
 
 function clampNonNeg(n: number): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
@@ -126,24 +137,12 @@ export function buildScanEntitlements(
       ? Math.max(0, FREE_LIFETIME_SCANS - freeScansUsed)
       : 0;
 
-  if (tier === "pro") {
-    return {
-      tier,
-      freeScansUsed,
-      memberScansUsed: memberScansUsedRaw,
-      topupScansAvailable,
-      memberScansIncluded: 0,
-      memberScansRemaining: 0,
-      freeScansRemaining,
-      canScan: true,
-      shouldUseTopup: false,
-      isUnlimited: true,
-      scanPeriodStartedAt,
-      scanPeriodEndsAt,
-    };
-  }
+  if (tier === "pro" || tier === "member") {
+    const includedPerPeriod =
+      tier === "pro"
+        ? PRO_INCLUDED_SCANS_PER_PERIOD
+        : MEMBER_INCLUDED_SCANS_PER_PERIOD;
 
-  if (tier === "member") {
     const effectiveUsed = effectiveMemberScansUsed(
       now,
       scanPeriodEndsAt,
@@ -151,7 +150,7 @@ export function buildScanEntitlements(
     );
     const memberScansRemaining = Math.max(
       0,
-      MEMBER_INCLUDED_SCANS_PER_PERIOD - effectiveUsed
+      includedPerPeriod - effectiveUsed
     );
 
     const canScan =
@@ -167,7 +166,7 @@ export function buildScanEntitlements(
       freeScansUsed,
       memberScansUsed: memberScansUsedRaw,
       topupScansAvailable,
-      memberScansIncluded: MEMBER_INCLUDED_SCANS_PER_PERIOD,
+      memberScansIncluded: includedPerPeriod,
       memberScansRemaining,
       freeScansRemaining,
       canScan,
