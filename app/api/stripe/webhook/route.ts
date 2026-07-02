@@ -172,46 +172,76 @@ async function updateProfileByEmail(
   return true;
 }
 
+/** Recognize a Postgres unique-violation (23505) / duplicate-key error. */
+export function isDuplicateKeyError(message: string | undefined): boolean {
+  return !!message && /duplicate key|already exists|23505/i.test(message);
+}
+
+type ClaimResult = "claimed" | "duplicate" | "unrecorded";
+
 /**
- * Idempotency check: returns true if we've already successfully processed
- * this Stripe event.id. We use a dedicated table 'stripe_webhook_events'
- * (see migrations/2026_05_07_stripe_webhook_idempotency.sql) keyed by the
- * event_id Stripe assigns to every delivery.
+ * Atomically CLAIM a Stripe event before processing it. event_id is the PK of
+ * stripe_webhook_events, so the INSERT itself is the idempotency gate: of N
+ * concurrent redeliveries of the same event.id, exactly one INSERT wins and the
+ * rest get a duplicate-key error.
  *
- * Returns true on already-processed (skip), false on first-seen.
- * On any error we conservatively return false and let the handler run —
- * better to risk a rare double-apply than to drop a real event when our
- * idempotency table is unreachable.
+ * This replaces the old check-at-start / record-at-end pattern, which had a
+ * TOCTOU race: two concurrent deliveries could both pass the SELECT before
+ * either recorded, and both apply the event (e.g. double top-up credits).
+ *
+ *   "claimed"    → we own it; process. The row is already recorded.
+ *   "duplicate"  → another delivery owns/processed it; skip.
+ *   "unrecorded" → idempotency table unreachable. Fail OPEN (process anyway so
+ *                  we never drop a real paid event), then best-effort record.
  */
-async function alreadyProcessed(
+async function claimEvent(
+  eventId: string,
+  eventType: string,
+  log: ReturnType<typeof logger.child>,
+  reqId: string
+): Promise<ClaimResult> {
+  try {
+    const supabase = await loadAdmin();
+    const { error } = await supabase
+      .from("stripe_webhook_events")
+      .insert({ event_id: eventId, event_type: eventType });
+    if (!error) return "claimed";
+    if (isDuplicateKeyError(error.message)) return "duplicate";
+    log.warn("webhook_claim_insert_error", {
+      req: reqId,
+      eventId,
+      message: error.message,
+    });
+    return "unrecorded";
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    log.warn("webhook_claim_threw", { req: reqId, eventId, message });
+    return "unrecorded";
+  }
+}
+
+/**
+ * Release a claim so Stripe's next retry can reprocess. Called only when
+ * processing THREW after we claimed — otherwise a failed event would stay
+ * marked "processed" forever and never apply.
+ */
+async function releaseEvent(
   eventId: string,
   log: ReturnType<typeof logger.child>,
   reqId: string
-): Promise<boolean> {
+): Promise<void> {
   try {
     const supabase = await loadAdmin();
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("stripe_webhook_events")
-      .select("event_id")
-      .eq("event_id", eventId)
-      .maybeSingle();
+      .delete()
+      .eq("event_id", eventId);
     if (error) {
-      log.warn("webhook_idempotency_lookup_error", {
-        req: reqId,
-        eventId,
-        message: error.message,
-      });
-      return false;
+      log.warn("webhook_release_error", { req: reqId, eventId, message: error.message });
     }
-    return !!data;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    log.warn("webhook_idempotency_lookup_threw", {
-      req: reqId,
-      eventId,
-      message,
-    });
-    return false;
+    log.warn("webhook_release_threw", { req: reqId, eventId, message });
   }
 }
 
@@ -298,11 +328,12 @@ export async function POST(req: NextRequest) {
     type: event.type,
   });
 
-  // Idempotency — Stripe redelivers events under several conditions
-  // (network errors on our side, manual replay from the Stripe dashboard,
-  // their own at-least-once guarantee). Skip if we've already processed
-  // this event.id.
-  if (await alreadyProcessed(event.id, log, reqId)) {
+  // Idempotency — Stripe redelivers events (retries on our errors, manual
+  // dashboard replay, their at-least-once guarantee), sometimes concurrently.
+  // CLAIM the event atomically before processing: the PK insert lets exactly
+  // one delivery win. A duplicate means someone else owns it → skip.
+  const claim = await claimEvent(event.id, event.type, log, reqId);
+  if (claim === "duplicate") {
     log.info("webhook_idempotent_skip", {
       req: reqId,
       eventId: event.id,
@@ -585,6 +616,9 @@ export async function POST(req: NextRequest) {
       message,
       ms: Date.now() - t0,
     });
+    // Processing failed after we claimed the event — release the claim so
+    // Stripe's retry can reprocess it (otherwise it'd be marked done forever).
+    if (claim === "claimed") await releaseEvent(event.id, log, reqId);
     // Return 500 so Stripe retries — better than dropping a real event.
     return NextResponse.json(
       { error: "Webhook handler error", detail: message },
@@ -592,7 +626,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  await recordProcessed(event.id, event.type, log, reqId);
+  // If the table was unreachable at claim time we processed fail-open and never
+  // recorded — best-effort backfill now so a later redelivery is idempotent.
+  if (claim === "unrecorded") await recordProcessed(event.id, event.type, log, reqId);
   log.info("webhook_done", {
     req: reqId,
     type: event.type,

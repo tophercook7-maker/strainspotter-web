@@ -1,7 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { membershipFromPriceId, membershipFromPriceKey, isTopupPriceKey } from "./route";
+import { membershipFromPriceId, membershipFromPriceKey, isTopupPriceKey, isDuplicateKeyError } from "./route";
 import { membershipToTier } from "@/lib/billing/membership";
 import { STRIPE_PRICES } from "@/lib/stripe/config";
+
+// Idempotency claim depends on correctly recognizing a unique-violation so a
+// concurrent redelivery is classified "duplicate" (skip) not "unrecorded"
+// (fail-open reprocess). Misclassifying a dup as unrecorded → double-apply.
+describe("isDuplicateKeyError (idempotency claim classification)", () => {
+  it("recognizes Postgres/PostgREST duplicate-key errors", () => {
+    expect(isDuplicateKeyError('duplicate key value violates unique constraint "stripe_webhook_events_pkey"')).toBe(true);
+    expect(isDuplicateKeyError("Key (event_id)=(evt_1) already exists.")).toBe(true);
+    expect(isDuplicateKeyError("23505")).toBe(true);
+  });
+  it("does not treat unrelated errors as duplicates (those must fail-open)", () => {
+    expect(isDuplicateKeyError("connection timeout")).toBe(false);
+    expect(isDuplicateKeyError("permission denied for table")).toBe(false);
+    expect(isDuplicateKeyError(undefined)).toBe(false);
+  });
+});
 
 // These mappers decide which plan a Stripe payment grants. A wrong mapping =
 // a paying customer gets the wrong tier (or none), so pin every case.
