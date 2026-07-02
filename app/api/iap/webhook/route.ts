@@ -143,22 +143,49 @@ async function updateProfile(
   return true;
 }
 
-/** Idempotency check — reuses the stripe_webhook_events table. */
-async function alreadyProcessed(
+const isDupKey = (m?: string) => !!m && /duplicate key|already exists|23505/i.test(m);
+type ClaimResult = "claimed" | "duplicate" | "unrecorded";
+
+/**
+ * Atomically CLAIM a RevenueCat event before processing (reuses
+ * stripe_webhook_events, key `rc_<eventId>`). The PK insert is the gate, so
+ * concurrent redeliveries can't both apply the event (double entitlement /
+ * double credit). See the Stripe webhook for the full rationale.
+ */
+async function claimEvent(
+  eventId: string,
+  eventType: string,
+  log: ReturnType<typeof logger.child>,
+  reqId: string
+): Promise<ClaimResult> {
+  try {
+    const supabase = await loadAdmin();
+    const { error } = await supabase.from("stripe_webhook_events").insert({
+      event_id: `rc_${eventId}`,
+      event_type: `revenuecat.${eventType.toLowerCase()}`,
+    });
+    if (!error) return "claimed";
+    if (isDupKey(error.message)) return "duplicate";
+    log.warn("iap_webhook_claim_insert_error", { req: reqId, eventId, message: error.message });
+    return "unrecorded";
+  } catch (err: unknown) {
+    log.warn("iap_webhook_claim_threw", { req: reqId, eventId, message: err instanceof Error ? err.message : String(err) });
+    return "unrecorded";
+  }
+}
+
+/** Release a claim so RevenueCat's retry can reprocess (only on failure). */
+async function releaseEvent(
   eventId: string,
   log: ReturnType<typeof logger.child>,
   reqId: string
-): Promise<boolean> {
+): Promise<void> {
   try {
     const supabase = await loadAdmin();
-    const { data } = await supabase
-      .from("stripe_webhook_events")
-      .select("event_id")
-      .eq("event_id", `rc_${eventId}`)
-      .maybeSingle();
-    return !!data;
-  } catch {
-    return false;
+    const { error } = await supabase.from("stripe_webhook_events").delete().eq("event_id", `rc_${eventId}`);
+    if (error) log.warn("iap_webhook_release_error", { req: reqId, eventId, message: error.message });
+  } catch (err: unknown) {
+    log.warn("iap_webhook_release_threw", { req: reqId, eventId, message: err instanceof Error ? err.message : String(err) });
   }
 }
 
@@ -231,19 +258,22 @@ export async function POST(req: NextRequest) {
     userId: ev.app_user_id,
   });
 
-  if (await alreadyProcessed(ev.id, log, reqId)) {
+  // Atomically claim before processing (closes the concurrent-redelivery race).
+  const claim = await claimEvent(ev.id, ev.type, log, reqId);
+  if (claim === "duplicate") {
     log.info("iap_webhook_idempotent_skip", { req: reqId, eventId: ev.id });
     return NextResponse.json({ received: true, idempotent: true });
   }
 
   // We allow sandbox events to flow through in non-production so we can
   // test against TestFlight. In production, drop them — they're test data.
+  // (Already claimed above, so a redelivery is a no-op.)
   if (ev.environment === "SANDBOX" && process.env.NODE_ENV === "production") {
     log.info("iap_webhook_sandbox_in_production_skipped", {
       req: reqId,
       eventId: ev.id,
     });
-    await recordProcessed(ev.id, ev.type, log, reqId);
+    if (claim === "unrecorded") await recordProcessed(ev.id, ev.type, log, reqId);
     return NextResponse.json({ received: true, sandbox_skipped: true });
   }
 
@@ -404,6 +434,8 @@ export async function POST(req: NextRequest) {
       message,
       ms: Date.now() - t0,
     });
+    // Release the claim so RevenueCat's retry can reprocess.
+    if (claim === "claimed") await releaseEvent(ev.id, log, reqId);
     // 500 → RevenueCat retries
     return NextResponse.json(
       { error: "Webhook handler error", detail: message },
@@ -411,7 +443,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  await recordProcessed(ev.id, ev.type, log, reqId);
+  // Backfill only if the claim insert never landed (table was unreachable).
+  if (claim === "unrecorded") await recordProcessed(ev.id, ev.type, log, reqId);
   log.info("iap_webhook_done", {
     req: reqId,
     type: ev.type,
