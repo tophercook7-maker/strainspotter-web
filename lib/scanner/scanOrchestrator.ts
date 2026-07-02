@@ -134,6 +134,10 @@ type V2Candidate = {
   strainName: string;
   slug: string;
   confidence: number;
+  /** Raw model self-confidence before calibration (present when SCANNER_CALIBRATION=1). */
+  modelConfidence?: number;
+  /** Whether the calibrated number came from a fit stratum or a declared prior. */
+  confidenceBasis?: "fit" | "prior";
   matchReasoning: string;
   matchSignals: {
     nameInImage: boolean;
@@ -267,11 +271,12 @@ function v2ToViewModel(
     },
 
     confidenceTier: { label: tierLabel, numeric: confidence },
+    // Single calibrated point estimate — no fabricated ± spread. (Kept as a
+    // degenerate range for type/back-compat; the UI renders the point value.)
     confidenceRange: {
-      min: Math.max(0, confidence - 10),
-      max: Math.min(100, confidence + 5),
-      explanation:
-        "Range reflects phenotype variation, image quality, and matching uncertainty.",
+      min: confidence,
+      max: confidence,
+      explanation: "Calibrated estimate of how often a scan like this is correct.",
     },
 
     matchBasis: `Visual + label analysis across ${imageCount} image${
@@ -295,10 +300,7 @@ function v2ToViewModel(
 
     primaryMatch: {
       name: strainName,
-      confidenceRange: {
-        min: Math.max(0, confidence - 10),
-        max: Math.min(100, confidence + 5),
-      },
+      confidenceRange: { min: confidence, max: confidence },
       whyThisMatch: reasoningWhy,
     },
 
@@ -311,8 +313,9 @@ function v2ToViewModel(
       confidenceBreakdown: {
         visualSimilarity: top?.matchSignals.visualTraitsMatchPercent ?? 0,
         traitOverlap: top?.matchSignals.visualTraitsMatchPercent ?? 0,
-        consensusStrength:
-          imageCount > 1 ? confidence : Math.max(0, confidence - 10),
+        // v2 is a single vision call, not a multi-image consensus vote — there
+        // is no real agreement signal to report, so don't fabricate one.
+        consensusStrength: 0,
       },
       whyThisMatch: [reasoningWhy],
       sourcesUsed: ["GPT-4o Vision", "StrainSpotter Catalog"],
