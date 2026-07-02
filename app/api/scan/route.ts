@@ -28,6 +28,7 @@ import { runIdempotent } from "@/lib/observability/idempotency";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { resolveStrain } from "@/lib/data/catalog10k";
 import { calibrateConfidence, calibratedTier } from "@/lib/scanner/calibration";
+import { bestLabelMatch, matchLabelToCatalog } from "@/lib/scanner/labelMatch";
 
 /* ─────────────────────────────────────────────────────────────────
  *  Catalog → compact textual reference for the system prompt
@@ -521,6 +522,68 @@ export function applyConfidenceCalibration(
 }
 
 /* ─────────────────────────────────────────────────────────────────
+ *  Label promotion (deterministic — the only route to CORRECT ID)
+ *
+ *  Image-embedding retrieval is proven near-chance for strain ID (ROADMAP
+ *  Phase 1). The reliable signal is a strain name read off the label. When OCR
+ *  yields a confident catalog match, promote it to the top candidate with
+ *  nameInImage=true so calibration awards it the high (label) confidence band.
+ *  Runs BEFORE calibration. Gated by SCANNER_LABEL_MATCH=1 (default off).
+ * ───────────────────────────────────────────────────────────────── */
+
+export function applyLabelMatch(result: Record<string, unknown>): Record<string, unknown> {
+  const obs = (result.observation as Record<string, unknown>) || {};
+  const ocrText = typeof obs.ocrText === "string" ? obs.ocrText : "";
+  const ocrCands = Array.isArray(obs.ocrStrainCandidates)
+    ? (obs.ocrStrainCandidates as unknown[]).filter((x): x is string => typeof x === "string")
+    : [];
+
+  const match = bestLabelMatch(ocrText, ocrCands);
+  // Only promote on a confident match (exact / normalized / containment / strong
+  // fuzzy). Weaker fuzzy stays out of the driver's seat.
+  if (!match || match.score < 0.9) return result;
+
+  const slug = match.strain.slug;
+  const existing = Array.isArray(result.candidates)
+    ? (result.candidates as Record<string, unknown>[]).slice()
+    : [];
+  const dupIdx = existing.findIndex(
+    (c) =>
+      (typeof c.slug === "string" && c.slug === slug) ||
+      matchLabelToCatalog(c.strainName as string)?.strain.slug === slug
+  );
+  const prior = dupIdx >= 0 ? existing[dupIdx] : undefined;
+  const priorSignals = (prior?.matchSignals as Record<string, unknown>) || {};
+
+  // Confidence scales with match strength; the label band (nameInImage) is the
+  // one place high confidence is earned. Calibration maps this to ~85 later.
+  const confidence = Math.min(95, Math.max(80, Math.round(match.score * 93)));
+
+  const promoted: Record<string, unknown> = {
+    strainName: match.strain.name,
+    slug,
+    confidence,
+    modelConfidence: typeof prior?.confidence === "number" ? prior.confidence : undefined,
+    matchReasoning: `Strain name read from the label ("${match.matchedText}") and matched to the catalog.`,
+    matchSignals: {
+      nameInImage: true,
+      categoryMatches: priorSignals.categoryMatches === true,
+      visualTraitsMatchPercent: clampInt(priorSignals.visualTraitsMatchPercent, 0, 100, 0),
+      terpeneFamilyMatches: priorSignals.terpeneFamilyMatches === true,
+    },
+    labelMatch: { method: match.method, score: Number(match.score.toFixed(3)) },
+  };
+
+  const rest = existing.filter((_, i) => i !== dupIdx);
+  const summary = { ...((result.summary as Record<string, unknown>) || {}) };
+  summary.primaryCandidateSlug = slug;
+  summary.confidenceTier = "high";
+  summary.headline = `Label reads "${match.matchedText}" — identified as ${match.strain.name}.`;
+
+  return { ...result, candidates: [promoted, ...rest].slice(0, 5), summary, labelMatched: { slug, method: match.method } };
+}
+
+/* ─────────────────────────────────────────────────────────────────
  *  POST handler
  * ───────────────────────────────────────────────────────────────── */
 
@@ -900,6 +963,11 @@ export async function POST(req: NextRequest) {
     // estimate (flag-gated; raw preserved as modelConfidence). Runs before the
     // catalog resolve so candidate ordering settles on the calibrated number.
     let result = outcome.normalized as Record<string, unknown>;
+    // Label → catalog promotion first (the reliable ID signal), so calibration
+    // sees nameInImage=true and awards the high band.
+    if (process.env.SCANNER_LABEL_MATCH === "1") {
+      result = applyLabelMatch(result);
+    }
     if (process.env.SCANNER_CALIBRATION === "1") {
       result = applyConfidenceCalibration(result);
     }
