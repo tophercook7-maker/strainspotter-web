@@ -94,6 +94,41 @@ for (const s of CATALOG_10K) {
 
 const bySlug = new Map(CATALOG_10K.map((s) => [s.slug, s] as const));
 
+// Common cannabis / label terms that must NEVER resolve to a strain, no matter
+// how a match path scores them. Guards against misidentifying ubiquitous label
+// text (potency, cannabinoids, categories, product forms) as a cultivar.
+const BLOCKLIST = new Set([
+  "thc", "cbd", "cbg", "cbn", "cbc", "thca", "thcv", "delta", "delta 8", "delta 9",
+  "bho", "hho", "hhc", "rso", "co2", "live resin", "rosin", "distillate", "hash",
+  "aka", "og", "kush", "indica", "sativa", "hybrid", "dominant", "cannabis",
+  "marijuana", "flower", "preroll", "vape", "cartridge", "gram", "eighth",
+  "sale", "net wt", "batch", "lot", "tested", "premium", "organic", "top shelf",
+]);
+
+// Vetted supplemental aliases — a SMALL, human-confident set for well-known
+// strains the catalog left without aliases. Deliberately NOT auto-generated
+// (generation produced dangerous maps like THC → a strain). Keys are alias
+// texts; values are canonical slugs that must exist in the catalog. Blocklisted
+// keys are ignored. Extend by hand only.
+const SUPPLEMENTAL_ALIASES: Record<string, string> = {
+  "ATF": "alaskan-thunder-fuck",
+  "Alaskan Thunderfuck": "alaskan-thunder-fuck",
+  "Matanuska Thunderfuck": "alaskan-thunder-fuck",
+  "PBB": "peanut-butter-breath",
+  "Grandaddy Purple": "granddaddy-purple",
+  "Grand Daddy Purple": "granddaddy-purple",
+};
+for (const [alias, slug] of Object.entries(SUPPLEMENTAL_ALIASES)) {
+  const norm = normalizeLabel(alias);
+  if (!norm || BLOCKLIST.has(norm) || !bySlug.has(slug)) continue;
+  const s = bySlug.get(slug)!;
+  const cand = { slug, curated: !!s.curated, nameLen: s.name.length };
+  setBestExact(norm, cand);
+  const dnorm = depluralize(norm);
+  if (dnorm !== norm) setBestExact(dnorm, cand);
+  if (norm.length >= 5) ENTRIES.push({ slug, norm, tokens: norm.split(" "), len: norm.length, text: alias, curated: !!s.curated });
+}
+
 function lev(a: string, b: string): number {
   const m = a.length, n = b.length;
   if (!m) return n;
@@ -153,13 +188,15 @@ export function matchLabelToCatalog(query: string | undefined | null): LabelMatc
   const raw = String(query).trim();
   if (!raw) return null;
 
+  // 0. blocklist — ubiquitous label terms (THC, CBD, indica, OG, …) must never
+  //    resolve to a strain, even if some path would score them.
+  const norm = normalizeLabel(raw);
+  if (!norm || BLOCKLIST.has(norm)) return null;
+  const dnorm = depluralize(norm);
+
   // 1. strict (exact slug / alias / trailing-qualifier)
   const strict = resolveStrain(raw);
   if (strict) return finalize(strict, 1, "exact", strict.name);
-
-  const norm = normalizeLabel(raw);
-  if (!norm) return null;
-  const dnorm = depluralize(norm);
 
   // 2. normalized exact (handles punctuation/spacing/plural)
   for (const key of [norm, dnorm]) {

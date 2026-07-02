@@ -36,6 +36,20 @@ describe("matchLabelToCatalog — the label→catalog path (the only route to co
     expect(matchLabelToCatalog("xyzzy qwerty")).toBeNull();
   });
 
+  it("blocklist: ubiquitous label terms never resolve to a strain", () => {
+    for (const term of ["THC", "CBD", "CBG", "BHO", "AKA", "OG", "Kush", "Indica", "Sativa", "Hybrid"]) {
+      expect(matchLabelToCatalog(term)).toBeNull();
+    }
+    // but real names containing those words still resolve
+    expect(matchLabelToCatalog("OG Kush")?.strain.slug).toBe("og-kush");
+  });
+
+  it("vetted supplemental aliases fill famous strains that had none", () => {
+    expect(matchLabelToCatalog("ATF")?.strain.slug).toBe("alaskan-thunder-fuck");
+    expect(matchLabelToCatalog("PBB")?.strain.slug).toBe("peanut-butter-breath");
+    expect(matchLabelToCatalog("Grandaddy Purple")?.strain.slug).toBe("granddaddy-purple");
+  });
+
   it("scores exact ≥ normalized ≥ fuzzy (so callers can gate promotion)", () => {
     expect(matchLabelToCatalog("Blue Dream")!.score).toBeGreaterThanOrEqual(
       matchLabelToCatalog("Blu Dream")!.score
