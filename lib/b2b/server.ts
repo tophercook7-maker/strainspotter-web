@@ -26,6 +26,8 @@ export interface BusinessProfile {
   contact_email: string | null;
   contact_phone: string | null;
   directory_opt_in: boolean;
+  moderator_volunteer: boolean;
+  moderator_active: boolean;
   created_at: string;
 }
 
@@ -34,7 +36,7 @@ export const DIRECTORY_COLUMNS =
   "id, role, business_name, region, bio, verified, created_at";
 
 const PROFILE_COLUMNS =
-  "id, user_id, role, business_name, region, bio, license_number, verified, contact_email, contact_phone, directory_opt_in, created_at";
+  "id, user_id, role, business_name, region, bio, license_number, verified, contact_email, contact_phone, directory_opt_in, moderator_volunteer, moderator_active, created_at";
 
 export async function getBusinessProfile(userId: string): Promise<BusinessProfile | null> {
   const { data, error } = await getSupabaseAdmin()

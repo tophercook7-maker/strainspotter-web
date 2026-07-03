@@ -48,6 +48,8 @@ interface Profile {
   contact_email: string | null;
   contact_phone: string | null;
   directory_opt_in: boolean;
+  moderator_volunteer?: boolean;
+  moderator_active?: boolean;
 }
 
 interface DirectoryEntry {
@@ -106,6 +108,7 @@ export default function BusinessPage() {
   const [fEmail, setFEmail] = useState("");
   const [fPhone, setFPhone] = useState("");
   const [fOptIn, setFOptIn] = useState(true);
+  const [fVolunteer, setFVolunteer] = useState(false);
 
   // Per-directory-entry request message
   const [requestTo, setRequestTo] = useState<DirectoryEntry | null>(null);
@@ -137,6 +140,7 @@ export default function BusinessPage() {
         setFEmail(p.contact_email ?? "");
         setFPhone(p.contact_phone ?? "");
         setFOptIn(p.directory_opt_in);
+        setFVolunteer(p.moderator_volunteer === true);
       }
     } catch { /* signed out / no sub — pitch renders */ }
     setProfileLoaded(true);
@@ -170,7 +174,7 @@ export default function BusinessPage() {
         body: JSON.stringify({
           role: fRole, businessName: fName, region: fRegion, bio: fBio,
           licenseNumber: fLicense, contactEmail: fEmail, contactPhone: fPhone,
-          directoryOptIn: fOptIn,
+          directoryOptIn: fOptIn, moderatorVolunteer: fVolunteer,
         }),
       });
       setNotice("Profile saved.");
@@ -437,10 +441,25 @@ export default function BusinessPage() {
               <input style={inputStyle} value={fEmail} onChange={(e) => setFEmail(e.target.value)} placeholder="Business email (shared only with accepted connections)" maxLength={200} />
               <input style={inputStyle} value={fPhone} onChange={(e) => setFPhone(e.target.value)} placeholder="Business phone (shared only with accepted connections)" maxLength={40} />
 
-              <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0 16px", cursor: "pointer" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0 12px", cursor: "pointer" }}>
                 <input type="checkbox" checked={fOptIn} onChange={(e) => setFOptIn(e.target.checked)} />
                 <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 13 }}>
                   List my business in the directory so others can find and contact me
+                </span>
+              </label>
+
+              {/* The moderator ask */}
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, margin: "0 0 16px", cursor: "pointer", padding: "12px 14px", borderRadius: 12, background: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.25)" }}>
+                <input type="checkbox" checked={fVolunteer} onChange={(e) => setFVolunteer(e.target.checked)} style={{ marginTop: 2 }} />
+                <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, lineHeight: 1.6 }}>
+                  <strong>🌿 Help keep our atmosphere clean and healthy</strong> — I&apos;d like to
+                  volunteer as a community group moderator. Approved moderators get a
+                  few bonus scans to start.
+                  {profile?.moderator_active && (
+                    <span style={{ display: "block", color: "#81C784", fontWeight: 800, marginTop: 4 }}>
+                      ✓ You&apos;re an active moderator — thank you!
+                    </span>
+                  )}
                 </span>
               </label>
 

@@ -290,6 +290,7 @@ const FEATURES: FeatureItem[] = [
 const QUICK_LINKS = [
   { href: "/garden/history",   icon: "📋", label: "Scan History" },
   { href: "/garden/favorites", icon: "❤️", label: "Favorites" },
+  { href: "/garden/feedback",  icon: "💡", label: "Feedback" },
   { href: "/garden/profile",   icon: "👤", label: "Profile" },
   { href: "/garden/settings",  icon: "⚙️", label: "Settings" },
 ];

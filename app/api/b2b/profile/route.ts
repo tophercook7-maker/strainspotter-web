@@ -60,14 +60,18 @@ export async function POST(req: NextRequest) {
     contact_email: cleanEmail(body.contactEmail),
     contact_phone: cleanPhone(body.contactPhone),
     directory_opt_in: body.directoryOptIn === true,
-    // NOTE: no `verified` here by design.
+    // The moderator ask: "help keep our atmosphere clean and healthy."
+    // Volunteering is self-serve; ACTIVATION is owner-approved via
+    // /api/admin/moderator (which also grants the small scan bonus).
+    moderator_volunteer: body.moderatorVolunteer === true,
+    // NOTE: no `verified` or `moderator_active` here by design.
   };
 
   try {
     const { data, error } = await getSupabaseAdmin()
       .from("business_profiles")
       .upsert(row, { onConflict: "user_id" })
-      .select("id, role, business_name, region, bio, license_number, verified, contact_email, contact_phone, directory_opt_in, created_at")
+      .select("id, role, business_name, region, bio, license_number, verified, contact_email, contact_phone, directory_opt_in, moderator_volunteer, moderator_active, created_at")
       .single();
     if (error) throw new Error(error.message);
     log.info("b2b_profile_upsert", { user: gate.userId, role: body.role });
