@@ -280,6 +280,12 @@ const FEATURES: FeatureItem[] = [
   { href: "/garden/journal",      icon: "📓", label: "Journal", desc: "Session diary — mood, dose, notes" },
   { href: "/garden/dispensaries", icon: "📍", label: "Nearby",  desc: "Dispensaries & seed vendors" },
   {
+    href: "/garden/community",
+    icon: "💬",
+    label: "Community",
+    desc: "Group chats: growers, plant health, labs & more",
+  },
+  {
     href: "/garden/business",
     icon: "🤝",
     label: "Business",

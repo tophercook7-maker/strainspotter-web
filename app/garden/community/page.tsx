@@ -1,257 +1,149 @@
 "use client";
 
-// app/garden/community/page.tsx
-//
-// Placeholder for v2.0 Community / messaging features. The route exists
-// in v1.0 so the Garden landing's "Coming v2.0" tile resolves to a real
-// page (Apple-friendly: clearly labeled "coming soon" rather than a
-// dead link or 404). When v2.0 development starts, this page is
-// replaced with the real chat/threads UI.
+// Community — the five group chats (New Growers, Plant Health & Care,
+// Strains & Genetics, Labs & Testing, Dispensaries & Products).
+// This replaces the v1 "Coming v2.0" placeholder. Educational talk only —
+// the no-sales guard + volunteer moderators keep the atmosphere clean and
+// healthy.
 
-import Link from "next/link";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import TopNav from "../_components/TopNav";
 
-export default function CommunityComingSoonPage() {
+let useOptionalAuth: () => any;
+try {
+  useOptionalAuth = require("@/lib/auth/AuthProvider").useOptionalAuth;
+} catch {
+  useOptionalAuth = () => null;
+}
+
+const glass: React.CSSProperties = {
+  background: "rgba(255,255,255,0.10)",
+  border: "1px solid rgba(255,255,255,0.20)",
+  borderRadius: 16,
+  backdropFilter: "blur(18px) saturate(1.4)",
+  WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
+};
+
+const GROUP_ICONS: Record<string, string> = {
+  "New Growers": "🌱",
+  "Plant Health & Care": "🩺",
+  "Strains & Genetics": "🧬",
+  "Labs & Testing": "🧪",
+  "Dispensaries & Products": "🏪",
+};
+
+interface Group {
+  threadId: string;
+  name: string;
+  memberCount: number;
+  moderatorCount: number;
+  joined: boolean;
+  myRole: string | null;
+}
+
+export default function CommunityPage() {
+  const router = useRouter();
+  const auth = useOptionalAuth();
+  const token: string | undefined = auth?.session?.access_token;
+
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!token) { setLoaded(true); return; }
+    try {
+      const res = await fetch("/api/community/groups", { headers: { Authorization: `Bearer ${token}` } });
+      const json = await res.json();
+      if (res.ok) setGroups(json.groups ?? []);
+      else setNotice(json.error || null);
+    } catch { /* noop */ }
+    setLoaded(true);
+  }, [token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const join = async (g: Group) => {
+    if (!token) return;
+    setBusy(g.threadId);
+    try {
+      const res = await fetch("/api/community/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ threadId: g.threadId, action: "join" }),
+      });
+      if (res.ok) router.push(`/garden/community/${g.threadId}`);
+      else setNotice(((await res.json()) as { error?: string }).error ?? "Couldn't join.");
+    } finally { setBusy(null); }
+  };
+
   return (
     <>
       <TopNav title="Community" showBack />
       <main className="min-h-screen text-white">
-        <div className="mx-auto w-full max-w-[640px] px-4 py-8">
+        <div className="mx-auto w-full max-w-[720px] px-4 py-6">
           {/* Hero */}
-          <div
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(102,187,106,0.20), rgba(46,125,50,0.10))",
-              border: "1px solid rgba(102,187,106,0.40)",
-              borderRadius: 18,
-              padding: "32px 24px",
-              textAlign: "center" as const,
-              marginBottom: 22,
-              backdropFilter: "blur(18px) saturate(1.4)",
-              WebkitBackdropFilter: "blur(18px) saturate(1.4)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
-            }}
-          >
-            <div style={{ fontSize: 48, marginBottom: 10 }}>💬</div>
-            <h1
-              style={{
-                fontSize: 26,
-                fontWeight: 800,
-                margin: "0 0 8px",
-                letterSpacing: -0.4,
-              }}
-            >
-              Community
-            </h1>
-            <span
-              style={{
-                display: "inline-block",
-                padding: "4px 10px",
-                borderRadius: 6,
-                background: "rgba(102,187,106,0.15)",
-                border: "1px solid rgba(102,187,106,0.30)",
-                color: "#81C784",
-                fontSize: 13,
-                fontWeight: 800,
-                letterSpacing: 1.2,
-                textTransform: "uppercase" as const,
-              }}
-            >
-              Coming v2.0
-            </span>
-            <p
-              style={{
-                color: "rgba(255,255,255,0.65)",
-                fontSize: 14,
-                lineHeight: 1.7,
-                margin: "16px 0 0",
-              }}
-            >
-              StrainSpotter is built to grow into a connected cannabis
-              community. Soon you&rsquo;ll be able to follow growers,
-              message dispensaries, and learn from other consumers
-              directly inside the app.
-            </p>
+          <div style={{ ...glass, padding: 24, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+              <span style={{ fontSize: 28 }}>💬</span>
+              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Community</span>
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
+              Talk growing, plant health, genetics, and products with other members.
+              Educational only — no buying or selling. Volunteer moderators keep
+              things clean and healthy. 🌿
+            </div>
           </div>
 
-          {/* What's coming */}
-          <div
-            style={{
-              background: "rgba(255,255,255,0.10)",
-              border: "1px solid rgba(255,255,255,0.20)",
-              borderRadius: 16,
-              padding: 22,
-              marginBottom: 16,
-              backdropFilter: "blur(18px) saturate(1.4)",
-              WebkitBackdropFilter: "blur(18px) saturate(1.4)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: 1.5,
-                textTransform: "uppercase" as const,
-                color: "rgba(255,255,255,0.75)",
-                margin: "0 0 14px",
-              }}
-            >
-              What&rsquo;s coming
-            </h2>
+          {notice && (
+            <div style={{ ...glass, padding: 12, marginBottom: 14 }}>
+              <span style={{ color: "#FFD54F", fontSize: 13 }}>{notice}</span>
+            </div>
+          )}
 
-            <FeatureRow
-              icon="🌱"
-              title="Grower profiles"
-              body="Verified cultivators showcase their strains, growing technique, and journals. Follow their work; learn from their wins."
-            />
-            <FeatureRow
-              icon="🏪"
-              title="Dispensary profiles"
-              body="Local dispensaries post hours, what's currently in stock, and connect with their regulars. Direct conversation for questions, recommendations, special drops."
-            />
-            <FeatureRow
-              icon="💬"
-              title="Direct messages & group threads"
-              body="Talk grower-to-grower, grower-to-dispensary, or consumer-to-either. Real conversations, not comments-on-a-feed."
-            />
-            <FeatureRow
-              icon="📢"
-              title="Broadcast updates"
-              body="Subscribe to your favorite growers and dispensaries. They post once; everyone who follows them gets notified."
-            />
-            <FeatureRow
-              icon="🛡"
-              title="Verified identities"
-              body="Growers and dispensary owners verify with a license check before claiming a profile. Real people, real businesses."
-            />
-            <FeatureRow
-              icon="✨"
-              title="Trust-weighted strain submissions"
-              body="When you scan a new strain we don't have, your submission goes into a community-vetted catalog with photo evidence required."
-              note="Already live in v1.0 — try it from the scanner"
-            />
-          </div>
+          {!token && loaded && (
+            <div style={{ ...glass, padding: 22, textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 14 }}>
+              Sign in with an active membership to join the groups.
+            </div>
+          )}
 
-          {/* Honesty note */}
-          <div
-            style={{
-              padding: "16px 18px",
-              borderRadius: 12,
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.16)",
-              color: "rgba(255,255,255,0.78)",
-              fontSize: 13,
-              lineHeight: 1.6,
-              backdropFilter: "blur(18px) saturate(1.4)",
-              WebkitBackdropFilter: "blur(18px) saturate(1.4)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
-            }}
-          >
-            <strong style={{ color: "#fff" }}>An honest note:</strong>{" "}
-            StrainSpotter is not a marketplace. We will never facilitate
-            the sale, transfer, or delivery of cannabis through the app.
-            Community is about connection and conversation — actual
-            commerce happens between you and the businesses you trust,
-            outside StrainSpotter.
-          </div>
-
-          {/* Back to garden */}
-          <div style={{ marginTop: 22, textAlign: "center" as const }}>
-            <Link
-              href="/garden"
-              style={{
-                display: "inline-block",
-                padding: "12px 24px",
-                borderRadius: 12,
-                background: "rgba(255,255,255,0.10)",
-                border: "1px solid rgba(255,255,255,0.20)",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                textDecoration: "none",
-                backdropFilter: "blur(18px) saturate(1.4)",
-                WebkitBackdropFilter: "blur(18px) saturate(1.4)",
-              }}
-            >
-              ← Back to Garden
-            </Link>
-          </div>
+          {groups.map((g) => (
+            <div key={g.threadId} style={{ ...glass, padding: 18, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 24 }}>{GROUP_ICONS[g.name] ?? "💬"}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ color: "white", fontWeight: 800, fontSize: 15 }}>{g.name}</span>
+                    {g.myRole === "moderator" && (
+                      <span style={{ color: "#FFD54F", fontSize: 10, fontWeight: 900, border: "1px solid rgba(255,213,79,0.4)", borderRadius: 99, padding: "1px 8px" }}>
+                        🛡️ MOD
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, marginTop: 2 }}>
+                    {g.memberCount} member{g.memberCount === 1 ? "" : "s"} · {g.moderatorCount} mod{g.moderatorCount === 1 ? "" : "s"}
+                  </div>
+                </div>
+                <button
+                  disabled={busy === g.threadId}
+                  onClick={() => (g.joined ? router.push(`/garden/community/${g.threadId}`) : join(g))}
+                  style={{
+                    padding: "9px 18px", borderRadius: 11, fontWeight: 800, fontSize: 13, cursor: "pointer",
+                    background: g.joined ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #43A047, #2E7D32)",
+                    color: "white", flexShrink: 0,
+                    border: g.joined ? "1px solid rgba(255,255,255,0.2)" : "none",
+                  }}
+                >
+                  {busy === g.threadId ? "…" : g.joined ? "Open" : "Join"}
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     </>
-  );
-}
-
-function FeatureRow({
-  icon,
-  title,
-  body,
-  note,
-}: {
-  icon: string;
-  title: string;
-  body: string;
-  note?: string;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        gap: 14,
-        marginBottom: 14,
-        paddingBottom: 14,
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 24,
-          flexShrink: 0,
-          width: 40,
-          height: 40,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: 10,
-          background: "rgba(255,255,255,0.04)",
-        }}
-      >
-        {icon}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: "#fff",
-            marginBottom: 4,
-          }}
-        >
-          {title}
-        </div>
-        <div
-          style={{
-            fontSize: 12,
-            color: "rgba(255,255,255,0.55)",
-            lineHeight: 1.55,
-          }}
-        >
-          {body}
-        </div>
-        {note && (
-          <div
-            style={{
-              marginTop: 6,
-              fontSize: 13,
-              color: "#81C784",
-              fontWeight: 600,
-            }}
-          >
-            ✓ {note}
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
