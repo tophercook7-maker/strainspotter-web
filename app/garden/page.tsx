@@ -280,12 +280,10 @@ const FEATURES: FeatureItem[] = [
   { href: "/garden/journal",      icon: "📓", label: "Journal", desc: "Session diary — mood, dose, notes" },
   { href: "/garden/dispensaries", icon: "📍", label: "Nearby",  desc: "Dispensaries & seed vendors" },
   {
-    href: "/garden/community",
-    icon: "💬",
-    label: "Community",
-    desc: "Grower & dispensary networking — connect, share, learn",
-    comingSoon: true,
-    comingSoonLabel: "Coming v2.0",
+    href: "/garden/business",
+    icon: "🤝",
+    label: "Business",
+    desc: "Growers ⇄ labs ⇄ dispensaries — connect & chat",
   },
 ];
 

@@ -353,7 +353,7 @@ export default function DispensariesPage() {
                               border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none",
                             }}
                           >
-                            Website ↗
+                            Menu / Site ↗
                           </a>
                         )}
                       </div>
