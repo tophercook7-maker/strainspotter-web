@@ -71,6 +71,18 @@ interface Connection {
   contact: { email: string | null; phone: string | null } | null;
 }
 
+interface MenuItem {
+  id: string;
+  strain_name: string;
+  strain_slug: string | null;
+  category: string;
+  price: string | null;
+  thc: string | null;
+  in_stock: boolean;
+}
+
+const MENU_CATEGORIES = ["flower", "preroll", "vape", "edible", "concentrate", "other"] as const;
+
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "11px 14px", borderRadius: 12,
   border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)",
@@ -90,7 +102,12 @@ export default function BusinessPage() {
   const auth = useOptionalAuth();
   const token: string | undefined = auth?.session?.access_token;
 
-  const [tab, setTab] = useState<"directory" | "connections" | "profile">("directory");
+  const [tab, setTab] = useState<"directory" | "connections" | "menu" | "profile">("directory");
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [mName, setMName] = useState("");
+  const [mCategory, setMCategory] = useState<string>("flower");
+  const [mPrice, setMPrice] = useState("");
+  const [mThc, setMThc] = useState("");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [directory, setDirectory] = useState<DirectoryEntry[]>([]);
@@ -161,10 +178,57 @@ export default function BusinessPage() {
     } catch { setConnections([]); }
   }, [api]);
 
+  const isMenuRole = profile?.role === "dispensary" || profile?.role === "processor";
+
+  const loadMenu = useCallback(async () => {
+    try {
+      const { items } = await api("/api/b2b/menu");
+      setMenuItems(items);
+    } catch { setMenuItems([]); }
+  }, [api]);
+
   useEffect(() => { loadProfile(); }, [loadProfile]);
   useEffect(() => {
     if (profile) { loadDirectory(); loadConnections(); }
   }, [profile, loadDirectory, loadConnections]);
+  useEffect(() => {
+    if (profile && isMenuRole && tab === "menu") loadMenu();
+  }, [profile, isMenuRole, tab, loadMenu]);
+
+  const addMenuItem = async () => {
+    if (!mName.trim()) return;
+    setBusy(true); setNotice(null);
+    try {
+      const { item } = await api("/api/b2b/menu", {
+        method: "POST",
+        body: JSON.stringify({ strainName: mName, category: mCategory, price: mPrice, thc: mThc }),
+      });
+      setMenuItems((prev) => [item, ...prev]);
+      setMName(""); setMPrice(""); setMThc("");
+      if (!item.strain_slug) {
+        setNotice("Added — heads up: that name didn't match our strain library, so it won't appear in \"carried nearby\" scan results. Check the spelling if it should.");
+      }
+    } catch (e) { setNotice(e instanceof Error ? e.message : "Failed to add item."); }
+    finally { setBusy(false); }
+  };
+
+  const toggleStock = async (item: MenuItem) => {
+    try {
+      const { item: updated } = await api("/api/b2b/menu", {
+        method: "POST",
+        body: JSON.stringify({ id: item.id, inStock: !item.in_stock }),
+      });
+      setMenuItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+    } catch { /* noop */ }
+  };
+
+  const deleteMenuItem = async (item: MenuItem) => {
+    if (!window.confirm(`Remove "${item.strain_name}" from your menu?`)) return;
+    try {
+      await api(`/api/b2b/menu?id=${item.id}`, { method: "DELETE" });
+      setMenuItems((prev) => prev.filter((i) => i.id !== item.id));
+    } catch { /* noop */ }
+  };
 
   const saveProfile = async () => {
     setBusy(true); setNotice(null);
@@ -267,6 +331,7 @@ export default function BusinessPage() {
               {([
                 { key: "directory" as const, label: "Directory" },
                 { key: "connections" as const, label: pendingIncoming.length ? `Connections (${pendingIncoming.length})` : "Connections" },
+                ...(isMenuRole ? [{ key: "menu" as const, label: "Menu" }] : []),
                 { key: "profile" as const, label: "My Profile" },
               ]).map((t) => (
                 <button key={t.key} onClick={() => setTab(t.key)} style={{
@@ -407,6 +472,85 @@ export default function BusinessPage() {
                       )}
                     </div>
                   )}
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* ── MENU (dispensary/processor) ── */}
+          {tab === "menu" && profile && isMenuRole && (
+            <>
+              <div style={{ ...glass, padding: 18, marginBottom: 16 }}>
+                <div style={{ color: "white", fontWeight: 800, fontSize: 15, marginBottom: 4 }}>Publish your menu</div>
+                <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 12.5, lineHeight: 1.6, marginBottom: 12 }}>
+                  Items that match our strain library show up on members&apos; scan results as
+                  &ldquo;carried by {profile.business_name}&rdquo; — free foot traffic from every scan.
+                </div>
+                <input style={inputStyle} value={mName} onChange={(e) => setMName(e.target.value)} placeholder="Strain / product name *" maxLength={120} />
+                <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+                  {MENU_CATEGORIES.map((c) => (
+                    <button key={c} onClick={() => setMCategory(c)} style={{
+                      padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      background: mCategory === c ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
+                      color: mCategory === c ? "#81C784" : "rgba(255,255,255,0.65)",
+                      border: `1px solid ${mCategory === c ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                    }}>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input style={{ ...inputStyle, marginBottom: 0 }} value={mPrice} onChange={(e) => setMPrice(e.target.value)} placeholder="Price (e.g. $40/eighth)" maxLength={40} />
+                  <input style={{ ...inputStyle, marginBottom: 0 }} value={mThc} onChange={(e) => setMThc(e.target.value)} placeholder="THC % (opt.)" maxLength={40} />
+                </div>
+                <button disabled={busy || !mName.trim()} onClick={addMenuItem} style={{
+                  width: "100%", marginTop: 12, padding: "12px 18px", borderRadius: 12, border: "none",
+                  background: mName.trim() ? "linear-gradient(135deg, #43A047, #2E7D32)" : "rgba(255,255,255,0.1)",
+                  color: "white", fontWeight: 800, fontSize: 14, cursor: mName.trim() ? "pointer" : "default",
+                }}>
+                  {busy ? "Adding…" : "＋ Add to menu"}
+                </button>
+              </div>
+
+              {menuItems.length === 0 && (
+                <div style={{ ...glass, padding: 18, textAlign: "center", color: "rgba(255,255,255,0.6)", fontSize: 13 }}>
+                  Nothing on your menu yet — add your top sellers first.
+                </div>
+              )}
+              {menuItems.map((item) => (
+                <div key={item.id} style={{ ...glass, padding: 14, marginBottom: 10, opacity: item.in_stock ? 1 : 0.55 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ color: "white", fontWeight: 800, fontSize: 14 }}>{item.strain_name}</span>
+                    <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>{item.category}</span>
+                    {item.strain_slug ? (
+                      <span title="Matched to the strain library — appears in scan results" style={{ color: "#81C784", fontSize: 10, fontWeight: 800, border: "1px solid rgba(76,175,80,0.4)", borderRadius: 99, padding: "0 7px" }}>
+                        🔗 scan-linked
+                      </span>
+                    ) : (
+                      <span title="Didn't match the strain library" style={{ color: "#FFB74D", fontSize: 10, fontWeight: 800, border: "1px solid rgba(255,183,77,0.4)", borderRadius: 99, padding: "0 7px" }}>
+                        unlinked
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, marginTop: 3 }}>
+                    {[item.price, item.thc && `THC ${item.thc}`].filter(Boolean).join(" · ") || "—"}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button onClick={() => toggleStock(item)} style={{
+                      padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                      background: item.in_stock ? "rgba(76,175,80,0.15)" : "rgba(255,255,255,0.08)",
+                      color: item.in_stock ? "#81C784" : "rgba(255,255,255,0.6)",
+                      border: `1px solid ${item.in_stock ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.15)"}`,
+                    }}>
+                      {item.in_stock ? "✓ In stock" : "Out of stock"}
+                    </button>
+                    <button onClick={() => deleteMenuItem(item)} style={{
+                      padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      background: "transparent", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.15)",
+                    }}>
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </>

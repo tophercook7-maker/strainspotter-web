@@ -9,6 +9,7 @@ import {
   type PlantDoctorResult,
 } from "@/lib/scanner/plantDoctorClient";
 import PlantDoctorPanel from "./PlantDoctorPanel";
+import WhereToFind from "./WhereToFind";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
 import ScanPaywall from "@/components/ScanPaywall";
@@ -230,6 +231,9 @@ interface SimpleResult {
   /** True only when calibrated confidence clears the bar for a single answer;
    *  false → present a shortlist, not a definitive identification. */
   hasPrimaryPick: boolean;
+  /** Catalog slug of the confident primary pick (null without one) — powers
+   *  the "available nearby" dispensary lookup. */
+  primarySlug: string | null;
   type: "Indica" | "Sativa" | "Hybrid" | "Unknown";
   lineage: string;
   effects: string[];
@@ -655,6 +659,7 @@ export default function ScannerPage() {
         // confident enough single answer to present (vs. a shortlist).
         confidenceTier: vm.v2?.summary.confidenceTier ?? "low",
         hasPrimaryPick: Boolean(vm.v2?.summary.primaryCandidateSlug),
+        primarySlug: vm.v2?.summary.primaryCandidateSlug ?? null,
         v2Candidates: Array.isArray(vm.v2?.candidates) ? vm.v2.candidates.slice(0, 4).map((c: any) => ({
           strainName: c.strainName,
           confidence: typeof c.confidence === "number" ? c.confidence : 0,
@@ -1140,6 +1145,11 @@ export default function ScannerPage() {
           <div style={{ marginTop: 24 }}>
             <PlantDoctorPanel result={plantResult} onReset={clearAll} />
           </div>
+        )}
+
+        {/* ── AVAILABLE NEARBY (confident strain pick + a dispensary carries it) ── */}
+        {result && scanState === "done" && result.primarySlug && (
+          <WhereToFind slug={result.primarySlug} token={auth?.session?.access_token} />
         )}
 
         {result && scanState === "done" && (
