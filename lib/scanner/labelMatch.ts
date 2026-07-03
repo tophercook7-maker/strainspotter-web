@@ -17,7 +17,7 @@ export type LabelMatch = {
   strain: CatalogStrain;
   /** 0–1 confidence in the match itself (not in the scan). */
   score: number;
-  method: "exact" | "normalized" | "contains" | "fuzzy";
+  method: "exact" | "normalized" | "compact" | "confusable" | "contains" | "fuzzy";
   /** the catalog name/alias text that matched */
   matchedText: string;
 };
@@ -37,6 +37,36 @@ export function normalizeLabel(s: string): string {
 /** Singularize a trailing plural on the last token ("dreams" -> "dream"). */
 function depluralize(norm: string): string {
   return norm.replace(/\b([a-z]{4,})s\b/g, "$1");
+}
+
+/** Space-less form: OCR frequently mangles spacing and normalizeLabel turns
+ *  punctuation into spaces ("GG#4" → "gg 4", "BlueDream" stays fused). Compact
+ *  both sides and short abbreviations match again. */
+function compact(norm: string): string {
+  return norm.replace(/ /g, "");
+}
+
+/**
+ * OCR-confusable repair, per token: digits that leaked into an alphabetic
+ * token become letters ("b1ue" → "blue"), letters that leaked into a numeric
+ * token become digits ("4l" → "41"). Applied only as a fallback lookup, so a
+ * query that already matches is never touched.
+ */
+function ocrConfusableVariant(norm: string): string {
+  return norm
+    .split(" ")
+    .map((tok) => {
+      const letters = (tok.match(/[a-z]/g) ?? []).length;
+      const digits = (tok.match(/[0-9]/g) ?? []).length;
+      if (digits > 0 && letters > digits) {
+        return tok.replace(/0/g, "o").replace(/1/g, "l").replace(/5/g, "s").replace(/8/g, "b").replace(/3/g, "e");
+      }
+      if (letters > 0 && digits >= letters) {
+        return tok.replace(/o/g, "0").replace(/[li]/g, "1").replace(/s/g, "5").replace(/b/g, "8");
+      }
+      return tok;
+    })
+    .join(" ");
 }
 
 // Label-noise tokens to ignore when scanning a long OCR string for a name.
@@ -66,24 +96,38 @@ function better(a: Entry, b: Entry | null): boolean {
 // (curated "GG4") canonicalizes to the descriptive dup ("Gorilla Glue #4"), and
 // a non-curated near-dup ("Blue Dreams") yields to the curated "Blue Dream".
 const NORM_EXACT = new Map<string, { slug: string; curated: boolean; nameLen: number }>();
+// Compact (space-less) index — same preference rules. Keys ≥3 chars only, so
+// 2-letter fragments ("og", "gg") can't hijack via the compact path.
+const COMPACT_EXACT = new Map<string, { slug: string; curated: boolean; nameLen: number }>();
 const ENTRIES: Entry[] = []; // for containment + fuzzy (distinctive names only)
-function setBestExact(key: string, cand: { slug: string; curated: boolean; nameLen: number }) {
-  const ex = NORM_EXACT.get(key);
+function setBest(
+  map: Map<string, { slug: string; curated: boolean; nameLen: number }>,
+  key: string,
+  cand: { slug: string; curated: boolean; nameLen: number }
+) {
+  const ex = map.get(key);
   const win = !ex
     ? true
     : cand.curated !== ex.curated
       ? cand.curated
       : cand.nameLen > ex.nameLen;
-  if (win) NORM_EXACT.set(key, cand);
+  if (win) map.set(key, cand);
+}
+function indexName(text: string, cand: { slug: string; curated: boolean; nameLen: number }) {
+  const norm = normalizeLabel(text);
+  if (!norm) return null;
+  setBest(NORM_EXACT, norm, cand);
+  const dnorm = depluralize(norm);
+  if (dnorm !== norm) setBest(NORM_EXACT, dnorm, cand);
+  for (const key of new Set([compact(norm), compact(dnorm)])) {
+    if (key.length >= 3) setBest(COMPACT_EXACT, key, cand);
+  }
+  return norm;
 }
 for (const s of CATALOG_10K) {
   for (const text of [s.name, ...(s.aliases ?? [])]) {
-    const norm = normalizeLabel(text);
+    const norm = indexName(text, { slug: s.slug, curated: !!s.curated, nameLen: s.name.length });
     if (!norm) continue;
-    const cand = { slug: s.slug, curated: !!s.curated, nameLen: s.name.length };
-    setBestExact(norm, cand);
-    const dnorm = depluralize(norm);
-    if (dnorm !== norm) setBestExact(dnorm, cand);
     // Only index reasonably distinctive names for fuzzy/containment to avoid
     // matching generic fragments ("og", "kush", "gg").
     if (norm.length >= 5) {
@@ -112,22 +156,33 @@ const BLOCKLIST = new Set([
 // keys are ignored. Extend by hand only.
 const SUPPLEMENTAL_ALIASES: Record<string, string> = {
   "ATF": "alaskan-thunder-fuck",
+  "MTF": "alaskan-thunder-fuck",
   "Alaskan Thunderfuck": "alaskan-thunder-fuck",
   "Matanuska Thunderfuck": "alaskan-thunder-fuck",
   "PBB": "peanut-butter-breath",
+  "PB Breath": "peanut-butter-breath",
   "Grandaddy Purple": "granddaddy-purple",
   "Grand Daddy Purple": "granddaddy-purple",
+  "GDP": "granddaddy-purple",
+  "Sour D": "sour-diesel",
+  "ECSD": "east-coast-sour-diesel",
+  "MAC": "mac-1",
+  "SLH": "super-lemon-haze",
+  "Skittlez": "zkittlez",
+  "Maui Waui": "maui-wowie",
 };
 for (const [alias, slug] of Object.entries(SUPPLEMENTAL_ALIASES)) {
   const norm = normalizeLabel(alias);
   if (!norm || BLOCKLIST.has(norm) || !bySlug.has(slug)) continue;
   const s = bySlug.get(slug)!;
   const cand = { slug, curated: !!s.curated, nameLen: s.name.length };
-  setBestExact(norm, cand);
-  const dnorm = depluralize(norm);
-  if (dnorm !== norm) setBestExact(dnorm, cand);
+  indexName(alias, cand);
   if (norm.length >= 5) ENTRIES.push({ slug, norm, tokens: norm.split(" "), len: norm.length, text: alias, curated: !!s.curated });
 }
+
+// Compact forms of the blocklist, so OCR-spaced junk ("T H C", "C-B-D") is
+// still rejected by the compact path.
+const COMPACT_BLOCK = new Set([...BLOCKLIST].map((t) => compact(t)));
 
 function lev(a: string, b: string): number {
   const m = a.length, n = b.length;
@@ -203,6 +258,37 @@ export function matchLabelToCatalog(query: string | undefined | null): LabelMatc
     const hit = NORM_EXACT.get(key);
     if (hit && bySlug.has(hit.slug)) {
       return finalize(bySlug.get(hit.slug)!, 0.97, "normalized", key);
+    }
+  }
+
+  // 2b. compact — spacing destroyed by OCR or by punctuation-stripping
+  //     ("GG#4" → "gg 4" → "gg4"; "BlueDream" → "bluedream").
+  {
+    const ckey = compact(dnorm);
+    if (ckey.length >= 3 && !COMPACT_BLOCK.has(ckey)) {
+      const hit = COMPACT_EXACT.get(ckey);
+      if (hit && bySlug.has(hit.slug)) {
+        return finalize(bySlug.get(hit.slug)!, 0.95, "compact", ckey);
+      }
+    }
+  }
+
+  // 2c. OCR-confusable repair ("B1ue Dream" → "blue dream", "Gelato 4l" →
+  //     "gelato 41") — exact/compact lookups only, on the repaired string.
+  {
+    const variant = ocrConfusableVariant(dnorm);
+    if (variant !== dnorm && !BLOCKLIST.has(variant)) {
+      const hit = NORM_EXACT.get(variant);
+      if (hit && bySlug.has(hit.slug)) {
+        return finalize(bySlug.get(hit.slug)!, 0.93, "confusable", variant);
+      }
+      const cvar = compact(variant);
+      if (cvar.length >= 3 && !COMPACT_BLOCK.has(cvar)) {
+        const chit = COMPACT_EXACT.get(cvar);
+        if (chit && bySlug.has(chit.slug)) {
+          return finalize(bySlug.get(chit.slug)!, 0.93, "confusable", cvar);
+        }
+      }
     }
   }
 

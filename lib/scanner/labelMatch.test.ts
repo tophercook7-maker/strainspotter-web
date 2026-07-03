@@ -50,6 +50,40 @@ describe("matchLabelToCatalog — the label→catalog path (the only route to co
     expect(matchLabelToCatalog("Grandaddy Purple")?.strain.slug).toBe("granddaddy-purple");
   });
 
+  it("compact: spacing destroyed by punctuation-stripping or OCR still resolves", () => {
+    // "GG#4" normalizes to "gg 4" which no longer equals the "GG4" alias —
+    // the compact path repairs exactly this (very common label format).
+    expect(matchLabelToCatalog("GG#4")?.strain.slug).toBe("gorilla-glue-4");
+    expect(matchLabelToCatalog("BlueDream")?.strain.slug).toBe("blue-dream");
+  });
+
+  it("compact path still refuses blocklisted junk and short fragments", () => {
+    expect(matchLabelToCatalog("T H C")).toBeNull();
+    expect(matchLabelToCatalog("O G")).toBeNull();
+  });
+
+  it("OCR-confusable repair: digit↔letter swaps resolve", () => {
+    expect(matchLabelToCatalog("B1ue Dream")?.strain.slug).toBe("blue-dream");
+    expect(matchLabelToCatalog("Gelato 4l")?.strain.slug).toBe("gelato-41");
+  });
+
+  it("expanded vetted aliases resolve famous shorthand", () => {
+    expect(matchLabelToCatalog("GDP")?.strain.slug).toBe("granddaddy-purple");
+    expect(matchLabelToCatalog("Sour D")?.strain.slug).toBe("sour-diesel");
+    expect(matchLabelToCatalog("MAC")?.strain.slug).toBe("mac-1");
+    expect(matchLabelToCatalog("MTF")?.strain.slug).toBe("alaskan-thunder-fuck");
+    expect(matchLabelToCatalog("ECSD")?.strain.slug).toBe("east-coast-sour-diesel");
+    expect(matchLabelToCatalog("SLH")?.strain.slug).toBe("super-lemon-haze");
+    expect(matchLabelToCatalog("Skittlez")?.strain.slug).toBe("zkittlez");
+    expect(matchLabelToCatalog("Maui Waui")?.strain.slug).toBe("maui-wowie");
+    expect(matchLabelToCatalog("PB Breath")?.strain.slug).toBe("peanut-butter-breath");
+  });
+
+  it("abbreviation embedded in a full label resolves via bestLabelMatch windows", () => {
+    expect(bestLabelMatch("GG#4 · Hybrid · Net Wt 3.5g · THC 28%", [])?.strain.slug).toBe("gorilla-glue-4");
+    expect(bestLabelMatch("GDP INDICA 1g PREROLL", [])?.strain.slug).toBe("granddaddy-purple");
+  });
+
   it("scores exact ≥ normalized ≥ fuzzy (so callers can gate promotion)", () => {
     expect(matchLabelToCatalog("Blue Dream")!.score).toBeGreaterThanOrEqual(
       matchLabelToCatalog("Blu Dream")!.score

@@ -194,8 +194,8 @@ When the user supplies a "sellersClaim" string in their request, additionally fi
  * the model name ANY cultivar (mapped to the catalog afterward via
  * resolveStrain). Accuracy-neutral vs the constrained prompt
  * (data/eval/free-naming-ab-*.json) but removes ~10k tokens/scan (≈half the
- * cost), eases rate limits, and recognizes 10k+ strains. Toggle with env
- * SCANNER_FREE_NAMING=1 (default off = current constrained behavior).
+ * cost), eases rate limits, and recognizes 10k+ strains. DEFAULT ON; set
+ * SCANNER_FREE_NAMING=0 to fall back to the constrained catalog prompt.
  */
 export const FREE_SYSTEM_PROMPT = SYSTEM_PROMPT
   .replace(/═══ STRAINSPOTTER CATALOG[\s\S]*?═══ END CATALOG ═══/, "You may name ANY cannabis cultivar you recognize — you are NOT limited to a fixed list. Use your full knowledge of cannabis strains.")
@@ -477,11 +477,11 @@ export function normalizeAnalysis(
  *  Confidence calibration (presentation transform)
  *
  *  The model's raw self-confidence is badly miscalibrated (see
- *  docs/scanner-calibration.md). When SCANNER_CALIBRATION=1, replace each
- *  candidate's displayed `confidence` with an honest, evidence-anchored
- *  estimate of P(correct), preserving the raw number as `modelConfidence`
- *  for audit. Kept OUT of normalizeAnalysis on purpose so the eval harnesses
- *  keep measuring raw model behavior. Default off = today's behavior.
+ *  docs/scanner-calibration.md). Replace each candidate's displayed
+ *  `confidence` with an honest, evidence-anchored estimate of P(correct),
+ *  preserving the raw number as `modelConfidence` for audit. Kept OUT of
+ *  normalizeAnalysis on purpose so the eval harnesses keep measuring raw
+ *  model behavior. DEFAULT ON; kill switch SCANNER_CALIBRATION=0.
  * ───────────────────────────────────────────────────────────────── */
 
 export function applyConfidenceCalibration(
@@ -528,7 +528,7 @@ export function applyConfidenceCalibration(
  *  Phase 1). The reliable signal is a strain name read off the label. When OCR
  *  yields a confident catalog match, promote it to the top candidate with
  *  nameInImage=true so calibration awards it the high (label) confidence band.
- *  Runs BEFORE calibration. Gated by SCANNER_LABEL_MATCH=1 (default off).
+ *  Runs BEFORE calibration. DEFAULT ON; kill switch SCANNER_LABEL_MATCH=0.
  * ───────────────────────────────────────────────────────────────── */
 
 export function applyLabelMatch(result: Record<string, unknown>): Record<string, unknown> {
@@ -874,7 +874,7 @@ export async function POST(req: NextRequest) {
               messages: [
                 {
                   role: "system",
-                  content: process.env.SCANNER_FREE_NAMING === "1" ? FREE_SYSTEM_PROMPT : SYSTEM_PROMPT,
+                  content: process.env.SCANNER_FREE_NAMING !== "0" ? FREE_SYSTEM_PROMPT : SYSTEM_PROMPT,
                 },
                 { role: "user", content },
               ],
@@ -960,15 +960,16 @@ export async function POST(req: NextRequest) {
         : 0,
     });
     // Honest confidence: replace raw model self-confidence with the calibrated
-    // estimate (flag-gated; raw preserved as modelConfidence). Runs before the
-    // catalog resolve so candidate ordering settles on the calibrated number.
+    // estimate (raw preserved as modelConfidence). Runs before the catalog
+    // resolve so candidate ordering settles on the calibrated number.
+    // Both layers are DEFAULT ON; set the env var to "0" as a kill switch.
     let result = outcome.normalized as Record<string, unknown>;
     // Label → catalog promotion first (the reliable ID signal), so calibration
     // sees nameInImage=true and awards the high band.
-    if (process.env.SCANNER_LABEL_MATCH === "1") {
+    if (process.env.SCANNER_LABEL_MATCH !== "0") {
       result = applyLabelMatch(result);
     }
-    if (process.env.SCANNER_CALIBRATION === "1") {
+    if (process.env.SCANNER_CALIBRATION !== "0") {
       result = applyConfidenceCalibration(result);
     }
 
@@ -986,7 +987,7 @@ export async function POST(req: NextRequest) {
       result,
       usage: outcome.usage,
       cached,
-      calibrated: process.env.SCANNER_CALIBRATION === "1",
+      calibrated: process.env.SCANNER_CALIBRATION !== "0",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

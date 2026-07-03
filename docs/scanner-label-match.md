@@ -21,9 +21,15 @@ packet) and resolving it to the catalog — even when the OCR is imperfect.
 
 1. **exact** (strict slug / alias / trailing-qualifier) — score 1.0
 2. **normalized** — lowercase, strip punctuation/accents, collapse, depluralize — 0.97
-3. **contains** — the query (a longer label) contains a catalog name as a
+3. **compact** — space-less lookup (keys ≥3 chars, blocklist-guarded): repairs
+   spacing destroyed by punctuation-stripping or OCR ("GG#4" → "gg 4" → "gg4",
+   "BlueDream") — 0.95
+4. **confusable** — per-token OCR digit↔letter repair ("B1ue Dream" → "blue
+   dream", "Gelato 4l" → "gelato 41"), then exact/compact lookup on the
+   repaired string — 0.93
+5. **contains** — the query (a longer label) contains a catalog name as a
    contiguous token run; most-specific (most tokens) wins — 0.9
-4. **fuzzy** — bounded Levenshtein for OCR typos, accepted only ≥ 0.85 on names
+6. **fuzzy** — bounded Levenshtein for OCR typos, accepted only ≥ 0.85 on names
    ≥ 5 chars — score = similarity
 
 Every match is **canonicalized** to the curated/fuller near-duplicate: the 10k
@@ -37,7 +43,7 @@ then sliding 1–4-token windows of the raw OCR text, and returns the best.
 
 ## Wired into `/api/scan` — `applyLabelMatch`
 
-Flag-gated `SCANNER_LABEL_MATCH=1` (default off). When OCR yields a confident
+**DEFAULT ON** (kill switch `SCANNER_LABEL_MATCH=0`). When OCR yields a confident
 match (score ≥ 0.9), the matched strain is **promoted to the top candidate** with
 `matchSignals.nameInImage = true`, a label-derived confidence (scaled by match
 strength), a "read from the label" reasoning, and the summary's primary pick +
@@ -50,9 +56,10 @@ of `normalizeAnalysis` so eval harnesses still measure raw model behavior.
 
 ## Rollout
 
-Default off. Turn on with `SCANNER_LABEL_MATCH=1`, verify on a few real labeled
-photos, then make default — same pattern as `SCANNER_CALIBRATION` /
-`SCANNER_FREE_NAMING`.
+**DEFAULT ON since 2026-07-03**, together with `SCANNER_CALIBRATION` and
+`SCANNER_FREE_NAMING`. Each env var is now a kill switch — set it to `0` to
+disable that layer. The deterministic pipeline (promotion → calibration) is
+covered end-to-end by `lib/scanner/flagDefaults.pipeline.test.ts`.
 
 ## Alias safety — blocklist + vetted supplement
 
@@ -62,8 +69,11 @@ Two guards in `labelMatch.ts`:
   indica, sativa, hybrid, gram, …) can never resolve to a strain, via any path.
   Real names that *contain* those words still work ("OG Kush" → `og-kush`).
 - **SUPPLEMENTAL_ALIASES** — a small, hand-vetted map for famous strains the
-  catalog left aliasless (ATF → alaskan-thunder-fuck, PBB → peanut-butter-breath,
-  GDP spellings). Extend **by hand only**.
+  catalog left aliasless: ATF/MTF → alaskan-thunder-fuck, PBB/PB Breath →
+  peanut-butter-breath, GDP + spellings → granddaddy-purple, Sour D, ECSD,
+  MAC → mac-1, SLH, Skittlez → zkittlez, Maui Waui. Extend **by hand only**.
+  Bare "GMO" was deliberately NOT added — "Non-GMO" is real packaging
+  boilerplate and a sliding-window hit would misfire.
 
 **Auto-generated initialisms were tried and rejected.** Generating acronyms from
 names produced dangerous maps: `THC → tahoe-hydro-champagne`, `BHO`/`AKA` → strains,
@@ -76,4 +86,5 @@ never generated. See `scripts/recall-ab.mjs` note in the commit history.
 - Dedup the catalog's near-duplicate entries at the source (build script), so
   canonicalization isn't load-bearing.
 - Pull vetted aliases from the Supabase 35k `strains` table (human-reviewed).
-- A small OCR-confusable normalization (0↔O, 1↔l) before fuzzy.
+- ~~A small OCR-confusable normalization (0↔O, 1↔l) before fuzzy.~~ ✅ shipped
+  (step 4 "confusable", 2026-07-03), plus the compact space-repair path.
