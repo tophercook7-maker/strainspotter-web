@@ -104,6 +104,23 @@ export default function CommunityChatPage() {
     } finally { setSending(false); }
   };
 
+  const report = async (m: Msg) => {
+    if (!threadId) return;
+    const reason = window.prompt(`Report ${m.senderName}'s message to the moderators?\nOptional: tell us why.`, "");
+    if (reason === null) return; // cancelled
+    try {
+      const res = await authedFetch("/api/community/report", {
+        method: "POST",
+        body: JSON.stringify({ threadId, messageId: m.id, reason: reason.trim() || undefined }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || "Report failed"); return; }
+      setModOpenFor(null);
+      setError(null);
+      window.alert("Thanks — the moderators will take a look.");
+    } catch { setError("Report failed"); }
+  };
+
   const moderate = async (
     action: "hide" | "mute" | "remove",
     m: Msg
@@ -162,14 +179,14 @@ export default function CommunityChatPage() {
             {messages.map((m) => (
               <div key={m.id} style={{ display: "flex", justifyContent: m.mine ? "flex-end" : "flex-start", marginBottom: 8 }}>
                 <div
-                  onClick={() => canModerate && !m.mine ? setModOpenFor(modOpenFor === m.id ? null : m.id) : undefined}
+                  onClick={() => !m.mine ? setModOpenFor(modOpenFor === m.id ? null : m.id) : undefined}
                   style={{
                     maxWidth: "78%", padding: "10px 14px", borderRadius: 16,
                     borderBottomRightRadius: m.mine ? 4 : 16,
                     borderBottomLeftRadius: m.mine ? 16 : 4,
                     background: m.mine ? "linear-gradient(135deg, #43A047, #2E7D32)" : "rgba(255,255,255,0.10)",
                     border: m.mine ? "none" : "1px solid rgba(255,255,255,0.15)",
-                    cursor: canModerate && !m.mine ? "pointer" : "default",
+                    cursor: !m.mine ? "pointer" : "default",
                   }}
                 >
                   {!m.mine && (
@@ -187,15 +204,26 @@ export default function CommunityChatPage() {
                     {new Date(m.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                   </div>
 
-                  {/* Moderator toolbar */}
-                  {canModerate && modOpenFor === m.id && !m.mine && (
+                  {/* Action toolbar: mod tools for moderators, report for members */}
+                  {modOpenFor === m.id && !m.mine && (
                     <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
-                      <button style={modBtn} onClick={() => moderate("hide", m)}>Hide message</button>
-                      {m.senderId && !m.isModerator && (
+                      {canModerate ? (
                         <>
-                          <button style={modBtn} onClick={() => moderate("mute", m)}>Mute 24h</button>
-                          <button style={modBtn} onClick={() => moderate("remove", m)}>Remove from group</button>
+                          <button style={modBtn} onClick={() => moderate("hide", m)}>Hide message</button>
+                          {m.senderId && !m.isModerator && (
+                            <>
+                              <button style={modBtn} onClick={() => moderate("mute", m)}>Mute 24h</button>
+                              <button style={modBtn} onClick={() => moderate("remove", m)}>Remove from group</button>
+                            </>
+                          )}
                         </>
+                      ) : (
+                        <button
+                          style={{ ...modBtn, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.2)" }}
+                          onClick={() => report(m)}
+                        >
+                          ⚑ Report to moderators
+                        </button>
                       )}
                     </div>
                   )}

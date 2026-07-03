@@ -48,6 +48,14 @@ interface Overview {
   volunteers: { pending: AdminProfile[]; active: AdminProfile[] };
   moderatorBox: { threadId: string; name: string; moderatorCount: number; moderators: { userId: string; businessName: string | null; role: string | null }[] }[];
   feedbackCounts: Record<string, number>;
+  openReports: number;
+}
+
+interface ReportGroup {
+  message: { id: string; content: string; hidden: boolean; senderName: string; groupName: string; threadId: string };
+  reportCount: number;
+  reasons: string[];
+  firstReportedAt: string;
 }
 
 interface FeedbackItem {
@@ -74,8 +82,9 @@ export default function AdminPage() {
   const token: string | undefined = auth?.session?.access_token;
   const isOwner = auth?.profile?.is_owner === true;
 
-  const [tab, setTab] = useState<"overview" | "verify" | "moderators" | "feedback">("overview");
+  const [tab, setTab] = useState<"overview" | "verify" | "moderators" | "reports" | "feedback">("overview");
   const [ov, setOv] = useState<Overview | null>(null);
+  const [reportGroups, setReportGroups] = useState<ReportGroup[]>([]);
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
   const [fbFilter, setFbFilter] = useState<string>("new");
   const [replyFor, setReplyFor] = useState<string | null>(null);
@@ -111,8 +120,27 @@ export default function AdminPage() {
     } catch { /* noop */ }
   }, [api, token, fbFilter]);
 
+  const loadReports = useCallback(async () => {
+    if (!token) return;
+    try {
+      const { reports } = await api("/api/admin/reports");
+      setReportGroups(reports);
+    } catch { /* noop */ }
+  }, [api, token]);
+
   useEffect(() => { loadOverview(); }, [loadOverview]);
   useEffect(() => { if (tab === "feedback") loadFeedback(); }, [tab, loadFeedback]);
+  useEffect(() => { if (tab === "reports") loadReports(); }, [tab, loadReports]);
+
+  const actOnReport = async (messageId: string, action: "hide_resolve" | "resolve") => {
+    setBusy(true); setNotice(null);
+    try {
+      await api("/api/admin/reports", { method: "POST", body: JSON.stringify({ messageId, action }) });
+      setNotice(action === "hide_resolve" ? "Message hidden and reports resolved." : "Reports dismissed.");
+      await Promise.all([loadReports(), loadOverview()]);
+    } catch (e) { setNotice(e instanceof Error ? e.message : "Failed."); }
+    finally { setBusy(false); }
+  };
 
   const setVerified = async (profileId: string, verified: boolean) => {
     setBusy(true); setNotice(null);
@@ -191,6 +219,7 @@ export default function AdminPage() {
               { key: "overview" as const, label: "Overview" },
               { key: "verify" as const, label: ov?.pendingVerifications.length ? `Verify (${ov.pendingVerifications.length})` : "Verify" },
               { key: "moderators" as const, label: ov?.volunteers.pending.length ? `Moderators (${ov.volunteers.pending.length})` : "Moderators" },
+              { key: "reports" as const, label: ov?.openReports ? `Reports (${ov.openReports})` : "Reports" },
               { key: "feedback" as const, label: ov?.feedbackCounts?.new ? `Feedback (${ov.feedbackCounts.new})` : "Feedback" },
             ]).map((t) => (
               <button key={t.key} onClick={() => setTab(t.key)} style={{
@@ -329,6 +358,52 @@ export default function AdminPage() {
                     <button disabled={busy} onClick={() => moderator(p.id, "remove")} style={btnGhost}>Remove moderator</button>
                   </div>
                 </Card>
+              ))}
+            </>
+          )}
+
+          {/* ── REPORTS ── */}
+          {tab === "reports" && (
+            <>
+              {reportGroups.length === 0 && (
+                <div style={{ ...glass, padding: 20, textAlign: "center", color: "rgba(255,255,255,0.65)", fontSize: 14 }}>
+                  No open reports — the atmosphere is clean. 🌿
+                </div>
+              )}
+              {reportGroups.map((g) => (
+                <div key={g.message.id} style={{ ...glass, padding: 16, marginBottom: 10 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+                    <span style={{ color: "#FFB74D", fontSize: 11, fontWeight: 900 }}>
+                      ⚑ {g.reportCount} report{g.reportCount === 1 ? "" : "s"}
+                    </span>
+                    <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{g.message.groupName}</span>
+                    <span style={{ color: "rgba(255,255,255,0.45)", fontSize: 11 }}>{new Date(g.firstReportedAt).toLocaleDateString()}</span>
+                    {g.message.hidden && (
+                      <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 700 }}>already hidden</span>
+                    )}
+                  </div>
+                  <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginBottom: 4 }}>
+                    <strong style={{ color: "white" }}>{g.message.senderName}</strong> wrote:
+                  </div>
+                  <div style={{ color: "white", fontSize: 14, lineHeight: 1.6, padding: "8px 12px", borderRadius: 10, background: "rgba(255,255,255,0.06)" }}>
+                    {g.message.content}
+                  </div>
+                  {g.reasons.length > 0 && (
+                    <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, marginTop: 6 }}>
+                      Reasons: {g.reasons.join(" · ")}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    {!g.message.hidden && (
+                      <button disabled={busy} onClick={() => actOnReport(g.message.id, "hide_resolve")} style={btnPrimary}>
+                        Hide & resolve
+                      </button>
+                    )}
+                    <button disabled={busy} onClick={() => actOnReport(g.message.id, "resolve")} style={btnGhost}>
+                      Dismiss (message is fine)
+                    </button>
+                  </div>
+                </div>
               ))}
             </>
           )}

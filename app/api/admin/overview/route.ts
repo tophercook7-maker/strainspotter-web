@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   try {
     const admin = getSupabaseAdmin();
 
-    const [profilesRes, groupsRes, modsRes, feedbackRes] = await Promise.all([
+    const [profilesRes, groupsRes, modsRes, feedbackRes, reportsRes] = await Promise.all([
       admin
         .from("business_profiles")
         .select("id, user_id, role, business_name, region, license_number, verified, directory_opt_in, moderator_volunteer, moderator_active, created_at")
@@ -31,6 +31,10 @@ export async function GET(req: NextRequest) {
         .select("thread_id, user_id, role")
         .eq("role", "moderator"),
       admin.from("feedback").select("status"),
+      admin
+        .from("chat_reports")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "open"),
     ]);
 
     for (const r of [profilesRes, groupsRes, modsRes, feedbackRes]) {
@@ -80,6 +84,7 @@ export async function GET(req: NextRequest) {
       },
       moderatorBox: groups,
       feedbackCounts,
+      openReports: reportsRes.count ?? 0,
     });
   } catch (e) {
     return NextResponse.json(

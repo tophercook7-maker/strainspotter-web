@@ -534,6 +534,24 @@ export default function ScannerPage() {
         });
         setPlantResult(pd);
         setScanState("done");
+        // Non-blocking history save — plant scans belong in History too.
+        if (pd.plantAssessment) {
+          const pa = pd.plantAssessment;
+          const age = pa.estimatedAgeWeeks
+            ? `${pa.estimatedAgeWeeks.min}–${pa.estimatedAgeWeeks.max} wk`
+            : null;
+          import("@/app/actions/savePlantScanHistory")
+            .then(({ savePlantScanHistory }) =>
+              savePlantScanHistory({
+                userId: auth?.user?.id ?? null,
+                stageLabel: pa.stage,
+                healthScore: pa.healthScore,
+                ageLabel: age,
+                result: pd as unknown as Record<string, unknown>,
+              })
+            )
+            .catch(() => {});
+        }
       } catch (e) {
         if (e instanceof PlantDoctorSubscriptionRequiredError) {
           setShowPaywall(true);

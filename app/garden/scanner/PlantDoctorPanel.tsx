@@ -189,6 +189,17 @@ export default function PlantDoctorPanel({
         </div>
       )}
 
+      <a
+        href="/garden/grow-coach"
+        style={{
+          display: "block", textAlign: "center", width: "100%", padding: "14px 18px",
+          borderRadius: 14, border: "none", marginBottom: 10,
+          background: "linear-gradient(135deg, #43A047, #2E7D32)",
+          color: "white", fontWeight: 800, fontSize: 15, textDecoration: "none",
+        }}
+      >
+        🩺 Open Grow Doctor{pa && pa.stage !== "unclear" ? ` — ${STAGE_LABELS[pa.stage]} guidance` : ""}
+      </a>
       <button
         onClick={onReset}
         style={{
