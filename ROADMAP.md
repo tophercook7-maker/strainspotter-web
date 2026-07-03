@@ -80,6 +80,16 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 - ⬜ Thin real community slice (replace "Coming v2.0").
 - ⬜ Accessibility / WCAG AA pass on the glass UI.
 
+## Phase 6 — Plant Doctor & grower platform  🟡
+*Strategy shift (2026-07-03, owner): strain ID from a bud photo is capped by
+biology — but stage, age, and health of a LIVE PLANT are photo-assessable at
+near-100%. Lead with what we can be right about.*
+- ✅ **Plant Doctor scan mode shipped (2026-07-03)**: scanner now has a Strain ID / Plant Doctor toggle. Plant mode calls `/api/grow-doctor/diagnose` (upgraded to `grow-doctor-v2`): whole-plant assessment — **health score 0-100 + vigor, fine-grained stage (seedling → harvest-ready), estimated age range (weeks from sprout), weeks into flower, estimated weeks to harvest, trichome state, indica/sativa morphology read (never claims a strain)** — plus the existing ranked problem diagnoses / severity / do-this-now actions. Normalizer in `lib/scanner/plantAssessment.ts` (8 tests, no API spend); client in `lib/scanner/plantDoctorClient.ts`; panel `app/garden/scanner/PlantDoctorPanel.tsx`. ⬜ still: one real-photo prod sanity scan (owner-triggered, costs pennies); feed stage into grow-coach deep links; save plant scans to history.
+- ✅ **Flywheel UNBLOCKED (2026-07-03)**: `scan_corrections` + `scan_feedback` tables created in prod (`018_scan_flywheel_tables.sql`, applied via management API). The feedback routes were already writing to them non-blocking — inserts silently failed table-less until now. ⬜ next: re-fit calibration `nameInImage` stratum once rows accumulate.
+- ✅ **Dispensary finder upgraded (2026-07-03)**: `/api/dispensaries` now returns coordinates (was silently missing → distance/directions were broken for live results), med/rec classification from OSM `cannabis:medical`/`cannabis:recreational` tags, website/phone, node+way dedupe; UI adds Medical/Recreational filter chips + badges. Free (Overpass), no key. ⬜ later: state-legality banner; paid data source if OSM coverage disappoints.
+- ✅ **Seed finder expanded (2026-07-03)**: `/garden/seed-vendors` directory grown to 27 real seed banks/breeders/marketplaces with honest descriptions + tag filters.
+- 🟡 **B2B Connect (growers ⇄ labs ⇄ dispensaries)**: schema LIVE in prod (`017_b2b_connect.sql`) — `business_profiles` (extended in place: role grower/lab/dispensary/breeder/processor, license #, verified flag, directory opt-in) + `connection_requests` (mutual-consent contact exchange; contact info released ONLY via `get_connection_contact()` on accepted connections; consumers excluded at RLS). Design doc: `docs/b2b-connect.md`. ⬜ next: API routes (`/api/b2b/*`), directory + request UI, admin verify flow, decide pricing (business tier).
+
 ---
 
 ## Needs the owner (blocks specific items)

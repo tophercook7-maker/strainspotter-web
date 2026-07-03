@@ -31,7 +31,7 @@ const VENDORS: SeedVendor[] = [
   {
     id: "seed-3", name: "Mephisto Genetics", website: "https://www.mephistogenetics.com",
     description: "Premier autoflower breeder known for exceptional quality. Limited drops sell out fast. Their genetics produce incredible autos.",
-    tags: ["Autoflower", "Premium", "Breeder Direct", "Limited Drops"], rating: 4.9, shipping: "US: 3-7 days", featured: true,
+    tags: ["Autoflower", "Premium", "Breeder-Direct", "Limited Drops"], rating: 4.9, shipping: "US: 3-7 days", featured: true,
   },
   {
     id: "seed-4", name: "Multiverse Beans", website: "https://multiversebeans.com",
@@ -62,6 +62,96 @@ const VENDORS: SeedVendor[] = [
     id: "seed-9", name: "STRNG Seeds", website: "https://strngseeds.com",
     description: "Premium US-grown cannabis seeds from trusted American farmers. 100% federally legal with grow kits, feminized, autoflower, and platinum strains. Backed by 100,000+ happy customers.",
     tags: ["US-Based", "Premium", "Grow Kits", "Feminized", "Autoflower", "Legal"], rating: 4.9, shipping: "US: 2-5 days", featured: true,
+  },
+  {
+    id: "seed-10", name: "Royal Queen Seeds", website: "https://www.royalqueenseeds.com",
+    description: "One of Europe's largest seed companies with extensive feminized, autoflower, and CBD lines. Solid genetics backed by a deep library of free grow guides.",
+    tags: ["EU-Based", "Feminized", "Autoflower", "Breeder-Direct"], rating: 4.6, shipping: "EU: 2-5 days, US store available", featured: true,
+  },
+  {
+    id: "seed-11", name: "Sensi Seeds", website: "https://sensiseeds.com",
+    description: "One of the oldest seed banks in the world, operating since 1985. Keeper of classic genetics like Skunk #1, Northern Lights, and Jack Herer.",
+    tags: ["EU-Based", "Classic Genetics", "Breeder-Direct", "Feminized"], rating: 4.6, shipping: "EU: 2-5 days, ships internationally", featured: true,
+  },
+  {
+    id: "seed-12", name: "Barney's Farm", website: "https://www.barneysfarm.com",
+    description: "Long-running Amsterdam breeder with multiple Cannabis Cup wins. Feminized and autoflower versions of well-known house strains like LSD and Pineapple Chunk.",
+    tags: ["EU-Based", "Breeder-Direct", "Feminized", "Award-Winning"], rating: 4.5, shipping: "EU/US: 7-14 days", featured: false,
+  },
+  {
+    id: "seed-13", name: "Dutch Passion", website: "https://dutch-passion.com",
+    description: "Amsterdam seed company founded in 1987 and a pioneer of feminized seeds. Strong autoflower lineup alongside their classic photoperiod catalog.",
+    tags: ["EU-Based", "Breeder-Direct", "Feminized", "Autoflower"], rating: 4.6, shipping: "EU: 2-5 days, ships internationally", featured: false,
+  },
+  {
+    id: "seed-14", name: "Herbies Seeds", website: "https://herbiesheadshop.com",
+    description: "Long-running international reseller with a large multi-breeder catalog. Germination guarantee and frequent promotions, though overseas shipping takes time.",
+    tags: ["International", "Multiple Breeders", "Germination Guarantee"], rating: 4.4, shipping: "Worldwide: 7-21 days", featured: false,
+  },
+  {
+    id: "seed-15", name: "Crop King Seeds", website: "https://www.cropkingseeds.com",
+    description: "Canadian seed bank operating since 2005 with feminized, autoflower, and CBD lines. Germination guarantee and reliable North American shipping.",
+    tags: ["Canada-Based", "Feminized", "Autoflower", "Germination Guarantee"], rating: 4.3, shipping: "US/Canada: 5-10 days", featured: false,
+  },
+  {
+    id: "seed-16", name: "MSNL", website: "https://www.marijuana-seeds.nl",
+    description: "UK-run seed bank selling Dutch genetics since 1999. Known for stealth shipping, value pricing, and regular promotions rather than boutique exclusives.",
+    tags: ["EU-Based", "Stealth Shipping", "Value"], rating: 4.4, shipping: "US: 7-14 days", featured: false,
+  },
+  {
+    id: "seed-17", name: "FastBuds", website: "https://2fast4buds.com",
+    description: "Autoflower-focused breeder adapting popular US photoperiod genetics into modern autos. One of the most recognized names in the autoflower space.",
+    tags: ["Autoflower", "Breeder-Direct", "EU-Based"], rating: 4.5, shipping: "EU/US: 7-14 days", featured: false,
+  },
+  {
+    id: "seed-18", name: "Ethos Genetics", website: "https://ethosgenetics.com",
+    description: "Colorado breeder known for data-driven breeding and detailed strain documentation. Popular with US growers looking for stable, well-tested lines.",
+    tags: ["US-Based", "Breeder-Direct", "Premium Genetics"], rating: 4.6, shipping: "US: 3-7 days", featured: false,
+  },
+  {
+    id: "seed-19", name: "Humboldt Seed Company", website: "https://humboldtseedcompany.com",
+    description: "California breeder from Humboldt County known for large-scale pheno hunts. Feminized and autoflower lines widely stocked by dispensaries and resellers.",
+    tags: ["US-Based", "Breeder-Direct", "Feminized", "Autoflower"], rating: 4.7, shipping: "US: 3-7 days", featured: true,
+  },
+  {
+    id: "seed-20", name: "Attitude Seed Bank", website: "https://www.cannabis-seeds-bank.co.uk",
+    description: "Veteran UK reseller with one of the largest multi-breeder catalogs anywhere. A long track record, though international delivery can be slow.",
+    tags: ["EU-Based", "Multiple Breeders", "Huge Selection"], rating: 4.4, shipping: "Worldwide: 7-21 days", featured: false,
+  },
+  {
+    id: "seed-21", name: "Seed Supreme", website: "https://seedsupreme.com",
+    description: "Multi-breeder reseller with a wide catalog and frequent budget-friendly deals. A decent option for value shoppers who don't mind longer delivery windows.",
+    tags: ["Multiple Breeders", "Value", "Huge Selection"], rating: 4.2, shipping: "US: 7-14 days", featured: false,
+  },
+  {
+    id: "seed-22", name: "Growers Choice Seeds", website: "https://www.growerschoiceseeds.com",
+    description: "US-facing seed bank selling lab-tested feminized and autoflower seeds with a 90% germination guarantee. Straightforward catalog aimed at home growers.",
+    tags: ["US-Based", "Feminized", "Autoflower", "Germination Guarantee"], rating: 4.3, shipping: "US: 5-10 days", featured: false,
+  },
+  {
+    id: "seed-23", name: "Neptune Seed Bank", website: "https://neptuneseedbank.com",
+    description: "US reseller carrying boutique and hype breeders with frequent limited drops. Good place to hunt current genetics, and orders often include freebies.",
+    tags: ["US-Based", "Rare Genetics", "Multiple Breeders", "Freebies"], rating: 4.6, shipping: "US: 3-7 days", featured: false,
+  },
+  {
+    id: "seed-24", name: "Great Lakes Genetics", website: "https://www.greatlakesgenetics.com",
+    description: "Michigan-based reseller focused on regular seeds from respected small breeders. Old-school operation known for fast shipping and generous freebies.",
+    tags: ["US-Based", "Regular Seeds", "Breeders", "Freebies"], rating: 4.7, shipping: "US: 2-5 days", featured: false,
+  },
+  {
+    id: "seed-25", name: "Nirvana Shop", website: "https://www.nirvanashop.com",
+    description: "Dutch seed bank operating since 1995 with affordable in-house classics. Not a boutique catalog, but a reliable budget option with decades of history.",
+    tags: ["EU-Based", "Breeder-Direct", "Value"], rating: 4.3, shipping: "Worldwide: 7-21 days", featured: false,
+  },
+  {
+    id: "seed-26", name: "Paradise Seeds", website: "https://www.paradise-seeds.com",
+    description: "Amsterdam breeder founded in 1994 with multiple Cannabis Cup wins. Stable feminized and autoflower lines, with classics like Wappa and Sensi Star.",
+    tags: ["EU-Based", "Breeder-Direct", "Feminized", "Award-Winning"], rating: 4.4, shipping: "EU: 2-5 days, ships internationally", featured: false,
+  },
+  {
+    id: "seed-27", name: "Green House Seed Co", website: "https://greenhouseseeds.nl",
+    description: "Amsterdam seed company behind the Strain Hunters project, with a long list of cup wins. House genetics include Super Lemon Haze and White Widow lines.",
+    tags: ["EU-Based", "Breeder-Direct", "Award-Winning"], rating: 4.3, shipping: "EU/Worldwide: 7-14 days", featured: false,
   },
 ];
 
@@ -108,8 +198,8 @@ export default function SeedVendorsPage() {
               <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Seed Vendors</span>
             </div>
             <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
-              Discover trusted seed banks and breeders. Find quality genetics for your next grow
-              from vetted vendors with proven track records.
+              A directory of well-known seed banks, breeders, and marketplaces. Use the search
+              and tag filters below to browse by region, seed type, and specialty.
             </div>
           </div>
 

@@ -92,7 +92,7 @@ async function blobToJpegDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-async function compressImage(file: File): Promise<string> {
+export async function compressImage(file: File): Promise<string> {
   const isHeic =
     file.type === "image/heic" ||
     file.type === "image/heif" ||

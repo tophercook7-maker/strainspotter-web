@@ -15,6 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSubscription } from "@/lib/auth/serverGate";
 import { logger } from "@/lib/observability/log";
 import { checkRateLimit } from "@/lib/observability/rateLimit";
+import { normalizePlantAssessment } from "@/lib/scanner/plantAssessment";
 
 // Runs on Fluid Compute Node.js. Edge's 25s cap is too tight for
 // multi-image Vision diagnostics and the rate-limit/idempotency layer
@@ -60,6 +61,26 @@ What to do differently next time to prevent this. One or two practical tips, not
 - Use "experienced growers commonly" and "the typical practice is" framing.
 - This is plant health diagnosis, not human health.
 
+═══ PLANT ASSESSMENT (always, even for healthy plants) ═══
+Beyond problem diagnosis, assess the WHOLE plant. These are things a photo CAN
+tell you reliably — be specific and confident here (unlike strain ID):
+
+- healthScore 0-100: overall plant health. 90+ = thriving, no visible issues.
+  70-89 = healthy with minor cosmetic issues. 40-69 = struggling, needs action.
+  <40 = serious trouble. Score the plant you SEE, not the worst-case.
+- stage, finely: seedling / early-veg / late-veg / pre-flower (transition,
+  first pistils) / early-flower (weeks 1-3) / mid-flower (weeks 4-6, bulking) /
+  late-flower (weeks 7+, ripening) / harvest-ready / harvested / unclear.
+- estimatedAgeWeeks: honest RANGE of weeks since sprout, judged from node
+  count, height, leaf development, structure. Wide range is fine ("4-7").
+- weeksIntoFlower: if flowering, range of weeks since flip/first flower. null otherwise.
+- estimatedWeeksToHarvest: if flowering, range of weeks until typical harvest
+  window based on pistil/trichome/calyx development. null if not in flower.
+- trichomes: clear / cloudy / mixed / amber / not-visible (only if buds visible close-up).
+- morphology: indica-leaning (wide leaflets, squat) / sativa-leaning (narrow
+  leaflets, stretchy) / balanced / unclear. This is honest phenotype reading,
+  NOT strain ID — never claim a specific strain from morphology.
+
 ═══ OUTPUT FORMAT ═══
 Return ONE valid JSON object, no markdown, no commentary, no code fences.
 
@@ -69,6 +90,18 @@ Return ONE valid JSON object, no markdown, no commentary, no code fences.
     "imageQuality": "clear" | "blurry" | "too-dark" | "too-far",
     "stageObserved": "seedling" | "veg" | "flower" | "harvested" | "unclear",
     "affectedArea": "lower-leaves" | "upper-leaves" | "all-leaves" | "stems" | "buds" | "roots-pot" | "whole-plant" | "unclear"
+  },
+  "plantAssessment": {
+    "healthScore": 0-100,
+    "vigor": "thriving" | "healthy" | "struggling" | "critical",
+    "stage": "seedling" | "early-veg" | "late-veg" | "pre-flower" | "early-flower" | "mid-flower" | "late-flower" | "harvest-ready" | "harvested" | "unclear",
+    "estimatedAgeWeeks": { "min": number, "max": number } | null,
+    "weeksIntoFlower": { "min": number, "max": number } | null,
+    "estimatedWeeksToHarvest": { "min": number, "max": number } | null,
+    "trichomes": "clear" | "cloudy" | "mixed" | "amber" | "not-visible",
+    "morphology": "indica-leaning" | "sativa-leaning" | "balanced" | "unclear",
+    "morphologyNotes": "1 sentence on leaf/structure evidence. Never name a strain.",
+    "healthSummary": "1-2 sentence plain-language overall read of the plant"
   },
   "diagnoses": [
     {
@@ -181,13 +214,17 @@ function normalizeDiagnosis(raw: any) {
     .sort((a: any, b: any) => b.confidence - a.confidence);
 
   return {
-    schemaVersion: "grow-doctor-v1",
+    schemaVersion: "grow-doctor-v2",
     imageAssessment: {
       isCannabisPlant: isCannabis,
       imageQuality: pickEnum(ia.imageQuality, VALID_QUALITY, "clear"),
       stageObserved: pickEnum(ia.stageObserved, VALID_STAGE_OBS, "unclear"),
       affectedArea: pickEnum(ia.affectedArea, VALID_AFFECTED, "unclear"),
     },
+    // Whole-plant read (health score, stage, age, harvest window) — the part
+    // of "plant doctor" a photo CAN answer near-reliably. Always present;
+    // null-safe when the plant isn't cannabis.
+    plantAssessment: isCannabis ? normalizePlantAssessment(raw?.plantAssessment) : null,
     diagnoses,
     severity: pickEnum(raw?.severity, VALID_SEVERITIES, "low"),
     severityReasoning:

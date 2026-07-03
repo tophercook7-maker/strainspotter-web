@@ -3,6 +3,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { orchestrateScan, ScanSubscriptionRequiredError } from "@/lib/scanner/scanOrchestrator";
+import {
+  diagnosePlant,
+  PlantDoctorSubscriptionRequiredError,
+  type PlantDoctorResult,
+} from "@/lib/scanner/plantDoctorClient";
+import PlantDoctorPanel from "./PlantDoctorPanel";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
 import ScanPaywall from "@/components/ScanPaywall";
@@ -414,6 +420,10 @@ export default function ScannerPage() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [result, setResult] = useState<SimpleResult | null>(null);
+  // Scanner mode: "strain" = spot the strain (label/bud), "plant" = Plant
+  // Doctor (live plant: stage, age, health, problems).
+  const [scanMode, setScanMode] = useState<"strain" | "plant">("strain");
+  const [plantResult, setPlantResult] = useState<PlantDoctorResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -472,6 +482,7 @@ export default function ScannerPage() {
       return next;
     });
     setResult(null);
+    setPlantResult(null);
     setError(null);
     setScanState("ready");
   }, []);
@@ -484,12 +495,14 @@ export default function ScannerPage() {
       return next;
     });
     setResult(null);
+    setPlantResult(null);
   };
 
   const clearAll = () => {
     setImages([]);
     setPreviews([]);
     setResult(null);
+    setPlantResult(null);
     setError(null);
     setScanState("idle");
     setIsFavorited(false);
@@ -508,6 +521,26 @@ export default function ScannerPage() {
 
     setScanState("scanning");
     setError(null);
+
+    // ── Plant Doctor mode: live-plant read (stage, age, health, problems) ──
+    if (scanMode === "plant") {
+      try {
+        const pd = await diagnosePlant(images, {
+          authToken: auth?.session?.access_token || undefined,
+        });
+        setPlantResult(pd);
+        setScanState("done");
+      } catch (e) {
+        if (e instanceof PlantDoctorSubscriptionRequiredError) {
+          setShowPaywall(true);
+          setScanState("ready");
+        } else {
+          setError(e instanceof Error ? e.message : "Plant Doctor scan failed. Please try again.");
+          setScanState("ready");
+        }
+      }
+      return;
+    }
 
     try {
       const authToken = auth?.session?.access_token || undefined;
@@ -811,6 +844,37 @@ export default function ScannerPage() {
           <MembershipCTA variant="scanner-status" />
         </div>
 
+        {/* ── MODE TOGGLE: Strain ID vs Plant Doctor ── */}
+        {scanState !== "done" && (
+          <div style={{ display: "flex", gap: 8, marginTop: 18, padding: 4, borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            {([
+              { key: "strain" as const, icon: "🔍", label: "Strain ID", hint: "bud, label, packaging" },
+              { key: "plant" as const, icon: "🩺", label: "Plant Doctor", hint: "live plant: age, health" },
+            ]).map((m) => (
+              <button
+                key={m.key}
+                onClick={() => { if (scanState !== "scanning") { setScanMode(m.key); setResult(null); setPlantResult(null); } }}
+                style={{
+                  flex: 1,
+                  padding: "10px 8px",
+                  borderRadius: 11,
+                  border: "none",
+                  cursor: scanState === "scanning" ? "default" : "pointer",
+                  background: scanMode === m.key ? "linear-gradient(135deg, #43A047, #2E7D32)" : "transparent",
+                  transition: "background 0.2s ease",
+                }}
+              >
+                <div style={{ color: scanMode === m.key ? "#fff" : "rgba(255,255,255,0.75)", fontWeight: 800, fontSize: 13 }}>
+                  {m.icon} {m.label}
+                </div>
+                <div style={{ color: scanMode === m.key ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.45)", fontSize: 10, marginTop: 2 }}>
+                  {m.hint}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* ── UPLOAD AREA ── */}
         {scanState !== "done" && (
           <div
@@ -876,7 +940,7 @@ export default function ScannerPage() {
                   Analyzing...
                 </p>
                 <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginTop: 6 }}>
-                  AI is identifying your strain
+                  {scanMode === "plant" ? "Reading your plant — stage, health, issues" : "AI is identifying your strain"}
                 </p>
               </div>
             ) : images.length > 0 ? (
@@ -1071,6 +1135,13 @@ export default function ScannerPage() {
         )}
 
         {/* ── RESULT CARD ── */}
+        {/* ── PLANT DOCTOR RESULT ── */}
+        {plantResult && scanState === "done" && (
+          <div style={{ marginTop: 24 }}>
+            <PlantDoctorPanel result={plantResult} onReset={clearAll} />
+          </div>
+        )}
+
         {result && scanState === "done" && (
           <div style={{ marginTop: 12 }}>
             {/* ── Phase 2: "Doesn't look like cannabis" banner ── */}

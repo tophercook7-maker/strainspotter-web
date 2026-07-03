@@ -13,7 +13,16 @@ interface Dispensary {
   openingHours?: string | null;
   lat?: number;
   lng?: number;
+  kind?: "medical" | "recreational" | "both" | "unknown";
+  website?: string | null;
+  phone?: string | null;
 }
+
+const KIND_BADGE: Record<string, { label: string; color: string }> = {
+  medical: { label: "Medical", color: "#42A5F5" },
+  recreational: { label: "Recreational", color: "#66BB6A" },
+  both: { label: "Med + Rec", color: "#AB47BC" },
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const glass: React.CSSProperties = {
@@ -57,6 +66,7 @@ export default function DispensariesPage() {
   const [radius, setRadius] = useState(25);
   const [search, setSearch] = useState("");
   const [source, setSource] = useState<"overpass" | "local" | null>(null);
+  const [kindFilter, setKindFilter] = useState<"all" | "medical" | "recreational">("all");
 
   const getLocation = () => {
     setLoading(true);
@@ -128,9 +138,14 @@ export default function DispensariesPage() {
     if (userLocation) fetchDispensaries(userLocation.lat, userLocation.lng, r);
   };
 
-  const filtered = dispensaries.filter((d) =>
-    !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.address?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = dispensaries.filter((d) => {
+    if (search && !d.name.toLowerCase().includes(search.toLowerCase()) && !d.address?.toLowerCase().includes(search.toLowerCase())) return false;
+    // Med/rec filter: "both" satisfies either side. Unknowns only show on All —
+    // OSM med/rec tagging is sparse, so most shops are honestly "unknown".
+    if (kindFilter === "medical") return d.kind === "medical" || d.kind === "both";
+    if (kindFilter === "recreational") return d.kind === "recreational" || d.kind === "both";
+    return true;
+  });
 
   const openDirections = (d: Dispensary) => {
     if (d.lat && d.lng) {
@@ -153,9 +168,31 @@ export default function DispensariesPage() {
               <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Dispensaries</span>
             </div>
             <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
-              Find cannabis dispensaries near you. We search OpenStreetMap data to locate
-              licensed dispensaries within your selected radius.
+              Find medical and recreational dispensaries near you. We search OpenStreetMap
+              data within your selected radius — availability depends on your state&apos;s laws.
             </div>
+          </div>
+
+          {/* Med / Rec filter */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            {([
+              { key: "all" as const, label: "All" },
+              { key: "medical" as const, label: "🏥 Medical" },
+              { key: "recreational" as const, label: "🛍️ Recreational" },
+            ]).map((k) => (
+              <button
+                key={k.key}
+                onClick={() => setKindFilter(k.key)}
+                style={{
+                  flex: 1, padding: "8px 12px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  background: kindFilter === k.key ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
+                  color: kindFilter === k.key ? "#81C784" : "rgba(255,255,255,0.65)",
+                  border: `1px solid ${kindFilter === k.key ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                }}
+              >
+                {k.label}
+              </button>
+            ))}
           </div>
 
           {/* Search */}
@@ -254,7 +291,18 @@ export default function DispensariesPage() {
 
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{d.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                        <span style={{ color: "white", fontWeight: 700, fontSize: 15 }}>{d.name}</span>
+                        {d.kind && KIND_BADGE[d.kind] && (
+                          <span style={{
+                            padding: "1px 8px", borderRadius: 99, fontSize: 10, fontWeight: 800,
+                            color: KIND_BADGE[d.kind].color, border: `1px solid ${KIND_BADGE[d.kind].color}55`,
+                            background: `${KIND_BADGE[d.kind].color}22`,
+                          }}>
+                            {KIND_BADGE[d.kind].label}
+                          </span>
+                        )}
+                      </div>
 
                       {d.address && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
@@ -293,6 +341,21 @@ export default function DispensariesPage() {
                         >
                           Directions ↗
                         </button>
+
+                        {d.website && (
+                          <a
+                            href={d.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600,
+                              background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)",
+                              border: "1px solid rgba(255,255,255,0.1)", textDecoration: "none",
+                            }}
+                          >
+                            Website ↗
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
