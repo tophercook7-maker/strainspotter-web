@@ -54,9 +54,26 @@ Default off. Turn on with `SCANNER_LABEL_MATCH=1`, verify on a few real labeled
 photos, then make default — same pattern as `SCANNER_CALIBRATION` /
 `SCANNER_FREE_NAMING`.
 
+## Alias safety — blocklist + vetted supplement
+
+Two guards in `labelMatch.ts`:
+
+- **BLOCKLIST** — ubiquitous label terms (THC, CBD, CBG, BHO, AKA, OG, Kush,
+  indica, sativa, hybrid, gram, …) can never resolve to a strain, via any path.
+  Real names that *contain* those words still work ("OG Kush" → `og-kush`).
+- **SUPPLEMENTAL_ALIASES** — a small, hand-vetted map for famous strains the
+  catalog left aliasless (ATF → alaskan-thunder-fuck, PBB → peanut-butter-breath,
+  GDP spellings). Extend **by hand only**.
+
+**Auto-generated initialisms were tried and rejected.** Generating acronyms from
+names produced dangerous maps: `THC → tahoe-hydro-champagne`, `BHO`/`AKA` → strains,
+and obscure cultivars hijacking famous shorthand (`GDP → grand-doggy-purps`). The
+`curated` flag is full of seed-bank crosses, so it didn't isolate "popular." The
+existing 103 aliases already cover common shorthand; enrichment must be vetted,
+never generated. See `scripts/recall-ab.mjs` note in the commit history.
+
 ## Next
-- Enrich catalog aliases (only 103 / 10,000 strains have any) — more aliases =
-  more label variants resolve.
 - Dedup the catalog's near-duplicate entries at the source (build script), so
   canonicalization isn't load-bearing.
-- Consider a small OCR-confusable normalization (0↔O, 1↔l) before fuzzy.
+- Pull vetted aliases from the Supabase 35k `strains` table (human-reviewed).
+- A small OCR-confusable normalization (0↔O, 1↔l) before fuzzy.
