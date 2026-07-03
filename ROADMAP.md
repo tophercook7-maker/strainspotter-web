@@ -62,8 +62,9 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 - ⬜ Harden storage/provenance: finish Supabase mirror (off the `/Volumes/TheVault` single drive); immutable source/license/consent per row.
 - ⬜ Explore data partnerships / licensed datasets.
 
-## Phase 3 — Monetization (make it transact)  ⬜
-- ⬜ Replace placeholder Stripe price IDs (annual, Founder, top-up-100); set `STRIPE_WEBHOOK_SECRET` + RevenueCat secrets.
+## Phase 3 — Monetization (make it transact)  🟡
+- ✅ **Stripe is LIVE (verified 2026-07-03 via API)**: all five prices real + active in live mode (Member $4.99/mo, Pro $9.99/mo, top-ups $2.99/$4.99/$9.99), `STRIPE_SECRET_KEY` (restricted live) + `STRIPE_WEBHOOK_SECRET` + publishable key set in Vercel prod, and the webhook endpoint `https://www.strainspotter.app/api/stripe/webhook` registered + enabled (5 events). The old "placeholder price IDs" note was stale. ⬜ remaining: one real end-to-end purchase test (buy a $2.99 top-up, confirm scans_remaining increments, refund from the Stripe dashboard).
+- ⬜ RevenueCat — DEFERRED until a native store build ships. Apple/Google force their own billing inside native apps (Stripe is banned there for digital goods); RevenueCat wraps StoreKit/Play Billing and posts to the already-built `/api/iap/webhook`. Web/PWA (current strategy) transacts fine on Stripe alone.
 - ✅ Founder oversell race fixed — `/api/stripe/checkout` enforces the 1,000 cap with a LIVE count (`lib/billing/founder.ts`, fail-closed on DB error so it can't oversell); counter route refactored to share it; 4 tests. (Residual: ~concurrent buyers at the very last slot — acceptable; true zero-race needs a DB reservation.)
 - ⬜ Post-checkout auto-login / account sync.
 - ⬜ Apple IAP products (App Store Connect + RevenueCat); **Google Play Billing**.
