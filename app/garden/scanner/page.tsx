@@ -10,6 +10,8 @@ import {
 } from "@/lib/scanner/plantDoctorClient";
 import PlantDoctorPanel from "./PlantDoctorPanel";
 import WhereToFind from "./WhereToFind";
+import ShareResultButton from "./ShareResultButton";
+import { buildStrainCardData } from "@/lib/share/resultCard";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
 import ScanPaywall from "@/components/ScanPaywall";
@@ -1168,6 +1170,24 @@ export default function ScannerPage() {
         {/* ── AVAILABLE NEARBY (confident strain pick + a dispensary carries it) ── */}
         {result && scanState === "done" && result.primarySlug && (
           <WhereToFind slug={result.primarySlug} token={auth?.session?.access_token} />
+        )}
+
+        {/* ── SHARE CARD — "here's exactly what the AI saw" ── */}
+        {result && scanState === "done" && (
+          <div style={{ marginTop: 14 }}>
+            <ShareResultButton
+              data={buildStrainCardData({
+                strainName: result.strainName,
+                confidence: result.confidence,
+                confidenceTier: result.confidenceTier,
+                hasPrimaryPick: result.hasPrimaryPick,
+                headline: result.headline,
+                ocrText: result.ocrText,
+                nameInImage: result.v2Candidates?.[0]?.matchSignals?.nameInImage ?? false,
+                visualTraitsMatchPercent: result.v2Candidates?.[0]?.matchSignals?.visualTraitsMatchPercent,
+              })}
+            />
+          </div>
         )}
 
         {result && scanState === "done" && (

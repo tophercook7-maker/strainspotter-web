@@ -7,6 +7,8 @@
 
 import { STAGE_LABELS, formatWeekRange, type PlantAssessment } from "@/lib/scanner/plantAssessment";
 import type { PlantDoctorResult } from "@/lib/scanner/plantDoctorClient";
+import { buildPlantCardData } from "@/lib/share/resultCard";
+import ShareResultButton from "./ShareResultButton";
 
 const glass: React.CSSProperties = {
   background: "rgba(255,255,255,0.10)",
@@ -189,6 +191,19 @@ export default function PlantDoctorPanel({
         </div>
       )}
 
+      {pa && (
+        <ShareResultButton
+          data={buildPlantCardData({
+            stageLabel: STAGE_LABELS[pa.stage],
+            healthScore: pa.healthScore,
+            vigor: pa.vigor,
+            ageLabel: formatWeekRange(pa.estimatedAgeWeeks),
+            harvestLabel: formatWeekRange(pa.estimatedWeeksToHarvest),
+            healthSummary: pa.healthSummary,
+            topIssue: result.diagnoses[0]?.cause ?? null,
+          })}
+        />
+      )}
       <a
         href="/garden/grow-coach"
         style={{
