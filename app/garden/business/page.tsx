@@ -8,7 +8,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import TopNav from "../_components/TopNav";
+import AuthScreen from "@/components/AuthScreen";
 
 let useOptionalAuth: () => any;
 try {
@@ -115,6 +117,7 @@ export default function BusinessPage() {
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
 
   // Profile form state
   const [fRole, setFRole] = useState<string>("grower");
@@ -315,13 +318,27 @@ export default function BusinessPage() {
               <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
                 The directory is business-to-business only. Create a profile as a grower,
                 lab, dispensary, breeder, or processor to browse and connect.
-                {!token && " You'll need to sign in with an active membership first."}
+                {!token && " Start by creating a free account — it takes a minute."}
               </div>
-              {token && (
+              {token ? (
                 <button onClick={() => setTab("profile")} style={{ padding: "12px 22px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
                   Create business profile
                 </button>
+              ) : (
+                <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+                  <button onClick={() => setShowAuth(true)} style={{ padding: "12px 22px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                    Sign in / Create free account
+                  </button>
+                  <Link href="/pricing" style={{ padding: "12px 22px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.1)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
+                    See plans
+                  </Link>
+                </div>
               )}
+              <div style={{ marginTop: 16 }}>
+                <Link href="/garden" style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
+                  ← Explore the rest of StrainSpotter
+                </Link>
+              </div>
             </div>
           )}
 
@@ -623,6 +640,17 @@ export default function BusinessPage() {
           )}
         </div>
       </main>
+
+      {showAuth && (
+        <AuthScreen
+          defaultMode="signup"
+          onClose={() => setShowAuth(false)}
+          onSuccess={() => {
+            setShowAuth(false);
+            loadProfile();
+          }}
+        />
+      )}
     </>
   );
 }
