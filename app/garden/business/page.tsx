@@ -61,6 +61,7 @@ interface DirectoryEntry {
   region: string | null;
   bio: string | null;
   verified: boolean;
+  isMe?: boolean;
 }
 
 interface Connection {
@@ -391,13 +392,18 @@ export default function BusinessPage() {
                     <span style={{ fontSize: 20 }}>{roleMeta(d.role).icon}</span>
                     <span style={{ color: "white", fontWeight: 800, fontSize: 15 }}>{d.business_name}</span>
                     {d.verified && <VerifiedBadge />}
+                    {d.isMe && (
+                      <span style={{ color: "#FFD54F", fontSize: 10, fontWeight: 900, border: "1px solid rgba(255,213,79,0.4)", background: "rgba(255,213,79,0.1)", borderRadius: 99, padding: "1px 8px" }}>
+                        ★ YOU — this is your live listing
+                      </span>
+                    )}
                   </div>
                   <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, marginTop: 3 }}>
                     {roleMeta(d.role).label}{d.region ? ` · ${d.region}` : ""}
                   </div>
                   {d.bio && <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, lineHeight: 1.6, marginTop: 8 }}>{d.bio}</div>}
 
-                  {requestTo?.id === d.id ? (
+                  {d.isMe ? null : requestTo?.id === d.id ? (
                     <div style={{ marginTop: 12 }}>
                       <textarea
                         value={requestMsg}

@@ -30,11 +30,13 @@ export async function GET(req: NextRequest) {
   const role = searchParams.get("role");
   const q = searchParams.get("q")?.trim().slice(0, 80);
 
+  // NOTE: includes the caller's own listing (flagged isMe below) — hiding it
+  // made every new business think their opt-in failed. The UI renders a "YOU"
+  // badge instead of a Connect button.
   let query = getSupabaseAdmin()
     .from("business_profiles")
     .select(DIRECTORY_COLUMNS)
     .eq("directory_opt_in", true)
-    .neq("id", me.id)
     .order("verified", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(100);
@@ -46,5 +48,9 @@ export async function GET(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "Directory read failed" }, { status: 500 });
   }
-  return NextResponse.json({ profiles: data ?? [], myProfileId: me.id });
+  const profiles = (data ?? []).map((p: Record<string, unknown>) => ({
+    ...p,
+    isMe: p.id === me.id,
+  }));
+  return NextResponse.json({ profiles, myProfileId: me.id });
 }
