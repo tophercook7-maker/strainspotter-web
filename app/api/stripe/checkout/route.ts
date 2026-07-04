@@ -46,10 +46,10 @@ export async function POST(req: NextRequest) {
       sessionParams.customer_email = email;
     }
 
-    // For subscriptions, allow promo codes
-    if (isSubscription) {
-      sessionParams.allow_promotion_codes = true;
-    }
+    // Promo codes on everything — subscriptions AND one-time top-ups.
+    // (Also how a $0 end-to-end pipeline test works: 100%-off code on a
+    // top-up completes checkout with no card and still fires the webhook.)
+    sessionParams.allow_promotion_codes = true;
 
     const session = await getStripeServerClient().checkout.sessions.create(sessionParams);
 
