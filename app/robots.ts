@@ -20,7 +20,15 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: "https://strainspotter.app/sitemap.xml",
+    sitemap: [
+      "https://strainspotter.app/sitemap.xml",
+      // Chunked strain-library sitemaps (35k pages, 10k per chunk) — keep in
+      // step with CHUNKS in app/strains/sitemap.ts.
+      "https://strainspotter.app/strains/sitemap/0.xml",
+      "https://strainspotter.app/strains/sitemap/1.xml",
+      "https://strainspotter.app/strains/sitemap/2.xml",
+      "https://strainspotter.app/strains/sitemap/3.xml",
+    ],
     host: "https://strainspotter.app",
   };
 }

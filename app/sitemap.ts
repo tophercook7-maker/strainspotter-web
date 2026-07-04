@@ -23,6 +23,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/garden/seed-vendors", priority: 0.6, changeFrequency: "weekly" },
     { path: "/garden/community", priority: 0.5, changeFrequency: "daily" },
     { path: "/garden/strains/submit", priority: 0.4, changeFrequency: "monthly" },
+    // Public strain library hub (35k strain pages live in the chunked
+    // sitemaps at /strains/sitemap/[0-3].xml, listed in robots.ts).
+    { path: "/strains", priority: 0.8, changeFrequency: "weekly" },
   ];
 
   return pages.map((p) => ({
