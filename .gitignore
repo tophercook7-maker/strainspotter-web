@@ -60,6 +60,8 @@ node_modules/
 !components/**
 !content/
 !content/**
+!supabase/
+!supabase/**
 !styles/
 !styles/**
 !public/
@@ -107,3 +109,6 @@ node_modules/
 # Build artifacts (stop tracking — regenerated locally/CI)
 !tsconfig.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# supabase CLI cache
+supabase/.temp/
