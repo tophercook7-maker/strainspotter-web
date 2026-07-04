@@ -515,14 +515,30 @@ export default function ScannerPage() {
     setPhotoContributed(null);
   };
 
+  // The one free signup scan: signed-in, unsubscribed, flag still unspent.
+  // Server enforces it atomically; this just decides what UI to show.
+  const freeScanAvailable =
+    isLoggedIn &&
+    tier !== "member" &&
+    tier !== "pro" &&
+    auth?.profile?.free_scan_used === false;
+
   const handleScan = async () => {
     if (images.length === 0 || scanState === "scanning") return;
 
-    // Subscribe-or-pay-wall: anyone without an active subscription must
-    // subscribe before scanning. No free scans, no daily allowance.
+    // Subscribe-or-pay-wall — with two exceptions: signed-out users get the
+    // signup screen (create an account → 1 free scan), and signed-in
+    // non-subscribers with their free scan unspent go straight through
+    // (strain mode only — Plant Doctor stays members-only).
     if (tier !== "member" && tier !== "pro") {
-      setShowPaywall(true);
-      return;
+      if (!isLoggedIn) {
+        setShowAuth(true);
+        return;
+      }
+      if (!freeScanAvailable || scanMode === "plant") {
+        setShowPaywall(true);
+        return;
+      }
     }
 
     setScanState("scanning");
@@ -697,6 +713,9 @@ export default function ScannerPage() {
 
       setResult(simple);
       setScanState("done");
+      // If this was the free signup scan, refresh the profile so the flag
+      // (and the paywall) reflect that it's spent.
+      if (freeScanAvailable) auth?.refreshProfile?.().catch(() => {});
 
       // No client-side scan accounting. Subscription state is server-authoritative;
       // monthly limits (e.g. Member 100/mo) are enforced by /api/scan via the
@@ -868,6 +887,18 @@ export default function ScannerPage() {
         <div style={{ marginTop: 12 }}>
           <MembershipCTA variant="scanner-status" />
         </div>
+
+        {/* ── Free signup scan badge ── */}
+        {freeScanAvailable && scanState !== "done" && (
+          <div style={{
+            marginTop: 14, padding: "12px 16px", borderRadius: 14, textAlign: "center",
+            background: "rgba(76,175,80,0.12)", border: "1px solid rgba(76,175,80,0.35)",
+          }}>
+            <span style={{ color: "#81C784", fontWeight: 800, fontSize: 14 }}>
+              🎁 Your free scan is ready — snap a strain and try it
+            </span>
+          </div>
+        )}
 
         {/* ── MODE TOGGLE: Strain ID vs Plant Doctor ── */}
         {scanState !== "done" && (
@@ -2452,7 +2483,7 @@ export default function ScannerPage() {
                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.65 }}>
                   {isLoggedIn
                     ? "You've got a full suite of cannabis tools waiting for you."
-                    : "Create an account and pick a membership to unlock the full cannabis companion — built for growers, consumers, and dispensary pros. Plans from $4.99/mo."}
+                    : "Create a free account and get 1 free scan — then unlock the full cannabis companion from $4.99/mo. Built for growers, consumers, and dispensary pros."}
                 </div>
               </div>
 

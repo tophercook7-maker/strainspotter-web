@@ -610,15 +610,28 @@ export async function POST(req: NextRequest) {
   let needsRefund = false;
   let refundUserId: string | null = null;
   let refundFromTopup = false;
+  let usedFreeScan = false;
 
   try {
     // ── Subscription gate (Apple-safe, money-protection layer) ──
     // Anyone hitting this endpoint must have a valid Supabase session AND
-    // an active 'member' or 'pro' membership. Free tier was retired May 2026.
-    const gate = await requireSubscription(req);
-    if (gate.ok === false) {
-      log.warn("scan_gate_blocked", { req: reqId });
-      return gate.response;
+    // an active 'member' or 'pro' membership. Free tier was retired May 2026 —
+    // EXCEPT the one free signup scan: a signed-in non-subscriber may claim
+    // exactly one scan per account (atomic flag flip, farm-resistant).
+    const subGate = await requireSubscription(req);
+    let gate: { ok: true; userId: string; tier: "member" | "pro" };
+    if (subGate.ok === true) {
+      gate = subGate;
+    } else {
+      const freeUserId = await claimFreeSignupScan(req);
+      if (!freeUserId) {
+        log.warn("scan_gate_blocked", { req: reqId });
+        return subGate.response;
+      }
+      // Member-equivalent limits for the one free scan.
+      gate = { ok: true, userId: freeUserId, tier: "member" };
+      usedFreeScan = true;
+      log.info("scan_free_signup_claimed", { req: reqId, user: freeUserId });
     }
     // Per-user burst rate limit — Pro: 30/min, Member: 10/min. Backed
     // by Supabase (public.check_rate_limit) so it works across all
@@ -775,7 +788,11 @@ export async function POST(req: NextRequest) {
     // and BEFORE the OpenAI call so a refused user never burns OpenAI
     // cost; if OpenAI later fails we refund_scan() to make the user whole.
     const sb = getSupabaseAdmin();
-    const quotaRpc = await sb.rpc("consume_scan", { p_user_id: gate.userId });
+    // Free signup scan: the atomic flag claim above IS the quota — skip
+    // consume_scan (it would refuse a non-subscriber anyway).
+    const quotaRpc = usedFreeScan
+      ? { data: { allowed: true, reason: "free_signup_scan" }, error: null }
+      : await sb.rpc("consume_scan", { p_user_id: gate.userId });
     if (quotaRpc.error) {
       log.error("scan_quota_rpc_error", {
         req: reqId,
@@ -930,16 +947,18 @@ export async function POST(req: NextRequest) {
 
     if (outcome.ok === false) {
       // OpenAI returned non-2xx — refund the slot so the user can retry.
-      await refundScan(sb, refundUserId, refundFromTopup).catch((e) =>
+      await refundScan(sb, refundUserId, refundFromTopup, usedFreeScan).catch((e) =>
         log.warn("scan_refund_failed", { req: reqId, err: String(e) })
       );
       needsRefund = false;
       return NextResponse.json(outcome.payload, { status: outcome.status });
     }
 
-    if (cached) {
+    if (cached && !usedFreeScan) {
       // Double-tap with the same requestId. The original request already
       // spent a slot; refund this second spend so we don't charge twice.
+      // (Free-scan requests can't double-spend — the atomic claim only
+      // succeeds once — so no refund there, or we'd mint a second freebie.)
       await refundScan(sb, refundUserId, refundFromTopup).catch((e) =>
         log.warn("scan_refund_cached_failed", {
           req: reqId,
@@ -998,7 +1017,7 @@ export async function POST(req: NextRequest) {
     });
     if (needsRefund && refundUserId) {
       try {
-        await refundScan(getSupabaseAdmin(), refundUserId, refundFromTopup);
+        await refundScan(getSupabaseAdmin(), refundUserId, refundFromTopup, usedFreeScan);
       } catch (refundErr) {
         log.warn("scan_refund_catch_failed", {
           req: reqId,
@@ -1016,11 +1035,63 @@ export async function POST(req: NextRequest) {
 async function refundScan(
   sb: ReturnType<typeof getSupabaseAdmin>,
   userId: string,
-  fromTopup: boolean
+  fromTopup: boolean,
+  wasFreeScan = false
 ): Promise<void> {
+  if (wasFreeScan) {
+    // Give the free signup scan back — a failed OpenAI call must not eat
+    // the one scan we promised.
+    const { error } = await sb
+      .from("profiles")
+      .update({ free_scan_used: false })
+      .eq("id", userId);
+    if (error) throw new Error(error.message);
+    return;
+  }
   const { error } = await sb.rpc("refund_scan", {
     p_user_id: userId,
     p_from_topup: fromTopup,
   });
   if (error) throw new Error(error.message);
+}
+
+/**
+ * The one-free-scan-per-account claim. Validates the bearer token, then
+ * atomically flips profiles.free_scan_used false→true. Returns the user id
+ * when THIS request won the claim; null when signed out, already used, or on
+ * any error (caller falls back to the paywall response).
+ */
+async function claimFreeSignupScan(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.toLowerCase().startsWith("bearer ")) return null;
+  const token = authHeader.slice(7).trim();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!token || !url || !anon) return null;
+
+  let userId: string | null = null;
+  try {
+    const res = await fetch(`${url}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: anon },
+    });
+    if (!res.ok) return null;
+    userId = ((await res.json()) as { id?: string }).id ?? null;
+  } catch {
+    return null;
+  }
+  if (!userId) return null;
+
+  try {
+    // Atomic claim: only one concurrent request can flip the flag.
+    const { data, error } = await getSupabaseAdmin()
+      .from("profiles")
+      .update({ free_scan_used: true })
+      .eq("id", userId)
+      .eq("free_scan_used", false)
+      .select("id");
+    if (error || !data?.length) return null;
+    return userId;
+  } catch {
+    return null;
+  }
 }
