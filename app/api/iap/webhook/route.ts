@@ -342,17 +342,19 @@ export async function POST(req: NextRequest) {
             break;
           }
           const supabase = await loadAdmin();
+          // Same column fix as the Stripe webhook: quota functions read
+          // id_scan_topups_remaining; legacy scans_remaining is dead.
           const { data: profile } = await supabase
             .from("profiles")
-            .select("scans_remaining")
+            .select("id_scan_topups_remaining")
             .eq("id", ev.app_user_id)
             .single();
-          const current = profile?.scans_remaining || 0;
+          const current = profile?.id_scan_topups_remaining || 0;
           const next = current + scansToAdd;
           const { error } = await supabase
             .from("profiles")
             .update({
-              scans_remaining: next,
+              id_scan_topups_remaining: next,
               apple_original_transaction_id:
                 ev.original_transaction_id ?? null,
             })

@@ -421,17 +421,20 @@ export async function POST(req: NextRequest) {
             });
             break;
           }
+          // NOTE: consume_scan/refund_scan operate on id_scan_topups_remaining.
+          // The legacy scans_remaining column is read by NOTHING — granting
+          // there stranded credits (caught by the 2026-07-03 $0 pipeline test).
           const { data: profile } = await supabase
             .from("profiles")
-            .select("scans_remaining")
+            .select("id_scan_topups_remaining")
             .eq("id", userId)
             .single();
-          const current = profile?.scans_remaining || 0;
+          const current = profile?.id_scan_topups_remaining || 0;
           const next = current + scansToAdd;
           await supabase
             .from("profiles")
             .update({
-              scans_remaining: next,
+              id_scan_topups_remaining: next,
               stripe_customer_id: customerId,
             })
             .eq("id", userId);

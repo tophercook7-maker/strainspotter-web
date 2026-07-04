@@ -2452,7 +2452,7 @@ export default function ScannerPage() {
                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.65 }}>
                   {isLoggedIn
                     ? "You've got a full suite of cannabis tools waiting for you."
-                    : "Create a free account and unlock a full cannabis companion app — built for growers, consumers, and dispensary pros."}
+                    : "Create an account and pick a membership to unlock the full cannabis companion — built for growers, consumers, and dispensary pros. Plans from $4.99/mo."}
                 </div>
               </div>
 
