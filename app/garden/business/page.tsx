@@ -487,6 +487,11 @@ export default function BusinessPage() {
                         {c.contact?.phone && (
                           <a href={`tel:${c.contact.phone}`} style={{ color: "#64B5F6", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>📞 {c.contact.phone}</a>
                         )}
+                        {!c.contact?.email && !c.contact?.phone && (
+                          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
+                            They haven&apos;t added contact info to their profile — use the chat.
+                          </span>
+                        )}
                       </div>
                       {c.threadId && (
                         <button onClick={() => router.push(`/garden/business/chat/${c.threadId}`)} style={{ padding: "9px 16px", borderRadius: 11, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
