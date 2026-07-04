@@ -1,5 +1,7 @@
 "use client";
 
+import NewsStrip from "@/components/NewsStrip";
+
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import TopNav from "../_components/TopNav";
@@ -669,6 +671,9 @@ export default function GrowCoachPage() {
               ))}
             </>
           )}
+        </div>
+        <div style={{ maxWidth: 720, margin: "20px auto 0", padding: "0 16px" }}>
+          <NewsStrip topic="growing" title="🗞️ Cultivation News" limit={4} />
         </div>
       </main>
       {showDiagnostic && (

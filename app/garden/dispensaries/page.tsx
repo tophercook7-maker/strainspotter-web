@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import TopNav from "../_components/TopNav";
 import ZoneNav from "../_components/ZoneNav";
+import NewsStrip from "@/components/NewsStrip";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Dispensary {
@@ -363,6 +364,10 @@ export default function DispensariesPage() {
               ))}
             </>
           )}
+
+          <div style={{ marginTop: 20 }}>
+            <NewsStrip topic="policy" title="🗞️ Legalization & Policy News" limit={4} />
+          </div>
         </div>
       </main>
     </>

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import TopNav from "../_components/TopNav";
 import AuthScreen from "@/components/AuthScreen";
+import NewsStrip from "@/components/NewsStrip";
 
 let useOptionalAuth: () => any;
 try {
@@ -649,6 +650,10 @@ export default function BusinessPage() {
               )}
             </div>
           )}
+
+          <div style={{ marginTop: 20 }}>
+            <NewsStrip topic="business" title="🗞️ Industry News" limit={5} />
+          </div>
         </div>
       </main>
 

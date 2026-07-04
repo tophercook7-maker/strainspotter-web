@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MembershipCTA from "@/components/MembershipCTA";
+import NewsStrip from "@/components/NewsStrip";
 import { useState, useEffect } from "react";
 import AuthScreen from "@/components/AuthScreen";
 
@@ -549,6 +550,10 @@ export default function GardenPage() {
           </div>
 
           {/* Footer credit — frosted */}
+          <div style={{ marginBottom: 24 }}>
+            <NewsStrip title="🗞️ Cannabis News" limit={5} />
+          </div>
+
           <div style={{
             textAlign: "center" as const,
             marginTop: 14,
