@@ -34,14 +34,37 @@ export async function GET(req: Request) {
     out center tags;
   `;
 
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: query,
-    headers: { "Content-Type": "text/plain" },
-    next: { revalidate: 86400 }, // cache 24h
-  });
-
-  const json = await res.json();
+  // Overpass etiquette: identify yourself. The main instance started 406ing
+  // UA-less requests (which crashed this route with an unhandled HTML parse).
+  // Try mirrors in order; any total failure returns an EMPTY list with 200 so
+  // the client can fall back to its local data instead of a dead page.
+  const OVERPASS_ENDPOINTS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+  ];
+  let json: { elements?: unknown[] } | null = null;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        body: query,
+        headers: {
+          "Content-Type": "text/plain",
+          "User-Agent": "StrainSpotter/1.0 (+https://strainspotter.app)",
+        },
+        signal: AbortSignal.timeout(15000),
+        next: { revalidate: 86400 }, // cache 24h
+      });
+      if (!res.ok) continue;
+      json = (await res.json()) as { elements?: unknown[] };
+      break;
+    } catch {
+      continue; // mirror down / timeout / non-JSON — try the next one
+    }
+  }
+  if (!json || !Array.isArray(json.elements)) {
+    return NextResponse.json({ dispensaries: [] });
+  }
 
   const seen = new Set<string>();
   const dispensaries = (json.elements as any[])
