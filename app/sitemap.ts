@@ -26,6 +26,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Public strain library hub (35k strain pages live in the chunked
     // sitemaps at /strains/sitemap/[0-3].xml, listed in robots.ts).
     { path: "/strains", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/blog", priority: 0.7, changeFrequency: "weekly" },
+    { path: "/blog/yellow-leaves-week-5-flower", priority: 0.6, changeFrequency: "monthly" },
+    { path: "/blog/how-old-is-my-cannabis-plant", priority: 0.6, changeFrequency: "monthly" },
+    { path: "/blog/verify-cannabis-strain-real", priority: 0.6, changeFrequency: "monthly" },
   ];
 
   return pages.map((p) => ({
