@@ -58,6 +58,8 @@ node_modules/
 !app/**
 !components/
 !components/**
+!content/
+!content/**
 !styles/
 !styles/**
 !public/
