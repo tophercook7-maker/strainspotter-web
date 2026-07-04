@@ -157,6 +157,8 @@ type V2ClaimValidation = {
 
 type V2Result = {
   schemaVersion: "scan-v2";
+  /** Full 35k-library record for the resolved primary strain (server-attached). */
+  strainDetails?: Record<string, unknown> | null;
   observation: {
     ocrText: string;
     ocrStrainCandidates: string[];
@@ -461,6 +463,7 @@ function v2ToViewModel(
       candidates: data.candidates,
       summary: data.summary,
       claimValidation: data.claimValidation,
+      strainDetails: data.strainDetails ?? null,
     },
   };
 

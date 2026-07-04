@@ -11,6 +11,7 @@ import {
 import PlantDoctorPanel from "./PlantDoctorPanel";
 import WhereToFind from "./WhereToFind";
 import ShareResultButton from "./ShareResultButton";
+import StrainDeepDive, { type StrainDetails } from "./StrainDeepDive";
 import { buildStrainCardData } from "@/lib/share/resultCard";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
@@ -236,6 +237,8 @@ interface SimpleResult {
   /** Catalog slug of the confident primary pick (null without one) — powers
    *  the "available nearby" dispensary lookup. */
   primarySlug: string | null;
+  /** Full 35k-library record for the identified strain (server-attached). */
+  strainDetails: StrainDetails | null;
   type: "Indica" | "Sativa" | "Hybrid" | "Unknown";
   lineage: string;
   effects: string[];
@@ -696,6 +699,7 @@ export default function ScannerPage() {
         confidenceTier: vm.v2?.summary.confidenceTier ?? "low",
         hasPrimaryPick: Boolean(vm.v2?.summary.primaryCandidateSlug),
         primarySlug: vm.v2?.summary.primaryCandidateSlug ?? null,
+        strainDetails: ((vm.v2 as any)?.strainDetails as StrainDetails | null) ?? null,
         v2Candidates: Array.isArray(vm.v2?.candidates) ? vm.v2.candidates.slice(0, 4).map((c: any) => ({
           strainName: c.strainName,
           confidence: typeof c.confidence === "number" ? c.confidence : 0,
@@ -1196,6 +1200,11 @@ export default function ScannerPage() {
           <div style={{ marginTop: 24 }}>
             <PlantDoctorPanel result={plantResult} onReset={clearAll} />
           </div>
+        )}
+
+        {/* ── STRAIN DEEP DIVE — everything the library knows about the ID ── */}
+        {result && scanState === "done" && result.strainDetails && (
+          <StrainDeepDive details={result.strainDetails} />
         )}
 
         {/* ── AVAILABLE NEARBY (confident strain pick + a dispensary carries it) ── */}

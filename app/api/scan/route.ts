@@ -1000,6 +1000,33 @@ export async function POST(req: NextRequest) {
         return { ...c, catalogSlug: match?.slug ?? null, inCatalog: Boolean(match) };
       });
     }
+
+    // Deep-dive enrichment: attach the FULL 35k-library record for the best
+    // resolved strain so the result screen can really teach the user what
+    // they scanned (effects, flavors, THC, lineage, grow info) — no extra AI
+    // tokens, one indexed DB read. Non-blocking: enrichment must never fail
+    // a scan.
+    try {
+      const summarySlug = (result.summary as Record<string, unknown>)?.primaryCandidateSlug;
+      const firstCandidateSlug = Array.isArray(result.candidates)
+        ? ((result.candidates as Record<string, unknown>[])[0]?.catalogSlug as string | null)
+        : null;
+      const deepSlug = (typeof summarySlug === "string" && summarySlug) || firstCandidateSlug;
+      if (deepSlug) {
+        const { data: strainRow } = await sb
+          .from("strains")
+          .select(
+            "slug, name, type, indica_percentage, sativa_percentage, thc_min, thc_max, cbd_min, cbd_max, description, genetics, breeder, flowering_time_min, flowering_time_max, yield_indoor, yield_outdoor, difficulty, effects, flavors"
+          )
+          .eq("slug", deepSlug)
+          .maybeSingle();
+        result.strainDetails = strainRow ?? null;
+      } else {
+        result.strainDetails = null;
+      }
+    } catch {
+      result.strainDetails = null;
+    }
     return NextResponse.json({
       ok: true,
       model: "gpt-4o",
