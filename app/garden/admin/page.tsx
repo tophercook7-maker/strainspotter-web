@@ -132,6 +132,41 @@ export default function AdminPage() {
   useEffect(() => { if (tab === "feedback") loadFeedback(); }, [tab, loadFeedback]);
   useEffect(() => { if (tab === "reports") loadReports(); }, [tab, loadReports]);
 
+  // ── Strain-library enrichment (owner-triggered, runs server-side) ──
+  const [enrichStats, setEnrichStats] = useState<{ withDescription: number; enriched: number; total: number } | null>(null);
+  const [enrichRunning, setEnrichRunning] = useState(false);
+  const [enrichLog, setEnrichLog] = useState<string>("");
+
+  const loadEnrichStats = useCallback(async () => {
+    if (!token) return;
+    try { setEnrichStats(await api("/api/admin/enrich")); } catch { /* noop */ }
+  }, [api, token]);
+  useEffect(() => { if (tab === "overview") loadEnrichStats(); }, [tab, loadEnrichStats]);
+
+  const runEnrichment = async () => {
+    if (enrichRunning) { setEnrichRunning(false); return; } // acts as Stop
+    setEnrichRunning(true);
+    let totalDone = 0;
+    try {
+      // Auto-loop batches while the tab is open; each batch ≈ 10 strains ≈ 1-2¢.
+      for (let i = 0; i < 200; i++) {
+        const r = await api("/api/admin/enrich", { method: "POST" });
+        totalDone += r.enriched ?? 0;
+        setEnrichLog(`Batch ${i + 1}: +${r.enriched} enriched (${r.skippedUnknown} unknown) — ${totalDone} this session`);
+        await loadEnrichStats();
+        if (r.exhausted || r.failed > 5) break;
+        // React state in a loop closure: re-read via functional check
+        let stopped = false;
+        setEnrichRunning((v) => { stopped = !v; return v; });
+        if (stopped) break;
+      }
+    } catch (e) {
+      setEnrichLog(e instanceof Error ? e.message : "Enrichment failed");
+    } finally {
+      setEnrichRunning(false);
+    }
+  };
+
   const actOnReport = async (messageId: string, action: "hide_resolve" | "resolve") => {
     setBusy(true); setNotice(null);
     try {
@@ -303,6 +338,33 @@ export default function AdminPage() {
                 )}
               </div>
             </>
+          )}
+
+          {tab === "overview" && ov && (
+            <div style={{ ...glass, padding: 18, marginTop: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+                <div style={{ color: "white", fontWeight: 800, fontSize: 15 }}>📚 Strain Library Enrichment</div>
+                {enrichStats && (
+                  <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>
+                    {enrichStats.withDescription.toLocaleString()} / {enrichStats.total.toLocaleString()} described · {enrichStats.enriched.toLocaleString()} AI-enriched
+                  </span>
+                )}
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 12.5, lineHeight: 1.6, marginBottom: 12 }}>
+                Fills empty strain records (descriptions, effects, THC, lineage) from AI knowledge —
+                famous strains first, unknowns skipped, ~1-2¢ per batch of 10. Keep this tab open while it runs.
+              </div>
+              <button disabled={!token} onClick={runEnrichment} style={{
+                padding: "10px 18px", borderRadius: 11, border: "none", fontWeight: 800, fontSize: 13, cursor: "pointer",
+                background: enrichRunning ? "rgba(255,183,77,0.2)" : "linear-gradient(135deg, #43A047, #2E7D32)",
+                color: enrichRunning ? "#FFB74D" : "white",
+              }}>
+                {enrichRunning ? "⏸ Stop after this batch" : "▶ Enrich the library"}
+              </button>
+              {enrichLog && (
+                <div style={{ color: "#81C784", fontSize: 12, marginTop: 8 }}>{enrichLog}</div>
+              )}
+            </div>
           )}
 
           {/* ── VERIFY ── */}
