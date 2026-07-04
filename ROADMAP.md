@@ -69,8 +69,8 @@ contradictory state described across the older root `*.md` docs (see Phase 0
 - ✅ Post-checkout auto-login / account sync (magic-link flow + `/api/stripe/verify-session`, shipped Jun 2026 — checkbox was stale).
 - ⬜ Apple IAP products (App Store Connect + RevenueCat); **Google Play Billing**.
 
-## Phase 4 — Platform & retention  ⬜
-- ⬜ Cloud-sync grow data (plants / grow-log / journal / favorites) off localStorage.
+## Phase 4 — Platform & retention  🟡
+- ✅ **Cloud sync SHIPPED (2026-07-03)**: all 8 garden localStorage stores (plants, grow groups, grow log, saved scans, journal, favorites, grow-coach grows, scan chain) mirror to `user_collections` (`024`, applied to prod; client-direct under owner-only RLS). Sync model: union-merge by id on login (no device loses data), then last-write-wins pushes on a 20s change scan + tab-hide (so deletions stick). Engine `lib/sync/cloudSync.ts` (5 merge tests), agent mounted in the garden layout; signed-out users stay local-only, unchanged. ⬜ later: tombstones for cross-device deletes (currently a deleted item can resurface at the next login merge on a stale device); per-item conflict UI.
 - ⬜ Android app: icons, keystore, Play Billing, build AAB, Play submission (+ policy-safe build).
 - ⬜ iOS TestFlight (icon gen) → App Store.
 - ⬜ Store-compliance feature flags for the "Partake" consumption content + dispensary finder; PWA + web-payments fallback.
