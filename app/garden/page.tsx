@@ -279,7 +279,8 @@ const FEATURES: FeatureItem[] = [
   { href: "/garden/grow-coach",   icon: "🩺", label: "Grow",    desc: "Grow Doctor: lifecycle + photo diagnostics" },
   { href: "/garden/strains",      icon: "📚", label: "Library", desc: "Strains, terpenes, discovery, compare" },
   { href: "/garden/journal",      icon: "📓", label: "Journal", desc: "Session diary — mood, dose, notes" },
-  { href: "/garden/dispensaries", icon: "📍", label: "Nearby",  desc: "Dispensaries & seed vendors" },
+  { href: "/garden/dispensaries", icon: "📍", label: "Nearby",  desc: "Dispensaries near you" },
+  { href: "/garden/seed-vendors", icon: "🌰", label: "Seeds",   desc: "Trusted seed banks — ratings & shipping" },
   {
     href: "/garden/community",
     icon: "💬",
@@ -295,12 +296,11 @@ const FEATURES: FeatureItem[] = [
 ];
 
 const QUICK_LINKS = [
-  { href: "/garden/history",      icon: "📋", label: "Scan History" },
-  { href: "/garden/favorites",    icon: "❤️", label: "Favorites" },
-  { href: "/garden/seed-vendors", icon: "🌰", label: "Seeds" },
-  { href: "/garden/feedback",     icon: "💡", label: "Feedback" },
-  { href: "/garden/profile",      icon: "👤", label: "Profile" },
-  { href: "/garden/settings",     icon: "⚙️", label: "Settings" },
+  { href: "/garden/history",   icon: "📋", label: "Scan History" },
+  { href: "/garden/favorites", icon: "❤️", label: "Favorites" },
+  { href: "/garden/feedback",  icon: "💡", label: "Feedback" },
+  { href: "/garden/profile",   icon: "👤", label: "Profile" },
+  { href: "/garden/settings",  icon: "⚙️", label: "Settings" },
 ];
 
 /* ─── Tier display helpers ─── */
