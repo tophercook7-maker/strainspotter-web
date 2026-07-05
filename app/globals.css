@@ -21,3 +21,29 @@ body {
   color: #fff;
   min-height: 100%;
 }
+
+/* ── Interactive scanner hero (added for landing demo) ── */
+@keyframes ss-scanline {
+  0%   { top: 0%;   opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+@keyframes ss-fadeup {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ss-grow { from { width: 0; } }
+.ss-scanline { animation: ss-scanline 2.1s ease-in-out; }
+.ss-fadeup   { animation: ss-fadeup .5s ease both; }
+.ss-bar > span { animation: ss-grow .9s ease both; }
+
+/* ── ScanningFX (cinematic scan overlay) ── */
+@keyframes sfx-sweep{0%{top:-2%}50%{top:100%}50.01%{top:-2%}100%{top:100%}}
+@keyframes sfx-drift{to{background-position:28px 28px}}
+@keyframes sfx-pulse{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes sfx-twinkle{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
+@keyframes ss-fillbar{from{width:0 !important}}
+@keyframes ss-spring{0%{transform:scale(.94)}55%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes ss-scan{0%{top:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:100%;opacity:0}}
+@keyframes ss-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}

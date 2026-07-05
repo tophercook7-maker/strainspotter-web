@@ -20,6 +20,7 @@ import MembershipCTA from "@/components/MembershipCTA";
 import ScannerExpectationsModal, {
   hasSeenScannerExpectations,
 } from "./ScannerExpectationsModal";
+import ScanningFX from "@/components/ScanningFX";
 
 /* ─── try to use real auth, fall back gracefully ─── */
 let useOptionalAuth: () => any;
@@ -1045,6 +1046,8 @@ export default function ScannerPage() {
         />
 
         {/* ── THUMBNAIL STRIP ── */}
+        {scanState === "scanning" && <ScanningFX imageUrl={previews[0]} />}
+
         {images.length > 0 && scanState !== "done" && (
           <div style={{
             display: "flex",
@@ -1742,7 +1745,7 @@ export default function ScannerPage() {
                             <span style={{ fontSize: 12, fontWeight: 700, color: v.color }}>{score}/10</span>
                           </div>
                           <div style={{ height: 7, borderRadius: 7, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 7, background: v.color, opacity: 0.8 }} />
+                            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 7, background: v.color, opacity: 0.8, boxShadow: `0 0 10px ${v.color}66`, animation: "ss-fillbar 1s cubic-bezier(.34,1.56,.64,1)" }} />
                           </div>
                         </div>
                       );
@@ -1880,7 +1883,7 @@ export default function ScannerPage() {
                     <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Could Also Be</h3>
                     <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
                       {result.alternates.map((a, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)" }}>
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", animation: "ss-fadeup .5s ease both", animationDelay: `${i * 0.09}s` }}>
                           <span style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>{a.name}</span>
                           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", fontWeight: 600 }}>{mapConfidence(a.confidence)}</span>
                         </div>

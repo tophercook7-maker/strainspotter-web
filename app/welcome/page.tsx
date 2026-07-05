@@ -1,6 +1,6 @@
-// Homepage: the interactive landing (was a straight redirect to the scanner).
-// Every CTA here drops the visitor into /garden/scanner, so the scanner is
-// still one tap away.
+// Interactive landing page. Kept at /welcome so the existing scanner-first
+// redirect at / stays intact; point app/page.tsx here to make it the homepage.
+
 import StrainSpotterLanding from "@/components/StrainSpotterLanding";
 
 export const metadata = {
@@ -9,6 +9,6 @@ export const metadata = {
     "One scan, two honest answers. Point your camera at any bud, plant, or label and get a calibrated strain ID plus a plant-health check — never a fake confident guess.",
 };
 
-export default function Home() {
+export default function WelcomePage() {
   return <StrainSpotterLanding />;
 }
