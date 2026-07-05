@@ -77,21 +77,34 @@ export async function enrichBatch(batchSize: number): Promise<EnrichBatchResult>
 
   const out: EnrichBatchResult = { enriched: 0, skippedUnknown: 0, alreadyGood: 0, failed: 0, scanned: 0, exhausted: false };
 
-  for (const slug of RANKED_SLUGS) {
-    if (out.enriched >= batchSize || out.failed > 5) break;
-    out.scanned++;
-    const { data: row } = await sb
+  // Find pending work in BULK — the old per-slug probe re-read every already-
+  // done strain each batch, so runs slowed linearly and eventually 504'd.
+  // Chunk the ranked list and ask for unvisited rows 400 slugs at a time.
+  const pending: Record<string, unknown>[] = [];
+  for (let i = 0; i < RANKED_SLUGS.length && pending.length < batchSize; i += 400) {
+    const chunk = RANKED_SLUGS.slice(i, i + 400);
+    out.scanned = i + chunk.length;
+    const { data: rows } = await sb
       .from("strains")
       .select("slug, name, description, type, indica_percentage, sativa_percentage, thc_min, thc_max, genetics, effects, flavors, enriched_at")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (!row) continue;
-    // enriched_at set = already visited (even if skipped-unknown we stamp it,
-    // so batches never re-pay for the same strain).
-    if (row.enriched_at || (row.description && row.description.length > 50)) {
-      out.alreadyGood++;
-      continue;
+      .in("slug", chunk)
+      .is("enriched_at", null);
+    const byuSlug = new Map((rows ?? []).map((r) => [r.slug as string, r]));
+    for (const slug of chunk) {
+      const row = byuSlug.get(slug);
+      if (!row) { out.alreadyGood++; continue; }
+      if (row.description && (row.description as string).length > 50) { out.alreadyGood++; continue; }
+      pending.push(row);
+      if (pending.length >= batchSize) break;
     }
+  }
+  if (!pending.length) {
+    out.exhausted = true;
+    return out;
+  }
+
+  for (const row of pending as { slug: string; name: string; description: string | null; type: string | null; indica_percentage: number | null; sativa_percentage: number | null; thc_min: number | null; thc_max: number | null; genetics: string | null; effects: unknown; flavors: unknown }[]) {
+    if (out.enriched + out.skippedUnknown >= batchSize || out.failed > 5) break;
 
     try {
       const ai = await askModel(row.name, apiKey);
@@ -120,13 +133,12 @@ export async function enrichBatch(batchSize: number): Promise<EnrichBatchResult>
       } else {
         out.enriched++;
       }
-      await sb.from("strains").update(patch).eq("slug", slug);
+      await sb.from("strains").update(patch).eq("slug", row.slug);
     } catch {
       out.failed++;
     }
   }
 
-  out.exhausted = out.scanned >= RANKED_SLUGS.length;
   return out;
 }
 
