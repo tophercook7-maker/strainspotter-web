@@ -47,7 +47,7 @@ const glass: React.CSSProperties = {
 
 function confidenceColor(c: number | null): string {
   if (c === null) return "rgba(255,255,255,0.78)";
-  if (c >= 80) return "#66BB6A";
+  if (c >= 80) return "#34d399";
   if (c >= 60) return "#FFA726";
   return "#EF5350";
 }
@@ -165,7 +165,7 @@ export default function FavoritesPage() {
                   <div style={{ color: "rgba(255,255,255,0.78)", fontSize: 12, fontWeight: 600 }}>Saved</div>
                 </div>
                 <div style={{ ...glass, padding: 16, flex: 1, textAlign: "center" }}>
-                  <div style={{ color: "#66BB6A", fontSize: 28, fontWeight: 800 }}>{Object.keys(grouped).length}</div>
+                  <div style={{ color: "#34d399", fontSize: 28, fontWeight: 800 }}>{Object.keys(grouped).length}</div>
                   <div style={{ color: "rgba(255,255,255,0.78)", fontSize: 12, fontWeight: 600 }}>Strains</div>
                 </div>
               </div>

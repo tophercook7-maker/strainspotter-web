@@ -113,7 +113,7 @@ export default function BusinessChatPage() {
                   maxWidth: "78%", padding: "10px 14px", borderRadius: 16,
                   borderBottomRightRadius: m.mine ? 4 : 16,
                   borderBottomLeftRadius: m.mine ? 16 : 4,
-                  background: m.mine ? "linear-gradient(135deg, #43A047, #2E7D32)" : "rgba(255,255,255,0.10)",
+                  background: m.mine ? "linear-gradient(135deg, #34d399, #059669)" : "rgba(255,255,255,0.10)",
                   border: m.mine ? "none" : "1px solid rgba(255,255,255,0.15)",
                 }}>
                   <div style={{ color: "white", fontSize: 14, lineHeight: 1.55, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.content}</div>
@@ -145,7 +145,7 @@ export default function BusinessChatPage() {
               disabled={sending || !draft.trim() || !token}
               style={{
                 padding: "0 20px", borderRadius: 14, border: "none", fontWeight: 800, fontSize: 14,
-                background: draft.trim() && token ? "linear-gradient(135deg, #43A047, #2E7D32)" : "rgba(255,255,255,0.1)",
+                background: draft.trim() && token ? "linear-gradient(135deg, #34d399, #059669)" : "rgba(255,255,255,0.1)",
                 color: "white", cursor: draft.trim() && token ? "pointer" : "default",
               }}
             >

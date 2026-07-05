@@ -64,7 +64,7 @@ export default function ScannerExpectationsModal({
           maxWidth: 440,
           width: "100%",
           background: "linear-gradient(180deg, rgba(20,30,20,0.96), rgba(10,15,10,0.98))",
-          border: "1px solid rgba(76,175,80,0.25)",
+          border: "1px solid rgba(52,211,153,0.25)",
           borderRadius: 20,
           padding: "28px 24px",
           color: "#fff",
@@ -134,13 +134,13 @@ export default function ScannerExpectationsModal({
             padding: "14px 0",
             borderRadius: 50,
             border: "none",
-            background: "linear-gradient(135deg, #43A047, #2E7D32)",
+            background: "linear-gradient(135deg, #34d399, #059669)",
             color: "#fff",
             fontSize: 15,
             fontWeight: 700,
             letterSpacing: 0.4,
             cursor: "pointer",
-            boxShadow: "0 4px 18px rgba(46,125,50,0.35)",
+            boxShadow: "0 4px 18px rgba(5,150,105,0.35)",
           }}
         >
           Got it — let&apos;s scan

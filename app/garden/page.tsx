@@ -34,7 +34,7 @@ interface DailyStrain {
 const TYPE_COLOR: Record<string, { border: string; badge: string; text: string }> = {
   Sativa: { border: "#FFD54F", badge: "rgba(255,213,79,0.15)", text: "#FFD54F" },
   Indica: { border: "#9575CD", badge: "rgba(149,117,205,0.15)", text: "#9575CD" },
-  Hybrid: { border: "#66BB6A", badge: "rgba(102,187,106,0.15)", text: "#66BB6A" },
+  Hybrid: { border: "#34d399", badge: "rgba(52,211,153,0.15)", text: "#34d399" },
 };
 
 function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
@@ -107,8 +107,8 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
           {strain.thc != null && strain.thc > 0 && (
             <span style={{
               padding: "3px 10px", borderRadius: 6, fontSize: 13, fontWeight: 700,
-              background: "rgba(102,187,106,0.12)", color: "#81C784",
-              border: "1px solid rgba(102,187,106,0.2)",
+              background: "rgba(52,211,153,0.12)", color: "#6ee7b7",
+              border: "1px solid rgba(52,211,153,0.2)",
             }}>
               THC {strain.thc}%
             </span>
@@ -138,8 +138,8 @@ function StrainOfTheDay({ router }: { router: ReturnType<typeof useRouter> }) {
           {strain.effects.slice(0, 5).map((e) => (
             <span key={e} style={{
               padding: "3px 8px", borderRadius: 5, fontSize: 13,
-              background: "rgba(102,187,106,0.1)", color: "#81C784",
-              border: "1px solid rgba(102,187,106,0.15)",
+              background: "rgba(52,211,153,0.1)", color: "#6ee7b7",
+              border: "1px solid rgba(52,211,153,0.15)",
             }}>
               {e.charAt(0).toUpperCase() + e.slice(1)}
             </span>
@@ -310,7 +310,7 @@ function tierLabel(t: string): string {
 }
 function tierColor(t: string): string {
   if (t === "pro") return "#FFD700";
-  if (t === "member") return "#4CAF50";
+  if (t === "member") return "#34d399";
   return "rgba(255,255,255,0.68)";
 }
 
@@ -374,7 +374,7 @@ export default function GardenPage() {
               </span>
               <div style={{
                 width: 30, height: 30, borderRadius: "50%",
-                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                background: "linear-gradient(135deg, #34d399, #059669)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 13, fontWeight: 800, color: "#fff",
               }}>
@@ -385,7 +385,7 @@ export default function GardenPage() {
             <button
               onClick={() => setShowAuth(true)}
               style={{
-                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                background: "linear-gradient(135deg, #34d399, #059669)",
                 border: "none", borderRadius: 10, padding: "7px 14px",
                 color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
               }}
@@ -402,15 +402,15 @@ export default function GardenPage() {
             style={{
               width: "100%", display: "flex", alignItems: "center", gap: 14,
               padding: "18px 20px",
-              background: "linear-gradient(135deg, rgba(76,175,80,0.15), rgba(56,142,60,0.08))",
-              border: "1px solid rgba(76,175,80,0.3)", borderRadius: 16,
+              background: "linear-gradient(135deg, rgba(52,211,153,0.15), rgba(5,150,105,0.08))",
+              border: "1px solid rgba(52,211,153,0.3)", borderRadius: 16,
               cursor: "pointer", color: "inherit", textAlign: "left",
             }}
           >
             <span style={{
               fontSize: 32, width: 52, height: 52,
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: "rgba(76,175,80,0.2)", borderRadius: 14,
+              background: "rgba(52,211,153,0.2)", borderRadius: 14,
             }}>
               📸
             </span>
@@ -443,8 +443,8 @@ export default function GardenPage() {
                       gridColumn: "1 / -1",
                       display: "flex", alignItems: "center", gap: 16,
                       padding: "18px 20px",
-                      background: "linear-gradient(135deg, rgba(102,187,106,0.18), rgba(46,125,50,0.10))",
-                      border: "1px solid rgba(102,187,106,0.35)",
+                      background: "linear-gradient(135deg, rgba(52,211,153,0.18), rgba(5,150,105,0.10))",
+                      border: "1px solid rgba(52,211,153,0.35)",
                       borderRadius: 16,
                       backdropFilter: "blur(18px) saturate(1.4)",
                       WebkitBackdropFilter: "blur(18px) saturate(1.4)",
@@ -461,12 +461,12 @@ export default function GardenPage() {
                     {/* Subtle glow */}
                     <div style={{
                       position: "absolute", top: -20, right: -20, width: 100, height: 100,
-                      borderRadius: "50%", background: "rgba(102,187,106,0.06)", pointerEvents: "none",
+                      borderRadius: "50%", background: "rgba(52,211,153,0.06)", pointerEvents: "none",
                     }} />
                     <span style={{
                       fontSize: 32, width: 52, height: 52, flexShrink: 0,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      background: "rgba(102,187,106,0.1)", borderRadius: 14,
+                      background: "rgba(52,211,153,0.1)", borderRadius: 14,
                       filter: "grayscale(0.2)",
                     }}>
                       {item.icon}
@@ -476,8 +476,8 @@ export default function GardenPage() {
                         <span style={{ color: "#fff", fontSize: 15, fontWeight: 700 }}>{item.label}</span>
                         <span style={{
                           fontSize: 13, fontWeight: 800, padding: "2px 7px", borderRadius: 5,
-                          background: "rgba(102,187,106,0.15)", color: "#81C784",
-                          border: "1px solid rgba(102,187,106,0.25)", letterSpacing: 0.8,
+                          background: "rgba(52,211,153,0.15)", color: "#6ee7b7",
+                          border: "1px solid rgba(52,211,153,0.25)", letterSpacing: 0.8,
                           textTransform: "uppercase" as const,
                         }}>
                           {item.comingSoonLabel}

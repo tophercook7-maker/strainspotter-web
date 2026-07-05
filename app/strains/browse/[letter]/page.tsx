@@ -49,9 +49,9 @@ export default async function BrowseLetterPage({ params }: { params: Promise<{ l
           {BROWSE_LETTERS.map((l) => (
             <Link key={l} href={`/strains/browse/${l}`} style={{
               padding: "4px 10px", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none", textTransform: "uppercase",
-              background: l === letter ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
-              color: l === letter ? "#81C784" : "rgba(255,255,255,0.6)",
-              border: `1px solid ${l === letter ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.12)"}`,
+              background: l === letter ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+              color: l === letter ? "#6ee7b7" : "rgba(255,255,255,0.6)",
+              border: `1px solid ${l === letter ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.12)"}`,
             }}>
               {l === "0" ? "0-9" : l}
             </Link>

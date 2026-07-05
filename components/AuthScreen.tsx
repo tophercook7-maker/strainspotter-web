@@ -272,12 +272,12 @@ export default function AuthScreen({
       {message && (
         <div
           style={{
-            background: "rgba(76,175,80,0.1)",
-            border: "1px solid rgba(76,175,80,0.3)",
+            background: "rgba(52,211,153,0.1)",
+            border: "1px solid rgba(52,211,153,0.3)",
             borderRadius: 10,
             padding: "10px 14px",
             marginBottom: 14,
-            color: "#66BB6A",
+            color: "#34d399",
             fontSize: 13,
             textAlign: "center",
           }}
@@ -303,7 +303,7 @@ export default function AuthScreen({
           border: "none",
           background: loading
             ? "#555"
-            : "linear-gradient(135deg, #43A047, #2E7D32)",
+            : "linear-gradient(135deg, #34d399, #059669)",
           color: "#fff",
           fontSize: 16,
           fontWeight: 800,

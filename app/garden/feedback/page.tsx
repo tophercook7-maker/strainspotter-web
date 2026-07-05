@@ -104,9 +104,9 @@ export default function FeedbackPage() {
               {CATEGORIES.map((c) => (
                 <button key={c.key} onClick={() => setCategory(c.key)} style={{
                   padding: "6px 13px", borderRadius: 99, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
-                  background: category === c.key ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
-                  color: category === c.key ? "#81C784" : "rgba(255,255,255,0.65)",
-                  border: `1px solid ${category === c.key ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                  background: category === c.key ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                  color: category === c.key ? "#6ee7b7" : "rgba(255,255,255,0.65)",
+                  border: `1px solid ${category === c.key ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
                 }}>
                   {c.label}
                 </button>
@@ -125,7 +125,7 @@ export default function FeedbackPage() {
               disabled={busy || !message.trim() || !token}
               style={{
                 width: "100%", padding: "13px 18px", borderRadius: 12, border: "none",
-                background: message.trim() && token ? "linear-gradient(135deg, #43A047, #2E7D32)" : "rgba(255,255,255,0.1)",
+                background: message.trim() && token ? "linear-gradient(135deg, #34d399, #059669)" : "rgba(255,255,255,0.1)",
                 color: "white", fontWeight: 800, fontSize: 15, cursor: message.trim() && token ? "pointer" : "default",
               }}
             >
@@ -153,8 +153,8 @@ export default function FeedbackPage() {
                   </div>
                   <div style={{ color: "white", fontSize: 14, lineHeight: 1.6 }}>{f.content}</div>
                   {f.admin_reply && (
-                    <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,80,0.1)", border: "1px solid rgba(76,175,80,0.3)" }}>
-                      <div style={{ color: "#81C784", fontSize: 11, fontWeight: 800, marginBottom: 4 }}>🌿 STRAINSPOTTER REPLIED</div>
+                    <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.3)" }}>
+                      <div style={{ color: "#6ee7b7", fontSize: 11, fontWeight: 800, marginBottom: 4 }}>🌿 STRAINSPOTTER REPLIED</div>
                       <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 13.5, lineHeight: 1.6 }}>{f.admin_reply}</div>
                     </div>
                   )}

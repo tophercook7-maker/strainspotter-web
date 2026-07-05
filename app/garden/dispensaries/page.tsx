@@ -21,7 +21,7 @@ interface Dispensary {
 
 const KIND_BADGE: Record<string, { label: string; color: string }> = {
   medical: { label: "Medical", color: "#42A5F5" },
-  recreational: { label: "Recreational", color: "#66BB6A" },
+  recreational: { label: "Recreational", color: "#34d399" },
   both: { label: "Med + Rec", color: "#AB47BC" },
 };
 
@@ -186,9 +186,9 @@ export default function DispensariesPage() {
                 onClick={() => setKindFilter(k.key)}
                 style={{
                   flex: 1, padding: "8px 12px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  background: kindFilter === k.key ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
-                  color: kindFilter === k.key ? "#81C784" : "rgba(255,255,255,0.65)",
-                  border: `1px solid ${kindFilter === k.key ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                  background: kindFilter === k.key ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                  color: kindFilter === k.key ? "#6ee7b7" : "rgba(255,255,255,0.65)",
+                  border: `1px solid ${kindFilter === k.key ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
                 }}
               >
                 {k.label}
@@ -221,9 +221,9 @@ export default function DispensariesPage() {
                 onClick={() => handleRadiusChange(r)}
                 style={{
                   padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  background: radius === r ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
-                  color: radius === r ? "#81C784" : "rgba(255,255,255,0.6)",
-                  border: `1px solid ${radius === r ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                  background: radius === r ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                  color: radius === r ? "#6ee7b7" : "rgba(255,255,255,0.6)",
+                  border: `1px solid ${radius === r ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
                 }}
               >
                 {r} mi
@@ -284,7 +284,7 @@ export default function DispensariesPage() {
                     {/* Icon */}
                     <div style={{
                       width: 48, height: 48, borderRadius: 8,
-                      background: "rgba(76,175,80,0.15)", border: "1px solid rgba(76,175,80,0.3)",
+                      background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.3)",
                       display: "grid", placeItems: "center", flexShrink: 0, fontSize: 24,
                     }}>
                       🏪

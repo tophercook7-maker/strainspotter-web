@@ -72,7 +72,7 @@ export default function SavedScanResultsView({
             fontWeight: 700,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
-            color: "rgba(76,175,80,0.85)",
+            color: "rgba(52,211,153,0.85)",
             marginBottom: 8,
           }}
         >
@@ -123,8 +123,8 @@ export default function SavedScanResultsView({
           marginTop: 20,
           padding: "14px 16px",
           borderRadius: 16,
-          background: "rgba(76,175,80,0.08)",
-          border: "1px solid rgba(76,175,80,0.22)",
+          background: "rgba(52,211,153,0.08)",
+          border: "1px solid rgba(52,211,153,0.22)",
         }}
       >
         <div
@@ -212,7 +212,7 @@ export default function SavedScanResultsView({
         </select>
         <Link
           href="/garden/plants"
-          style={{ display: "inline-block", marginTop: 10, fontSize: 12, color: "rgba(129,199,132,0.9)", fontWeight: 600 }}
+          style={{ display: "inline-block", marginTop: 10, fontSize: 12, color: "rgba(110,231,183,0.9)", fontWeight: 600 }}
         >
           Create new plant →
         </Link>
@@ -247,7 +247,7 @@ export default function SavedScanResultsView({
               {m.cardLabel}
             </div>
             <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>{m.name}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "rgba(129,199,132,0.95)" }}>{m.confidence}%</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "rgba(110,231,183,0.95)" }}>{m.confidence}%</div>
             <Link
               href={`/garden/strains?q=${encodeURIComponent(m.name)}`}
               style={{
@@ -299,7 +299,7 @@ export default function SavedScanResultsView({
                 {k === "typeEstimate" ? "Type" : k === "growthStage" ? "Stage" : "Health"}
               </div>
               <div style={{ fontSize: 16, fontWeight: 800, marginTop: 4 }}>{block.label}</div>
-              <div style={{ fontSize: 13, color: "rgba(129,199,132,0.9)", marginTop: 4 }}>
+              <div style={{ fontSize: 13, color: "rgba(110,231,183,0.9)", marginTop: 4 }}>
                 {block.confidence}% · {block.confidenceLabel}
               </div>
             </div>
@@ -318,8 +318,8 @@ export default function SavedScanResultsView({
           style={{
             borderRadius: 18,
             padding: "16px",
-            background: "linear-gradient(160deg, rgba(46,125,50,0.14), rgba(10,20,12,0.92))",
-            border: "1px solid rgba(76,175,80,0.28)",
+            background: "linear-gradient(160deg, rgba(5,150,105,0.14), rgba(10,20,12,0.92))",
+            border: "1px solid rgba(52,211,153,0.28)",
           }}
         >
           <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 8 }}>{scanUi.growCoach.headline}</div>
@@ -362,7 +362,7 @@ export default function SavedScanResultsView({
                 padding: "14px 16px",
                 borderRadius: 14,
                 fontWeight: 700,
-                background: "linear-gradient(135deg, #81C784, #43A047)",
+                background: "linear-gradient(135deg, #6ee7b7, #34d399)",
                 color: "#0d1f0f",
                 textDecoration: "none",
               }}
@@ -378,7 +378,7 @@ export default function SavedScanResultsView({
                 padding: "14px 16px",
                 borderRadius: 14,
                 fontWeight: 700,
-                background: "linear-gradient(135deg, #81C784, #43A047)",
+                background: "linear-gradient(135deg, #6ee7b7, #34d399)",
                 color: "#0d1f0f",
                 textDecoration: "none",
               }}

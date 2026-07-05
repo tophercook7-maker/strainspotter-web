@@ -33,7 +33,7 @@ interface APIResponse {
 const TYPE_COLORS: Record<StrainType, { bg: string; border: string; text: string }> = {
   Sativa:  { bg: "rgba(255,213,79,0.12)",  border: "#FFD54F", text: "#FFD54F" },
   Indica:  { bg: "rgba(149,117,205,0.12)", border: "#9575CD", text: "#9575CD" },
-  Hybrid:  { bg: "rgba(102,187,106,0.12)", border: "#66BB6A", text: "#66BB6A" },
+  Hybrid:  { bg: "rgba(52,211,153,0.12)", border: "#34d399", text: "#34d399" },
 };
 
 const EFFECT_ICONS: Record<string, string> = {
@@ -76,7 +76,7 @@ function StrainCard({ strain: s, onTap }: { strain: Strain; onTap: () => void })
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: (hasDesc || hasEffects) ? 8 : 0 }}>
         <span style={{ fontSize: 12, color: "#9575CD", fontWeight: 600, minWidth: 30 }}>I {s.indica_percentage}%</span>
         <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-          <div style={{ width: `${s.indica_percentage}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg, #9575CD 0%, #66BB6A 60%, #FFD54F 100%)" }} />
+          <div style={{ width: `${s.indica_percentage}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg, #9575CD 0%, #34d399 60%, #FFD54F 100%)" }} />
         </div>
         <span style={{ fontSize: 12, color: "#FFD54F", fontWeight: 600, minWidth: 30, textAlign: "right" }}>S {s.sativa_percentage}%</span>
       </div>
@@ -115,13 +115,13 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
         <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "16px 0" }}>
           <span style={{ fontSize: 12, color: "#9575CD", fontWeight: 600 }}>Indica {s.indica_percentage}%</span>
           <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-            <div style={{ width: `${s.indica_percentage}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #9575CD 0%, #66BB6A 60%, #FFD54F 100%)" }} />
+            <div style={{ width: `${s.indica_percentage}%`, height: "100%", borderRadius: 3, background: "linear-gradient(90deg, #9575CD 0%, #34d399 60%, #FFD54F 100%)" }} />
           </div>
           <span style={{ fontSize: 12, color: "#FFD54F", fontWeight: 600 }}>Sativa {s.sativa_percentage}%</span>
         </div>
         {((s.thc != null && s.thc > 0) || (s.cbd != null && s.cbd > 0)) && (
           <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-            {s.thc != null && s.thc > 0 && <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "8px 16px" }}><div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>THC</div><div style={{ fontSize: 18, fontWeight: 700, color: "#66BB6A" }}>{s.thc}%</div></div>}
+            {s.thc != null && s.thc > 0 && <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "8px 16px" }}><div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>THC</div><div style={{ fontSize: 18, fontWeight: 700, color: "#34d399" }}>{s.thc}%</div></div>}
             {s.cbd != null && s.cbd > 0 && <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "8px 16px" }}><div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>CBD</div><div style={{ fontSize: 18, fontWeight: 700, color: "#9575CD" }}>{s.cbd}%</div></div>}
           </div>
         )}
@@ -130,7 +130,7 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", marginBottom: 8, letterSpacing: "0.1em", textTransform: "uppercase" }}>Effects</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {s.effects.map((e) => <span key={e} style={{ padding: "4px 10px", borderRadius: 10, background: "rgba(102,187,106,0.1)", border: "1px solid rgba(102,187,106,0.18)", fontSize: 12, color: "#66BB6A" }}>{EFFECT_ICONS[e.toLowerCase()] || "🌿"} {cap(e)}</span>)}
+              {s.effects.map((e) => <span key={e} style={{ padding: "4px 10px", borderRadius: 10, background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.18)", fontSize: 12, color: "#34d399" }}>{EFFECT_ICONS[e.toLowerCase()] || "🌿"} {cap(e)}</span>)}
             </div>
           </div>
         )}
@@ -205,7 +205,7 @@ export default function EcosystemPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, marginTop: 4 }}>
           <button onClick={() => router.push("/garden")} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", color: "rgba(255,255,255,0.78)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>‹</button>
           <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#66BB6A" }}>🧬 Ecosystem</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#34d399" }}>🧬 Ecosystem</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", marginTop: 2 }}>{loading ? "Loading…" : `${total.toLocaleString()} strains`}</div>
           </div>
           <div style={{ width: 32 }} />

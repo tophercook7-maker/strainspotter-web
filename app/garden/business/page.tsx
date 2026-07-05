@@ -323,12 +323,12 @@ export default function BusinessPage() {
                 {!token && " Start by creating a free account — it takes a minute."}
               </div>
               {token ? (
-                <button onClick={() => setTab("profile")} style={{ padding: "12px 22px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                <button onClick={() => setTab("profile")} style={{ padding: "12px 22px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
                   Create business profile
                 </button>
               ) : (
                 <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-                  <button onClick={() => setShowAuth(true)} style={{ padding: "12px 22px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                  <button onClick={() => setShowAuth(true)} style={{ padding: "12px 22px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
                     Sign in / Create free account
                   </button>
                   <Link href="/pricing" style={{ padding: "12px 22px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.1)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
@@ -356,7 +356,7 @@ export default function BusinessPage() {
                 <button key={t.key} onClick={() => setTab(t.key)} style={{
                   flex: 1, padding: "9px 8px", borderRadius: 11, border: "none", cursor: "pointer",
                   fontWeight: 800, fontSize: 13,
-                  background: tab === t.key ? "linear-gradient(135deg, #43A047, #2E7D32)" : "transparent",
+                  background: tab === t.key ? "linear-gradient(135deg, #34d399, #059669)" : "transparent",
                   color: tab === t.key ? "#fff" : "rgba(255,255,255,0.7)",
                 }}>
                   {t.label}
@@ -372,9 +372,9 @@ export default function BusinessPage() {
                 {[{ key: "", label: "All" }, ...ROLES.map((r) => ({ key: r.key, label: `${r.icon} ${r.label}` }))].map((r) => (
                   <button key={r.key} onClick={() => setRoleFilter(r.key)} style={{
                     padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                    background: roleFilter === r.key ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
-                    color: roleFilter === r.key ? "#81C784" : "rgba(255,255,255,0.65)",
-                    border: `1px solid ${roleFilter === r.key ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                    background: roleFilter === r.key ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                    color: roleFilter === r.key ? "#6ee7b7" : "rgba(255,255,255,0.65)",
+                    border: `1px solid ${roleFilter === r.key ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
                   }}>
                     {r.label}
                   </button>
@@ -414,7 +414,7 @@ export default function BusinessPage() {
                         style={{ ...inputStyle, resize: "vertical", marginBottom: 8 }}
                       />
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button disabled={busy} onClick={sendRequest} style={{ padding: "9px 16px", borderRadius: 11, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+                        <button disabled={busy} onClick={sendRequest} style={{ padding: "9px 16px", borderRadius: 11, border: "none", background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
                           Send request
                         </button>
                         <button onClick={() => setRequestTo(null)} style={{ padding: "9px 16px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "rgba(255,255,255,0.7)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
@@ -423,7 +423,7 @@ export default function BusinessPage() {
                       </div>
                     </div>
                   ) : (
-                    <button onClick={() => { setRequestTo(d); setRequestMsg(""); }} style={{ marginTop: 12, padding: "8px 16px", borderRadius: 11, border: "1px solid rgba(76,175,80,0.4)", background: "rgba(76,175,80,0.15)", color: "#81C784", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+                    <button onClick={() => { setRequestTo(d); setRequestMsg(""); }} style={{ marginTop: 12, padding: "8px 16px", borderRadius: 11, border: "1px solid rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.15)", color: "#6ee7b7", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
                       🤝 Connect
                     </button>
                   )}
@@ -448,8 +448,8 @@ export default function BusinessPage() {
                     {c.other.verified && <VerifiedBadge />}
                     <span style={{
                       marginLeft: "auto", fontSize: 11, fontWeight: 800, borderRadius: 99, padding: "2px 10px",
-                      color: c.status === "accepted" ? "#81C784" : c.status === "pending" ? "#FFD54F" : "rgba(255,255,255,0.5)",
-                      border: `1px solid ${c.status === "accepted" ? "rgba(76,175,80,0.4)" : c.status === "pending" ? "rgba(255,213,79,0.4)" : "rgba(255,255,255,0.2)"}`,
+                      color: c.status === "accepted" ? "#6ee7b7" : c.status === "pending" ? "#FFD54F" : "rgba(255,255,255,0.5)",
+                      border: `1px solid ${c.status === "accepted" ? "rgba(52,211,153,0.4)" : c.status === "pending" ? "rgba(255,213,79,0.4)" : "rgba(255,255,255,0.2)"}`,
                     }}>
                       {c.status === "pending" ? (c.direction === "incoming" ? "wants to connect" : "request sent") : c.status}
                     </span>
@@ -465,7 +465,7 @@ export default function BusinessPage() {
 
                   {c.status === "pending" && c.direction === "incoming" && (
                     <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                      <button disabled={busy} onClick={() => respond(c.id, "accept")} style={{ padding: "9px 16px", borderRadius: 11, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+                      <button disabled={busy} onClick={() => respond(c.id, "accept")} style={{ padding: "9px 16px", borderRadius: 11, border: "none", background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
                         Accept
                       </button>
                       <button disabled={busy} onClick={() => respond(c.id, "decline")} style={{ padding: "9px 16px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "rgba(255,255,255,0.7)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
@@ -495,7 +495,7 @@ export default function BusinessPage() {
                         )}
                       </div>
                       {c.threadId && (
-                        <button onClick={() => router.push(`/garden/business/chat/${c.threadId}`)} style={{ padding: "9px 16px", borderRadius: 11, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
+                        <button onClick={() => router.push(`/garden/business/chat/${c.threadId}`)} style={{ padding: "9px 16px", borderRadius: 11, border: "none", background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer" }}>
                           💬 Open chat
                         </button>
                       )}
@@ -520,9 +520,9 @@ export default function BusinessPage() {
                   {MENU_CATEGORIES.map((c) => (
                     <button key={c} onClick={() => setMCategory(c)} style={{
                       padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                      background: mCategory === c ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
-                      color: mCategory === c ? "#81C784" : "rgba(255,255,255,0.65)",
-                      border: `1px solid ${mCategory === c ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                      background: mCategory === c ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                      color: mCategory === c ? "#6ee7b7" : "rgba(255,255,255,0.65)",
+                      border: `1px solid ${mCategory === c ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
                     }}>
                       {c}
                     </button>
@@ -534,7 +534,7 @@ export default function BusinessPage() {
                 </div>
                 <button disabled={busy || !mName.trim()} onClick={addMenuItem} style={{
                   width: "100%", marginTop: 12, padding: "12px 18px", borderRadius: 12, border: "none",
-                  background: mName.trim() ? "linear-gradient(135deg, #43A047, #2E7D32)" : "rgba(255,255,255,0.1)",
+                  background: mName.trim() ? "linear-gradient(135deg, #34d399, #059669)" : "rgba(255,255,255,0.1)",
                   color: "white", fontWeight: 800, fontSize: 14, cursor: mName.trim() ? "pointer" : "default",
                 }}>
                   {busy ? "Adding…" : "＋ Add to menu"}
@@ -552,7 +552,7 @@ export default function BusinessPage() {
                     <span style={{ color: "white", fontWeight: 800, fontSize: 14 }}>{item.strain_name}</span>
                     <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>{item.category}</span>
                     {item.strain_slug ? (
-                      <span title="Matched to the strain library — appears in scan results" style={{ color: "#81C784", fontSize: 10, fontWeight: 800, border: "1px solid rgba(76,175,80,0.4)", borderRadius: 99, padding: "0 7px" }}>
+                      <span title="Matched to the strain library — appears in scan results" style={{ color: "#6ee7b7", fontSize: 10, fontWeight: 800, border: "1px solid rgba(52,211,153,0.4)", borderRadius: 99, padding: "0 7px" }}>
                         🔗 scan-linked
                       </span>
                     ) : (
@@ -567,9 +567,9 @@ export default function BusinessPage() {
                   <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                     <button onClick={() => toggleStock(item)} style={{
                       padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer",
-                      background: item.in_stock ? "rgba(76,175,80,0.15)" : "rgba(255,255,255,0.08)",
-                      color: item.in_stock ? "#81C784" : "rgba(255,255,255,0.6)",
-                      border: `1px solid ${item.in_stock ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.15)"}`,
+                      background: item.in_stock ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.08)",
+                      color: item.in_stock ? "#6ee7b7" : "rgba(255,255,255,0.6)",
+                      border: `1px solid ${item.in_stock ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.15)"}`,
                     }}>
                       {item.in_stock ? "✓ In stock" : "Out of stock"}
                     </button>
@@ -598,9 +598,9 @@ export default function BusinessPage() {
                 {ROLES.map((r) => (
                   <button key={r.key} onClick={() => setFRole(r.key)} style={{
                     padding: "7px 14px", borderRadius: 99, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                    background: fRole === r.key ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
-                    color: fRole === r.key ? "#81C784" : "rgba(255,255,255,0.65)",
-                    border: `1px solid ${fRole === r.key ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                    background: fRole === r.key ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                    color: fRole === r.key ? "#6ee7b7" : "rgba(255,255,255,0.65)",
+                    border: `1px solid ${fRole === r.key ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
                   }}>
                     {r.icon} {r.label}
                   </button>
@@ -622,14 +622,14 @@ export default function BusinessPage() {
               </label>
 
               {/* The moderator ask */}
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, margin: "0 0 16px", cursor: "pointer", padding: "12px 14px", borderRadius: 12, background: "rgba(76,175,80,0.08)", border: "1px solid rgba(76,175,80,0.25)" }}>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, margin: "0 0 16px", cursor: "pointer", padding: "12px 14px", borderRadius: 12, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.25)" }}>
                 <input type="checkbox" checked={fVolunteer} onChange={(e) => setFVolunteer(e.target.checked)} style={{ marginTop: 2 }} />
                 <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, lineHeight: 1.6 }}>
                   <strong>🌿 Help keep our atmosphere clean and healthy</strong> — I&apos;d like to
                   volunteer as a community group moderator. Approved moderators get a
                   few bonus scans to start.
                   {profile?.moderator_active && (
-                    <span style={{ display: "block", color: "#81C784", fontWeight: 800, marginTop: 4 }}>
+                    <span style={{ display: "block", color: "#6ee7b7", fontWeight: 800, marginTop: 4 }}>
                       ✓ You&apos;re an active moderator — thank you!
                     </span>
                   )}
@@ -638,7 +638,7 @@ export default function BusinessPage() {
 
               <button disabled={busy || !fName.trim() || !token} onClick={saveProfile} style={{
                 width: "100%", padding: "13px 18px", borderRadius: 12, border: "none",
-                background: !fName.trim() || !token ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #43A047, #2E7D32)",
+                background: !fName.trim() || !token ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #34d399, #059669)",
                 color: "white", fontWeight: 800, fontSize: 15, cursor: busy ? "default" : "pointer",
               }}>
                 {busy ? "Saving…" : profile ? "Save changes" : "Create profile"}

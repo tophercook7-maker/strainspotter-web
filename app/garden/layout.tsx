@@ -8,15 +8,16 @@ export default function GardenLayout({ children }: { children: ReactNode }) {
     <AuthProvider>
       <div
         className="relative min-h-screen w-full text-white"
-        style={{
-          backgroundImage: "url(/strainspotter-bg.jpeg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-        }}
+        style={{ background: "#0a0a0a" }}
       >
-        {/* subtle dark wash for legibility — fixed so it covers scroll */}
-        <div className="fixed inset-0 bg-black/35 pointer-events-none" />
+        {/* new-look flat black + radial emerald glow — fixed so it covers scroll */}
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(80% 55% at 50% -5%, rgba(52,211,153,0.10), transparent 60%), radial-gradient(60% 40% at 100% 100%, rgba(52,211,153,0.05), transparent 55%)",
+          }}
+        />
         {/* Checkout return handler — auto-activates after Stripe redirect */}
         <CheckoutReturn />
         {/* Cloud sync — mirrors plants/grows/journal/favorites to Supabase */}

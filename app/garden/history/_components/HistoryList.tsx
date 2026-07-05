@@ -71,9 +71,9 @@ export default function HistoryList({ scans }: { scans: Scan[] }) {
               fontSize: 12,
               fontWeight: 600,
               cursor: "pointer",
-              background: conf === k ? "rgba(76,175,80,0.18)" : "rgba(255,255,255,0.04)",
-              border: conf === k ? "1px solid rgba(76,175,80,0.45)" : "1px solid rgba(255,255,255,0.10)",
-              color: conf === k ? "#81C784" : "rgba(255,255,255,0.75)",
+              background: conf === k ? "rgba(52,211,153,0.18)" : "rgba(255,255,255,0.04)",
+              border: conf === k ? "1px solid rgba(52,211,153,0.45)" : "1px solid rgba(255,255,255,0.10)",
+              color: conf === k ? "#6ee7b7" : "rgba(255,255,255,0.75)",
               textTransform: "capitalize",
             }}
           >

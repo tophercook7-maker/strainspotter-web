@@ -214,8 +214,8 @@ export default function StrainSubmitPage() {
                   marginTop: 20,
                   padding: "12px 16px",
                   borderRadius: 10,
-                  background: "rgba(76,175,80,0.10)",
-                  border: "1px solid rgba(76,175,80,0.20)",
+                  background: "rgba(52,211,153,0.10)",
+                  border: "1px solid rgba(52,211,153,0.20)",
                   display: "inline-block",
                 }}
               >
@@ -225,7 +225,7 @@ export default function StrainSubmitPage() {
                     fontWeight: 700,
                     letterSpacing: 1.2,
                     textTransform: "uppercase" as const,
-                    color: "rgba(129,199,132,0.65)",
+                    color: "rgba(110,231,183,0.65)",
                     marginBottom: 4,
                   }}
                 >
@@ -249,7 +249,7 @@ export default function StrainSubmitPage() {
                     borderRadius: 12,
                     border: "none",
                     background:
-                      "linear-gradient(135deg, #43A047, #2E7D32)",
+                      "linear-gradient(135deg, #34d399, #059669)",
                     color: "#fff",
                     fontSize: 14,
                     fontWeight: 700,
@@ -433,15 +433,15 @@ export default function StrainSubmitPage() {
                         cursor: "pointer",
                         background:
                           proposedType === t
-                            ? "rgba(76,175,80,0.15)"
+                            ? "rgba(52,211,153,0.15)"
                             : "rgba(255,255,255,0.04)",
                         border:
                           proposedType === t
-                            ? "1px solid rgba(76,175,80,0.40)"
+                            ? "1px solid rgba(52,211,153,0.40)"
                             : "1px solid rgba(255,255,255,0.10)",
                         color:
                           proposedType === t
-                            ? "#81C784"
+                            ? "#6ee7b7"
                             : "rgba(255,255,255,0.75)",
                       }}
                     >
@@ -508,7 +508,7 @@ export default function StrainSubmitPage() {
                 border: "none",
                 background: submitting
                   ? "rgba(255,255,255,0.08)"
-                  : "linear-gradient(135deg, #43A047, #2E7D32)",
+                  : "linear-gradient(135deg, #34d399, #059669)",
                 color: submitting ? "rgba(255,255,255,0.75)" : "#fff",
                 fontSize: 15,
                 fontWeight: 800,

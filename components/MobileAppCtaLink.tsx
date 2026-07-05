@@ -8,7 +8,7 @@ import {
 } from "@/lib/config/mobileAppDestination";
 
 const baseStyle: CSSProperties = {
-  color: "#81C784",
+  color: "#6ee7b7",
   fontWeight: 700,
   textDecoration: "underline",
   textUnderlineOffset: 3,

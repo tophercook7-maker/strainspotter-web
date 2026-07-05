@@ -92,7 +92,7 @@ export default async function StrainPage({ params }: { params: Promise<{ slug: s
         </nav>
 
         <h1 style={{ fontSize: 38, fontWeight: 900, margin: "0 0 6px" }}>🌿 {strain.name}</h1>
-        <p style={{ color: "#81C784", fontWeight: 700, fontSize: 17, margin: "0 0 24px" }}>{typeLabel(strain)}</p>
+        <p style={{ color: "#6ee7b7", fontWeight: 700, fontSize: 17, margin: "0 0 24px" }}>{typeLabel(strain)}</p>
 
         {/* Fast facts */}
         <div style={{ ...glass, display: "flex", flexWrap: "wrap", gap: 20, marginBottom: 18 }}>
@@ -125,7 +125,7 @@ export default async function StrainPage({ params }: { params: Promise<{ slug: s
                 <h2 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 10px" }}>Reported effects</h2>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: flavors.length ? 16 : 0 }}>
                   {effects.map((e) => (
-                    <span key={e} style={{ padding: "5px 13px", borderRadius: 99, background: "rgba(76,175,80,0.15)", border: "1px solid rgba(76,175,80,0.35)", color: "#A5D6A7", fontSize: 13, fontWeight: 600 }}>{e}</span>
+                    <span key={e} style={{ padding: "5px 13px", borderRadius: 99, background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.35)", color: "#A5D6A7", fontSize: 13, fontWeight: 600 }}>{e}</span>
                   ))}
                 </div>
               </>
@@ -160,14 +160,14 @@ export default async function StrainPage({ params }: { params: Promise<{ slug: s
         )}
 
         {/* CTAs — the funnel */}
-        <div style={{ ...glass, marginBottom: 18, textAlign: "center", border: "1px solid rgba(76,175,80,0.35)" }}>
+        <div style={{ ...glass, marginBottom: 18, textAlign: "center", border: "1px solid rgba(52,211,153,0.35)" }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px" }}>Got a jar of {strain.name}?</h2>
           <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: "0 0 14px" }}>
             Scan the label to verify it, check seller claims, and see who carries it near you.
             New accounts get 1 free scan.
           </p>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/garden/scanner" style={{ padding: "12px 22px", borderRadius: 12, background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
+            <Link href="/garden/scanner" style={{ padding: "12px 22px", borderRadius: 12, background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
               📷 Scan a strain — free
             </Link>
             <Link href="/garden/dispensaries" style={{ padding: "12px 22px", borderRadius: 12, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.25)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>

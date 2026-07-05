@@ -76,9 +76,9 @@ export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps
             style={{
               fontSize: 12,
               fontWeight: 700,
-              color: "#81C784",
+              color: "#6ee7b7",
               padding: "4px 10px",
-              background: "rgba(76,175,80,0.15)",
+              background: "rgba(52,211,153,0.15)",
               borderRadius: 99,
             }}
           >
@@ -99,8 +99,8 @@ export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps
         <div
           onClick={() => setShowPaywall(true)}
           style={{
-            background: "rgba(76,175,80,0.06)",
-            border: "1px solid rgba(76,175,80,0.20)",
+            background: "rgba(52,211,153,0.06)",
+            border: "1px solid rgba(52,211,153,0.20)",
             borderRadius: 14,
             padding: "14px 16px",
             cursor: "pointer",
@@ -140,8 +140,8 @@ export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps
       <div
         onClick={() => setShowPaywall(true)}
         style={{
-          background: "linear-gradient(135deg, rgba(76,175,80,0.10), rgba(46,125,50,0.18))",
-          border: "1px solid rgba(76,175,80,0.30)",
+          background: "linear-gradient(135deg, rgba(52,211,153,0.10), rgba(5,150,105,0.18))",
+          border: "1px solid rgba(52,211,153,0.30)",
           borderRadius: 16,
           padding: "20px 22px",
           cursor: "pointer",
@@ -152,7 +152,7 @@ export default function MembershipCTA({ variant = "banner" }: MembershipCTAProps
         <div style={{ fontSize: 28, marginBottom: 6 }}>🌿</div>
         <p
           style={{
-            color: "#66BB6A",
+            color: "#34d399",
             fontSize: 13,
             fontWeight: 800,
             margin: "0 0 4px",

@@ -49,7 +49,7 @@ export default function NotFound() {
           style={{
             padding: "12px 22px",
             borderRadius: 12,
-            background: "linear-gradient(135deg, #43A047, #2E7D32)",
+            background: "linear-gradient(135deg, #34d399, #059669)",
             color: "#fff",
             fontSize: 14,
             fontWeight: 700,

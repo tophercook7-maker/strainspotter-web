@@ -11,8 +11,8 @@ type SSButtonProps = {
 
 const variants: Record<SSButtonVariant, CSSProperties> = {
   primary: {
-    background: "linear-gradient(135deg, #43A047, #2E7D32)",
-    border: "1px solid rgba(129,199,132,0.35)",
+    background: "linear-gradient(135deg, #34d399, #059669)",
+    border: "1px solid rgba(110,231,183,0.35)",
     color: "#fff",
   },
   secondary: {
@@ -21,7 +21,7 @@ const variants: Record<SSButtonVariant, CSSProperties> = {
     color: "rgba(255,255,255,0.9)",
   },
   success: {
-    background: "rgba(76,175,80,0.16)",
+    background: "rgba(52,211,153,0.16)",
     border: "1px solid rgba(159,255,208,0.42)",
     color: "#9fffd0",
   },

@@ -20,7 +20,7 @@ const glass: React.CSSProperties = {
 };
 
 function healthColor(score: number): string {
-  if (score >= 90) return "#4CAF50";
+  if (score >= 90) return "#34d399";
   if (score >= 70) return "#8BC34A";
   if (score >= 40) return "#FF9800";
   return "#F44336";
@@ -209,7 +209,7 @@ export default function PlantDoctorPanel({
         style={{
           display: "block", textAlign: "center", width: "100%", padding: "14px 18px",
           borderRadius: 14, border: "none", marginBottom: 10,
-          background: "linear-gradient(135deg, #43A047, #2E7D32)",
+          background: "linear-gradient(135deg, #34d399, #059669)",
           color: "white", fontWeight: 800, fontSize: 15, textDecoration: "none",
         }}
       >

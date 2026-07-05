@@ -14,8 +14,8 @@ const toneStyles: Record<NonNullable<SSCardProps["tone"]>, CSSProperties> = {
     border: "1px solid rgba(255,255,255,0.1)",
   },
   success: {
-    background: "rgba(76,175,80,0.08)",
-    border: "1px solid rgba(76,175,80,0.28)",
+    background: "rgba(52,211,153,0.08)",
+    border: "1px solid rgba(52,211,153,0.28)",
   },
   warning: {
     background: "rgba(255,183,77,0.08)",

@@ -16,7 +16,7 @@ const tones: Record<SSBadgeTone, CSSProperties> = {
   },
   success: {
     color: "#9fffd0",
-    background: "rgba(76,175,80,0.14)",
+    background: "rgba(52,211,153,0.14)",
     border: "1px solid rgba(159,255,208,0.35)",
   },
   warning: {

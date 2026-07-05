@@ -20,7 +20,7 @@ export default function StrainsHubPage() {
         <h1 style={{ fontSize: 38, fontWeight: 900, margin: "0 0 8px" }}>🌿 Strain Library</h1>
         <p style={{ color: "rgba(255,255,255,0.72)", fontSize: 16, lineHeight: 1.7, margin: "0 0 28px" }}>
           35,000+ cannabis strains — effects, THC & CBD, lineage, flavors, and grow
-          info. Found a jar you can&apos;t place? <Link href="/garden/scanner" style={{ color: "#81C784", fontWeight: 700 }}>Scan it with AI</Link> — new accounts get 1 free scan.
+          info. Found a jar you can&apos;t place? <Link href="/garden/scanner" style={{ color: "#6ee7b7", fontWeight: 700 }}>Scan it with AI</Link> — new accounts get 1 free scan.
         </p>
 
         <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 14px" }}>Browse A–Z</h2>
@@ -40,14 +40,14 @@ export default function StrainsHubPage() {
           ))}
         </div>
 
-        <div style={{ padding: 20, borderRadius: 16, background: "rgba(76,175,80,0.1)", border: "1px solid rgba(76,175,80,0.3)" }}>
+        <div style={{ padding: 20, borderRadius: 16, background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.3)" }}>
           <h2 style={{ fontSize: 17, fontWeight: 800, margin: "0 0 6px" }}>The honest strain scanner</h2>
           <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 1.7, margin: "0 0 12px" }}>
             StrainSpotter reads labels, packaging, and menus with AI, verifies seller
             claims, and tells you the truth about what a photo can and can&apos;t identify.
             Plus a Plant Doctor that reads your live plant&apos;s age, stage, and health.
           </p>
-          <Link href="/garden/scanner" style={{ display: "inline-block", padding: "11px 20px", borderRadius: 12, background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
+          <Link href="/garden/scanner" style={{ display: "inline-block", padding: "11px 20px", borderRadius: 12, background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
             Try it free
           </Link>
         </div>

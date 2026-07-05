@@ -70,7 +70,7 @@ export default function StrainDeepDive({ details }: { details: StrainDetails }) 
     <div style={{ ...glass, marginTop: 14 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
         <div style={{ color: "white", fontWeight: 900, fontSize: 18 }}>📖 About {details.name}</div>
-        {typeLine && <div style={{ color: "#81C784", fontWeight: 700, fontSize: 12.5 }}>{typeLine}</div>}
+        {typeLine && <div style={{ color: "#6ee7b7", fontWeight: 700, fontSize: 12.5 }}>{typeLine}</div>}
       </div>
 
       {/* Fast facts */}
@@ -101,7 +101,7 @@ export default function StrainDeepDive({ details }: { details: StrainDetails }) 
           <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Reported effects</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {effects.map((e) => (
-              <span key={e} style={{ padding: "4px 11px", borderRadius: 99, background: "rgba(76,175,80,0.15)", border: "1px solid rgba(76,175,80,0.35)", color: "#A5D6A7", fontSize: 12, fontWeight: 600 }}>{e}</span>
+              <span key={e} style={{ padding: "4px 11px", borderRadius: 99, background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.35)", color: "#A5D6A7", fontSize: 12, fontWeight: 600 }}>{e}</span>
             ))}
           </div>
         </div>
@@ -129,8 +129,8 @@ export default function StrainDeepDive({ details }: { details: StrainDetails }) 
         href={`/strains/${details.slug}`}
         style={{
           display: "inline-block", padding: "9px 18px", borderRadius: 11,
-          background: "rgba(76,175,80,0.15)", border: "1px solid rgba(76,175,80,0.4)",
-          color: "#81C784", fontWeight: 800, fontSize: 13, textDecoration: "none",
+          background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.4)",
+          color: "#6ee7b7", fontWeight: 800, fontSize: 13, textDecoration: "none",
         }}
       >
         Full strain profile →

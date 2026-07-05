@@ -51,8 +51,8 @@ interface CoachTip {
 const STAGES: { key: Stage; label: string; emoji: string; color: string }[] = [
   { key: "sourcing", label: "Sourcing", emoji: "🛒", color: "#9C27B0" },
   { key: "seed", label: "Germination", emoji: "🌰", color: "#8B6914" },
-  { key: "seedling", label: "Seedling", emoji: "🌱", color: "#4CAF50" },
-  { key: "veg", label: "Vegetative", emoji: "🌿", color: "#2E7D32" },
+  { key: "seedling", label: "Seedling", emoji: "🌱", color: "#34d399" },
+  { key: "veg", label: "Vegetative", emoji: "🌿", color: "#059669" },
   { key: "flower", label: "Flowering", emoji: "🌸", color: "#E91E63" },
   { key: "dry", label: "Drying", emoji: "🍂", color: "#FF9800" },
   { key: "cure", label: "Curing", emoji: "🫙", color: "#795548" },
@@ -249,7 +249,7 @@ function NewGrowForm({ onAdd, onCancel }: { onAdd: (g: Grow) => void; onCancel: 
 
       <div style={{ display: "flex", gap: 12 }}>
         <button onClick={handleSubmit} style={{
-          padding: "10px 24px", borderRadius: 8, background: "#4CAF50", color: "white",
+          padding: "10px 24px", borderRadius: 8, background: "#34d399", color: "white",
           fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer",
         }}>
           Start Grow
@@ -304,7 +304,7 @@ function AddLogForm({ grow, onAdd, onCancel }: { grow: Grow; onAdd: (log: GrowLo
 
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button onClick={handleSubmit} style={{
-          padding: "8px 20px", borderRadius: 8, background: "#4CAF50",
+          padding: "8px 20px", borderRadius: 8, background: "#34d399",
           color: "white", fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer",
         }}>
           Save Entry
@@ -383,8 +383,8 @@ function GrowCard({ grow, onUpdate, onDelete }: { grow: Grow; onUpdate: (g: Grow
               🌿 Update Stage
             </button>
             <button onClick={() => setShowLogForm(true)} style={{
-              padding: "6px 12px", borderRadius: 6, background: "rgba(76,175,80,0.2)",
-              color: "#81C784", fontSize: 12, fontWeight: 600,
+              padding: "6px 12px", borderRadius: 6, background: "rgba(52,211,153,0.2)",
+              color: "#6ee7b7", fontSize: 12, fontWeight: 600,
               display: "flex", alignItems: "center", gap: 4, border: "none", cursor: "pointer",
             }}>
               📝 Add Log
@@ -552,8 +552,8 @@ export default function GrowCoachPage() {
                   display: "block",
                   padding: "12px 14px",
                   borderRadius: 12,
-                  background: "rgba(76,175,80,0.10)",
-                  border: "1px solid rgba(76,175,80,0.25)",
+                  background: "rgba(52,211,153,0.10)",
+                  border: "1px solid rgba(52,211,153,0.25)",
                   textDecoration: "none",
                   color: "#fff",
                 }}
@@ -578,8 +578,8 @@ export default function GrowCoachPage() {
                   display: "block",
                   padding: "12px 14px",
                   borderRadius: 12,
-                  background: "rgba(76,175,80,0.10)",
-                  border: "1px solid rgba(76,175,80,0.25)",
+                  background: "rgba(52,211,153,0.10)",
+                  border: "1px solid rgba(52,211,153,0.25)",
                   textDecoration: "none",
                   color: "#fff",
                 }}
@@ -609,8 +609,8 @@ export default function GrowCoachPage() {
               padding: "16px 18px",
               marginBottom: 24,
               borderRadius: 16,
-              border: "1px solid rgba(76,175,80,0.40)",
-              background: "linear-gradient(135deg, rgba(67,160,71,0.18), rgba(46,125,50,0.28))",
+              border: "1px solid rgba(52,211,153,0.40)",
+              background: "linear-gradient(135deg, rgba(52,211,153,0.18), rgba(5,150,105,0.28))",
               color: "#fff",
               cursor: "pointer",
               display: "flex",
@@ -622,7 +622,7 @@ export default function GrowCoachPage() {
             <span style={{
               fontSize: 28, lineHeight: 1, flexShrink: 0,
               width: 48, height: 48, borderRadius: 12,
-              background: "rgba(76,175,80,0.22)",
+              background: "rgba(52,211,153,0.22)",
               display: "grid", placeItems: "center",
             }}>📷</span>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -642,8 +642,8 @@ export default function GrowCoachPage() {
               onClick={() => setShowNewForm(true)}
               style={{
                 width: "100%", padding: "16px 0", marginBottom: 24, borderRadius: 12,
-                border: "2px dashed rgba(76,175,80,0.4)", background: "rgba(76,175,80,0.08)",
-                color: "#81C784", fontWeight: 700, fontSize: 15,
+                border: "2px dashed rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.08)",
+                color: "#6ee7b7", fontWeight: 700, fontSize: 15,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 cursor: "pointer",
               }}

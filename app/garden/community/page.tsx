@@ -132,7 +132,7 @@ export default function CommunityPage() {
                   onClick={() => (g.joined ? router.push(`/garden/community/${g.threadId}`) : join(g))}
                   style={{
                     padding: "9px 18px", borderRadius: 11, fontWeight: 800, fontSize: 13, cursor: "pointer",
-                    background: g.joined ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #43A047, #2E7D32)",
+                    background: g.joined ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #34d399, #059669)",
                     color: "white", flexShrink: 0,
                     border: g.joined ? "1px solid rgba(255,255,255,0.2)" : "none",
                   }}

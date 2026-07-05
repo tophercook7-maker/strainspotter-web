@@ -142,9 +142,9 @@ export default function JournalPage() {
                 padding: "16px 18px",
                 marginBottom: 22,
                 borderRadius: 14,
-                border: "2px dashed rgba(76,175,80,0.40)",
-                background: "rgba(76,175,80,0.06)",
-                color: "#81C784",
+                border: "2px dashed rgba(52,211,153,0.40)",
+                background: "rgba(52,211,153,0.06)",
+                color: "#6ee7b7",
                 fontWeight: 700,
                 fontSize: 15,
                 cursor: "pointer",
@@ -257,11 +257,11 @@ function NewSessionForm({
               onClick={() => setMethod(o.value)}
               style={{
                 ...pillButton,
-                background: method === o.value ? "rgba(76,175,80,0.18)" : "rgba(255,255,255,0.04)",
+                background: method === o.value ? "rgba(52,211,153,0.18)" : "rgba(255,255,255,0.04)",
                 border: method === o.value
-                  ? "1px solid rgba(76,175,80,0.45)"
+                  ? "1px solid rgba(52,211,153,0.45)"
                   : "1px solid rgba(255,255,255,0.10)",
-                color: method === o.value ? "#81C784" : "rgba(255,255,255,0.75)",
+                color: method === o.value ? "#6ee7b7" : "rgba(255,255,255,0.75)",
               }}
             >
               {o.icon} {o.label}
@@ -362,7 +362,7 @@ function NewSessionForm({
           style={{
             flex: 1, padding: "12px 0", borderRadius: 12, border: "none",
             background: strain.trim()
-              ? "linear-gradient(135deg, #43A047, #2E7D32)"
+              ? "linear-gradient(135deg, #34d399, #059669)"
               : "rgba(255,255,255,0.08)",
             color: strain.trim() ? "#fff" : "rgba(255,255,255,0.72)",
             fontSize: 14, fontWeight: 700,
@@ -487,11 +487,11 @@ function MoodRow({ value, onChange }: { value: Mood; onChange: (m: Mood) => void
           onClick={() => onChange(o.value)}
           style={{
             ...pillButton,
-            background: value === o.value ? "rgba(76,175,80,0.18)" : "rgba(255,255,255,0.04)",
+            background: value === o.value ? "rgba(52,211,153,0.18)" : "rgba(255,255,255,0.04)",
             border: value === o.value
-              ? "1px solid rgba(76,175,80,0.45)"
+              ? "1px solid rgba(52,211,153,0.45)"
               : "1px solid rgba(255,255,255,0.10)",
-            color: value === o.value ? "#81C784" : "rgba(255,255,255,0.75)",
+            color: value === o.value ? "#6ee7b7" : "rgba(255,255,255,0.75)",
           }}
         >
           {o.emoji} {o.label}

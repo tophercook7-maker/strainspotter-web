@@ -183,7 +183,7 @@ export default function PrivacyPage() {
             For privacy questions or data requests, email{" "}
             <a
               href="mailto:privacy@strainspotter.app"
-              style={{ color: "#81C784" }}
+              style={{ color: "#6ee7b7" }}
             >
               privacy@strainspotter.app
             </a>
@@ -193,7 +193,7 @@ export default function PrivacyPage() {
 
         <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, marginTop: 32 }}>
           See also the{" "}
-          <Link href="/terms" style={{ color: "rgba(129,199,132,0.7)" }}>
+          <Link href="/terms" style={{ color: "rgba(110,231,183,0.7)" }}>
             Terms of Service
           </Link>
           .

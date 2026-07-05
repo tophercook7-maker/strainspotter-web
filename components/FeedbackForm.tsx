@@ -69,15 +69,15 @@ export default function FeedbackForm() {
     return (
       <div
         style={{
-          background: "rgba(76,175,80,0.06)",
-          border: "1px solid rgba(76,175,80,0.15)",
+          background: "rgba(52,211,153,0.06)",
+          border: "1px solid rgba(52,211,153,0.15)",
           borderRadius: 16,
           padding: "20px",
           textAlign: "center",
         }}
       >
         <div style={{ fontSize: 32, marginBottom: 8 }}>💚</div>
-        <p style={{ color: "#66BB6A", fontSize: 14, fontWeight: 700, margin: "0 0 4px" }}>
+        <p style={{ color: "#34d399", fontSize: 14, fontWeight: 700, margin: "0 0 4px" }}>
           Thanks for your feedback!
         </p>
         <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: 0 }}>
@@ -166,11 +166,11 @@ export default function FeedbackForm() {
               key={r}
               onClick={() => setRole(r)}
               style={{
-                background: role === r ? "rgba(76,175,80,0.2)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${role === r ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.08)"}`,
+                background: role === r ? "rgba(52,211,153,0.2)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${role === r ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.08)"}`,
                 borderRadius: 99,
                 padding: "6px 14px",
-                color: role === r ? "#66BB6A" : "rgba(255,255,255,0.5)",
+                color: role === r ? "#34d399" : "rgba(255,255,255,0.5)",
                 fontSize: 12,
                 cursor: "pointer",
                 fontWeight: role === r ? 700 : 500,
@@ -220,8 +220,8 @@ export default function FeedbackForm() {
             gap: 10,
             cursor: "pointer",
             padding: "10px 12px",
-            background: moderatorInterest ? "rgba(76,175,80,0.06)" : "rgba(255,255,255,0.02)",
-            border: `1px solid ${moderatorInterest ? "rgba(76,175,80,0.2)" : "rgba(255,255,255,0.06)"}`,
+            background: moderatorInterest ? "rgba(52,211,153,0.06)" : "rgba(255,255,255,0.02)",
+            border: `1px solid ${moderatorInterest ? "rgba(52,211,153,0.2)" : "rgba(255,255,255,0.06)"}`,
             borderRadius: 12,
             transition: "all 0.15s",
           }}
@@ -230,7 +230,7 @@ export default function FeedbackForm() {
             type="checkbox"
             checked={moderatorInterest}
             onChange={(e) => setModeratorInterest(e.target.checked)}
-            style={{ marginTop: 2, accentColor: "#66BB6A" }}
+            style={{ marginTop: 2, accentColor: "#34d399" }}
           />
           <div>
             <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600 }}>
@@ -250,7 +250,7 @@ export default function FeedbackForm() {
         disabled={rating === 0 || submitting}
         style={{
           width: "100%",
-          background: rating === 0 ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #43A047, #2E7D32)",
+          background: rating === 0 ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #34d399, #059669)",
           border: "none",
           borderRadius: 12,
           padding: "14px",

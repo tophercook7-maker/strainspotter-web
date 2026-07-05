@@ -100,12 +100,12 @@ export default function ZoneNav({
                 fontWeight: 600,
                 textDecoration: "none",
                 background: active
-                  ? "rgba(76,175,80,0.18)"
+                  ? "rgba(52,211,153,0.18)"
                   : "rgba(255,255,255,0.04)",
                 border: active
-                  ? "1px solid rgba(76,175,80,0.45)"
+                  ? "1px solid rgba(52,211,153,0.45)"
                   : "1px solid rgba(255,255,255,0.10)",
-                color: active ? "#81C784" : "rgba(255,255,255,0.75)",
+                color: active ? "#6ee7b7" : "rgba(255,255,255,0.75)",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,

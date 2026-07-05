@@ -89,7 +89,7 @@ async function compressImage(file: File, maxDim = 1024, quality = 0.85): Promise
 }
 
 const severityColor = {
-  low: { bg: "rgba(76,175,80,0.10)", border: "rgba(76,175,80,0.35)", text: "#81C784", emoji: "🟢" },
+  low: { bg: "rgba(52,211,153,0.10)", border: "rgba(52,211,153,0.35)", text: "#6ee7b7", emoji: "🟢" },
   moderate: { bg: "rgba(255,183,77,0.10)", border: "rgba(255,183,77,0.35)", text: "#FFB74D", emoji: "🟡" },
   urgent: { bg: "rgba(244,67,54,0.10)", border: "rgba(244,67,54,0.35)", text: "#EF5350", emoji: "🔴" },
 };
@@ -228,7 +228,7 @@ export default function DiagnosticDialog({
           maxWidth: 540,
           width: "100%",
           background: "linear-gradient(180deg, rgba(20,30,20,0.97), rgba(8,12,10,0.99))",
-          border: "1px solid rgba(76,175,80,0.30)",
+          border: "1px solid rgba(52,211,153,0.30)",
           borderRadius: 22,
           padding: "26px 22px 22px",
           color: "#fff",
@@ -239,7 +239,7 @@ export default function DiagnosticDialog({
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
-            background: "linear-gradient(135deg, rgba(76,175,80,0.25), rgba(46,125,50,0.40))",
+            background: "linear-gradient(135deg, rgba(52,211,153,0.25), rgba(5,150,105,0.40))",
             display: "grid", placeItems: "center", fontSize: 24,
           }}>🩺</div>
           <div style={{ flex: 1 }}>
@@ -392,11 +392,11 @@ export default function DiagnosticDialog({
                 border: "none",
                 background: loading || images.length === 0
                   ? "rgba(255,255,255,0.08)"
-                  : "linear-gradient(135deg, #43A047, #2E7D32)",
+                  : "linear-gradient(135deg, #34d399, #059669)",
                 color: loading || images.length === 0 ? "rgba(255,255,255,0.72)" : "#fff",
                 fontSize: 15, fontWeight: 700, letterSpacing: 0.4,
                 cursor: loading || images.length === 0 ? "not-allowed" : "pointer",
-                boxShadow: loading || images.length === 0 ? "none" : "0 4px 18px rgba(46,125,50,0.35)",
+                boxShadow: loading || images.length === 0 ? "none" : "0 4px 18px rgba(5,150,105,0.35)",
               }}
             >
               {loading ? "Diagnosing…" : "Diagnose"}
@@ -486,10 +486,10 @@ function DiagnosisResult({
             <span style={{
               fontSize: 12, fontWeight: 700, padding: "2px 8px",
               borderRadius: 99,
-              background: d.confidence >= 70 ? "rgba(76,175,80,0.18)"
+              background: d.confidence >= 70 ? "rgba(52,211,153,0.18)"
                        : d.confidence >= 40 ? "rgba(255,183,77,0.18)"
                        : "rgba(255,255,255,0.06)",
-              color: d.confidence >= 70 ? "#81C784"
+              color: d.confidence >= 70 ? "#6ee7b7"
                    : d.confidence >= 40 ? "#FFB74D"
                    : "rgba(255,255,255,0.55)",
             }}>
@@ -646,7 +646,7 @@ function FooterButtons({
         style={{
           flex: 1, padding: "12px 0",
           borderRadius: 12, border: "none",
-          background: "linear-gradient(135deg, #43A047, #2E7D32)",
+          background: "linear-gradient(135deg, #34d399, #059669)",
           color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
         }}
       >Done</button>

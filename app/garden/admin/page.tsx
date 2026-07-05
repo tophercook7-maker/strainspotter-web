@@ -69,7 +69,7 @@ interface FeedbackItem {
 
 const btnPrimary: React.CSSProperties = {
   padding: "8px 16px", borderRadius: 11, border: "none",
-  background: "linear-gradient(135deg, #43A047, #2E7D32)",
+  background: "linear-gradient(135deg, #34d399, #059669)",
   color: "white", fontWeight: 800, fontSize: 13, cursor: "pointer",
 };
 const btnGhost: React.CSSProperties = {
@@ -266,7 +266,7 @@ export default function AdminPage() {
               <button key={t.key} onClick={() => setTab(t.key)} style={{
                 flex: 1, minWidth: 100, padding: "9px 8px", borderRadius: 11, border: "none", cursor: "pointer",
                 fontWeight: 800, fontSize: 12.5,
-                background: tab === t.key ? "linear-gradient(135deg, #43A047, #2E7D32)" : "transparent",
+                background: tab === t.key ? "linear-gradient(135deg, #34d399, #059669)" : "transparent",
                 color: tab === t.key ? "#fff" : "rgba(255,255,255,0.7)",
               }}>
                 {t.label}
@@ -324,8 +324,8 @@ export default function AdminPage() {
                       <span style={{ color: "white", fontWeight: 700, fontSize: 13.5 }}>{g.name}</span>
                       <span style={{
                         fontWeight: 900, fontSize: 13, borderRadius: 99, padding: "2px 12px",
-                        color: g.moderatorCount > 0 ? "#81C784" : "#FFB74D",
-                        border: `1px solid ${g.moderatorCount > 0 ? "rgba(76,175,80,0.4)" : "rgba(255,183,77,0.4)"}`,
+                        color: g.moderatorCount > 0 ? "#6ee7b7" : "#FFB74D",
+                        border: `1px solid ${g.moderatorCount > 0 ? "rgba(52,211,153,0.4)" : "rgba(255,183,77,0.4)"}`,
                       }}>
                         {g.moderatorCount} mod{g.moderatorCount === 1 ? "" : "s"}
                       </span>
@@ -362,13 +362,13 @@ export default function AdminPage() {
               </div>
               <button disabled={!token} onClick={runEnrichment} style={{
                 padding: "10px 18px", borderRadius: 11, border: "none", fontWeight: 800, fontSize: 13, cursor: "pointer",
-                background: enrichRunning ? "rgba(255,183,77,0.2)" : "linear-gradient(135deg, #43A047, #2E7D32)",
+                background: enrichRunning ? "rgba(255,183,77,0.2)" : "linear-gradient(135deg, #34d399, #059669)",
                 color: enrichRunning ? "#FFB74D" : "white",
               }}>
                 {enrichRunning ? "⏸ Stop after this batch" : "▶ Enrich the library"}
               </button>
               {enrichLog && (
-                <div style={{ color: "#81C784", fontSize: 12, marginTop: 8 }}>{enrichLog}</div>
+                <div style={{ color: "#6ee7b7", fontSize: 12, marginTop: 8 }}>{enrichLog}</div>
               )}
             </div>
           )}
@@ -483,9 +483,9 @@ export default function AdminPage() {
                 {["new", "replied", "closed", "all"].map((s) => (
                   <button key={s} onClick={() => setFbFilter(s)} style={{
                     padding: "5px 14px", borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                    background: fbFilter === s ? "rgba(76,175,80,0.25)" : "rgba(255,255,255,0.06)",
-                    color: fbFilter === s ? "#81C784" : "rgba(255,255,255,0.65)",
-                    border: `1px solid ${fbFilter === s ? "rgba(76,175,80,0.4)" : "rgba(255,255,255,0.1)"}`,
+                    background: fbFilter === s ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                    color: fbFilter === s ? "#6ee7b7" : "rgba(255,255,255,0.65)",
+                    border: `1px solid ${fbFilter === s ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
                   }}>
                     {s}
                   </button>
@@ -505,7 +505,7 @@ export default function AdminPage() {
                   </div>
                   <div style={{ color: "white", fontSize: 14, lineHeight: 1.6 }}>{f.content}</div>
                   {f.admin_reply && (
-                    <div style={{ color: "#81C784", fontSize: 13, lineHeight: 1.6, marginTop: 8, paddingLeft: 10, borderLeft: "2px solid rgba(76,175,80,0.5)" }}>
+                    <div style={{ color: "#6ee7b7", fontSize: 13, lineHeight: 1.6, marginTop: 8, paddingLeft: 10, borderLeft: "2px solid rgba(52,211,153,0.5)" }}>
                       You replied: {f.admin_reply}
                     </div>
                   )}

@@ -184,14 +184,14 @@ export default function CommunityChatPage() {
                     maxWidth: "78%", padding: "10px 14px", borderRadius: 16,
                     borderBottomRightRadius: m.mine ? 4 : 16,
                     borderBottomLeftRadius: m.mine ? 16 : 4,
-                    background: m.mine ? "linear-gradient(135deg, #43A047, #2E7D32)" : "rgba(255,255,255,0.10)",
+                    background: m.mine ? "linear-gradient(135deg, #34d399, #059669)" : "rgba(255,255,255,0.10)",
                     border: m.mine ? "none" : "1px solid rgba(255,255,255,0.15)",
                     cursor: !m.mine ? "pointer" : "default",
                   }}
                 >
                   {!m.mine && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                      <span style={{ color: "#81C784", fontSize: 12, fontWeight: 800 }}>{m.senderName}</span>
+                      <span style={{ color: "#6ee7b7", fontSize: 12, fontWeight: 800 }}>{m.senderName}</span>
                       {m.isModerator && (
                         <span style={{ color: "#FFD54F", fontSize: 9, fontWeight: 900, border: "1px solid rgba(255,213,79,0.4)", borderRadius: 99, padding: "0 6px" }}>
                           🛡️ MOD
@@ -257,7 +257,7 @@ export default function CommunityChatPage() {
                 disabled={sending || !draft.trim() || !token}
                 style={{
                   padding: "0 20px", borderRadius: 14, border: "none", fontWeight: 800, fontSize: 14,
-                  background: draft.trim() && token ? "linear-gradient(135deg, #43A047, #2E7D32)" : "rgba(255,255,255,0.1)",
+                  background: draft.trim() && token ? "linear-gradient(135deg, #34d399, #059669)" : "rgba(255,255,255,0.1)",
                   color: "white", cursor: draft.trim() && token ? "pointer" : "default",
                 }}
               >

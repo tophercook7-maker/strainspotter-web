@@ -225,9 +225,9 @@ export default function SeedVendorsPage() {
               onClick={() => setActiveTag(null)}
               style={{
                 padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                background: !activeTag ? "rgba(102,187,106,0.25)" : "rgba(255,255,255,0.06)",
-                color: !activeTag ? "#81C784" : "rgba(255,255,255,0.78)",
-                border: `1px solid ${!activeTag ? "rgba(102,187,106,0.4)" : "rgba(255,255,255,0.1)"}`,
+                background: !activeTag ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                color: !activeTag ? "#6ee7b7" : "rgba(255,255,255,0.78)",
+                border: `1px solid ${!activeTag ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
               }}
             >
               All
@@ -238,9 +238,9 @@ export default function SeedVendorsPage() {
                 onClick={() => setActiveTag(activeTag === tag ? null : tag)}
                 style={{
                   padding: "4px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  background: activeTag === tag ? "rgba(102,187,106,0.25)" : "rgba(255,255,255,0.06)",
-                  color: activeTag === tag ? "#81C784" : "rgba(255,255,255,0.78)",
-                  border: `1px solid ${activeTag === tag ? "rgba(102,187,106,0.4)" : "rgba(255,255,255,0.1)"}`,
+                  background: activeTag === tag ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.06)",
+                  color: activeTag === tag ? "#6ee7b7" : "rgba(255,255,255,0.78)",
+                  border: `1px solid ${activeTag === tag ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.1)"}`,
                 }}
               >
                 {tag}
@@ -266,7 +266,7 @@ export default function SeedVendorsPage() {
                   key={vendor.id}
                   style={{
                     ...glass, marginBottom: 12, overflow: "hidden", transition: "background 0.2s",
-                    borderColor: vendor.featured ? "rgba(102,187,106,0.3)" : "rgba(255,255,255,0.15)",
+                    borderColor: vendor.featured ? "rgba(52,211,153,0.3)" : "rgba(255,255,255,0.15)",
                   }}
                 >
                   <div style={{ padding: 20 }}>
@@ -274,8 +274,8 @@ export default function SeedVendorsPage() {
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 12 }}>
                       <div style={{
                         width: 48, height: 48, borderRadius: 8,
-                        background: vendor.featured ? "rgba(102,187,106,0.15)" : "rgba(255,255,255,0.08)",
-                        border: `1px solid ${vendor.featured ? "rgba(102,187,106,0.3)" : "rgba(255,255,255,0.15)"}`,
+                        background: vendor.featured ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.08)",
+                        border: `1px solid ${vendor.featured ? "rgba(52,211,153,0.3)" : "rgba(255,255,255,0.15)"}`,
                         display: "grid", placeItems: "center", flexShrink: 0, fontSize: 24,
                       }}>
                         🌱
@@ -325,8 +325,8 @@ export default function SeedVendorsPage() {
                         onClick={() => window.open(vendor.website, "_blank")}
                         style={{
                           padding: "6px 16px", borderRadius: 99, fontSize: 13, fontWeight: 700,
-                          background: "rgba(102,187,106,0.2)", color: "#81C784",
-                          border: "1px solid rgba(102,187,106,0.3)", cursor: "pointer",
+                          background: "rgba(52,211,153,0.2)", color: "#6ee7b7",
+                          border: "1px solid rgba(52,211,153,0.3)", cursor: "pointer",
                           display: "flex", alignItems: "center", gap: 4,
                         }}
                       >

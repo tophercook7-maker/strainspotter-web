@@ -155,7 +155,7 @@ function Toggle({
         borderRadius: 13,
         padding: 3,
         cursor: "pointer",
-        background: checked ? "#43A047" : "rgba(255,255,255,0.55)",
+        background: checked ? "#34d399" : "rgba(255,255,255,0.55)",
         border: "none",
         position: "relative",
         transition: "background 0.2s",
@@ -187,7 +187,7 @@ function tierLabel(t: string): string {
 function tierBadgeColor(t: string): string {
   if (t === "pro") return "#FFD54F";
   if (t === "member" || t === "garden" || t === "standard" || t === "elite")
-    return "#66BB6A";
+    return "#34d399";
   return "rgba(255,255,255,0.6)";
 }
 
@@ -388,7 +388,7 @@ export default function SettingsPage() {
                 right: 20,
                 padding: "10px 18px",
                 borderRadius: 10,
-                background: "#43A047",
+                background: "#34d399",
                 color: "white",
                 fontSize: 14,
                 fontWeight: 700,
@@ -471,7 +471,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => setShowAuth(true)}
                   style={{
-                    background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                    background: "linear-gradient(135deg, #34d399, #059669)",
                     border: "none",
                     borderRadius: 12,
                     padding: "14px 32px",
@@ -500,11 +500,11 @@ export default function SettingsPage() {
                 background:
                   tier === "free"
                     ? "rgba(255,213,79,0.12)"
-                    : "rgba(76,175,80,0.12)",
+                    : "rgba(52,211,153,0.12)",
                 border: `1px solid ${
                   tier === "free"
                     ? "rgba(255,213,79,0.30)"
-                    : "rgba(76,175,80,0.30)"
+                    : "rgba(52,211,153,0.30)"
                 }`,
               }}
             >
@@ -572,7 +572,7 @@ export default function SettingsPage() {
                   style={{
                     color:
                       scansRemaining > 10
-                        ? "#66BB6A"
+                        ? "#34d399"
                         : scansRemaining > 0
                         ? "#FFB74D"
                         : "#EF5350",

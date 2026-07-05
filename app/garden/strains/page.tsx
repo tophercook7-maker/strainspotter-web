@@ -33,7 +33,7 @@ interface APIResponse {
 const TYPE_COLORS: Record<StrainType, { bg: string; border: string; text: string }> = {
   Sativa:  { bg: "rgba(255,213,79,0.12)",  border: "#FFD54F", text: "#FFD54F" },
   Indica:  { bg: "rgba(149,117,205,0.12)", border: "#9575CD", text: "#9575CD" },
-  Hybrid:  { bg: "rgba(102,187,106,0.12)", border: "#66BB6A", text: "#66BB6A" },
+  Hybrid:  { bg: "rgba(52,211,153,0.12)", border: "#34d399", text: "#34d399" },
 };
 
 const EFFECT_ICONS: Record<string, string> = {
@@ -83,7 +83,7 @@ function StrainCard({ strain: s, onTap }: { strain: Strain; onTap: () => void })
         <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
           <div style={{
             width: `${s.indica_percentage}%`, height: "100%", borderRadius: 2,
-            background: "linear-gradient(90deg, #9575CD 0%, #66BB6A 60%, #FFD54F 100%)",
+            background: "linear-gradient(90deg, #9575CD 0%, #34d399 60%, #FFD54F 100%)",
           }} />
         </div>
         <span style={{ fontSize: 12, color: "#FFD54F", fontWeight: 600, minWidth: 30, textAlign: "right" }}>S {s.sativa_percentage}%</span>
@@ -175,7 +175,7 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
           <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
             <div style={{
               width: `${s.indica_percentage}%`, height: "100%", borderRadius: 3,
-              background: "linear-gradient(90deg, #9575CD 0%, #66BB6A 60%, #FFD54F 100%)",
+              background: "linear-gradient(90deg, #9575CD 0%, #34d399 60%, #FFD54F 100%)",
             }} />
           </div>
           <span style={{ fontSize: 12, color: "#FFD54F", fontWeight: 600 }}>Sativa {s.sativa_percentage}%</span>
@@ -190,7 +190,7 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
                 borderRadius: 12, padding: "8px 16px",
               }}>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>THC</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#66BB6A" }}>{s.thc}%</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#34d399" }}>{s.thc}%</div>
               </div>
             )}
             {s.cbd != null && s.cbd > 0 && (
@@ -222,8 +222,8 @@ function DetailModal({ strain: s, onClose }: { strain: Strain; onClose: () => vo
               {s.effects.map((e) => (
                 <span key={e} style={{
                   padding: "4px 10px", borderRadius: 10,
-                  background: "rgba(102,187,106,0.1)", border: "1px solid rgba(102,187,106,0.18)",
-                  fontSize: 12, color: "#66BB6A",
+                  background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.18)",
+                  fontSize: 12, color: "#34d399",
                 }}>
                   {EFFECT_ICONS[e.toLowerCase()] || "🌿"} {cap(e)}
                 </span>
@@ -341,7 +341,7 @@ export default function StrainsPage() {
             }}
           >‹</button>
           <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#66BB6A" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#34d399" }}>
               🔬 Strain Database
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", marginTop: 2 }}>

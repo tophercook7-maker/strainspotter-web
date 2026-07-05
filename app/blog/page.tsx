@@ -19,7 +19,7 @@ export default function BlogIndexPage() {
         <h1 style={{ fontSize: 36, fontWeight: 900, margin: "0 0 8px" }}>🌿 Grower Guides</h1>
         <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, lineHeight: 1.7, margin: "0 0 28px" }}>
           Practical, no-hype cannabis knowledge — from the team behind the{" "}
-          <Link href="/garden/scanner" style={{ color: "#81C784", fontWeight: 700 }}>honest AI scanner</Link>.
+          <Link href="/garden/scanner" style={{ color: "#6ee7b7", fontWeight: 700 }}>honest AI scanner</Link>.
         </p>
         {posts.map((p) => (
           <Link key={p.slug} href={`/blog/${p.slug}`} style={{ display: "block", textDecoration: "none", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.16)", borderRadius: 16, padding: 20, marginBottom: 14 }}>

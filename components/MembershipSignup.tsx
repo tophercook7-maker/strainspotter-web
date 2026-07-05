@@ -130,7 +130,7 @@ export default function MembershipSignup({
                 padding: "12px 8px",
                 borderRadius: 12,
                 border: "none",
-                background: plan === p ? "linear-gradient(135deg, #43A047, #2E7D32)" : "transparent",
+                background: plan === p ? "linear-gradient(135deg, #34d399, #059669)" : "transparent",
                 color: plan === p ? "#fff" : "rgba(255,255,255,0.5)",
                 fontSize: 14,
                 fontWeight: 700,
@@ -150,7 +150,7 @@ export default function MembershipSignup({
         <div style={{
           padding: "12px 14px",
           borderRadius: 12,
-          background: "rgba(76,175,80,0.06)",
+          background: "rgba(52,211,153,0.06)",
           marginBottom: 20,
           fontSize: 12,
           color: "rgba(255,255,255,0.5)",
@@ -211,7 +211,7 @@ export default function MembershipSignup({
             border: "none",
             background: loading
               ? "rgba(255,255,255,0.1)"
-              : "linear-gradient(135deg, #43A047, #2E7D32)",
+              : "linear-gradient(135deg, #34d399, #059669)",
             color: "#fff",
             fontSize: 16,
             fontWeight: 700,

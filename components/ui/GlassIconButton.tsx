@@ -18,7 +18,7 @@ export default function GlassIconButton({
   onClick,
   href,
   disabled = false,
-  gradient = 'linear-gradient(135deg, rgba(76,175,80,0.5), rgba(27,94,32,0.7))',
+  gradient = 'linear-gradient(135deg, rgba(52,211,153,0.5), rgba(27,94,32,0.7))',
 }: GlassIconButtonProps) {
   const content = (
     <Box

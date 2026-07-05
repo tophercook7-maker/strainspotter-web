@@ -156,9 +156,9 @@ export default function ScanPaywall({
                   width: "100%",
                   marginTop: 8,
                   padding: "8px 0",
-                  background: "rgba(76,175,80,0.15)",
-                  border: "1px solid rgba(76,175,80,0.30)",
-                  color: "#81C784",
+                  background: "rgba(52,211,153,0.15)",
+                  border: "1px solid rgba(52,211,153,0.30)",
+                  color: "#6ee7b7",
                   borderRadius: 8,
                   fontSize: 12,
                   fontWeight: 600,
@@ -197,7 +197,7 @@ export default function ScanPaywall({
             ctaLabel={`Join — ${MEMBERSHIP_TIERS.member.price}`}
             loading={loading === "member"}
             onClick={() => handleCheckout("member")}
-            color="#66BB6A"
+            color="#34d399"
           />
 
           {/* Pro */}

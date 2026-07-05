@@ -90,7 +90,7 @@ export default function MobileAppPage() {
                 href={externalInstall}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "#81C784", fontWeight: 700 }}
+                style={{ color: "#6ee7b7", fontWeight: 700 }}
               >
                 open install link
               </a>
@@ -109,8 +109,8 @@ export default function MobileAppPage() {
           style={{
             padding: "16px 18px",
             borderRadius: 14,
-            background: "rgba(76,175,80,0.08)",
-            border: "1px solid rgba(76,175,80,0.22)",
+            background: "rgba(52,211,153,0.08)",
+            border: "1px solid rgba(52,211,153,0.22)",
             marginBottom: 24,
           }}
         >
@@ -162,7 +162,7 @@ export default function MobileAppPage() {
               textAlign: "center",
               padding: "14px 20px",
               borderRadius: 12,
-              background: "linear-gradient(135deg, #43A047, #2E7D32)",
+              background: "linear-gradient(135deg, #34d399, #059669)",
               color: "#fff",
               fontWeight: 800,
               fontSize: 15,

@@ -39,7 +39,7 @@ export default function WhereToFind({ slug, token }: { slug: string; token?: str
   return (
     <div style={{
       background: "rgba(255,255,255,0.10)",
-      border: "1px solid rgba(76,175,80,0.35)",
+      border: "1px solid rgba(52,211,153,0.35)",
       borderRadius: 16,
       backdropFilter: "blur(18px) saturate(1.4)",
       WebkitBackdropFilter: "blur(18px) saturate(1.4)",
@@ -67,7 +67,7 @@ export default function WhereToFind({ slug, token }: { slug: string; token?: str
         onClick={() => router.push("/garden/dispensaries")}
         style={{
           marginTop: 12, padding: "8px 16px", borderRadius: 11, fontWeight: 800, fontSize: 12.5, cursor: "pointer",
-          background: "rgba(76,175,80,0.15)", color: "#81C784", border: "1px solid rgba(76,175,80,0.4)",
+          background: "rgba(52,211,153,0.15)", color: "#6ee7b7", border: "1px solid rgba(52,211,153,0.4)",
         }}
       >
         📍 Find dispensaries near me

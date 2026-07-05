@@ -27,8 +27,8 @@ export default function ShareResultButton({ data }: { data: ResultCardData }) {
       disabled={state === "busy"}
       style={{
         width: "100%", padding: "14px 18px", borderRadius: 14, marginBottom: 10,
-        border: "1px solid rgba(76,175,80,0.45)", background: "rgba(76,175,80,0.14)",
-        color: "#81C784", fontWeight: 800, fontSize: 15, cursor: "pointer",
+        border: "1px solid rgba(52,211,153,0.45)", background: "rgba(52,211,153,0.14)",
+        color: "#6ee7b7", fontWeight: 800, fontSize: 15, cursor: "pointer",
       }}
     >
       {state === "busy" ? "Rendering…" : state === "done" ? "✓ Card saved" : "📤 Share result card"}

@@ -152,8 +152,8 @@ export default function TrainingConsentToggle({ accessToken }: Props) {
             color: "rgba(255,255,255,0.55)",
             lineHeight: 1.55,
             padding: "8px 10px",
-            background: "rgba(76,175,80,0.10)",
-            border: "1px solid rgba(76,175,80,0.25)",
+            background: "rgba(52,211,153,0.10)",
+            border: "1px solid rgba(52,211,153,0.25)",
             borderRadius: 8,
           }}
         >
@@ -210,7 +210,7 @@ function Toggle({
         width: 48,
         height: 28,
         flexShrink: 0,
-        background: on ? "#66BB6A" : "rgba(255,255,255,0.18)",
+        background: on ? "#34d399" : "rgba(255,255,255,0.18)",
         border: "none",
         borderRadius: 999,
         cursor: disabled ? "not-allowed" : "pointer",

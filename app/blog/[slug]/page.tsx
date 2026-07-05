@@ -54,12 +54,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           .blog-article h1 { color: #fff; font-size: 32px; line-height: 1.25; margin: 0 0 18px; }
           .blog-article h2 { color: #A5D6A7; font-size: 23px; margin: 34px 0 12px; }
           .blog-article h3 { color: #fff; font-size: 18px; margin: 26px 0 10px; }
-          .blog-article a { color: #81C784; font-weight: 700; }
+          .blog-article a { color: #6ee7b7; font-weight: 700; }
           .blog-article strong { color: #fff; }
           .blog-article hr { border: none; border-top: 1px solid rgba(255,255,255,0.15); margin: 30px 0; }
           .blog-article table { border-collapse: collapse; width: 100%; font-size: 14px; }
           .blog-article th, .blog-article td { border: 1px solid rgba(255,255,255,0.2); padding: 8px 10px; text-align: left; }
-          .blog-article blockquote { border-left: 3px solid #4CAF50; margin: 0; padding: 4px 18px; color: rgba(255,255,255,0.7); }
+          .blog-article blockquote { border-left: 3px solid #34d399; margin: 0; padding: 4px 18px; color: rgba(255,255,255,0.7); }
           .blog-article code { background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 4px; font-size: 14px; }
         `}</style>
         <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 32, lineHeight: 1.6 }}>

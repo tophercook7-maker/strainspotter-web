@@ -35,7 +35,7 @@ function getLocalTier(): string | null {
   try { return localStorage.getItem("ss_membership_tier"); } catch { return null; }
 }
 function tierLabel(t: string) { return t === "pro" ? "Pro" : t === "member" ? "Member" : "Free"; }
-function tierColor(t: string) { return t === "pro" ? "#FFD700" : t === "member" ? "#4CAF50" : "rgba(255,255,255,0.68)"; }
+function tierColor(t: string) { return t === "pro" ? "#FFD700" : t === "member" ? "#34d399" : "rgba(255,255,255,0.68)"; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    StrainSpotter Scanner — Clean Visual Redesign
@@ -48,7 +48,7 @@ type ScanState = "idle" | "ready" | "scanning" | "done";
 const TYPE_PILL: Record<string, { bg: string; color: string }> = {
   Sativa:  { bg: "rgba(255,213,79,0.15)",  color: "#FFD54F" },
   Indica:  { bg: "rgba(149,117,205,0.15)", color: "#9575CD" },
-  Hybrid:  { bg: "rgba(102,187,106,0.15)", color: "#66BB6A" },
+  Hybrid:  { bg: "rgba(52,211,153,0.15)", color: "#34d399" },
 };
 
 interface SimilarStrain {
@@ -116,7 +116,7 @@ function SimilarStrains({ result }: { result: SimpleResult }) {
                 {s.type}
               </div>
               {s.thc != null && s.thc > 0 && (
-                <div style={{ fontSize: 13, color: "#66BB6A", fontWeight: 700, marginBottom: 6 }}>
+                <div style={{ fontSize: 13, color: "#34d399", fontWeight: 700, marginBottom: 6 }}>
                   THC {s.thc}%
                 </div>
               )}
@@ -124,8 +124,8 @@ function SimilarStrains({ result }: { result: SimpleResult }) {
                 {s.effects.slice(0, 3).map((e) => (
                   <span key={e} style={{
                     padding: "2px 6px", borderRadius: 5, fontSize: 12,
-                    background: "rgba(102,187,106,0.1)", color: "#81C784",
-                    border: "1px solid rgba(102,187,106,0.15)",
+                    background: "rgba(52,211,153,0.1)", color: "#6ee7b7",
+                    border: "1px solid rgba(52,211,153,0.15)",
                   }}>
                     {e.charAt(0).toUpperCase() + e.slice(1)}
                   </span>
@@ -182,14 +182,14 @@ function InstallBanner() {
   return (
     <div style={{
       margin: "0 0 12px",
-      background: "linear-gradient(135deg, rgba(76,175,80,0.12), rgba(56,142,60,0.06))",
-      border: "1px solid rgba(76,175,80,0.25)",
+      background: "linear-gradient(135deg, rgba(52,211,153,0.12), rgba(5,150,105,0.06))",
+      border: "1px solid rgba(52,211,153,0.25)",
       borderRadius: 14, padding: "12px 14px",
       display: "flex", alignItems: "flex-start", gap: 12,
     }}>
       <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>📲</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ color: "#81C784", fontWeight: 700, fontSize: 13, marginBottom: 3 }}>
+        <div style={{ color: "#6ee7b7", fontWeight: 700, fontSize: 13, marginBottom: 3 }}>
           Install StrainSpotter
         </div>
         {showIOSTip ? (
@@ -207,8 +207,8 @@ function InstallBanner() {
             onClick={install}
             style={{
               marginTop: 8, padding: "5px 14px", borderRadius: 8,
-              background: "rgba(76,175,80,0.3)", border: "1px solid rgba(76,175,80,0.5)",
-              color: "#81C784", fontSize: 12, fontWeight: 700, cursor: "pointer",
+              background: "rgba(52,211,153,0.3)", border: "1px solid rgba(52,211,153,0.5)",
+              color: "#6ee7b7", fontSize: 12, fontWeight: 700, cursor: "pointer",
             }}
           >
             Install
@@ -354,7 +354,7 @@ function mapConfidence(n: number): string {
 function typeGradient(type: string): string {
   if (type === "Indica") return "linear-gradient(135deg, #7B1FA2, #4A148C)";
   if (type === "Sativa") return "linear-gradient(135deg, #F57C00, #E65100)";
-  return "linear-gradient(135deg, #2E7D32, #1B5E20)";
+  return "linear-gradient(135deg, #059669, #1B5E20)";
 }
 
 function typeEmoji(type: string): string {
@@ -831,8 +831,8 @@ export default function ScannerPage() {
             {photoCredits > 0 && (
               <span style={{
                 fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
-                color: "#66BB6A", background: "rgba(102,187,106,0.15)",
-                border: "1px solid rgba(102,187,106,0.35)",
+                color: "#34d399", background: "rgba(52,211,153,0.15)",
+                border: "1px solid rgba(52,211,153,0.35)",
                 borderRadius: 5, padding: "2px 6px",
               }}>+{photoCredits} scan{photoCredits !== 1 ? "s" : ""}</span>
             )}
@@ -851,7 +851,7 @@ export default function ScannerPage() {
               width: 26,
               height: 26,
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #43A047, #2E7D32)",
+              background: "linear-gradient(135deg, #34d399, #059669)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -866,7 +866,7 @@ export default function ScannerPage() {
           <button
             onClick={() => setShowAuth(true)}
             style={{
-              background: "linear-gradient(135deg, #43A047, #2E7D32)",
+              background: "linear-gradient(135deg, #34d399, #059669)",
               border: "none",
               borderRadius: 8,
               padding: "5px 12px",
@@ -897,9 +897,9 @@ export default function ScannerPage() {
         {freeScanAvailable && scanState !== "done" && (
           <div style={{
             marginTop: 14, padding: "12px 16px", borderRadius: 14, textAlign: "center",
-            background: "rgba(76,175,80,0.12)", border: "1px solid rgba(76,175,80,0.35)",
+            background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.35)",
           }}>
-            <span style={{ color: "#81C784", fontWeight: 800, fontSize: 14 }}>
+            <span style={{ color: "#6ee7b7", fontWeight: 800, fontSize: 14 }}>
               🎁 Your free scan is ready — snap a strain and try it
             </span>
           </div>
@@ -921,7 +921,7 @@ export default function ScannerPage() {
                   borderRadius: 11,
                   border: "none",
                   cursor: scanState === "scanning" ? "default" : "pointer",
-                  background: scanMode === m.key ? "linear-gradient(135deg, #43A047, #2E7D32)" : "transparent",
+                  background: scanMode === m.key ? "linear-gradient(135deg, #34d399, #059669)" : "transparent",
                   transition: "background 0.2s ease",
                 }}
               >
@@ -949,9 +949,9 @@ export default function ScannerPage() {
               aspectRatio: "1",
               borderRadius: "50%",
               background: scanState === "scanning"
-                ? "radial-gradient(circle, rgba(46,125,50,0.15) 0%, rgba(10,15,10,0) 70%)"
+                ? "radial-gradient(circle, rgba(5,150,105,0.15) 0%, rgba(10,15,10,0) 70%)"
                 : images.length > 0
-                ? "radial-gradient(circle, rgba(46,125,50,0.1) 0%, rgba(10,15,10,0) 70%)"
+                ? "radial-gradient(circle, rgba(5,150,105,0.1) 0%, rgba(10,15,10,0) 70%)"
                 : "radial-gradient(circle, rgba(255,255,255,0.03) 0%, rgba(10,15,10,0) 70%)",
               display: "flex",
               flexDirection: "column",
@@ -980,9 +980,9 @@ export default function ScannerPage() {
               inset: 0,
               borderRadius: "50%",
               border: scanState === "scanning"
-                ? "2px solid rgba(76,175,80,0.6)"
+                ? "2px solid rgba(52,211,153,0.6)"
                 : images.length > 0
-                ? "2px solid rgba(76,175,80,0.35)"
+                ? "2px solid rgba(52,211,153,0.35)"
                 : "2px solid rgba(52,211,153,0.28)",
               boxShadow: "0 0 30px rgba(52,211,153,0.12), inset 0 0 24px rgba(52,211,153,0.06)",
               animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite" : "scan-idle-pulse 3.5s ease-in-out infinite",
@@ -994,7 +994,7 @@ export default function ScannerPage() {
               inset: 20,
               borderRadius: "50%",
               border: scanState === "scanning"
-                ? "1px solid rgba(76,175,80,0.3)"
+                ? "1px solid rgba(52,211,153,0.3)"
                 : "1px dashed rgba(52,211,153,0.25)",
               animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite 0.5s" : "scan-rotate-rev 18s linear infinite",
             }} />
@@ -1026,7 +1026,7 @@ export default function ScannerPage() {
                 }}>
                   <img src="/brand/cannabis-icon.png" width={64} height={64} alt="" style={{ display: 'inline-block', flexShrink: 0, borderRadius: '50%' }} />
                 </div>
-                <p style={{ color: "rgba(76,175,80,0.9)", fontSize: 16, fontWeight: 600 }}>
+                <p style={{ color: "rgba(52,211,153,0.9)", fontSize: 16, fontWeight: 600 }}>
                   Analyzing...
                 </p>
                 <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginTop: 6 }}>
@@ -1193,7 +1193,7 @@ export default function ScannerPage() {
             <button
               onClick={handleScan}
               style={{
-                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                background: "linear-gradient(135deg, #34d399, #059669)",
                 border: "none",
                 borderRadius: 50,
                 padding: "16px 48px",
@@ -1202,7 +1202,7 @@ export default function ScannerPage() {
                 fontWeight: 700,
                 cursor: "pointer",
                 letterSpacing: 0.5,
-                boxShadow: "0 4px 24px rgba(46,125,50,0.4)",
+                boxShadow: "0 4px 24px rgba(5,150,105,0.4)",
                 transition: "all 0.2s",
               }}
             >
@@ -1318,13 +1318,13 @@ export default function ScannerPage() {
                   borderRadius: 14,
                   background:
                     result.claimValidation.consistent === "yes"
-                      ? "rgba(76,175,80,0.10)"
+                      ? "rgba(52,211,153,0.10)"
                       : result.claimValidation.consistent === "no"
                       ? "rgba(244,67,54,0.10)"
                       : "rgba(255,183,77,0.10)",
                   border:
                     result.claimValidation.consistent === "yes"
-                      ? "1px solid rgba(76,175,80,0.35)"
+                      ? "1px solid rgba(52,211,153,0.35)"
                       : result.claimValidation.consistent === "no"
                       ? "1px solid rgba(244,67,54,0.35)"
                       : "1px solid rgba(255,183,77,0.35)",
@@ -1372,7 +1372,7 @@ export default function ScannerPage() {
                       textTransform: "uppercase" as const,
                       color:
                         result.claimValidation.consistent === "yes"
-                          ? "#81C784"
+                          ? "#6ee7b7"
                           : result.claimValidation.consistent === "no"
                           ? "#E57373"
                           : "#FFB74D",
@@ -1517,7 +1517,7 @@ export default function ScannerPage() {
                         fontWeight: 700,
                         letterSpacing: 1.5,
                         textTransform: "uppercase" as const,
-                        color: "rgba(129,199,132,0.65)",
+                        color: "rgba(110,231,183,0.65)",
                         marginBottom: 8,
                       }}>
                         Verify lab data
@@ -1532,8 +1532,8 @@ export default function ScannerPage() {
                             style={{
                               padding: "10px 12px",
                               borderRadius: 10,
-                              background: "rgba(76,175,80,0.08)",
-                              border: "1px solid rgba(76,175,80,0.20)",
+                              background: "rgba(52,211,153,0.08)",
+                              border: "1px solid rgba(52,211,153,0.20)",
                               color: "#A5D6A7",
                               fontSize: 12,
                               textDecoration: "none",
@@ -1616,8 +1616,8 @@ export default function ScannerPage() {
                   const uncertain = !result.hasPrimaryPick || result.confidenceTier === "uncertain";
                   return (
                     <span style={{
-                      background: uncertain ? "rgba(255,255,255,0.06)" : "rgba(76,175,80,0.14)",
-                      border: uncertain ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(76,175,80,0.30)",
+                      background: uncertain ? "rgba(255,255,255,0.06)" : "rgba(52,211,153,0.14)",
+                      border: uncertain ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(52,211,153,0.30)",
                       padding: "5px 14px",
                       borderRadius: 20,
                       fontSize: 12,
@@ -1717,9 +1717,9 @@ export default function ScannerPage() {
                         fontSize: 12,
                         fontWeight: 700,
                         cursor: "pointer",
-                        border: activeTab === tab.key ? "1px solid rgba(76,175,80,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                        background: activeTab === tab.key ? "rgba(76,175,80,0.15)" : "rgba(255,255,255,0.04)",
-                        color: activeTab === tab.key ? "#81C784" : "rgba(255,255,255,0.75)",
+                        border: activeTab === tab.key ? "1px solid rgba(52,211,153,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                        background: activeTab === tab.key ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.04)",
+                        color: activeTab === tab.key ? "#6ee7b7" : "rgba(255,255,255,0.75)",
                         transition: "all 0.15s",
                         display: "flex",
                         alignItems: "center",
@@ -1760,7 +1760,7 @@ export default function ScannerPage() {
                   <div style={{ padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }}>
                     <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.28)", marginBottom: 16 }}>🎛️ Vibe Meter</div>
                     {([
-                      { label: "Energizing", key: "energizing" as const, icon: "⚡", color: "#66BB6A" },
+                      { label: "Energizing", key: "energizing" as const, icon: "⚡", color: "#34d399" },
                       { label: "Creative",   key: "creative"   as const, icon: "🎨", color: "#AB47BC" },
                       { label: "Social",     key: "social"     as const, icon: "👥", color: "#42A5F5" },
                       { label: "Relaxing",   key: "relaxing"   as const, icon: "🌙", color: "#7E57C2" },
@@ -1831,13 +1831,13 @@ export default function ScannerPage() {
                   <div style={{
                     padding: "16px 18px",
                     borderRadius: 16,
-                    background: "linear-gradient(135deg, rgba(76,175,80,0.1), rgba(27,94,32,0.06))",
-                    border: "1px solid rgba(76,175,80,0.22)",
+                    background: "linear-gradient(135deg, rgba(52,211,153,0.1), rgba(27,94,32,0.06))",
+                    border: "1px solid rgba(52,211,153,0.22)",
                     marginBottom: 16,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                       <span style={{ fontSize: 16 }}>💚</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(129,199,132,0.75)" }}>Expert Tip</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(110,231,183,0.75)" }}>Expert Tip</span>
                     </div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", margin: 0, lineHeight: 1.7 }}>{result.expertTip}</p>
                   </div>
@@ -1849,7 +1849,7 @@ export default function ScannerPage() {
                     <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Effects</h3>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                       {result.effects.map((e, i) => (
-                        <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 600, background: "rgba(76,175,80,0.12)", color: "rgba(129,199,132,0.9)" }}>{e}</span>
+                        <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 600, background: "rgba(52,211,153,0.12)", color: "rgba(110,231,183,0.9)" }}>{e}</span>
                       ))}
                     </div>
                   </div>
@@ -1947,9 +1947,9 @@ export default function ScannerPage() {
                       padding: "14px 16px",
                       marginBottom: 14,
                       borderRadius: 12,
-                      background: "rgba(76,175,80,0.10)",
-                      border: "1px dashed rgba(76,175,80,0.45)",
-                      color: "#81C784",
+                      background: "rgba(52,211,153,0.10)",
+                      border: "1px dashed rgba(52,211,153,0.45)",
+                      color: "#6ee7b7",
                       fontSize: 13,
                       fontWeight: 600,
                       textAlign: "left" as const,
@@ -1991,8 +1991,8 @@ export default function ScannerPage() {
                         <div key={i} style={{
                           padding: "12px 14px",
                           borderRadius: 12,
-                          background: i === 0 ? "rgba(76,175,80,0.08)" : "rgba(255,255,255,0.03)",
-                          border: i === 0 ? "1px solid rgba(76,175,80,0.20)" : "1px solid rgba(255,255,255,0.05)",
+                          background: i === 0 ? "rgba(52,211,153,0.08)" : "rgba(255,255,255,0.03)",
+                          border: i === 0 ? "1px solid rgba(52,211,153,0.20)" : "1px solid rgba(255,255,255,0.05)",
                         }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
                             <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{c.strainName}</span>
@@ -2055,8 +2055,8 @@ export default function ScannerPage() {
                       {result.medicalConditions.map((m, i) => (
                         <span key={i} style={{
                           fontSize: 12, padding: "5px 11px", borderRadius: 99,
-                          background: "rgba(76,175,80,0.10)",
-                          border: "1px solid rgba(76,175,80,0.22)",
+                          background: "rgba(52,211,153,0.10)",
+                          border: "1px solid rgba(52,211,153,0.22)",
                           color: "rgba(255,255,255,0.75)",
                         }}>{m}</span>
                       ))}
@@ -2177,8 +2177,8 @@ export default function ScannerPage() {
                   </div>
                 )}
                 {result.growNotes && (
-                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(76,175,80,0.05)", border: "1px solid rgba(76,175,80,0.12)", marginBottom: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(129,199,132,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>📝 Grow Notes</div>
+                  <div style={{ padding: "14px 16px", borderRadius: 14, background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.12)", marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(110,231,183,0.6)", textTransform: "uppercase" as const, marginBottom: 6 }}>📝 Grow Notes</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>{result.growNotes}</p>
                   </div>
                 )}
@@ -2331,8 +2331,8 @@ export default function ScannerPage() {
                   </div>
                 )}
                 {result.consultingScript && (
-                  <div style={{ padding: "16px", borderRadius: 14, background: "rgba(76,175,80,0.05)", border: "1px solid rgba(76,175,80,0.15)", marginBottom: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(129,199,132,0.7)", textTransform: "uppercase" as const, marginBottom: 8 }}>💬 Budtender Script</div>
+                  <div style={{ padding: "16px", borderRadius: 14, background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.15)", marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "rgba(110,231,183,0.7)", textTransform: "uppercase" as const, marginBottom: 8 }}>💬 Budtender Script</div>
                     <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", margin: 0, lineHeight: 1.7, fontStyle: "italic" }}>"{result.consultingScript}"</p>
                   </div>
                 )}
@@ -2359,10 +2359,10 @@ export default function ScannerPage() {
                 </a>
                 <button
                   onClick={() => { setActiveTab("grower"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(56,142,60,0.07)", border: "1px solid rgba(76,175,80,0.13)", textAlign: "center" as const, cursor: "pointer" }}
+                  style={{ padding: "16px 12px", borderRadius: 16, background: "rgba(5,150,105,0.07)", border: "1px solid rgba(52,211,153,0.13)", textAlign: "center" as const, cursor: "pointer" }}
                 >
                   <div style={{ fontSize: 24, marginBottom: 5 }}>🌱</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(129,199,132,0.8)" }}>Grow Guide</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(110,231,183,0.8)" }}>Grow Guide</div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>Tips &amp; yield data</div>
                 </button>
               </div>
@@ -2374,15 +2374,15 @@ export default function ScannerPage() {
                 display: "flex", alignItems: "flex-start", gap: 10,
                 padding: "12px 14px", borderRadius: 12, marginBottom: 4,
                 background: photoContributed === "verified"
-                  ? "rgba(102,187,106,0.08)" : "rgba(79,195,247,0.07)",
+                  ? "rgba(52,211,153,0.08)" : "rgba(79,195,247,0.07)",
                 border: photoContributed === "verified"
-                  ? "1px solid rgba(102,187,106,0.2)" : "1px solid rgba(79,195,247,0.15)",
+                  ? "1px solid rgba(52,211,153,0.2)" : "1px solid rgba(79,195,247,0.15)",
               }}>
                 <span style={{ fontSize: 16, flexShrink: 0 }}>
                   {photoContributed === "verified" ? "✅" : "📸"}
                 </span>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: photoContributed === "verified" ? "#81C784" : "#4FC3F7", marginBottom: 2 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: photoContributed === "verified" ? "#6ee7b7" : "#4FC3F7", marginBottom: 2 }}>
                     {photoContributed === "verified"
                       ? "Photo added to the community database"
                       : "Photo saved to your history"}
@@ -2429,9 +2429,9 @@ export default function ScannerPage() {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: "rgba(102,187,106,0.05)", border: "1px solid rgba(102,187,106,0.11)" }}>
+              <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.11)" }}>
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", margin: 0, lineHeight: 1.6 }}>
-                  <strong style={{ color: "rgba(102,187,106,0.65)" }}>You help us get better.</strong> Every scan you contribute trains the model to better distinguish look-alike cultivars. The more the community uses it, the sharper the AI gets.
+                  <strong style={{ color: "rgba(52,211,153,0.65)" }}>You help us get better.</strong> Every scan you contribute trains the model to better distinguish look-alike cultivars. The more the community uses it, the sharper the AI gets.
                 </p>
               </div>
             </div>
@@ -2511,8 +2511,8 @@ export default function ScannerPage() {
             <div style={{
               padding: "22px 20px 20px",
               borderRadius: 20,
-              background: "linear-gradient(145deg, rgba(46,125,50,0.1), rgba(27,94,32,0.05))",
-              border: "1px solid rgba(102,187,106,0.18)",
+              background: "linear-gradient(145deg, rgba(5,150,105,0.1), rgba(27,94,32,0.05))",
+              border: "1px solid rgba(52,211,153,0.18)",
               textAlign: "left",
               marginBottom: 20,
             }}>
@@ -2560,10 +2560,10 @@ export default function ScannerPage() {
                 onClick={() => isLoggedIn ? router.push("/garden") : setShowAuth(true)}
                 style={{
                   width: "100%", padding: "14px 0", borderRadius: 14,
-                  background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                  background: "linear-gradient(135deg, #34d399, #059669)",
                   border: "none", color: "#fff", fontSize: 15, fontWeight: 800,
                   cursor: "pointer", letterSpacing: 0.3,
-                  boxShadow: "0 4px 18px rgba(67,160,71,0.3)",
+                  boxShadow: "0 4px 18px rgba(52,211,153,0.3)",
                 }}
               >
                 {isLoggedIn ? "Open My Garden →" : "Sign In to StrainSpotter"}
@@ -2608,7 +2608,7 @@ export default function ScannerPage() {
             style={{
               width: "100%", maxWidth: 440,
               background: "linear-gradient(180deg, #111a11 0%, #0d150d 100%)",
-              border: "1px solid rgba(102,187,106,0.25)",
+              border: "1px solid rgba(52,211,153,0.25)",
               borderRadius: 24, padding: "24px 22px 28px",
             }}
           >
@@ -2618,18 +2618,18 @@ export default function ScannerPage() {
                 Help us build better AI
               </div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.65 }}>
-                Your scan of <strong style={{ color: "#81C784" }}>{result.strainName}</strong> matched at {Math.round(result.confidence)}% confidence. Allow StrainSpotter to use this photo to improve strain identification for everyone?
+                Your scan of <strong style={{ color: "#6ee7b7" }}>{result.strainName}</strong> matched at {Math.round(result.confidence)}% confidence. Allow StrainSpotter to use this photo to improve strain identification for everyone?
               </div>
             </div>
 
             <div style={{
-              background: "rgba(102,187,106,0.08)", border: "1px solid rgba(102,187,106,0.2)",
+              background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)",
               borderRadius: 12, padding: "12px 14px", marginBottom: 20,
               display: "flex", alignItems: "flex-start", gap: 10,
             }}>
               <span style={{ fontSize: 18, flexShrink: 0 }}>🎁</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: "#81C784", marginBottom: 3 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "#6ee7b7", marginBottom: 3 }}>
                   Help improve StrainSpotter
                 </div>
                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>
@@ -2685,7 +2685,7 @@ export default function ScannerPage() {
               }}
               style={{
                 width: "100%", padding: "14px 0", borderRadius: 14, marginBottom: 10,
-                background: "linear-gradient(135deg, #43A047, #2E7D32)",
+                background: "linear-gradient(135deg, #34d399, #059669)",
                 border: "none", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
               }}
             >
@@ -2713,10 +2713,10 @@ export default function ScannerPage() {
         <div
           style={{
             position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)",
-            zIndex: 300, background: "linear-gradient(135deg, #43A047, #2E7D32)",
+            zIndex: 300, background: "linear-gradient(135deg, #34d399, #059669)",
             borderRadius: 50, padding: "10px 20px",
             display: "flex", alignItems: "center", gap: 8,
-            boxShadow: "0 4px 24px rgba(67,160,71,0.4)",
+            boxShadow: "0 4px 24px rgba(52,211,153,0.4)",
           }}
           onAnimationEnd={() => setTimeout(() => setCreditEarned(false), 2000)}
         >
@@ -2748,9 +2748,9 @@ function Pill({ ok, children }: { ok: boolean; children: React.ReactNode }) {
         fontSize: 13,
         padding: "3px 9px",
         borderRadius: 99,
-        background: ok ? "rgba(76,175,80,0.12)" : "rgba(244,67,54,0.10)",
+        background: ok ? "rgba(52,211,153,0.12)" : "rgba(244,67,54,0.10)",
         border: ok
-          ? "1px solid rgba(76,175,80,0.30)"
+          ? "1px solid rgba(52,211,153,0.30)"
           : "1px solid rgba(244,67,54,0.25)",
         color: ok ? "#A5D6A7" : "rgba(244,67,54,0.85)",
         fontWeight: 600,

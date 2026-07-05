@@ -149,9 +149,9 @@ export default function OnboardingFlow({
                 borderRadius: 4,
                 background:
                   i === step
-                    ? "#43A047"
+                    ? "#34d399"
                     : i < step
-                    ? "rgba(67,160,71,0.4)"
+                    ? "rgba(52,211,153,0.4)"
                     : "rgba(255,255,255,0.1)",
                 transition: "all 0.3s",
               }}
@@ -187,11 +187,11 @@ export default function OnboardingFlow({
                     cursor: "pointer",
                     background:
                       userType === t.id
-                        ? "rgba(76,175,80,0.12)"
+                        ? "rgba(52,211,153,0.12)"
                         : "rgba(255,255,255,0.03)",
                     border: `2px solid ${
                       userType === t.id
-                        ? "rgba(76,175,80,0.5)"
+                        ? "rgba(52,211,153,0.5)"
                         : "rgba(255,255,255,0.06)"
                     }`,
                     transition: "all 0.2s",
@@ -203,7 +203,7 @@ export default function OnboardingFlow({
                       style={{
                         color:
                           userType === t.id
-                            ? "#66BB6A"
+                            ? "#34d399"
                             : "rgba(255,255,255,0.7)",
                         fontSize: 15,
                         fontWeight: 700,
@@ -251,11 +251,11 @@ export default function OnboardingFlow({
                     cursor: "pointer",
                     background:
                       experience === lvl.id
-                        ? "rgba(76,175,80,0.12)"
+                        ? "rgba(52,211,153,0.12)"
                         : "rgba(255,255,255,0.03)",
                     border: `2px solid ${
                       experience === lvl.id
-                        ? "rgba(76,175,80,0.5)"
+                        ? "rgba(52,211,153,0.5)"
                         : "rgba(255,255,255,0.06)"
                     }`,
                     transition: "all 0.2s",
@@ -265,7 +265,7 @@ export default function OnboardingFlow({
                     style={{
                       color:
                         experience === lvl.id
-                          ? "#66BB6A"
+                          ? "#34d399"
                           : "rgba(255,255,255,0.7)",
                       fontSize: 15,
                       fontWeight: 700,
@@ -314,11 +314,11 @@ export default function OnboardingFlow({
                       cursor: "pointer",
                       textAlign: "center",
                       background: selected
-                        ? "rgba(76,175,80,0.12)"
+                        ? "rgba(52,211,153,0.12)"
                         : "rgba(255,255,255,0.03)",
                       border: `2px solid ${
                         selected
-                          ? "rgba(76,175,80,0.5)"
+                          ? "rgba(52,211,153,0.5)"
                           : "rgba(255,255,255,0.06)"
                       }`,
                       transition: "all 0.2s",
@@ -330,7 +330,7 @@ export default function OnboardingFlow({
                     <p
                       style={{
                         color: selected
-                          ? "#66BB6A"
+                          ? "#34d399"
                           : "rgba(255,255,255,0.6)",
                         fontSize: 12,
                         fontWeight: 600,
@@ -476,7 +476,7 @@ export default function OnboardingFlow({
               background:
                 !canProceed() || saving
                   ? "rgba(255,255,255,0.08)"
-                  : "linear-gradient(135deg, #43A047, #2E7D32)",
+                  : "linear-gradient(135deg, #34d399, #059669)",
               color:
                 !canProceed() || saving ? "rgba(255,255,255,0.3)" : "#fff",
               fontSize: 15,

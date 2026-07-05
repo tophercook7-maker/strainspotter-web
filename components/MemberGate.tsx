@@ -115,7 +115,7 @@ export default function MemberGate({
         <button
           onClick={() => setShowSignup(true)}
           style={{
-            background: "linear-gradient(135deg, #43A047, #2E7D32)",
+            background: "linear-gradient(135deg, #34d399, #059669)",
             border: "none", borderRadius: 14,
             padding: "14px 32px", color: "#fff",
             fontSize: 15, fontWeight: 700, cursor: "pointer",

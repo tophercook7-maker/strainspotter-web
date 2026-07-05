@@ -80,7 +80,7 @@ export default function PricingPage() {
             style={{
               padding: "10px 18px",
               borderRadius: 99,
-              background: "linear-gradient(135deg, #66BB6A, #43A047)",
+              background: "linear-gradient(135deg, #34d399, #34d399)",
               color: "#0a0f0a",
               textDecoration: "none",
               fontSize: 13,
@@ -123,7 +123,7 @@ export default function PricingPage() {
           <p
             style={{
               fontSize: 13,
-              color: "rgba(129,199,132,0.85)",
+              color: "rgba(110,231,183,0.85)",
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: 1.5,
@@ -145,7 +145,7 @@ export default function PricingPage() {
           >
             {/* Member */}
             <PlanColumn
-              accent="#66BB6A"
+              accent="#34d399"
               badge="🌿 Member"
               monthlyPrice={member.price}
               tagline={member.tagline}
@@ -206,10 +206,10 @@ export default function PricingPage() {
                   style={{
                     padding: "18px 18px",
                     background: isBest
-                      ? "rgba(76,175,80,0.10)"
+                      ? "rgba(52,211,153,0.10)"
                       : "rgba(255,255,255,0.04)",
                     border: isBest
-                      ? "1px solid rgba(76,175,80,0.30)"
+                      ? "1px solid rgba(52,211,153,0.30)"
                       : "1px solid rgba(255,255,255,0.10)",
                     borderRadius: 14,
                     position: "relative",
@@ -222,7 +222,7 @@ export default function PricingPage() {
                         top: -9,
                         right: 14,
                         padding: "3px 10px",
-                        background: "#66BB6A",
+                        background: "#34d399",
                         color: "#0a0f0a",
                         borderRadius: 999,
                         fontSize: 10,
@@ -340,7 +340,7 @@ export default function PricingPage() {
               display: "inline-block",
               padding: "14px 32px",
               borderRadius: 99,
-              background: "linear-gradient(135deg, #66BB6A, #43A047)",
+              background: "linear-gradient(135deg, #34d399, #34d399)",
               color: "#0a0f0a",
               textDecoration: "none",
               fontSize: 15,
