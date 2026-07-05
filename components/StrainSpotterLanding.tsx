@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
+import AddToHomeScreen from "@/components/AddToHomeScreen";
 
 const G = "#34d399", G2 = "#6ee7b7", LIME = "#a3e635", AMBER = "#fbbf24";
 const spring = "cubic-bezier(.34,1.56,.64,1)";
@@ -68,7 +69,10 @@ export default function StrainSpotterLanding() {
       <nav style={{ position: "sticky", top: 0, zIndex: 50, backdropFilter: "blur(14px)", background: "rgba(10,10,10,.6)", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 22px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontWeight: 800, fontSize: 19, letterSpacing: "-.02em" }}>Strain<span style={{ color: G }}>Spotter</span></div>
-          <Link href="/garden/scanner" style={btnG} onClick={spr}>Open scanner →</Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span className="ssl-install-nav"><AddToHomeScreen variant="outline" label="📲 Install" /></span>
+            <Link href="/garden/scanner" style={btnG} onClick={spr}>Open scanner →</Link>
+          </div>
         </div>
       </nav>
 
@@ -183,11 +187,14 @@ export default function StrainSpotterLanding() {
       <footer style={{ padding: "70px 22px", borderTop: "1px solid rgba(255,255,255,.06)", textAlign: "center", color: "rgba(255,255,255,.5)" }}>
         <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 10 }}>Strain<span style={{ color: G }}>Spotter</span></div>
         <p style={{ marginBottom: 20 }}>The cannabis companion built for honesty.</p>
-        <Link href="/garden/scanner" style={btnG} onClick={spr}>Start scanning free →</Link>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/garden/scanner" style={btnG} onClick={spr}>Start scanning free →</Link>
+          <AddToHomeScreen variant="outline" label="📲 Add to Home Screen" />
+        </div>
         <p style={{ marginTop: 26, fontSize: 12 }}>Intended for use where cannabis is legal. Always follow your local laws.</p>
       </footer>
 
-      <style>{`@media(max-width:900px){.ssl-grid2{grid-template-columns:1fr!important;justify-items:center;text-align:center}.ssl-stats{grid-template-columns:1fr 1fr!important}}`}</style>
+      <style>{`@media(max-width:900px){.ssl-grid2{grid-template-columns:1fr!important;justify-items:center;text-align:center}.ssl-stats{grid-template-columns:1fr 1fr!important}}@media(max-width:560px){.ssl-install-nav{display:none}}`}</style>
     </div>
   );
 }
