@@ -1186,6 +1186,22 @@ export default function ScannerPage() {
           </div>
         )}
 
+        {/* ── IMPROVING OVER TIME: the community flywheel ── */}
+        {scanState !== "done" && scanState !== "scanning" && (
+          <div style={{
+            marginTop: 12, padding: "12px 14px", borderRadius: 14, display: "flex", gap: 10, alignItems: "flex-start",
+            background: "rgba(52,211,153,0.07)", border: "1px solid rgba(52,211,153,0.22)",
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1.2, flexShrink: 0 }}>📈</span>
+            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: "rgba(255,255,255,0.72)" }}>
+              <b style={{ color: "#6ee7b7" }}>Results get sharper over time.</b> StrainSpotter learns from verified
+              photos the community opts in — real dispensary buds paired with their packaging. The more growers and
+              dispensaries add, the better every ID gets. Today we lead with honest candidates over fake confidence —
+              and that bar keeps rising as the data grows.
+            </div>
+          </div>
+        )}
+
         <input
           ref={fileRef}
           type="file"
@@ -1822,6 +1838,20 @@ export default function ScannerPage() {
                   candidates. Specific strain ID from an unlabeled bud is genuinely hard.
                 </p>
               )}
+
+              {/* Community flywheel — set the expectation: this improves over time */}
+              <div style={{
+                marginTop: 12, marginLeft: "auto", marginRight: "auto", maxWidth: 360,
+                padding: "10px 14px", borderRadius: 12, display: "flex", gap: 9, alignItems: "flex-start",
+                background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.16)",
+              }}>
+                <span style={{ fontSize: 15, flexShrink: 0, lineHeight: 1.3 }}>📈</span>
+                <div style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.55)", textAlign: "left" }}>
+                  <b style={{ color: "#6ee7b7" }}>This keeps getting sharper.</b> As dispensaries and growers opt in
+                  verified bud &amp; packaging photos, the AI learns to tell look-alike strains apart — so IDs improve
+                  the more the community contributes.
+                </div>
+              </div>
 
               {result.tagline && (
                 <p style={{
