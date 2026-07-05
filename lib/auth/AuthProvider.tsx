@@ -147,6 +147,14 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state
   useEffect(() => {
+    // `loading` gates the whole member UI — it must NEVER get stuck true. We
+    // resolve it as soon as we know whether a session exists, and we never
+    // block it on the (slower) profile fetch. A hard safety timeout guarantees
+    // the gate opens even if getSession() hangs on a flaky network.
+    let settled = false;
+    const settle = () => { if (!settled) { settled = true; setLoading(false); } };
+    const guard = setTimeout(settle, 4000);
+
     const initAuth = async () => {
       try {
         const {
@@ -156,24 +164,25 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         if (currentSession?.user) {
           setUser(currentSession.user);
           setSession(currentSession);
-          const p = await fetchProfile(currentSession.user.id);
-          setProfile(p);
 
-          // Sync tier to localStorage for components that still use it.
-          // Canonical helper: elite (founder) collapses to "pro" — earlier
-          // code mapped it to "member" which capped founders at the
-          // Member tier rate-limit.
-          if (p) {
-            localStorage.setItem(
-              "ss_membership_tier",
-              membershipToTier(p.membership)
-            );
-          }
+          // Fetch the profile in the BACKGROUND — don't hold `loading` on it.
+          // Canonical helper: elite (founder) collapses to "pro".
+          fetchProfile(currentSession.user.id)
+            .then((p) => {
+              if (p) {
+                setProfile(p);
+                localStorage.setItem(
+                  "ss_membership_tier",
+                  membershipToTier(p.membership)
+                );
+              }
+            })
+            .catch(() => {});
         }
       } catch (err) {
         console.warn("Auth init error:", err);
       } finally {
-        setLoading(false);
+        settle();
       }
     };
 
@@ -203,7 +212,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => { clearTimeout(guard); subscription.unsubscribe(); };
   }, [supabase, fetchProfile]);
 
   // Sign up

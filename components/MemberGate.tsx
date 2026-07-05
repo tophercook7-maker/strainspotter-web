@@ -55,22 +55,27 @@ export default function MemberGate({
   const authTier = auth?.tier;
   const authLoading = auth?.loading ?? false;
 
-  // Still loading
-  if (localTier === null || authLoading) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>Loading...</div>
-      </div>
-    );
-  }
-
-  // Grant access if EITHER auth context OR localStorage says member/pro
+  // Grant access the moment EITHER source says member/pro. localStorage is
+  // written at login and persists, so returning members get in immediately —
+  // we never make them wait on (or hang behind) the network auth check.
   const hasMembership =
     authTier === "member" || authTier === "pro" ||
     localTier === "member" || localTier === "pro";
 
   if (hasMembership) {
     return <>{children}</>;
+  }
+
+  // We don't yet know they're a member. Only show the brief loading state while
+  // we genuinely don't know: the first localStorage read, or the network auth
+  // check that might still upgrade a "free" local tier. (AuthProvider caps
+  // `authLoading` with a hard timeout, so this can never hang.)
+  if (localTier === null || authLoading) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>Loading...</div>
+      </div>
+    );
   }
 
   // Free user — show lock screen with BOTH signup and login options
