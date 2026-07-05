@@ -295,11 +295,12 @@ const FEATURES: FeatureItem[] = [
 ];
 
 const QUICK_LINKS = [
-  { href: "/garden/history",   icon: "📋", label: "Scan History" },
-  { href: "/garden/favorites", icon: "❤️", label: "Favorites" },
-  { href: "/garden/feedback",  icon: "💡", label: "Feedback" },
-  { href: "/garden/profile",   icon: "👤", label: "Profile" },
-  { href: "/garden/settings",  icon: "⚙️", label: "Settings" },
+  { href: "/garden/history",      icon: "📋", label: "Scan History" },
+  { href: "/garden/favorites",    icon: "❤️", label: "Favorites" },
+  { href: "/garden/seed-vendors", icon: "🌰", label: "Seeds" },
+  { href: "/garden/feedback",     icon: "💡", label: "Feedback" },
+  { href: "/garden/profile",      icon: "👤", label: "Profile" },
+  { href: "/garden/settings",     icon: "⚙️", label: "Settings" },
 ];
 
 /* ─── Tier display helpers ─── */
@@ -527,8 +528,9 @@ export default function GardenPage() {
           {/* Quick Links — frosted bar */}
           <div style={{
             display: "flex",
+            flexWrap: "wrap",
             justifyContent: "center",
-            gap: 24,
+            gap: 18,
             padding: "12px 16px",
             marginTop: 14,
             borderRadius: 14,
