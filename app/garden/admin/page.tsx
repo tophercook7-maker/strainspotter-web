@@ -6,7 +6,7 @@
 // The API is the enforcement (profiles.is_owner); this page just refuses to
 // render for non-owners.
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import TopNav from "../_components/TopNav";
 
 let useOptionalAuth: () => any;
@@ -172,6 +172,19 @@ export default function AdminPage() {
       setEnrichRunning(false);
     }
   };
+
+  // /garden/admin?autorun=1 — start enrichment automatically on open (used
+  // by "open the enrichment back up" style deep links; owner gate still
+  // applies server-side, this just presses ▶ for you).
+  const autorunFired = useRef(false);
+  useEffect(() => {
+    if (autorunFired.current || !token || !isOwner) return;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("autorun") === "1") {
+      autorunFired.current = true;
+      setTimeout(() => { void runEnrichment(); }, 800);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, isOwner]);
 
   const actOnReport = async (messageId: string, action: "hide_resolve" | "resolve") => {
     setBusy(true); setNotice(null);
