@@ -203,6 +203,13 @@ export const FREE_SYSTEM_PROMPT = SYSTEM_PROMPT
   .replace(/string — from catalog when possible/, "string — the cultivar name");
 
 /* ─────────────────────────────────────────────────────────────────
+ *  Vision model — env-configurable so it can be upgraded (better label OCR +
+ *  trait reading) with NO code deploy and no surprise cost. Defaults to the
+ *  current gpt-4o; set SCANNER_VISION_MODEL=<id> in the env to upgrade/revert.
+ * ───────────────────────────────────────────────────────────────── */
+export const VISION_MODEL = process.env.SCANNER_VISION_MODEL || "gpt-4o";
+
+/* ─────────────────────────────────────────────────────────────────
  *  User-prompt builder
  * ───────────────────────────────────────────────────────────────── */
 
@@ -539,10 +546,38 @@ export function applyLabelMatch(result: Record<string, unknown>): Record<string,
     : [];
 
   const match = bestLabelMatch(ocrText, ocrCands);
-  // Only promote on a confident match (exact / normalized / containment / strong
-  // fuzzy). Weaker fuzzy stays out of the driver's seat.
-  if (!match || match.score < 0.9) return result;
+  if (!match) return result;
 
+  // Soft tier (0.78–0.9): a plausible-but-not-clean label read. Surface the
+  // catalog strain as a MEDIUM candidate so a slightly-garbled label doesn't
+  // drop the right answer — WITHOUT claiming the high (label) confidence band.
+  // Additive only (never reorders the model's top pick); default on
+  // (kill switch SCANNER_SOFT_LABEL=0).
+  if (match.score < 0.9) {
+    if (process.env.SCANNER_SOFT_LABEL === "0" || match.score < 0.78) return result;
+    const softSlug = match.strain.slug;
+    const cands = Array.isArray(result.candidates)
+      ? (result.candidates as Record<string, unknown>[]).slice()
+      : [];
+    const present = cands.some(
+      (c) =>
+        (typeof c.slug === "string" && c.slug === softSlug) ||
+        matchLabelToCatalog(c.strainName as string)?.strain.slug === softSlug
+    );
+    if (present) return result;
+    const softConf = Math.min(58, Math.max(42, Math.round(match.score * 62)));
+    const soft: Record<string, unknown> = {
+      strainName: match.strain.name,
+      slug: softSlug,
+      confidence: softConf,
+      matchReasoning: `Label text resembles "${match.matchedText}" — possible match, but the read isn't clean.`,
+      matchSignals: { nameInImage: false, categoryMatches: false, visualTraitsMatchPercent: 0, terpeneFamilyMatches: false },
+      labelMatch: { method: match.method, score: Number(match.score.toFixed(3)), soft: true },
+    };
+    return { ...result, candidates: [...cands, soft].slice(0, 5) };
+  }
+
+  // Strong match (≥0.9): promote to the top with the earned high confidence.
   const slug = match.strain.slug;
   const existing = Array.isArray(result.candidates)
     ? (result.candidates as Record<string, unknown>[]).slice()
@@ -887,7 +922,7 @@ export async function POST(req: NextRequest) {
               Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-              model: "gpt-4o",
+              model: VISION_MODEL,
               messages: [
                 {
                   role: "system",
@@ -1029,7 +1064,7 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({
       ok: true,
-      model: "gpt-4o",
+      model: VISION_MODEL,
       result,
       usage: outcome.usage,
       cached,

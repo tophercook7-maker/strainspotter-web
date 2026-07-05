@@ -1171,6 +1171,21 @@ export default function ScannerPage() {
           </div>
         )}
 
+        {/* ── ACCURACY TIP: text is the most reliable signal ── */}
+        {scanState !== "done" && scanState !== "scanning" && (
+          <div style={{
+            marginTop: 18, padding: "12px 14px", borderRadius: 14, display: "flex", gap: 10, alignItems: "flex-start",
+            background: "rgba(163,230,53,0.07)", border: "1px solid rgba(163,230,53,0.22)",
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1.2, flexShrink: 0 }}>📋</span>
+            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: "rgba(255,255,255,0.72)" }}>
+              <b style={{ color: "#bef264" }}>For the most accurate ID, include the label.</b> A shot of the
+              package, jar, or dispensary menu lets us read the strain name — far more reliable than a bud photo alone.
+              No label? We&rsquo;ll still give honest visual candidates.
+            </div>
+          </div>
+        )}
+
         <input
           ref={fileRef}
           type="file"
@@ -1771,6 +1786,27 @@ export default function ScannerPage() {
                   );
                 })()}
               </div>
+
+              {/* How we know — the ID source is the single most useful signal:
+                  a label read is trustworthy; a bud-only visual guess is not. */}
+              {(() => {
+                const fromLabel = result.v2Candidates?.[0]?.matchSignals?.nameInImage ?? false;
+                return (
+                  <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 14px", borderRadius: 20,
+                      fontSize: 12, fontWeight: 700,
+                      background: fromLabel ? "rgba(52,211,153,0.14)" : "rgba(251,191,36,0.12)",
+                      border: `1px solid ${fromLabel ? "rgba(52,211,153,0.35)" : "rgba(251,191,36,0.30)"}`,
+                      color: fromLabel ? "#6ee7b7" : "#fbbf24",
+                    }}>
+                      {fromLabel
+                        ? "✓ Read from the label — reliable source"
+                        : "◦ Visual estimate — no label detected"}
+                    </span>
+                  </div>
+                );
+              })()}
 
               {!result.hasPrimaryPick && (
                 <p style={{

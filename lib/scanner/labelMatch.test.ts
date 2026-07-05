@@ -147,6 +147,34 @@ describe("applyLabelMatch — /api/scan promotion", () => {
     expect(cands.filter((c) => c.slug === "green-crack").length).toBe(1);
     expect((cands[0].matchSignals as Record<string, unknown>).nameInImage).toBe(true);
   });
+
+  it("garbled label read still SURFACES the catalog strain (promote or soft tier)", () => {
+    // Before: a sub-0.9 fuzzy read was dropped entirely, losing the right answer.
+    // Now it surfaces — either promoted (≥0.9) or added as a medium soft candidate.
+    const out = applyLabelMatch(
+      scan("Blu Dream · 3.5g", ["Blu Dream"], [
+        { strainName: "Gelato", slug: "gelato", confidence: 55, matchSignals: { nameInImage: false } },
+      ])
+    );
+    const cands = out.candidates as Record<string, unknown>[];
+    expect(cands.some((c) => c.slug === "blue-dream")).toBe(true);
+  });
+
+  it("soft tier never fakes the high (label) confidence band", () => {
+    // Whatever soft candidate gets added must stay medium (<80) and not claim
+    // nameInImage — only a clean ≥0.9 read earns the high label band.
+    const out = applyLabelMatch(
+      scan("Blu Dream · 3.5g", ["Blu Dream"], [
+        { strainName: "Gelato", slug: "gelato", confidence: 55, matchSignals: { nameInImage: false } },
+      ])
+    );
+    const cands = out.candidates as Record<string, unknown>[];
+    const soft = cands.find((c) => c.slug === "blue-dream" && (c.labelMatch as any)?.soft === true);
+    if (soft) {
+      expect(soft.confidence as number).toBeLessThan(80);
+      expect((soft.matchSignals as Record<string, unknown>).nameInImage).toBe(false);
+    }
+  });
 });
 
 describe("normalizeLabel", () => {
