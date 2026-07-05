@@ -20,6 +20,7 @@ import ScannerExpectationsModal, {
   hasSeenScannerExpectations,
 } from "./ScannerExpectationsModal";
 import ScanningFX from "@/components/ScanningFX";
+import { spark, startBubbles, stopBubbles, chime, setScanMuted } from "@/lib/scanSounds";
 
 /* ─── try to use real auth, fall back gracefully ─── */
 let useOptionalAuth: () => any;
@@ -434,6 +435,24 @@ export default function ScannerPage() {
   // save cost). Members/pro can toggle it on; free users see an unlock teaser.
   const [includeHealth, setIncludeHealth] = useState(false);
   const [healthLocked, setHealthLocked] = useState(false);
+  // Cannabis-flavored scan audio — on by default, remembered per device.
+  const [soundOn, setSoundOn] = useState(true);
+  useEffect(() => {
+    const pref = typeof window !== "undefined" ? localStorage.getItem("ss_scan_sound") : null;
+    const on = pref !== "off";
+    setSoundOn(on);
+    setScanMuted(!on);
+    return () => stopBubbles();
+  }, []);
+  const toggleSound = () => {
+    setSoundOn((prev) => {
+      const next = !prev;
+      setScanMuted(!next);
+      try { localStorage.setItem("ss_scan_sound", next ? "on" : "off"); } catch {}
+      if (!next) stopBubbles();
+      return next;
+    });
+  };
   const [plantResult, setPlantResult] = useState<PlantDoctorResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -549,6 +568,10 @@ export default function ScannerPage() {
     setScanState("scanning");
     setError(null);
     setPlantResult(null);
+
+    // Scan audio: a lighter-flick to kick off, then a soft bubbler loop. This
+    // runs inside the button-click gesture, which unlocks the audio context.
+    if (soundOn) { spark(); startBubbles(); }
 
     // Plant-health read is OPT-IN per scan (a second AI call) to save cost. It
     // only fires when the user toggled it on AND has a membership. Free users who
@@ -697,6 +720,8 @@ export default function ScannerPage() {
 
       setResult(simple);
       setScanState("done");
+      stopBubbles();
+      if (soundOn) chime();
 
       // Settle the parallel plant-health read and attach it to the SAME result.
       healthPromise.then((pd) => {
@@ -762,6 +787,7 @@ export default function ScannerPage() {
         reader.readAsDataURL(firstFile);
       }
     } catch (e: any) {
+      stopBubbles();
       if (e instanceof ScanSubscriptionRequiredError) {
         // Server says: no active subscription. Open the paywall instead
         // of showing a generic scan-failure error card.
@@ -954,6 +980,25 @@ export default function ScannerPage() {
           </div>
         )}
 
+        {/* ── SOUND TOGGLE ── */}
+        {scanState !== "done" && (
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+            <button
+              onClick={toggleSound}
+              aria-label={soundOn ? "Mute scan sound" : "Unmute scan sound"}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999,
+                cursor: "pointer", fontSize: 12, fontWeight: 700,
+                background: soundOn ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${soundOn ? "rgba(52,211,153,0.35)" : "rgba(255,255,255,0.14)"}`,
+                color: soundOn ? "#6ee7b7" : "rgba(255,255,255,0.55)", transition: "all 0.2s ease",
+              }}
+            >
+              {soundOn ? "🔊" : "🔇"} Scan sound {soundOn ? "on" : "off"}
+            </button>
+          </div>
+        )}
+
         {/* ── UPLOAD AREA ── */}
         {scanState !== "done" && (
           <div
@@ -980,6 +1025,47 @@ export default function ScannerPage() {
               transition: "all 0.3s ease",
             }}
           >
+            {/* ── Cannabis vibe: drifting emerald haze/smoke, clipped to the disc ── */}
+            <div style={{ position: "absolute", inset: 0, borderRadius: "50%", overflow: "hidden", pointerEvents: "none" }}>
+              <div style={{
+                position: "absolute", inset: "-20%",
+                background: "radial-gradient(40% 40% at 32% 66%, rgba(52,211,153,0.22), transparent 70%)",
+                filter: "blur(14px)", animation: "ss-haze 9s ease-in-out infinite",
+              }} />
+              <div style={{
+                position: "absolute", inset: "-20%",
+                background: "radial-gradient(38% 38% at 70% 36%, rgba(163,230,53,0.16), transparent 70%)",
+                filter: "blur(16px)", animation: "ss-haze2 11s ease-in-out infinite",
+              }} />
+              {/* Faint cannabis-leaf watermark, gently swaying */}
+              <div style={{
+                position: "absolute", inset: 0, display: "grid", placeItems: "center",
+                opacity: scanState === "scanning" ? 0.16 : 0.09, animation: "ss-leaf-spin-soft 7s ease-in-out infinite",
+              }}>
+                <svg width="60%" height="60%" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="0.5">
+                  <path d="M12 2c.6 2.2.4 4.3-.6 6.2 1.7-1.2 3-2.9 3.8-5-.2 2.4-1 4.5-2.4 6.3 2-.7 3.7-2 5-3.8-.8 2.6-2.4 4.7-4.6 6.2 2.2 0 4.3-.7 6.2-1.9-1.6 2.1-3.7 3.5-6.3 4.1 1.9.9 4 1.2 6.1.9-2.2 1.4-4.6 1.9-7.1 1.5.6.9 1 2 1.1 3.2H9.8c.1-1.2.5-2.3 1.1-3.2-2.5.4-4.9-.1-7.1-1.5 2.1.3 4.2 0 6.1-.9-2.6-.6-4.7-2-6.3-4.1 1.9 1.2 4 1.9 6.2 1.9-2.2-1.5-3.8-3.6-4.6-6.2 1.3 1.8 3 3.1 5 3.8C8.9 9.6 8.1 7.5 7.9 5.1c.8 2.1 2.1 3.8 3.8 5C10.7 8.2 10.5 6.1 11.1 3.9 11.4 3.2 11.7 2.6 12 2Z" />
+                </svg>
+              </div>
+              {/* Rising leaves + trichome sparkles (only while scanning, to feel alive) */}
+              {scanState === "scanning" && (
+                <>
+                  {[{ l: "24%", d: "0s", s: 13 }, { l: "58%", d: "0.9s", s: 16 }, { l: "76%", d: "1.7s", s: 11 }].map((lf, i) => (
+                    <span key={i} style={{
+                      position: "absolute", bottom: 12, left: lf.l, fontSize: lf.s,
+                      animation: `ss-leaf-rise 3.4s ease-in ${lf.d} infinite`,
+                    }}>🍃</span>
+                  ))}
+                  {["16%", "40%", "64%", "84%"].map((l, i) => (
+                    <span key={`t${i}`} style={{
+                      position: "absolute", bottom: 20, left: l, width: 4, height: 4, borderRadius: "50%",
+                      background: "#bef264", boxShadow: "0 0 6px 1px rgba(163,230,53,0.9)",
+                      animation: `ss-trichome 2.6s ease-in ${i * 0.5}s infinite`,
+                    }} />
+                  ))}
+                </>
+              )}
+            </div>
+
             {/* Rotating radar sweep — always alive at rest */}
             {scanState !== "scanning" && (
               <div style={{
