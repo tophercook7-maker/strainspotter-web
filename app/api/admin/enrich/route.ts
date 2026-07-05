@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const gate = await requireOwner(req);
   if (gate.ok === false) return gate.response;
   try {
-    const result = await enrichBatch(10);
+    const result = await enrichBatch(5);
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
     return NextResponse.json({ error: String(e instanceof Error ? e.message : e) }, { status: 500 });

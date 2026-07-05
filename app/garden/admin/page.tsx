@@ -147,21 +147,27 @@ export default function AdminPage() {
     if (enrichRunning) { setEnrichRunning(false); return; } // acts as Stop
     setEnrichRunning(true);
     let totalDone = 0;
+    let strikes = 0; // transient 504s/hiccups shouldn't kill an hours-long run
     try {
-      // Auto-loop batches while the tab is open; each batch ≈ 10 strains ≈ 1-2¢.
-      for (let i = 0; i < 200; i++) {
-        const r = await api("/api/admin/enrich", { method: "POST" });
-        totalDone += r.enriched ?? 0;
-        setEnrichLog(`Batch ${i + 1}: +${r.enriched} enriched (${r.skippedUnknown} unknown) — ${totalDone} this session`);
-        await loadEnrichStats();
-        if (r.exhausted || r.failed > 5) break;
-        // React state in a loop closure: re-read via functional check
+      // Auto-loop batches while the tab is open; each batch ≈ 5 strains ≈ 1¢.
+      for (let i = 0; i < 400; i++) {
+        try {
+          const r = await api("/api/admin/enrich", { method: "POST" });
+          strikes = 0;
+          totalDone += r.enriched ?? 0;
+          setEnrichLog(`Batch ${i + 1}: +${r.enriched} enriched (${r.skippedUnknown} unknown) — ${totalDone} this session`);
+          await loadEnrichStats();
+          if (r.exhausted) { setEnrichLog(`Library fully processed — ${totalDone} enriched this session 🎉`); break; }
+        } catch (e) {
+          strikes++;
+          setEnrichLog(`Hiccup (${strikes}/3): ${e instanceof Error ? e.message : "batch failed"} — retrying in 10s…`);
+          if (strikes >= 3) { setEnrichLog(`Stopped after 3 consecutive failures — ${totalDone} enriched this session. Tap ▶ to resume anytime.`); break; }
+          await new Promise((res) => setTimeout(res, 10_000));
+        }
         let stopped = false;
         setEnrichRunning((v) => { stopped = !v; return v; });
-        if (stopped) break;
+        if (stopped) { setEnrichLog(`Paused — ${totalDone} enriched this session. Tap ▶ to resume.`); break; }
       }
-    } catch (e) {
-      setEnrichLog(e instanceof Error ? e.message : "Enrichment failed");
     } finally {
       setEnrichRunning(false);
     }
