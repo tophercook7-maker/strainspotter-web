@@ -984,7 +984,7 @@ export default function ScannerPage() {
                 : images.length > 0
                 ? "2px solid rgba(76,175,80,0.35)"
                 : "2px solid rgba(52,211,153,0.28)",
-              boxShadow: scanState !== "done" ? "0 0 30px rgba(52,211,153,0.12), inset 0 0 24px rgba(52,211,153,0.06)" : "none",
+              boxShadow: "0 0 30px rgba(52,211,153,0.12), inset 0 0 24px rgba(52,211,153,0.06)",
               animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite" : "scan-idle-pulse 3.5s ease-in-out infinite",
             }} />
 
@@ -1000,10 +1000,10 @@ export default function ScannerPage() {
             }} />
 
             {/* Corner reticle brackets */}
-            {scanState !== "done" && [
+            {([
               { top: 8, left: 8, bt: "2px", bl: "2px" }, { top: 8, right: 8, bt: "2px", br: "2px" },
               { bottom: 8, left: 8, bb: "2px", bl: "2px" }, { bottom: 8, right: 8, bb: "2px", br: "2px" },
-            ].map((c, i) => (
+            ] as Array<{ top?: number; left?: number; right?: number; bottom?: number; bt?: string; bl?: string; br?: string; bb?: string }>).map((c, i) => (
               <span key={i} style={{
                 position: "absolute", width: 22, height: 22,
                 top: c.top, left: c.left, right: c.right, bottom: c.bottom,
