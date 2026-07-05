@@ -9,7 +9,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 
-const STAGES = [
+const DUAL_STAGES = [
   "🔍 Reading label & text…",
   "🩺 Estimating stage & age…",
   "🔍 Weighing trichomes & pistils…",
@@ -19,10 +19,18 @@ const STAGES = [
   "Fusing both reads into one result…",
   "Calibrating honest confidence…",
 ];
+const STRAIN_STAGES = [
+  "🔍 Reading label & text…",
+  "🔍 Weighing trichomes & pistils…",
+  "🔍 Matching against 314 cultivars…",
+  "🔍 Cross-checking visual traits…",
+  "Calibrating honest confidence…",
+];
 
 const G = "#6ee7b7";
 
-export default function ScanningFX({ imageUrl }: { imageUrl?: string }) {
+export default function ScanningFX({ imageUrl, dual = false }: { imageUrl?: string; dual?: boolean }) {
+  const STAGES = dual ? DUAL_STAGES : STRAIN_STAGES;
   const [stage, setStage] = useState(0);
   const [pct, setPct] = useState(0);
   // Two independent tracks filling in parallel — the visible proof that ONE
@@ -72,7 +80,7 @@ export default function ScanningFX({ imageUrl }: { imageUrl?: string }) {
           }} />
           {/* top HUD */}
           <div style={{ position: "absolute", top: 14, left: 14, right: 14, display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-            <span style={{ border: "1px solid rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.12)", color: G, borderRadius: 99, padding: "3px 10px", fontWeight: 700, letterSpacing: 0.6 }}>◦ ONE SCAN · 2 READS</span>
+            <span style={{ border: "1px solid rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.12)", color: G, borderRadius: 99, padding: "3px 10px", fontWeight: 700, letterSpacing: 0.6 }}>◦ {dual ? "ONE SCAN · 2 READS" : "LIVE SCAN"}</span>
             <span style={{ color: "rgba(255,255,255,0.7)" }}>{Math.round(pct)}%</span>
           </div>
           {/* reticle */}
@@ -98,11 +106,16 @@ export default function ScanningFX({ imageUrl }: { imageUrl?: string }) {
               <span style={{ width: 7, height: 7, borderRadius: 99, background: G, boxShadow: `0 0 8px ${G}`, animation: "sfx-pulse 1s infinite" }} />
               {STAGES[stage]}
             </div>
-            {/* dual tracks — strain + health filling side by side */}
-            {([
-              { label: "🔍 STRAIN", pctv: strainPct, grad: "linear-gradient(90deg,#34d399,#a3e635)" },
-              { label: "🩺 HEALTH", pctv: healthPct, grad: "linear-gradient(90deg,#34d399,#6ee7b7)" },
-            ]).map((t) => (
+            {/* tracks — strain always; health rides along only when opted in */}
+            {(dual
+              ? [
+                  { label: "🔍 STRAIN", pctv: strainPct, grad: "linear-gradient(90deg,#34d399,#a3e635)" },
+                  { label: "🩺 HEALTH", pctv: healthPct, grad: "linear-gradient(90deg,#34d399,#6ee7b7)" },
+                ]
+              : [
+                  { label: "🔍 STRAIN", pctv: pct, grad: "linear-gradient(90deg,#34d399,#a3e635)" },
+                ]
+            ).map((t) => (
               <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 7 }}>
                 <span style={{ width: 66, flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: 0.4, color: "rgba(255,255,255,0.82)", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{t.label}</span>
                 <div style={{ flex: 1, height: 7, borderRadius: 99, background: "rgba(255,255,255,0.12)", overflow: "hidden", boxShadow: "inset 0 0 6px rgba(0,0,0,0.5)" }}>

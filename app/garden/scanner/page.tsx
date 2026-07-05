@@ -429,9 +429,10 @@ export default function ScannerPage() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [result, setResult] = useState<SimpleResult | null>(null);
-  // Unified scan: every scan reads BOTH the strain ID and the plant's health
-  // in one pass. The plant-health read is a member/pro perk — free users still
-  // get the strain ID and see a teaser to unlock the health read.
+  // Unified scan: one scan can return BOTH the strain ID and the plant's health.
+  // The health read is OPT-IN per scan (it's a second AI call — off by default to
+  // save cost). Members/pro can toggle it on; free users see an unlock teaser.
+  const [includeHealth, setIncludeHealth] = useState(false);
   const [healthLocked, setHealthLocked] = useState(false);
   const [plantResult, setPlantResult] = useState<PlantDoctorResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -549,18 +550,20 @@ export default function ScannerPage() {
     setError(null);
     setPlantResult(null);
 
-    // Plant-health read rides along with every scan for members/pro. Free users
-    // still get the strain ID; they see a teaser to unlock the health read.
+    // Plant-health read is OPT-IN per scan (a second AI call) to save cost. It
+    // only fires when the user toggled it on AND has a membership. Free users who
+    // opted in get the strain ID plus an unlock teaser.
     const canHealth = tier === "member" || tier === "pro";
-    setHealthLocked(!canHealth);
+    const doHealth = includeHealth && canHealth;
+    setHealthLocked(includeHealth && !canHealth);
 
     try {
       const authToken = auth?.session?.access_token || undefined;
 
-      // ── UNIFIED SCAN — kick off the plant-HEALTH read in parallel with the
-      // strain ID so one scan returns both answers. Non-fatal: a health miss
-      // (or subscription limit) never fails the strain result.
-      const healthPromise: Promise<PlantDoctorResult | null> = canHealth
+      // ── UNIFIED SCAN — when opted in, kick off the plant-HEALTH read in
+      // parallel with the strain ID so one scan returns both answers. Non-fatal:
+      // a health miss (or subscription limit) never fails the strain result.
+      const healthPromise: Promise<PlantDoctorResult | null> = doHealth
         ? diagnosePlant(images, { authToken }).catch(() => null)
         : Promise.resolve(null);
 
@@ -906,26 +909,48 @@ export default function ScannerPage() {
           </div>
         )}
 
-        {/* ── UNIFIED SCAN BANNER: one scan → strain ID + plant health ── */}
+        {/* ── SCAN BANNER + opt-in HEALTH toggle (health is a 2nd AI read) ── */}
         {scanState !== "done" && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 12, marginTop: 18, padding: "12px 14px",
-            borderRadius: 14, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.28)",
-            boxShadow: "0 0 24px rgba(52,211,153,0.06) inset",
-          }}>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => { if (scanState !== "scanning") setIncludeHealth((v) => !v); }}
+            onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && scanState !== "scanning") { e.preventDefault(); setIncludeHealth((v) => !v); } }}
+            style={{
+              display: "flex", alignItems: "center", gap: 12, marginTop: 18, padding: "12px 14px",
+              borderRadius: 14, cursor: scanState === "scanning" ? "default" : "pointer",
+              background: includeHealth ? "rgba(52,211,153,0.12)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${includeHealth ? "rgba(52,211,153,0.4)" : "rgba(255,255,255,0.12)"}`,
+              boxShadow: includeHealth ? "0 0 24px rgba(52,211,153,0.08) inset" : "none",
+              transition: "background 0.2s ease, border-color 0.2s ease",
+            }}
+          >
             <span style={{
               flexShrink: 0, width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center",
               background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.3)", fontSize: 20,
-              animation: "scan-idle-pulse 3.5s ease-in-out infinite",
-            }}>🔬</span>
+              animation: includeHealth ? "scan-idle-pulse 3.5s ease-in-out infinite" : "none",
+            }}>{includeHealth ? "🔬" : "🔍"}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: "#6ee7b7", fontWeight: 800, fontSize: 14, letterSpacing: "-0.01em" }}>
-                One scan · two answers
+                {includeHealth ? "One scan · two answers" : "Add a plant-health read?"}
               </div>
               <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11.5, marginTop: 2, lineHeight: 1.4 }}>
-                <span style={{ color: "rgba(255,255,255,0.85)" }}>🔍 Strain ID</span> + <span style={{ color: "rgba(255,255,255,0.85)" }}>🩺 Plant health</span> read together — no second photo.
+                {includeHealth
+                  ? <><span style={{ color: "rgba(255,255,255,0.85)" }}>🔍 Strain ID</span> + <span style={{ color: "rgba(255,255,255,0.85)" }}>🩺 Plant health</span> in the same scan.</>
+                  : <>🔍 Strain ID always. Flip on 🩺 <span style={{ color: "rgba(255,255,255,0.82)" }}>Plant health</span> for this scan.</>}
               </div>
             </div>
+            {/* switch */}
+            <span style={{
+              flexShrink: 0, width: 44, height: 26, borderRadius: 99, position: "relative",
+              background: includeHealth ? "linear-gradient(135deg, #34d399, #059669)" : "rgba(255,255,255,0.18)",
+              transition: "background 0.2s ease",
+            }}>
+              <span style={{
+                position: "absolute", top: 3, left: includeHealth ? 21 : 3, width: 20, height: 20, borderRadius: "50%",
+                background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.4)", transition: "left 0.2s cubic-bezier(.34,1.56,.64,1)",
+              }} />
+            </span>
           </div>
         )}
 
@@ -1023,7 +1048,9 @@ export default function ScannerPage() {
                   Analyzing...
                 </p>
                 <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginTop: 6 }}>
-                  Reading strain <span style={{ color: "#6ee7b7" }}>&amp;</span> plant health — one scan
+                  {includeHealth
+                    ? <>Reading strain <span style={{ color: "#6ee7b7" }}>&amp;</span> plant health — one scan</>
+                    : "AI is identifying your strain"}
                 </p>
               </div>
             ) : images.length > 0 ? (
@@ -1068,7 +1095,7 @@ export default function ScannerPage() {
         />
 
         {/* ── THUMBNAIL STRIP ── */}
-        {scanState === "scanning" && <ScanningFX imageUrl={previews[0]} />}
+        {scanState === "scanning" && <ScanningFX imageUrl={previews[0]} dual={includeHealth} />}
 
         {images.length > 0 && scanState !== "done" && (
           <div style={{
