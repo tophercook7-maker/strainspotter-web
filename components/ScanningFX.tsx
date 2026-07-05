@@ -10,10 +10,13 @@
 import { useEffect, useState, type CSSProperties } from "react";
 
 const STAGES = [
-  "Reading label & text…",
-  "Weighing trichomes & pistils…",
-  "Matching against 314 cultivars…",
-  "Checking plant health…",
+  "🔍 Reading label & text…",
+  "🩺 Estimating stage & age…",
+  "🔍 Weighing trichomes & pistils…",
+  "🩺 Scanning leaves for stress…",
+  "🔍 Matching against 314 cultivars…",
+  "🩺 Checking for deficiencies…",
+  "Fusing both reads into one result…",
   "Calibrating honest confidence…",
 ];
 
@@ -22,11 +25,17 @@ const G = "#6ee7b7";
 export default function ScanningFX({ imageUrl }: { imageUrl?: string }) {
   const [stage, setStage] = useState(0);
   const [pct, setPct] = useState(0);
+  // Two independent tracks filling in parallel — the visible proof that ONE
+  // scan is reading both the strain and the plant's health at the same time.
+  const [strainPct, setStrainPct] = useState(0);
+  const [healthPct, setHealthPct] = useState(0);
 
   useEffect(() => {
-    const a = setInterval(() => setStage((s) => (s + 1) % STAGES.length), 1600);
+    const a = setInterval(() => setStage((s) => (s + 1) % STAGES.length), 1400);
     const b = setInterval(() => setPct((p) => Math.min(100, p + Math.random() * 6)), 260);
-    return () => { clearInterval(a); clearInterval(b); };
+    const c = setInterval(() => setStrainPct((p) => Math.min(100, p + Math.random() * 9)), 300);
+    const d = setInterval(() => setHealthPct((p) => Math.min(100, p + Math.random() * 7)), 340);
+    return () => { clearInterval(a); clearInterval(b); clearInterval(c); clearInterval(d); };
   }, []);
 
   const corner = (pos: CSSProperties): CSSProperties => ({
@@ -63,7 +72,7 @@ export default function ScanningFX({ imageUrl }: { imageUrl?: string }) {
           }} />
           {/* top HUD */}
           <div style={{ position: "absolute", top: 14, left: 14, right: 14, display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-            <span style={{ border: "1px solid rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.12)", color: G, borderRadius: 99, padding: "3px 10px", fontWeight: 600 }}>◦ LIVE SCAN</span>
+            <span style={{ border: "1px solid rgba(52,211,153,0.4)", background: "rgba(52,211,153,0.12)", color: G, borderRadius: 99, padding: "3px 10px", fontWeight: 700, letterSpacing: 0.6 }}>◦ ONE SCAN · 2 READS</span>
             <span style={{ color: "rgba(255,255,255,0.7)" }}>{Math.round(pct)}%</span>
           </div>
           {/* reticle */}
@@ -85,13 +94,23 @@ export default function ScanningFX({ imageUrl }: { imageUrl?: string }) {
           <div style={spark("72%", "66%", "1.3s")} />
           {/* bottom HUD */}
           <div style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, textShadow: "0 1px 4px rgba(0,0,0,0.8)", marginBottom: 10 }}>
               <span style={{ width: 7, height: 7, borderRadius: 99, background: G, boxShadow: `0 0 8px ${G}`, animation: "sfx-pulse 1s infinite" }} />
               {STAGES[stage]}
             </div>
-            <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,0.12)", overflow: "hidden", marginTop: 8, boxShadow: "inset 0 0 6px rgba(0,0,0,0.5)" }}>
-              <span style={{ display: "block", height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg,#34d399,#a3e635)", boxShadow: "0 0 14px rgba(52,211,153,0.8)", transition: "width 0.3s ease" }} />
-            </div>
+            {/* dual tracks — strain + health filling side by side */}
+            {([
+              { label: "🔍 STRAIN", pctv: strainPct, grad: "linear-gradient(90deg,#34d399,#a3e635)" },
+              { label: "🩺 HEALTH", pctv: healthPct, grad: "linear-gradient(90deg,#34d399,#6ee7b7)" },
+            ]).map((t) => (
+              <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 7 }}>
+                <span style={{ width: 66, flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: 0.4, color: "rgba(255,255,255,0.82)", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{t.label}</span>
+                <div style={{ flex: 1, height: 7, borderRadius: 99, background: "rgba(255,255,255,0.12)", overflow: "hidden", boxShadow: "inset 0 0 6px rgba(0,0,0,0.5)" }}>
+                  <span style={{ display: "block", height: "100%", width: `${t.pctv}%`, borderRadius: 99, background: t.grad, boxShadow: "0 0 12px rgba(52,211,153,0.75)", transition: "width 0.3s ease" }} />
+                </div>
+                <span style={{ width: 30, flexShrink: 0, textAlign: "right", fontSize: 10, color: "rgba(255,255,255,0.6)", fontVariantNumeric: "tabular-nums" }}>{Math.round(t.pctv)}%</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

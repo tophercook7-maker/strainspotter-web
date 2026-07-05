@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { orchestrateScan, ScanSubscriptionRequiredError } from "@/lib/scanner/scanOrchestrator";
 import {
   diagnosePlant,
-  PlantDoctorSubscriptionRequiredError,
   type PlantDoctorResult,
 } from "@/lib/scanner/plantDoctorClient";
 import PlantDoctorPanel from "./PlantDoctorPanel";
@@ -430,9 +429,10 @@ export default function ScannerPage() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [result, setResult] = useState<SimpleResult | null>(null);
-  // Scanner mode: "strain" = spot the strain (label/bud), "plant" = Plant
-  // Doctor (live plant: stage, age, health, problems).
-  const [scanMode, setScanMode] = useState<"strain" | "plant">("strain");
+  // Unified scan: every scan reads BOTH the strain ID and the plant's health
+  // in one pass. The plant-health read is a member/pro perk — free users still
+  // get the strain ID and see a teaser to unlock the health read.
+  const [healthLocked, setHealthLocked] = useState(false);
   const [plantResult, setPlantResult] = useState<PlantDoctorResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -539,7 +539,7 @@ export default function ScannerPage() {
         setShowAuth(true);
         return;
       }
-      if (!freeScanAvailable || scanMode === "plant") {
+      if (!freeScanAvailable) {
         setShowPaywall(true);
         return;
       }
@@ -547,47 +547,23 @@ export default function ScannerPage() {
 
     setScanState("scanning");
     setError(null);
+    setPlantResult(null);
 
-    // ── Plant Doctor mode: live-plant read (stage, age, health, problems) ──
-    if (scanMode === "plant") {
-      try {
-        const pd = await diagnosePlant(images, {
-          authToken: auth?.session?.access_token || undefined,
-        });
-        setPlantResult(pd);
-        setScanState("done");
-        // Non-blocking history save — plant scans belong in History too.
-        if (pd.plantAssessment) {
-          const pa = pd.plantAssessment;
-          const age = pa.estimatedAgeWeeks
-            ? `${pa.estimatedAgeWeeks.min}–${pa.estimatedAgeWeeks.max} wk`
-            : null;
-          import("@/app/actions/savePlantScanHistory")
-            .then(({ savePlantScanHistory }) =>
-              savePlantScanHistory({
-                userId: auth?.user?.id ?? null,
-                stageLabel: pa.stage,
-                healthScore: pa.healthScore,
-                ageLabel: age,
-                result: pd as unknown as Record<string, unknown>,
-              })
-            )
-            .catch(() => {});
-        }
-      } catch (e) {
-        if (e instanceof PlantDoctorSubscriptionRequiredError) {
-          setShowPaywall(true);
-          setScanState("ready");
-        } else {
-          setError(e instanceof Error ? e.message : "Plant Doctor scan failed. Please try again.");
-          setScanState("ready");
-        }
-      }
-      return;
-    }
+    // Plant-health read rides along with every scan for members/pro. Free users
+    // still get the strain ID; they see a teaser to unlock the health read.
+    const canHealth = tier === "member" || tier === "pro";
+    setHealthLocked(!canHealth);
 
     try {
       const authToken = auth?.session?.access_token || undefined;
+
+      // ── UNIFIED SCAN — kick off the plant-HEALTH read in parallel with the
+      // strain ID so one scan returns both answers. Non-fatal: a health miss
+      // (or subscription limit) never fails the strain result.
+      const healthPromise: Promise<PlantDoctorResult | null> = canHealth
+        ? diagnosePlant(images, { authToken }).catch(() => null)
+        : Promise.resolve(null);
+
       const orchestrated = await orchestrateScan(images, {
         authToken,
         sellersClaim: sellersClaim.trim() || undefined,
@@ -718,6 +694,31 @@ export default function ScannerPage() {
 
       setResult(simple);
       setScanState("done");
+
+      // Settle the parallel plant-health read and attach it to the SAME result.
+      healthPromise.then((pd) => {
+        if (!pd) return;
+        setPlantResult(pd);
+        // Non-blocking history save — plant reads belong in History too.
+        if (pd.plantAssessment) {
+          const pa = pd.plantAssessment;
+          const age = pa.estimatedAgeWeeks
+            ? `${pa.estimatedAgeWeeks.min}–${pa.estimatedAgeWeeks.max} wk`
+            : null;
+          import("@/app/actions/savePlantScanHistory")
+            .then(({ savePlantScanHistory }) =>
+              savePlantScanHistory({
+                userId: auth?.user?.id ?? null,
+                stageLabel: pa.stage,
+                healthScore: pa.healthScore,
+                ageLabel: age,
+                result: pd as unknown as Record<string, unknown>,
+              })
+            )
+            .catch(() => {});
+        }
+      });
+
       // If this was the free signup scan, refresh the profile so the flag
       // (and the paywall) reflect that it's spent.
       if (freeScanAvailable) auth?.refreshProfile?.().catch(() => {});
@@ -905,34 +906,26 @@ export default function ScannerPage() {
           </div>
         )}
 
-        {/* ── MODE TOGGLE: Strain ID vs Plant Doctor ── */}
+        {/* ── UNIFIED SCAN BANNER: one scan → strain ID + plant health ── */}
         {scanState !== "done" && (
-          <div style={{ display: "flex", gap: 8, marginTop: 18, padding: 4, borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            {([
-              { key: "strain" as const, icon: "🔍", label: "Strain ID", hint: "bud, label, packaging" },
-              { key: "plant" as const, icon: "🩺", label: "Plant Doctor", hint: "live plant: age, health" },
-            ]).map((m) => (
-              <button
-                key={m.key}
-                onClick={() => { if (scanState !== "scanning") { setScanMode(m.key); setResult(null); setPlantResult(null); } }}
-                style={{
-                  flex: 1,
-                  padding: "10px 8px",
-                  borderRadius: 11,
-                  border: "none",
-                  cursor: scanState === "scanning" ? "default" : "pointer",
-                  background: scanMode === m.key ? "linear-gradient(135deg, #34d399, #059669)" : "transparent",
-                  transition: "background 0.2s ease",
-                }}
-              >
-                <div style={{ color: scanMode === m.key ? "#fff" : "rgba(255,255,255,0.75)", fontWeight: 800, fontSize: 13 }}>
-                  {m.icon} {m.label}
-                </div>
-                <div style={{ color: scanMode === m.key ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.45)", fontSize: 10, marginTop: 2 }}>
-                  {m.hint}
-                </div>
-              </button>
-            ))}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12, marginTop: 18, padding: "12px 14px",
+            borderRadius: 14, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.28)",
+            boxShadow: "0 0 24px rgba(52,211,153,0.06) inset",
+          }}>
+            <span style={{
+              flexShrink: 0, width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center",
+              background: "rgba(52,211,153,0.14)", border: "1px solid rgba(52,211,153,0.3)", fontSize: 20,
+              animation: "scan-idle-pulse 3.5s ease-in-out infinite",
+            }}>🔬</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "#6ee7b7", fontWeight: 800, fontSize: 14, letterSpacing: "-0.01em" }}>
+                One scan · two answers
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11.5, marginTop: 2, lineHeight: 1.4 }}>
+                <span style={{ color: "rgba(255,255,255,0.85)" }}>🔍 Strain ID</span> + <span style={{ color: "rgba(255,255,255,0.85)" }}>🩺 Plant health</span> read together — no second photo.
+              </div>
+            </div>
           </div>
         )}
 
@@ -1030,7 +1023,7 @@ export default function ScannerPage() {
                   Analyzing...
                 </p>
                 <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginTop: 6 }}>
-                  {scanMode === "plant" ? "Reading your plant — stage, health, issues" : "AI is identifying your strain"}
+                  Reading strain <span style={{ color: "#6ee7b7" }}>&amp;</span> plant health — one scan
                 </p>
               </div>
             ) : images.length > 0 ? (
@@ -1227,10 +1220,46 @@ export default function ScannerPage() {
         )}
 
         {/* ── RESULT CARD ── */}
-        {/* ── PLANT DOCTOR RESULT ── */}
+        {/* ── PLANT HEALTH — from the SAME scan ── */}
         {plantResult && scanState === "done" && (
           <div style={{ marginTop: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 12px" }}>
+              <span style={{ height: 1, flex: 1, background: "linear-gradient(90deg, transparent, rgba(52,211,153,0.4))" }} />
+              <span style={{ color: "#6ee7b7", fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                🩺 Plant health · same scan
+              </span>
+              <span style={{ height: 1, flex: 1, background: "linear-gradient(90deg, rgba(52,211,153,0.4), transparent)" }} />
+            </div>
             <PlantDoctorPanel result={plantResult} onReset={clearAll} />
+          </div>
+        )}
+
+        {/* ── HEALTH TEASER — free users get the strain ID; unlock the health read ── */}
+        {result && scanState === "done" && healthLocked && !plantResult && (
+          <div style={{
+            marginTop: 24, padding: "18px 18px", borderRadius: 16, position: "relative", overflow: "hidden",
+            background: "linear-gradient(135deg, rgba(52,211,153,0.10), rgba(52,211,153,0.03))",
+            border: "1px dashed rgba(52,211,153,0.4)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 30, filter: "drop-shadow(0 0 10px rgba(52,211,153,0.5))" }}>🩺</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: "#fff", fontWeight: 800, fontSize: 15 }}>Plant health — locked</div>
+                <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 12.5, marginTop: 2, lineHeight: 1.45 }}>
+                  This same scan can also read stage, age, deficiencies &amp; a real fix. Unlock it with a membership.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowPaywall(true)}
+              style={{
+                marginTop: 14, width: "100%", padding: "12px 0", borderRadius: 12, border: "none", cursor: "pointer",
+                background: "linear-gradient(135deg, #34d399, #059669)", color: "#04120b", fontWeight: 800, fontSize: 14,
+                boxShadow: "0 4px 20px rgba(5,150,105,0.35)",
+              }}
+            >
+              Unlock plant health →
+            </button>
           </div>
         )}
 
