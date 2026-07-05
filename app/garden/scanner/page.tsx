@@ -962,6 +962,18 @@ export default function ScannerPage() {
               transition: "all 0.3s ease",
             }}
           >
+            {/* Rotating radar sweep — always alive at rest */}
+            {scanState !== "scanning" && (
+              <div style={{
+                position: "absolute", inset: 0, borderRadius: "50%",
+                background: "conic-gradient(from 0deg, transparent 0deg, rgba(52,211,153,0.22) 40deg, transparent 80deg)",
+                animation: "scan-rotate 7s linear infinite",
+                maskImage: "radial-gradient(circle, transparent 60%, #000 61%)",
+                WebkitMaskImage: "radial-gradient(circle, transparent 60%, #000 61%)",
+                pointerEvents: "none",
+              }} />
+            )}
+
             {/* Outer ring */}
             <div style={{
               position: "absolute",
@@ -970,21 +982,38 @@ export default function ScannerPage() {
               border: scanState === "scanning"
                 ? "2px solid rgba(76,175,80,0.6)"
                 : images.length > 0
-                ? "2px solid rgba(76,175,80,0.3)"
-                : "2px solid rgba(255,255,255,0.08)",
-              animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite" : "none",
+                ? "2px solid rgba(76,175,80,0.35)"
+                : "2px solid rgba(52,211,153,0.28)",
+              boxShadow: scanState !== "done" ? "0 0 30px rgba(52,211,153,0.12), inset 0 0 24px rgba(52,211,153,0.06)" : "none",
+              animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite" : "scan-idle-pulse 3.5s ease-in-out infinite",
             }} />
 
-            {/* Inner ring */}
+            {/* Inner dashed ring — slow counter-rotation */}
             <div style={{
               position: "absolute",
               inset: 20,
               borderRadius: "50%",
               border: scanState === "scanning"
                 ? "1px solid rgba(76,175,80,0.3)"
-                : "1px solid rgba(255,255,255,0.04)",
-              animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite 0.5s" : "none",
+                : "1px dashed rgba(52,211,153,0.25)",
+              animation: scanState === "scanning" ? "scanPulse 2s ease-in-out infinite 0.5s" : "scan-rotate-rev 18s linear infinite",
             }} />
+
+            {/* Corner reticle brackets */}
+            {scanState !== "done" && [
+              { top: 8, left: 8, bt: "2px", bl: "2px" }, { top: 8, right: 8, bt: "2px", br: "2px" },
+              { bottom: 8, left: 8, bb: "2px", bl: "2px" }, { bottom: 8, right: 8, bb: "2px", br: "2px" },
+            ].map((c, i) => (
+              <span key={i} style={{
+                position: "absolute", width: 22, height: 22,
+                top: c.top, left: c.left, right: c.right, bottom: c.bottom,
+                borderTop: c.bt ? `${c.bt} solid rgba(110,231,183,0.6)` : undefined,
+                borderBottom: c.bb ? `${c.bb} solid rgba(110,231,183,0.6)` : undefined,
+                borderLeft: c.bl ? `${c.bl} solid rgba(110,231,183,0.6)` : undefined,
+                borderRight: c.br ? `${c.br} solid rgba(110,231,183,0.6)` : undefined,
+                pointerEvents: "none",
+              }} />
+            ))}
 
             {/* Content */}
             {scanState === "scanning" ? (
