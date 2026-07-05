@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import TopNav from "../_components/TopNav";
+import AuthScreen from "@/components/AuthScreen";
 
 let useOptionalAuth: () => any;
 try {
@@ -92,6 +93,7 @@ export default function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   const api = useCallback(
     async (path: string, init?: RequestInit) => {
@@ -248,6 +250,20 @@ export default function AdminPage() {
     </div>
   );
 
+  // Auth still resolving? Don't flash the lock screen at the real owner.
+  if (auth?.loading) {
+    return (
+      <>
+        <TopNav title="Admin" showBack />
+        <main className="min-h-screen text-white">
+          <div className="mx-auto w-full max-w-[720px] px-4 py-16" style={{ textAlign: "center", color: "rgba(255,255,255,0.6)" }}>
+            Checking access…
+          </div>
+        </main>
+      </>
+    );
+  }
+
   if (!token || denied || (auth?.profile && !isOwner)) {
     return (
       <>
@@ -255,9 +271,30 @@ export default function AdminPage() {
         <main className="min-h-screen text-white">
           <div className="mx-auto w-full max-w-[720px] px-4 py-16" style={{ textAlign: "center" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
-            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 15 }}>Owner access only.</div>
+            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, marginBottom: 8 }}>Owner access only.</div>
+            {!token ? (
+              <>
+                <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 16 }}>
+                  This browser isn&apos;t signed in — sign in with the owner account.
+                </div>
+                <button onClick={() => setShowAuth(true)} style={{ padding: "12px 22px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #43A047, #2E7D32)", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+                  Sign in
+                </button>
+              </>
+            ) : (
+              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
+                Signed in as a non-owner account — switch to the owner account.
+              </div>
+            )}
           </div>
         </main>
+        {showAuth && (
+          <AuthScreen
+            defaultMode="signin"
+            onClose={() => setShowAuth(false)}
+            onSuccess={() => { setShowAuth(false); setDenied(false); }}
+          />
+        )}
       </>
     );
   }
