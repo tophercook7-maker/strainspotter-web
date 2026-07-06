@@ -83,8 +83,8 @@ export default function StrainSpotterLanding() {
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8, borderRadius: 999, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.05)", padding: "6px 13px", fontSize: 12.5, fontWeight: 500, color: G2 }}>
               <span style={{ height: 6, width: 6, borderRadius: 999, background: G, animation: "ss-float 2s ease-in-out infinite" }} /> One scan · strain + health
             </span>
-            <h1 style={{ marginTop: 16, fontSize: 52, lineHeight: 1.05, fontWeight: 800, letterSpacing: "-.02em" }}>One scan.<br />Two honest answers.</h1>
-            <p style={{ marginTop: 14, color: "rgba(255,255,255,.66)", fontSize: 17, lineHeight: 1.55, maxWidth: 470 }}>Point your camera at any plant, bud, or label — <b>once</b>. StrainSpotter tells you what it likely <b>is</b> and how it&rsquo;s <b>doing</b>, in the same scan. Calibrated confidence, never a fake guess.</p>
+            <h1 style={{ marginTop: 16, fontSize: 52, lineHeight: 1.05, fontWeight: 800, letterSpacing: "-.02em" }}>Read the label.<br />Read the plant.</h1>
+            <p style={{ marginTop: 14, color: "rgba(255,255,255,.66)", fontSize: 17, lineHeight: 1.55, maxWidth: 470 }}>Show a <b>label</b> and we read the strain name off it. Show the <b>plant</b> and our Grow Doctor reads its health — stage, stress, deficiencies. Two reliable answers in one scan, with <b>calibrated confidence</b> and never a fake guess.</p>
             <div style={{ marginTop: 28, display: "flex", gap: 12, flexWrap: "wrap" }}>
               <Link href="/garden/scanner" style={btnG} onClick={spr}>Scan your plant →</Link>
               <button style={btnO} onClick={(e) => { spr(e); setRun((n) => n + 1); }}>↻ Replay scan</button>

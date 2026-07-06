@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import TopNav from "../_components/TopNav";
-import ZoneNav from "../_components/ZoneNav";
 import NewsStrip from "@/components/NewsStrip";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -158,19 +157,18 @@ export default function DispensariesPage() {
 
   return (
     <>
-      <TopNav title="Dispensaries" showBack />
+      <TopNav title="Dispensary Finder" showBack />
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
-          <ZoneNav zone="nearby" zoneLabel="Nearby" />
           {/* Hero */}
           <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
               <span style={{ fontSize: 28 }}>🏪</span>
-              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Dispensaries</span>
+              <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Dispensary Finder</span>
             </div>
             <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
-              Find medical and recreational dispensaries near you. We search OpenStreetMap
-              data within your selected radius — availability depends on your state&apos;s laws.
+              Find medical and recreational dispensaries near you. This finder uses your
+              location and selected radius only for licensed retail lookup.
             </div>
           </div>
 

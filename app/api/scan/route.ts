@@ -933,11 +933,18 @@ export async function POST(req: NextRequest) {
               response_format: { type: "json_object" },
               // GPT-5 / o-series ("reasoning") models reject `max_tokens` and a
               // custom `temperature` — they take `max_completion_tokens` (which
-              // also funds hidden reasoning tokens, so give extra headroom) and
-              // only the default temperature. GPT-4o / GPT-4.1 use the classic
-              // params. Keyed off the model id so the env swap Just Works.
+              // ALSO funds hidden reasoning tokens, so give generous headroom or
+              // the JSON gets truncated) and only the default temperature.
+              // Optional quality dial: SCANNER_REASONING_EFFORT
+              // (minimal|low|medium|high) — only sent when set, so it can never
+              // 400 by default. GPT-4o / GPT-4.1 use the classic params.
               ...(/^(gpt-5|o\d)/i.test(VISION_MODEL)
-                ? { max_completion_tokens: 4000 }
+                ? {
+                    max_completion_tokens: 6000,
+                    ...(process.env.SCANNER_REASONING_EFFORT
+                      ? { reasoning_effort: process.env.SCANNER_REASONING_EFFORT }
+                      : {}),
+                  }
                 : { max_tokens: 1800, temperature: 0.2 }),
             }),
           }

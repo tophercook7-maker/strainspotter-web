@@ -435,6 +435,32 @@ export default function ScannerPage() {
   // save cost). Members/pro can toggle it on; free users see an unlock teaser.
   const [includeHealth, setIncludeHealth] = useState(false);
   const [healthLocked, setHealthLocked] = useState(false);
+  // Data flywheel: a one-tap "was this right?" confirm/correct on every result.
+  // Confirmed answers + corrections feed scan_corrections (owned, labeled data)
+  // — the only durable path to better accuracy on the label route.
+  const [feedbackState, setFeedbackState] = useState<"idle" | "correcting" | "sent">("idle");
+  const [correctionName, setCorrectionName] = useState("");
+  const submitScanFeedback = async (opts: { confirmed: boolean; correctedName?: string }) => {
+    if (!result) return;
+    const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    setFeedbackState("sent");
+    try {
+      await fetch("/api/scan/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selectedMatchSlug: opts.confirmed ? slug(result.strainName) : undefined,
+          selectedMatchName: opts.confirmed ? result.strainName : undefined,
+          correctedStrainName: opts.confirmed ? undefined : (opts.correctedName?.trim() || undefined),
+          wrongTopMatchSlug: opts.confirmed ? undefined : slug(result.strainName),
+          predictedTopMatches: result.v2Candidates.map((c, i) => ({
+            slug: slug(c.strainName), strainName: c.strainName, rank: i + 1, confidence: c.confidence,
+          })),
+          provider: "openai",
+        }),
+      });
+    } catch { /* non-blocking — the thank-you still shows */ }
+  };
   // Cannabis-flavored scan audio — on by default, remembered per device.
   const [soundOn, setSoundOn] = useState(true);
   useEffect(() => {
@@ -568,6 +594,9 @@ export default function ScannerPage() {
     setScanState("scanning");
     setError(null);
     setPlantResult(null);
+
+    setFeedbackState("idle");
+    setCorrectionName("");
 
     // Scan audio: a lighter-flick to kick off, then a soft bubbler loop. This
     // runs inside the button-click gesture, which unlocks the audio context.
@@ -1159,12 +1188,12 @@ export default function ScannerPage() {
                   fontSize: 56,
                   marginBottom: 16,
                   opacity: 0.6,
-                }}>🔍</div>
-                <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 15, fontWeight: 600 }}>
-                  Upload Photos
+                }}>🏷️</div>
+                <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 15, fontWeight: 700 }}>
+                  Snap the label or package
                 </p>
-                <p style={{ color: "rgba(255,255,255,0.60)", fontSize: 12, marginTop: 6 }}>
-                  2–5 photos from different angles work best
+                <p style={{ color: "rgba(255,255,255,0.60)", fontSize: 12, marginTop: 6, lineHeight: 1.45 }}>
+                  Reading the name off a label is how we nail the strain.<br />Add a bud shot too for health &amp; traits.
                 </p>
               </div>
             )}
@@ -1894,6 +1923,89 @@ export default function ScannerPage() {
                   <span style={{ fontSize: 15 }}>{isFavorited ? "❤️" : "🤍"}</span>
                   {isFavorited ? "Saved to Favorites" : "Save to Favorites"}
                 </button>
+              </div>
+
+              {/* ── DATA FLYWHEEL: was this right? confirm / correct ── */}
+              <div style={{
+                marginTop: 18, padding: "14px 16px", borderRadius: 16,
+                background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.18)",
+              }}>
+                {feedbackState === "sent" ? (
+                  <div style={{ textAlign: "center", color: "#6ee7b7", fontWeight: 700, fontSize: 14 }}>
+                    🙏 Thanks — you just made the next scan smarter.
+                  </div>
+                ) : feedbackState === "correcting" ? (
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 8, textAlign: "center" }}>
+                      What is it actually?
+                    </div>
+                    <input
+                      value={correctionName}
+                      onChange={(e) => setCorrectionName(e.target.value)}
+                      placeholder="Real strain name (from the label)"
+                      style={{
+                        width: "100%", padding: "11px 14px", borderRadius: 12, marginBottom: 10,
+                        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.16)",
+                        color: "#fff", fontSize: 14, outline: "none",
+                      }}
+                    />
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => submitScanFeedback({ confirmed: false, correctedName: correctionName })}
+                        disabled={!correctionName.trim()}
+                        style={{
+                          flex: 1, padding: "11px 0", borderRadius: 12, border: "none",
+                          background: correctionName.trim() ? "linear-gradient(135deg, #34d399, #059669)" : "rgba(255,255,255,0.08)",
+                          color: correctionName.trim() ? "#04120b" : "rgba(255,255,255,0.4)",
+                          fontWeight: 800, fontSize: 14, cursor: correctionName.trim() ? "pointer" : "default",
+                        }}
+                      >
+                        Submit correction
+                      </button>
+                      <button
+                        onClick={() => setFeedbackState("idle")}
+                        style={{
+                          padding: "11px 16px", borderRadius: 12, cursor: "pointer",
+                          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.14)",
+                          color: "rgba(255,255,255,0.6)", fontWeight: 700, fontSize: 13,
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.82)" }}>
+                      Was this right?
+                    </span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => submitScanFeedback({ confirmed: true })}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 20, cursor: "pointer",
+                          background: "rgba(52,211,153,0.16)", border: "1px solid rgba(52,211,153,0.4)",
+                          color: "#6ee7b7", fontWeight: 700, fontSize: 13,
+                        }}
+                      >
+                        ✓ Yes, correct
+                      </button>
+                      <button
+                        onClick={() => { setCorrectionName(""); setFeedbackState("correcting"); }}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 20, cursor: "pointer",
+                          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.16)",
+                          color: "rgba(255,255,255,0.7)", fontWeight: 700, fontSize: 13,
+                        }}
+                      >
+                        ✗ No, fix it
+                      </button>
+                    </div>
+                    <div style={{ flexBasis: "100%", textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                      Your answer trains the AI — this is how results get better over time.
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

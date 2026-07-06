@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import TopNav from "../_components/TopNav";
-import ZoneNav from "../_components/ZoneNav";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface SeedVendor {
@@ -190,7 +189,6 @@ export default function SeedVendorsPage() {
       <TopNav title="Seed Vendors" showBack />
       <main className="min-h-screen text-white">
         <div className="mx-auto w-full max-w-[720px] px-4 py-6">
-          <ZoneNav zone="nearby" zoneLabel="Nearby" />
           {/* Hero */}
           <div style={{ ...glass, padding: 24, marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -198,8 +196,8 @@ export default function SeedVendorsPage() {
               <span style={{ color: "white", fontWeight: 800, fontSize: 24 }}>Seed Vendors</span>
             </div>
             <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.7 }}>
-              A directory of well-known seed banks, breeders, and marketplaces. Use the search
-              and tag filters below to browse by region, seed type, and specialty.
+              A standalone directory of well-known seed banks, breeders, and marketplaces.
+              Browse by region, seed type, and specialty without using location services.
             </div>
           </div>
 

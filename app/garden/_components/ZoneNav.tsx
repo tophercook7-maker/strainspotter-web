@@ -9,7 +9,6 @@
 // pages so users can hop between siblings without going back to the landing.
 //
 //   <ZoneNav zone="library" />   on strains, ecosystem, terpenes, compare, favorites
-//   <ZoneNav zone="nearby"  />   on dispensaries, seed-vendors
 //   <ZoneNav zone="scan"    />   on scanner, history
 //   <ZoneNav zone="grow"    />   on grow-coach, plants, grow-groups, grow-log
 //
@@ -18,7 +17,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export type ZoneKey = "scan" | "grow" | "library" | "nearby" | "journal";
+export type ZoneKey = "scan" | "grow" | "library" | "journal";
 
 type Tab = { href: string; label: string; icon: string };
 
@@ -37,10 +36,6 @@ const ZONES: Record<ZoneKey, Tab[]> = {
     { href: "/garden/strains",   label: "Strains",   icon: "🔬" },
     { href: "/garden/ecosystem", label: "Discover",  icon: "🧬" },
     { href: "/garden/favorites", label: "Favorites", icon: "❤️" },
-  ],
-  nearby: [
-    { href: "/garden/dispensaries", label: "Dispensaries", icon: "📍" },
-    { href: "/garden/seed-vendors", label: "Seeds",        icon: "🌰" },
   ],
   journal: [
     { href: "/garden/journal", label: "Journal", icon: "📓" },

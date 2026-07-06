@@ -265,22 +265,23 @@ interface FeatureItem {
 }
 
 /**
- * Five primary destinations (the consolidated garden).
+ * Primary destinations in The Garden.
  * Each tile is a "zone" that absorbs related routes:
  *
  *   Scan      → scanner, history, saved-scan
  *   Grow      → grow-coach (doctor + diagnostic), plants, grow-groups, grow-log
  *   Library   → strains, ecosystem, compare, terpenes, favorites
  *   Journal   → consumption / session diary
- *   Nearby    → dispensaries + seed-vendors
+ *   Dispensary Finder → location-based licensed dispensary lookup
+ *   Seed Vendors      → online seed bank / breeder directory
  */
 const FEATURES: FeatureItem[] = [
   { href: "/garden/scanner",      icon: "📷", label: "Scan",    desc: "AI strain analysis + seller's-claim check" },
   { href: "/garden/grow-coach",   icon: "🩺", label: "Grow",    desc: "Grow Doctor: lifecycle + photo diagnostics" },
   { href: "/garden/strains",      icon: "📚", label: "Library", desc: "Strains, terpenes, discovery, compare" },
   { href: "/garden/journal",      icon: "📓", label: "Journal", desc: "Session diary — mood, dose, notes" },
-  { href: "/garden/dispensaries", icon: "📍", label: "Nearby",  desc: "Dispensaries near you" },
-  { href: "/garden/seed-vendors", icon: "🌰", label: "Seeds",   desc: "Trusted seed banks — ratings & shipping" },
+  { href: "/garden/dispensaries", icon: "📍", label: "Dispensary Finder", desc: "Licensed stores near your location" },
+  { href: "/garden/seed-vendors", icon: "🌰", label: "Seed Vendors",      desc: "Online seed banks, breeders, and shipping" },
   {
     href: "/garden/community",
     icon: "💬",
