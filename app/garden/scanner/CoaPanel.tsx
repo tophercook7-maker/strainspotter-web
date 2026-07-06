@@ -6,13 +6,27 @@
 // Terpene rows are tappable into the same education KB.
 
 import { useState } from "react";
-import { parseCoa } from "@/lib/scanner/coaParser";
+import { parseCoa, type CoaResult } from "@/lib/scanner/coaParser";
 import { getTerpeneInfo } from "@/lib/education/terpenes";
 
-export default function CoaPanel({ ocrText }: { ocrText?: string }) {
+// Accepts EITHER raw OCR text (printed panel) OR an already-parsed result
+// (fetched from the linked lab certificate). `source` sets the honest label.
+export default function CoaPanel({
+  ocrText, coa: coaProp, source = "label",
+}: {
+  ocrText?: string;
+  coa?: CoaResult | null;
+  source?: "label" | "cert";
+}) {
   const [open, setOpen] = useState<string | null>(null);
-  const coa = parseCoa(ocrText);
+  const coa = coaProp ?? parseCoa(ocrText);
   if (!coa) return null;
+
+  const isCert = source === "cert";
+  const title = isCert ? "Pulled from the lab certificate" : "Measured from the label";
+  const sub = isCert
+    ? "Fetched from the COA linked on the package"
+    : "Real lab numbers read off this package — not a guess";
 
   const maxTerp = Math.max(0.001, ...coa.terpenes.map((t) => t.pct));
 
@@ -24,8 +38,8 @@ export default function CoaPanel({ ocrText }: { ocrText?: string }) {
       <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid rgba(52,211,153,0.16)" }}>
         <span style={{ fontSize: 18 }}>🧾</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 800, color: "#6ee7b7" }}>Measured from the label</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Real lab numbers read off this package — not a guess</div>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: "#6ee7b7" }}>{title}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{sub}</div>
         </div>
         <span style={{ fontSize: 10, fontWeight: 800, color: "#04120b", background: "#34d399", borderRadius: 6, padding: "3px 7px" }}>✓ LAB</span>
       </div>

@@ -17,6 +17,8 @@ import CoaPanel from "./CoaPanel";
 import { parseCoa } from "@/lib/scanner/coaParser";
 import QrCoaPanel from "./QrCoaPanel";
 import { decodeQrFromMany } from "@/lib/scanner/decodeQr";
+import { looksLikeCoaUrl } from "@/lib/scanner/coaFetch";
+import type { CoaResult } from "@/lib/scanner/coaParser";
 import { buildStrainCardData } from "@/lib/share/resultCard";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
@@ -449,6 +451,9 @@ export default function ScannerPage() {
   const [correctionName, setCorrectionName] = useState("");
   // QR codes decoded from the photo (COA / lab-cert links printed on packages).
   const [qrCodes, setQrCodes] = useState<string[]>([]);
+  // Auto-fetched lab certificate (server pulls + parses the linked COA PDF).
+  const [fetchedCoa, setFetchedCoa] = useState<CoaResult | null>(null);
+  const [coaFetching, setCoaFetching] = useState(false);
   const submitScanFeedback = async (opts: { confirmed: boolean; correctedName?: string }) => {
     if (!result) return;
     const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -534,6 +539,23 @@ export default function ScannerPage() {
   const auth = useOptionalAuth();
   const isLoggedIn = !!auth?.user;
   const displayName = auth?.profile?.display_name || auth?.user?.email?.split("@")[0] || null;
+
+  // When a scanned QR points to a COA, fetch + parse the linked certificate.
+  useEffect(() => {
+    const coaUrl = qrCodes.find((c) => /^https?:\/\//i.test(c) && looksLikeCoaUrl(c));
+    const token = auth?.session?.access_token;
+    if (!coaUrl || !token) { setFetchedCoa(null); return; }
+    let cancelled = false;
+    setCoaFetching(true);
+    setFetchedCoa(null);
+    fetch(`/api/scan/coa?url=${encodeURIComponent(coaUrl)}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d?.ok && d.coa) setFetchedCoa(d.coa as CoaResult); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCoaFetching(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrCodes, auth?.session?.access_token]);
   const tier = (auth?.profile != null ? auth.tier : (getLocalTier() || auth?.tier || "free")) as "free" | "member" | "pro";
 
   const addImages = useCallback((files: FileList | File[]) => {
@@ -2196,6 +2218,18 @@ export default function ScannerPage() {
 
                 {/* COA / lab-cert links decoded from the package QR code(s) */}
                 <QrCoaPanel codes={qrCodes} />
+
+                {/* Auto-fetched lab certificate (pulled + parsed from the QR link) */}
+                {coaFetching && !fetchedCoa && (
+                  <div style={{
+                    marginBottom: 14, padding: "12px 16px", borderRadius: 14, display: "flex", alignItems: "center", gap: 10,
+                    background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.2)",
+                  }}>
+                    <span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(52,211,153,0.3)", borderTopColor: "#34d399", animation: "scan-rotate 0.8s linear infinite", flexShrink: 0 }} />
+                    <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.7)" }}>Reading the lab certificate from the QR…</span>
+                  </div>
+                )}
+                {fetchedCoa && <CoaPanel coa={fetchedCoa} source="cert" />}
 
                 {/* MEASURED lab panel from the package label (real numbers) */}
                 <CoaPanel ocrText={result.ocrText} />
