@@ -83,7 +83,8 @@ export default function AdminPage() {
   const token: string | undefined = auth?.session?.access_token;
   const isOwner = auth?.profile?.is_owner === true;
 
-  const [tab, setTab] = useState<"overview" | "verify" | "moderators" | "reports" | "feedback">("overview");
+  const [tab, setTab] = useState<"overview" | "funnel" | "verify" | "moderators" | "reports" | "feedback">("overview");
+  const [analytics, setAnalytics] = useState<any>(null);
   const [ov, setOv] = useState<Overview | null>(null);
   const [reportGroups, setReportGroups] = useState<ReportGroup[]>([]);
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
@@ -131,6 +132,11 @@ export default function AdminPage() {
   }, [api, token]);
 
   useEffect(() => { loadOverview(); }, [loadOverview]);
+  const loadAnalytics = useCallback(async () => {
+    try { setAnalytics(await api("/api/admin/analytics")); } catch { /* denied handled */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => { if (tab === "funnel" && !analytics) loadAnalytics(); }, [tab, analytics, loadAnalytics]);
   useEffect(() => { if (tab === "feedback") loadFeedback(); }, [tab, loadFeedback]);
   useEffect(() => { if (tab === "reports") loadReports(); }, [tab, loadReports]);
 
@@ -308,6 +314,7 @@ export default function AdminPage() {
           <div style={{ display: "flex", gap: 6, marginBottom: 16, padding: 4, borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", flexWrap: "wrap" }}>
             {([
               { key: "overview" as const, label: "Overview" },
+              { key: "funnel" as const, label: "Funnel" },
               { key: "verify" as const, label: ov?.pendingVerifications.length ? `Verify (${ov.pendingVerifications.length})` : "Verify" },
               { key: "moderators" as const, label: ov?.volunteers.pending.length ? `Moderators (${ov.volunteers.pending.length})` : "Moderators" },
               { key: "reports" as const, label: ov?.openReports ? `Reports (${ov.openReports})` : "Reports" },
@@ -421,6 +428,65 @@ export default function AdminPage() {
                 <div style={{ color: "#6ee7b7", fontSize: 12, marginTop: 8 }}>{enrichLog}</div>
               )}
             </div>
+          )}
+
+          {/* ── FUNNEL ── */}
+          {tab === "funnel" && (
+            <>
+              {!analytics ? (
+                <div style={{ ...glass, padding: 20, textAlign: "center", color: "rgba(255,255,255,0.5)", fontSize: 14 }}>
+                  Loading funnel…
+                </div>
+              ) : analytics.error ? (
+                <div style={{ ...glass, padding: 20, color: "#FFD54F", fontSize: 13 }}>{analytics.error}</div>
+              ) : (
+                <>
+                  {/* Funnel stages */}
+                  <div style={{ ...glass, padding: 18, marginBottom: 14 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", marginBottom: 14 }}>Conversion funnel</div>
+                    {([
+                      { label: "Accounts", value: analytics.funnel.accounts, sub: null },
+                      { label: "Used free scan", value: analytics.funnel.freeScanUsed, sub: `${analytics.funnel.signupToScan}% of accounts` },
+                      { label: "Subscribers", value: analytics.funnel.subscribers, sub: `${analytics.funnel.scanToPaid}% of scanners · ${analytics.funnel.signupToPaid}% of accounts` },
+                    ]).map((s, i, arr) => {
+                      const max = Math.max(1, arr[0].value);
+                      const w = Math.round((s.value / max) * 100);
+                      return (
+                        <div key={s.label} style={{ marginBottom: 14 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{s.label}</span>
+                            <span style={{ fontSize: 18, fontWeight: 800, color: "#6ee7b7" }}>{s.value.toLocaleString()}</span>
+                          </div>
+                          <div style={{ height: 10, borderRadius: 99, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${w}%`, borderRadius: 99, background: "linear-gradient(90deg, #34d399, #059669)" }} />
+                          </div>
+                          {s.sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 }}>{s.sub}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Stat grid */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                    {([
+                      { label: "Subscribers", value: analytics.subscribers.total, note: `${analytics.subscribers.member} member · ${analytics.subscribers.pro} pro` },
+                      { label: "Total scans", value: analytics.scans.total, note: `${analytics.scans.last30} in last 30d` },
+                      { label: "New accounts", value: analytics.growth.accountsLast30, note: `${analytics.growth.accountsLast7} in last 7d` },
+                      { label: "Flywheel data", value: analytics.flywheel.corrections + analytics.flywheel.confirmations, note: `${analytics.flywheel.confirmations} confirmed · ${analytics.flywheel.corrections} corrected` },
+                    ]).map((s) => (
+                      <div key={s.label} style={{ ...glass, padding: 14 }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: "#fff" }}>{s.value.toLocaleString()}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{s.label}</div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 3, lineHeight: 1.4 }}>{s.note}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, padding: "0 4px" }}>
+                    {analytics.note}
+                  </div>
+                </>
+              )}
+            </>
           )}
 
           {/* ── VERIFY ── */}

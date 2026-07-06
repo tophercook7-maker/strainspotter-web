@@ -12,6 +12,7 @@ import WhereToFind from "./WhereToFind";
 import ShareResultButton from "./ShareResultButton";
 import StrainDeepDive, { type StrainDetails } from "./StrainDeepDive";
 import TerpeneEducation from "./TerpeneEducation";
+import ScanEducation from "./ScanEducation";
 import { buildStrainCardData } from "@/lib/share/resultCard";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
@@ -2223,6 +2224,13 @@ export default function ScannerPage() {
                     )}
                   </div>
                 )}
+
+                {/* ── EDUCATION LAYER: harvest school · effects explained · consumption 101 ── */}
+                <ScanEducation
+                  effects={result.effects}
+                  trichomes={result.trichomes}
+                  coloration={result.coloration}
+                />
 
                 {/* Could Also Be */}
                 {result.alternates.length > 0 && (
