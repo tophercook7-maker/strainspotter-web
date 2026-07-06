@@ -98,7 +98,7 @@ ${STRAIN_CATALOG}
 ═══ ANALYSIS PROTOCOL ═══
 
 Step 1 — READ EVERY VISIBLE WORD.
-Cannabis sold in dispensaries or by reputable seed banks is almost always labelled. If the image contains packaging, a jar label, a menu board, a seed packet, or any other visible text, transcribe it COMPLETELY and identify any cannabis strain names within. Strain names visible in text are your single most reliable signal — far more reliable than guessing from bud appearance.
+Cannabis sold in dispensaries or by reputable seed banks is almost always labelled. If the image contains packaging, a jar label, a menu board, a seed packet, or any other visible text, transcribe it COMPLETELY into ocrText and identify any cannabis strain names within. Strain names visible in text are your single most reliable signal — far more reliable than guessing from bud appearance. CRITICAL: transcribe any printed LAB PANEL / Certificate of Analysis numbers VERBATIM — every cannabinoid and terpene with its exact value and unit (e.g. "THC 22.4%", "Total THC 24.8%", "Myrcene 0.94%", "β-Caryophyllene 0.33%", "Total Terpenes 2.1%", or mg/g values). These printed lab numbers are real measurements — never round, drop, or invent them.
 
 Step 2 — OBSERVE VISUAL TRAITS.
 Examine bud structure (dense / airy / popcorn / chunky), trichome coverage and color (clear / cloudy / amber / mixed), pistil color and density, base coloration, leaf shape (narrow vs broad), and overall morphotype. Report what you actually see, not what you think the answer "should" be.

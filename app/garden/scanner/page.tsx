@@ -13,6 +13,8 @@ import ShareResultButton from "./ShareResultButton";
 import StrainDeepDive, { type StrainDetails } from "./StrainDeepDive";
 import TerpeneEducation from "./TerpeneEducation";
 import ScanEducation from "./ScanEducation";
+import CoaPanel from "./CoaPanel";
+import { parseCoa } from "@/lib/scanner/coaParser";
 import { buildStrainCardData } from "@/lib/share/resultCard";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
@@ -2183,11 +2185,15 @@ export default function ScannerPage() {
                   </div>
                 )}
 
-                {/* Terpenes — rich education cards (aroma, effects, benefits, vape temp) */}
-                {result.terpenes.length > 0 && (
+                {/* MEASURED lab panel from the package label (real numbers) */}
+                <CoaPanel ocrText={result.ocrText} />
+
+                {/* Terpenes — the model's TYPICAL guess. Hidden when the label
+                    already gave us a measured terpene panel above (no redundancy). */}
+                {result.terpenes.length > 0 && !(parseCoa(result.ocrText)?.terpenes?.length) && (
                   <div style={{ marginBottom: 14 }}>
                     <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>
-                      🧪 Terpenes <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.4)", fontSize: 12 }}>· tap to learn what each does</span>
+                      🧪 Typical terpenes <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.4)", fontSize: 12 }}>· tap to learn what each does</span>
                     </h3>
                     <TerpeneEducation terpenes={result.terpenes} />
                   </div>
