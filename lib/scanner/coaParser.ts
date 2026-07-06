@@ -17,18 +17,23 @@ export type CoaResult = {
   totalTerpenes: number | null;
 };
 
-// Longest aliases first so "total thc" wins over "thc", "thca" over "thc".
+// Longest / most-specific aliases first so "total thc" wins over "thc", "thca"
+// over "thc", "cbca" over "cbc". A concentrate can be ~90% cannabinoids, so the
+// max ranges allow vape/extract potency, not just flower.
 const CANNABINOIDS: { display: string; aliases: string[]; min: number; max: number }[] = [
-  { display: "Total THC", aliases: ["total thc"], min: 0.05, max: 45 },
-  { display: "Total CBD", aliases: ["total cbd"], min: 0.02, max: 30 },
-  { display: "THCA", aliases: ["thca", "thc-a"], min: 0.05, max: 45 },
-  { display: "CBDA", aliases: ["cbda", "cbd-a"], min: 0.02, max: 30 },
-  { display: "THCV", aliases: ["thcv"], min: 0.01, max: 10 },
-  { display: "CBG", aliases: ["cbga", "cbg"], min: 0.01, max: 15 },
-  { display: "CBN", aliases: ["cbn"], min: 0.01, max: 10 },
-  { display: "CBC", aliases: ["cbc"], min: 0.01, max: 10 },
-  { display: "THC", aliases: ["thc", "d9-thc", "delta-9-thc", "delta 9 thc", "δ9-thc"], min: 0.05, max: 45 },
-  { display: "CBD", aliases: ["cbd"], min: 0.02, max: 30 },
+  { display: "Total Cannabinoids", aliases: ["total cannabinoids"], min: 0.1, max: 100 },
+  { display: "Total THC", aliases: ["total thc"], min: 0.05, max: 100 },
+  { display: "Total CBD", aliases: ["total cbd"], min: 0.02, max: 100 },
+  { display: "THCA", aliases: ["thca", "thc-a"], min: 0.05, max: 100 },
+  { display: "CBDA", aliases: ["cbda", "cbd-a"], min: 0.02, max: 100 },
+  { display: "CBCA", aliases: ["cbca", "cbc-a"], min: 0.01, max: 30 },
+  { display: "CBGA", aliases: ["cbga"], min: 0.01, max: 30 },
+  { display: "THCV", aliases: ["thcv"], min: 0.01, max: 20 },
+  { display: "CBG", aliases: ["cbg"], min: 0.01, max: 30 },
+  { display: "CBN", aliases: ["cbn"], min: 0.01, max: 20 },
+  { display: "CBC", aliases: ["cbc"], min: 0.01, max: 20 },
+  { display: "THC", aliases: ["thc", "d9-thc", "delta-9-thc", "delta 9 thc", "δ9-thc"], min: 0.05, max: 100 },
+  { display: "CBD", aliases: ["cbd"], min: 0.02, max: 100 },
 ];
 
 const TERPENES = [
@@ -44,6 +49,7 @@ function norm(s: string): string {
   return s
     .toLowerCase()
     .replace(/β/g, "b").replace(/α/g, "a").replace(/γ/g, "g").replace(/δ/g, "d")
+    .replace(/[–—−]/g, "-")
     .replace(/[|•·\t]+/g, " ")
     .replace(/ /g, " ");
 }
@@ -55,7 +61,7 @@ const PFX = "(?:(?:alpha|beta|gamma|delta|trans|cis|d9|d)[-\\s]*)?";
 // Returns the value (as a %) AND the exact matched substring so the caller can
 // blank it out — preventing "THC" from re-reading the number inside "Total THC".
 function findValue(
-  text: string, name: string, min: number, max: number
+  text: string, name: string, min: number, max: number, preferBefore = false
 ): { pct: number; matched: string } | null {
   const n = name.replace(/[-\s]/g, "[-\\s]?");
   const num = "([0-9]{1,3}(?:\\.[0-9]{1,3})?)";
@@ -66,7 +72,10 @@ function findValue(
   // number → name  (e.g. "0.94% Myrcene")
   const before = new RegExp(`${num}\\s*${unit}\\s*${PFX}${n}\\b`);
 
-  for (const re of [after, before]) {
+  // Reversed "value% NAME" totals want `before` first; forward "NAME – value%"
+  // line items want `after` first. Trying the wrong one first lets a match
+  // spill into the neighbouring field, so the caller sets the orientation.
+  for (const re of preferBefore ? [before, after] : [after, before]) {
     const m = text.match(re);
     if (!m) continue;
     let v = parseFloat(m[1]);
@@ -91,8 +100,10 @@ export function parseCoa(ocrText: string | undefined | null): CoaResult | null {
 
   const cannabinoids: CoaEntry[] = [];
   for (const c of CANNABINOIDS) {
+    // Headline "Total …" stats are usually printed value-first (reversed).
+    const preferBefore = c.display.startsWith("Total");
     for (const a of c.aliases) {
-      const hit = findValue(work, a, c.min, c.max);
+      const hit = findValue(work, a, c.min, c.max, preferBefore);
       if (hit) {
         cannabinoids.push({ name: c.display, pct: hit.pct, unit: "%" });
         work = blank(work, hit.matched);
@@ -111,10 +122,21 @@ export function parseCoa(ocrText: string | undefined | null): CoaResult | null {
   }
 
   let totalTerpenes: number | null = null;
-  const tt = norm(ocrText).match(/total\s*terpenes?\b[^0-9%]{0,8}([0-9]{1,2}(?:\.[0-9]{1,3})?)/);
-  if (tt) {
-    const v = parseFloat(tt[1]);
-    if (v > 0 && v <= 15) totalTerpenes = Math.round(v * 1000) / 1000;
+  const ttText = norm(ocrText);
+  // Either order, but the % must sit next to the number so we don't grab a
+  // neighbouring total's value: "4.2% TOTAL TERPENES" (AcreLabs) or
+  // "Total Terpenes: 2.1%". First in-range (0–15%) hit wins.
+  for (const re of [
+    // forward "Total Terpenes: 2.1%" first (the out-of-range neighbour in a
+    // reversed layout is skipped, so AcreLabs "4.2% TOTAL TERPENES" falls through)
+    /total\s*terpenes?\b[^0-9]{0,6}([0-9]{1,2}(?:\.[0-9]{1,3})?)\s*%/,
+    /([0-9]{1,2}(?:\.[0-9]{1,3})?)\s*%\s*total\s*terpenes?\b/,
+  ]) {
+    const m = ttText.match(re);
+    if (m) {
+      const v = parseFloat(m[1]);
+      if (v > 0 && v <= 15) { totalTerpenes = Math.round(v * 1000) / 1000; break; }
+    }
   }
 
   // Only a real hit if we actually measured something.
