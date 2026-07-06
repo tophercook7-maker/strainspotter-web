@@ -6,6 +6,15 @@ import MembershipCTA from "@/components/MembershipCTA";
 import NewsStrip from "@/components/NewsStrip";
 import { useState, useEffect } from "react";
 import AuthScreen from "@/components/AuthScreen";
+import { compliance } from "@/lib/storeCompliance";
+
+// Store-compliance: in native builds, hide hub entries for policy-sensitive
+// surfaces. On web every flag is on, so this set is empty and nothing changes.
+const HIDDEN_HREFS = new Set<string>([
+  ...(compliance.dispensaryFinder ? [] : ["/garden/dispensaries"]),
+  ...(compliance.seedVendors ? [] : ["/garden/seed-vendors"]),
+  ...(compliance.consumptionDiary ? [] : ["/garden/journal"]),
+]);
 
 /* ─── try to use real auth, fall back to localStorage tier ─── */
 let useOptionalAuth: () => any;
@@ -433,7 +442,7 @@ export default function GardenPage() {
 
           {/* Feature Grid */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {FEATURES.map((item) => {
+            {FEATURES.filter((item) => !HIDDEN_HREFS.has(item.href)).map((item) => {
               if (item.comingSoon) {
                 const isClickable = item.href && item.href !== "#";
                 return (
@@ -541,7 +550,7 @@ export default function GardenPage() {
             WebkitBackdropFilter: "blur(18px) saturate(1.4)",
             boxShadow: "0 4px 16px rgba(0,0,0,0.32)",
           }}>
-            {QUICK_LINKS.map((link) => (
+            {QUICK_LINKS.filter((link) => !HIDDEN_HREFS.has(link.href)).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
