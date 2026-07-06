@@ -1,5 +1,16 @@
-import type { MultiImageEmbeddingResult } from "@/lib/scanner/embeddingService";
+import type { RetrievalCandidate } from "@/lib/scanner/retrievalTypes";
 import { shouldRunEmbeddingRetrieval } from "@/lib/scanner/scanAnalysisSignals";
+
+// Result shape for the (retired) embedding-retrieval choke point. The embedding
+// implementation was removed — image embeddings proved at-chance for strain ID
+// (ROADMAP Phase 1) and pulled a vulnerable @xenova/transformers → protobufjs
+// chain. This guard remains as the tested gate that keeps embedding retrieval
+// OFF for unusable images; callers inject their own `run`.
+export type MultiImageEmbeddingResult = {
+  candidates: RetrievalCandidate[];
+  embeddingImageCount: number;
+  embeddingTopStrainMultiImageReinforced: boolean;
+};
 
 const EMPTY: MultiImageEmbeddingResult = {
   candidates: [],
