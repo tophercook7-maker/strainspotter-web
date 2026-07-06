@@ -1469,8 +1469,12 @@ export default function ScannerPage() {
         {result && scanState === "done" && (
           <div style={{ marginTop: 12 }}>
             {/* ── Phase 2: "Doesn't look like cannabis" banner ── */}
+            {/* Never claim "not cannabis" if we actually read text off it — a
+                labeled package/jar IS cannabis, even at low visual confidence. */}
             {(result.imageType === "other" || result.imageType === "unclear") &&
-              result.confidence < 15 && (
+              result.confidence < 15 &&
+              !result.ocrText?.trim() &&
+              result.ocrStrainCandidates.length === 0 && (
                 <div
                   style={{
                     marginTop: 16,

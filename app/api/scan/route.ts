@@ -932,18 +932,17 @@ export async function POST(req: NextRequest) {
               ],
               response_format: { type: "json_object" },
               // GPT-5 / o-series ("reasoning") models reject `max_tokens` and a
-              // custom `temperature` — they take `max_completion_tokens` (which
-              // ALSO funds hidden reasoning tokens, so give generous headroom or
-              // the JSON gets truncated) and only the default temperature.
-              // Optional quality dial: SCANNER_REASONING_EFFORT
-              // (minimal|low|medium|high) — only sent when set, so it can never
-              // 400 by default. GPT-4o / GPT-4.1 use the classic params.
+              // custom `temperature` — they take `max_completion_tokens`, which
+              // ALSO funds hidden reasoning tokens. This is a structured OCR +
+              // extraction task, not a reasoning puzzle: default reasoning to
+              // "low" (fast, few reasoning tokens) and give a LARGE completion
+              // budget so a package's full label transcription can't truncate
+              // the JSON (truncation → empty parse → false "not cannabis").
+              // SCANNER_REASONING_EFFORT (minimal|low|medium|high) overrides.
               ...(/^(gpt-5|o\d)/i.test(VISION_MODEL)
                 ? {
-                    max_completion_tokens: 6000,
-                    ...(process.env.SCANNER_REASONING_EFFORT
-                      ? { reasoning_effort: process.env.SCANNER_REASONING_EFFORT }
-                      : {}),
+                    max_completion_tokens: 16000,
+                    reasoning_effort: process.env.SCANNER_REASONING_EFFORT || "low",
                   }
                 : { max_tokens: 1800, temperature: 0.2 }),
             }),
@@ -966,6 +965,7 @@ export async function POST(req: NextRequest) {
         const choices = aiJson.choices as
           | Array<Record<string, unknown>>
           | undefined;
+        const finishReason = choices?.[0]?.finish_reason as string | undefined;
         const messageContent = choices?.[0]?.message
           ? ((choices[0].message as Record<string, unknown>).content as string)
           : "";
@@ -982,6 +982,27 @@ export async function POST(req: NextRequest) {
               /* fall through */
             }
           }
+        }
+
+        // Truncated / empty response (e.g. a reasoning model that spent its whole
+        // completion budget before emitting the JSON). Returning the normalized
+        // empty object would surface a misleading "doesn't look like cannabis" —
+        // instead fail honestly so the caller refunds the slot and says "retry".
+        if (finishReason === "length" || Object.keys(parsed).length === 0) {
+          log.warn("scan_incomplete_response", {
+            req: reqId,
+            finishReason: finishReason ?? "none",
+            contentLen: messageContent.length,
+          });
+          return {
+            ok: false as const,
+            status: 503,
+            payload: {
+              error:
+                "The analysis was cut off before it finished. Please try that scan again.",
+              code: "incomplete_response",
+            },
+          };
         }
 
         const normalized = normalizeAnalysis(parsed, sellersClaim);
