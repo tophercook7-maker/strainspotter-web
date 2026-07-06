@@ -81,7 +81,7 @@ export default function MobileAppPage() {
               margin: "0 0 10px",
             }}
           >
-            App Store and Google Play
+            Native app status
           </h2>
           {externalInstall ? (
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "rgba(255,255,255,0.72)" }}>
@@ -98,9 +98,9 @@ export default function MobileAppPage() {
             </p>
           ) : (
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "rgba(255,255,255,0.72)" }}>
-              Public store listings are not wired for this deployment yet. When they are,
-              the same “StrainSpotter on your phone” link in the scanner will take you straight
-              to the official install page.
+              There&rsquo;s no App Store or Google Play listing — app stores don&rsquo;t allow
+              cannabis apps. The web app IS the app: add strainspotter.app to your home
+              screen (steps below) and it runs full-screen with everything included.
             </p>
           )}
         </div>

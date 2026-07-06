@@ -148,7 +148,7 @@ export default function StrainSpotterLanding() {
       {/* stats */}
       <section style={{ padding: "20px 22px 60px" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }} className="ssl-stats">
-          {[{ to: 314, s: "", l: "cultivars in catalog" }, { to: 0, s: "%", l: "inflated confidence floor" }, { to: 5, s: "", l: "honest candidates, not 1" }, { to: 60, s: "s", l: "from photo to answer" }].map((x, i) => (
+          {[{ to: 35796, s: "", l: "strains in the library" }, { to: 0, s: "%", l: "inflated confidence floor" }, { to: 5, s: "", l: "honest candidates, not 1" }, { to: 60, s: "s", l: "from photo to answer" }].map((x, i) => (
             <Reveal key={i}><div style={{ border: "1px solid rgba(255,255,255,.09)", borderRadius: 18, padding: 22, background: "rgba(255,255,255,.03)" }}><CountUp to={x.to} suffix={x.s} /><span style={{ color: "rgba(255,255,255,.55)", fontSize: 13.5 }}>{x.l}</span></div></Reveal>
           ))}
         </div>

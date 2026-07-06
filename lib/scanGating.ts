@@ -132,13 +132,15 @@ export const TOPUP_PACKS = [
  *
  * The old free-tier API is no longer used internally, but external callers
  * (the scanner page in particular still has scaffolding) might import these.
- * They now reflect the no-free-scans reality.
+ * These client-side shims return 0 because scan accounting is server-side:
+ * the ONE free signup scan (migration 025, profiles.free_scan_used) is
+ * claimed atomically by /api/scan — the client never tracks it.
  */
 
-/** Always 0 — there is no free allowance. */
+/** Always 0 client-side — the single free signup scan is tracked server-side. */
 export const FREE_SCAN_TOTAL = 0;
 
-/** Always 0 — there are no free scans remaining, ever. */
+/** Always 0 client-side — the server claims the free signup scan atomically. */
 export function getScansRemaining(): number {
   return 0;
 }

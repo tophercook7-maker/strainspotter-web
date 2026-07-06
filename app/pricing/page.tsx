@@ -116,7 +116,7 @@ export default function PricingPage() {
             }}
           >
             Every plan unlocks the full StrainSpotter Garden — scanner,
-            Grow Doctor, the 314-strain library, scan history, journal,
+            Grow Doctor, the 35,000+ strain library, scan history, journal,
             and the nearby dispensary directory. The difference is how
             many scans you get and how much you want to pay.
           </p>
@@ -129,13 +129,14 @@ export default function PricingPage() {
               letterSpacing: 1.5,
             }}
           >
-            No free tier · No ads · No data resale · Cancel anytime
+            1 free scan on signup · No ads · No data resale · Cancel anytime
           </p>
         </section>
 
         {/* ─── Main plans grid ─── */}
         <section style={{ marginBottom: 64 }}>
           <div
+            className="ss-stagger"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
@@ -192,6 +193,7 @@ export default function PricingPage() {
             stack with any subscription you start later.
           </p>
           <div
+            className="ss-stagger"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
@@ -203,6 +205,7 @@ export default function PricingPage() {
               return (
                 <div
                   key={p.id}
+                  className="ss-lift"
                   style={{
                     padding: "18px 18px",
                     background: isBest
@@ -415,6 +418,7 @@ function PlanColumn({
 }) {
   return (
     <div
+      className="ss-lift"
       style={{
         background: highlighted ? `${accent}14` : "rgba(255,255,255,0.04)",
         border: highlighted

@@ -406,9 +406,10 @@ export default function GardenPage() {
           )}
         </div>
 
-        <div className="mx-auto w-full max-w-[720px] px-4 py-6 space-y-8">
+        <div className="mx-auto w-full max-w-[720px] px-4 py-6 space-y-8 ss-stagger">
           {/* Scanner Shortcut */}
           <button
+            className="ss-lift ss-glow"
             onClick={() => router.push("/garden/scanner")}
             style={{
               width: "100%", display: "flex", alignItems: "center", gap: 14,
@@ -441,13 +442,14 @@ export default function GardenPage() {
           <StrainOfTheDay router={router} />
 
           {/* Feature Grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div className="ss-stagger" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {FEATURES.filter((item) => !HIDDEN_HREFS.has(item.href)).map((item) => {
               if (item.comingSoon) {
                 const isClickable = item.href && item.href !== "#";
                 return (
                   <button
                     key={item.href}
+                    className="ss-lift"
                     onClick={() => isClickable && router.push(item.href)}
                     disabled={!isClickable}
                     style={{
@@ -513,6 +515,7 @@ export default function GardenPage() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  className="ss-lift"
                   style={{
                     display: "flex", flexDirection: "column", gap: 6,
                     padding: "16px 14px",

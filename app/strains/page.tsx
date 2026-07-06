@@ -24,11 +24,12 @@ export default function StrainsHubPage() {
         </p>
 
         <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 14px" }}>Browse A–Z</h2>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 32 }}>
+        <div className="ss-stagger" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 32 }}>
           {BROWSE_LETTERS.map((l) => (
             <Link
               key={l}
               href={`/strains/browse/${l}`}
+              className="ss-lift"
               style={{
                 width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center",
                 borderRadius: 12, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.16)",
@@ -47,7 +48,7 @@ export default function StrainsHubPage() {
             claims, and tells you the truth about what a photo can and can&apos;t identify.
             Plus a Plant Doctor that reads your live plant&apos;s age, stage, and health.
           </p>
-          <Link href="/garden/scanner" style={{ display: "inline-block", padding: "11px 20px", borderRadius: 12, background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
+          <Link href="/garden/scanner" className="ss-glow" style={{ display: "inline-block", padding: "11px 20px", borderRadius: 12, background: "linear-gradient(135deg, #34d399, #059669)", color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
             Try it free
           </Link>
         </div>
