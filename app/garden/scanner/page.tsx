@@ -15,6 +15,8 @@ import TerpeneEducation from "./TerpeneEducation";
 import ScanEducation from "./ScanEducation";
 import CoaPanel from "./CoaPanel";
 import { parseCoa } from "@/lib/scanner/coaParser";
+import QrCoaPanel from "./QrCoaPanel";
+import { decodeQrFromMany } from "@/lib/scanner/decodeQr";
 import { buildStrainCardData } from "@/lib/share/resultCard";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
@@ -445,6 +447,8 @@ export default function ScannerPage() {
   // — the only durable path to better accuracy on the label route.
   const [feedbackState, setFeedbackState] = useState<"idle" | "correcting" | "sent">("idle");
   const [correctionName, setCorrectionName] = useState("");
+  // QR codes decoded from the photo (COA / lab-cert links printed on packages).
+  const [qrCodes, setQrCodes] = useState<string[]>([]);
   const submitScanFeedback = async (opts: { confirmed: boolean; correctedName?: string }) => {
     if (!result) return;
     const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -602,6 +606,11 @@ export default function ScannerPage() {
 
     setFeedbackState("idle");
     setCorrectionName("");
+
+    // Decode any COA / lab-cert QR codes off the photo in parallel (client-side,
+    // non-blocking) — surfaced on the result when found.
+    setQrCodes([]);
+    decodeQrFromMany(previews).then(setQrCodes).catch(() => {});
 
     // Scan audio: a lighter-flick to kick off, then a soft bubbler loop. This
     // runs inside the button-click gesture, which unlocks the audio context.
@@ -2184,6 +2193,9 @@ export default function ScannerPage() {
                     </div>
                   </div>
                 )}
+
+                {/* COA / lab-cert links decoded from the package QR code(s) */}
+                <QrCoaPanel codes={qrCodes} />
 
                 {/* MEASURED lab panel from the package label (real numbers) */}
                 <CoaPanel ocrText={result.ocrText} />
