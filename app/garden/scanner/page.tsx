@@ -11,6 +11,7 @@ import PlantDoctorPanel from "./PlantDoctorPanel";
 import WhereToFind from "./WhereToFind";
 import ShareResultButton from "./ShareResultButton";
 import StrainDeepDive, { type StrainDetails } from "./StrainDeepDive";
+import TerpeneEducation from "./TerpeneEducation";
 import { buildStrainCardData } from "@/lib/share/resultCard";
 import Link from "next/link";
 import AuthScreen from "@/components/AuthScreen";
@@ -2181,22 +2182,13 @@ export default function ScannerPage() {
                   </div>
                 )}
 
-                {/* Terpenes */}
+                {/* Terpenes — rich education cards (aroma, effects, benefits, vape temp) */}
                 {result.terpenes.length > 0 && (
                   <div style={{ marginBottom: 14 }}>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>Terpenes</h3>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
-                      {result.terpenes.map((t, i) => {
-                        const colors = [
-                          { bg: "rgba(171,71,188,0.12)", text: "rgba(206,147,216,0.9)" },
-                          { bg: "rgba(255,183,77,0.12)", text: "rgba(255,213,79,0.9)" },
-                          { bg: "rgba(79,195,247,0.12)", text: "rgba(129,212,250,0.9)" },
-                          { bg: "rgba(255,138,101,0.12)", text: "rgba(255,171,145,0.9)" },
-                        ];
-                        const c = colors[i % colors.length];
-                        return <span key={i} style={{ padding: "8px 16px", borderRadius: 24, fontSize: 13, fontWeight: 600, background: c.bg, color: c.text }}>{t}</span>;
-                      })}
-                    </div>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "rgba(255,255,255,0.65)", marginBottom: 10 }}>
+                      🧪 Terpenes <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.4)", fontSize: 12 }}>· tap to learn what each does</span>
+                    </h3>
+                    <TerpeneEducation terpenes={result.terpenes} />
                   </div>
                 )}
 
