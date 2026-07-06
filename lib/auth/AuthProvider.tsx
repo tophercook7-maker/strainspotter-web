@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { getSupabase } from "../supabase/client";
+import { funnel } from "@/lib/analytics/funnel";
 import type { MembershipTier } from "@/lib/auth/effectiveTier";
 import type { ScanEntitlements } from "@/lib/scanner/scanEntitlements";
 import type { User, Session } from "@supabase/supabase-js";
@@ -229,6 +230,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (error) return { error: error.message };
+
+    funnel.signup(); // funnel: new free account created
 
     // Persist the display_name on profiles once the row exists. The
     // Supabase auth signUp returns the new user directly — we use that

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
+import { funnel } from "@/lib/analytics/funnel";
 
 /**
  * After Stripe redirects back with ?checkout=success&session_id=...
@@ -62,6 +63,7 @@ export default function CheckoutReturn() {
 
       // Step 2: Set localStorage tier immediately (fallback)
       if (tier === "member" || tier === "pro") {
+        funnel.subscribed({ tier }); // funnel: verified new subscriber
         localStorage.setItem("ss_membership_tier", tier);
         localStorage.setItem(
           "ss_member_info",

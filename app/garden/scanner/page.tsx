@@ -21,6 +21,7 @@ import ScannerExpectationsModal, {
 } from "./ScannerExpectationsModal";
 import ScanningFX from "@/components/ScanningFX";
 import { spark, startBubbles, stopBubbles, chime, setScanMuted } from "@/lib/scanSounds";
+import { funnel } from "@/lib/analytics/funnel";
 
 /* ─── try to use real auth, fall back gracefully ─── */
 let useOptionalAuth: () => any;
@@ -751,6 +752,7 @@ export default function ScannerPage() {
       setScanState("done");
       stopBubbles();
       if (soundOn) chime();
+      funnel.scanCompleted({ free: freeScanAvailable, health: includeHealth }); // funnel: activation
 
       // Settle the parallel plant-health read and attach it to the SAME result.
       healthPromise.then((pd) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { funnel } from "@/lib/analytics/funnel";
 
 interface MembershipSignupProps {
   onClose: () => void;
@@ -37,6 +38,9 @@ export default function MembershipSignup({
           ts: Date.now(),
         }));
       }
+
+      // Funnel: intent to pay (leaving for Stripe).
+      funnel.checkoutStarted({ plan });
 
       // Go straight to Stripe checkout
       const res = await fetch("/api/stripe/checkout", {
